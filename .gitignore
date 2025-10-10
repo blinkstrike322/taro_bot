@@ -1,0 +1,19 @@
+# .gitignore (пример)
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+.env.*
+venv/
+env/
+venv.bak/
+.idea/
+.vscode/
+.DS_Store
+*.sqlite3
+/.pytest_cache/
+/coverage/
+*.egg-info/
+dist/
+build/
