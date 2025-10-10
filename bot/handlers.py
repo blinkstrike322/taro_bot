@@ -5,86 +5,101 @@ from aiogram.filters import Command
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
 
-from core.tarot import draw_card, draw_three_cards
-from core.emotion import detect_emotion, generate_mirror
+from core.tarot import draw_cards
+from core.utils import is_valid_question
 
 router = Router()
 
-# Состояния
 class TarotStates(StatesGroup):
     waiting_for_question_one = State()
     waiting_for_question_three = State()
+    waiting_for_question_celtic = State()
+    waiting_for_question_period = State()
 
-# Клавиатура
 start_kb = ReplyKeyboardMarkup(
     keyboard=[
-        [KeyboardButton(text="🎴 Одна карта"), KeyboardButton(text="🎴 Три карты")]
+        [KeyboardButton(text="🎴 1 карта"), KeyboardButton(text="🎴 3 карты")],
+        [KeyboardButton(text="🌀 Кельтский крест"), KeyboardButton(text="📅 День/Неделя/Месяц")]
     ],
     resize_keyboard=True,
-    one_time_keyboard=False
+    one_time_keyboard=True
 )
 
-# /start
+# Старт
 @router.message(Command("start"))
 async def cmd_start(message: Message, state: FSMContext):
     await state.clear()
     await message.answer(
-        "🔮 Привет! Задай вопрос или выбери расклад:",
+        "🔮 Привет! Выбери вариант расклада:",
         reply_markup=start_kb
     )
 
-# Выбор одной карты
-@router.message(lambda msg: msg.text == "🎴 Одна карта")
+# Выбор раскладов
+@router.message(lambda msg: msg.text == "🎴 1 карта")
 async def choose_one_card(message: Message, state: FSMContext):
     await state.set_state(TarotStates.waiting_for_question_one)
-    await message.answer("Задай свой вопрос:")
+    await message.answer("Задай свой вопрос для расклада из одной карты:")
 
-# Выбор трёх карт
-@router.message(lambda msg: msg.text == "🎴 Три карты")
+@router.message(lambda msg: msg.text == "🎴 3 карты")
 async def choose_three_cards(message: Message, state: FSMContext):
     await state.set_state(TarotStates.waiting_for_question_three)
-    await message.answer("Задай вопрос для расклада из трёх карт:")
+    await message.answer("Задай свой вопрос для расклада из трёх карт:")
 
-# Обработка вопроса → одна карта
-@router.message(TarotStates.waiting_for_question_one)
-async def process_one_card(message: Message, state: FSMContext):
-    question = message.text
-    card = draw_card()
-    interpretation = card["reversed"] if card["is_reversed"] else card["upright"]
+@router.message(lambda msg: msg.text == "🌀 Кельтский крест")
+async def choose_celtic(message: Message, state: FSMContext):
+    await state.set_state(TarotStates.waiting_for_question_celtic)
+    await message.answer("Задай вопрос для расклада 'Кельтский крест':")
 
-    emotion_label, emotion_score = detect_emotion(question)
-    mirror_text = generate_mirror(question, emotion_label, emotion_score)
+@router.message(lambda msg: msg.text == "📅 День/Неделя/Месяц")
+async def choose_period(message: Message, state: FSMContext):
+    await state.set_state(TarotStates.waiting_for_question_period)
+    await message.answer("Задай вопрос для временного расклада:")
 
-    caption = f"{mirror_text}\n\nВопрос: {question}\n\nКарта: {card['name']}\n\n{interpretation}"
-    photo = FSInputFile(card["image_path"])
-    await message.answer_photo(photo=photo, caption=caption, reply_markup=start_kb)
-    await state.clear()
+# Общая функция обработки карточек
+async def process_card_message(message: Message, state: FSMContext, n_cards: int, positions: list = None):
+    question = message.text.strip()
+    if not is_valid_question(question):
+        await message.answer("Пожалуйста, задай осмысленный вопрос.")
+        return
 
-# Обработка вопроса → три карты
-@router.message(TarotStates.waiting_for_question_three)
-async def process_three_cards(message: Message, state: FSMContext):
-    question = message.text
-    cards = draw_three_cards()
-    positions = ["Прошлое", "Настоящее", "Будущее"]
-
-    emotion_label, emotion_score = detect_emotion(question)
-    mirror_text = generate_mirror(question, emotion_label, emotion_score)
+    cards = draw_cards(n_cards)
+    if positions is None:
+        positions = [f"Карта {i+1}" for i in range(n_cards)]
 
     media = []
     interpretations = []
     for i, card in enumerate(cards):
         media.append(InputMediaPhoto(media=FSInputFile(card["image_path"])))
+        orientation = "🔄 Перевёрнута" if card["is_reversed"] else "⬆️ Прямо"
         interp = card["reversed"] if card["is_reversed"] else card["upright"]
-        interpretations.append(f"🔹 {positions[i]} — {card['name']}\n{interp}")
+        interpretations.append(f"🔹 {positions[i]} — {card['name']} ({orientation})\n{interp}")
 
-    # Отправка карт
     await message.answer_media_group(media=media)
-
-    caption = f"{mirror_text}\n\nВопрос: {question}\n\n" + "\n\n".join(interpretations)
+    caption = f"Вопрос: {question}\n\n" + "\n\n".join(interpretations)
     await message.answer(caption, reply_markup=start_kb)
     await state.clear()
 
+# Обработка вопросов
+@router.message(TarotStates.waiting_for_question_one)
+async def handle_one_card(message: Message, state: FSMContext):
+    await process_card_message(message, state, 1)
 
-# Регистрация всех хендлеров
+@router.message(TarotStates.waiting_for_question_three)
+async def handle_three_cards(message: Message, state: FSMContext):
+    await process_card_message(message, state, 3, positions=["Прошлое", "Настоящее", "Будущее"])
+
+@router.message(TarotStates.waiting_for_question_celtic)
+async def handle_celtic(message: Message, state: FSMContext):
+    celtic_positions = [
+        "Ситуация", "Перекрестие", "Основа", "Прошлое", "Настоящее",
+        "Будущее", "Совет", "Влияние окружения", "Надежды/Страхи", "Итог"
+    ]
+    await process_card_message(message, state, 10, positions=celtic_positions)
+
+@router.message(TarotStates.waiting_for_question_period)
+async def handle_period(message: Message, state: FSMContext):
+    await process_card_message(message, state, 3, positions=["Сегодня", "Эта неделя", "Этот месяц"])
+
+# Регистрация роутера
 def register_handlers(dp):
     dp.include_router(router)
