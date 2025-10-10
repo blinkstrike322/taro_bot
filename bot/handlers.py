@@ -1,12 +1,20 @@
 # bot/handlers.py
 from aiogram import Router
-from aiogram.types import Message, FSInputFile, ReplyKeyboardMarkup, KeyboardButton, InputMediaPhoto
+from aiogram.types import Message, FSInputFile, ReplyKeyboardMarkup, KeyboardButton
 from aiogram.filters import Command
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
 
 from core.tarot import draw_cards
 from core.utils import is_valid_question
+from core.emotion import detect_emotion, generate_mirror
+
+from bot.animations import (
+    show_magic_ball_once,
+    show_mirror_once,
+    send_media_group_quiet,
+    send_interpretations_compact,
+)
 
 router = Router()
 
@@ -55,29 +63,46 @@ async def choose_period(message: Message, state: FSMContext):
     await state.set_state(TarotStates.waiting_for_question_period)
     await message.answer("Задай вопрос для временного расклада:")
 
-# Общая функция обработки карточек
-async def process_card_message(message: Message, state: FSMContext, n_cards: int, positions: list = None):
-    question = message.text.strip()
+
+async def process_card_message(message: Message, state: FSMContext, n_cards: int, positions: list | None = None):
+    """
+    Orchestration pipeline:
+    1) validate question
+    2) quick emotion mirror (one short message)
+    3) magic-ball indicator (one short message)
+    4) send album of cards (one media_group)
+    5) send compact interpretations (one message or logical blocks)
+    """
+
+    question = (message.text or "").strip()
     if not is_valid_question(question):
         await message.answer("Пожалуйста, задай осмысленный вопрос.")
         return
 
+    # --- 1) Emotion mirror (one short message) ---
+    emotion_label, emotion_score = detect_emotion(question)
+    mirror_text = generate_mirror(question, emotion_label, emotion_score)
+    # show_mirror_once handles a small typing action and sends a single message
+    await show_mirror_once(message, mirror_text, delay=0.45)
+
+    # --- 2) Magic ball indicator (one short message) ---
+    await show_magic_ball_once(message)
+
+    # --- 3) Draw cards and prepare positions ---
     cards = draw_cards(n_cards)
     if positions is None:
         positions = [f"Карта {i+1}" for i in range(n_cards)]
 
-    media = []
-    interpretations = []
-    for i, card in enumerate(cards):
-        media.append(InputMediaPhoto(media=FSInputFile(card["image_path"])))
-        orientation = "🔄 Перевёрнута" if card["is_reversed"] else "⬆️ Прямо"
-        interp = card["reversed"] if card["is_reversed"] else card["upright"]
-        interpretations.append(f"🔹 {positions[i]} — {card['name']} ({orientation})\n{interp}")
+    # --- 4) Send images as a single media_group (efficient, one API call) ---
+    await send_media_group_quiet(message, cards)
 
-    await message.answer_media_group(media=media)
-    caption = f"Вопрос: {question}\n\n" + "\n\n".join(interpretations)
-    await message.answer(caption, reply_markup=start_kb)
+    # --- 5) Send compact interpretations (single message if fits, else logical blocks) ---
+    await send_interpretations_compact(message, cards, positions)
+
+    # --- 6) Final hint and reset UI state ---
+    await message.answer("🔮 Расклад завершён!", reply_markup=start_kb)
     await state.clear()
+
 
 # Обработка вопросов
 @router.message(TarotStates.waiting_for_question_one)
@@ -99,6 +124,7 @@ async def handle_celtic(message: Message, state: FSMContext):
 @router.message(TarotStates.waiting_for_question_period)
 async def handle_period(message: Message, state: FSMContext):
     await process_card_message(message, state, 3, positions=["Сегодня", "Эта неделя", "Этот месяц"])
+
 
 # Регистрация роутера
 def register_handlers(dp):
