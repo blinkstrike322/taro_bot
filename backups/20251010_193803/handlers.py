@@ -1,13 +1,14 @@
-# bot/handlers.py
+# handlers.py
 from aiogram import Router
 from aiogram.types import Message, FSInputFile, ReplyKeyboardMarkup, KeyboardButton, InputMediaPhoto
-from aiogram.filters import Command
+from aiogram.filters import Command, StateFilter
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
 
-from core.tarot import draw_card, draw_three_cards
-from core.emotion import detect_emotion, generate_mirror
 
+from core.tarot import draw_card, draw_three_cards
+
+# Создаём роутер
 router = Router()
 
 # Состояния
@@ -51,11 +52,7 @@ async def process_one_card(message: Message, state: FSMContext):
     question = message.text
     card = draw_card()
     interpretation = card["reversed"] if card["is_reversed"] else card["upright"]
-
-    emotion_label, emotion_score = detect_emotion(question)
-    mirror_text = generate_mirror(question, emotion_label, emotion_score)
-
-    caption = f"{mirror_text}\n\nВопрос: {question}\n\nКарта: {card['name']}\n\n{interpretation}"
+    caption = f"Вопрос: {question}\n\nКарта: {card['name']}\n\n{interpretation}"
     photo = FSInputFile(card["image_path"])
     await message.answer_photo(photo=photo, caption=caption, reply_markup=start_kb)
     await state.clear()
@@ -67,9 +64,7 @@ async def process_three_cards(message: Message, state: FSMContext):
     cards = draw_three_cards()
     positions = ["Прошлое", "Настоящее", "Будущее"]
 
-    emotion_label, emotion_score = detect_emotion(question)
-    mirror_text = generate_mirror(question, emotion_label, emotion_score)
-
+    # Формируем альбом
     media = []
     interpretations = []
     for i, card in enumerate(cards):
@@ -77,13 +72,13 @@ async def process_three_cards(message: Message, state: FSMContext):
         interp = card["reversed"] if card["is_reversed"] else card["upright"]
         interpretations.append(f"🔹 {positions[i]} — {card['name']}\n{interp}")
 
-    # Отправка карт
+    # Отправляем альбом
     await message.answer_media_group(media=media)
 
-    caption = f"{mirror_text}\n\nВопрос: {question}\n\n" + "\n\n".join(interpretations)
+    # Отправляем толкование отдельно
+    caption = f"Вопрос: {question}\n\n" + "\n\n".join(interpretations)
     await message.answer(caption, reply_markup=start_kb)
     await state.clear()
-
 
 # Регистрация всех хендлеров
 def register_handlers(dp):
