@@ -1,9 +1,8 @@
-import json
+import json, json5
 import os
 import logging
 import re
 from typing import List, Dict, Any, Optional
-from concurrent.futures import ThreadPoolExecutor, TimeoutError
 from core.groq_client import create_groq_client
 
 logger = logging.getLogger(__name__)
@@ -19,12 +18,16 @@ cards_db = {card["name"]: card for card in cards_db_list}
 
 def build_system_prompt() -> str:
   return (
-    "You are a professional tarot reader. "
-    "Respond ONLY with valid JSON, no explanations or markdown. "
-    "Schema: {"
+    "Ты — опытный таролог с многолетней практикой. "
+    "Ты создаешь эмоциональные, поэтичные, но при этом точные интерпретации раскладов. "
+    "Говори естественно и образно, как будто ты ведёшь личную консультацию. "
+    "Сначала дай краткий устный ответ в стиле живого таролога, без JSON. "
+    "Затем в конце, после текста, обязательно добавь раздел 'JSON:' с валидным JSON-объектом строго по схеме: "
+    "{"
     '"short_answer": string, '
     '"cards": [{"position": int, "label": string, "card": string, "interpretation": string, "advice": string}], '
     '"conclusion": string, "tone": string, "confidence": number}'
+    " — JSON нужен для внутренней логики, не объясняй его."
   )
 
 def build_user_prompt(question: str, spread_labels: List[str], cards: List[Dict[str, str]]) -> str:
@@ -35,10 +38,10 @@ def build_user_prompt(question: str, spread_labels: List[str], cards: List[Dict[
   lines.append("Дай интерпретацию в валидном JSON по указанной схеме.")
   return "\n".join(lines)
 
-def call_groq_sync(prompt: str, model: str = "llama-3.1-8b-instant", max_tokens: int = 1500) -> str:
+async def call_groq_async(prompt: str, model: str = "openai/gpt-oss-20b", max_tokens: int = 1500) -> str:
   client = create_groq_client()
   try:
-    response = client.chat.completions.create(
+    response = await client.chat.completions.create(
       model=model,
       messages=[
         {"role": "system", "content": build_system_prompt()},
@@ -57,31 +60,28 @@ def call_groq_sync(prompt: str, model: str = "llama-3.1-8b-instant", max_tokens:
     return ""
 
 def extract_json(text: str) -> Optional[Dict[str, Any]]:
-  """Извлекает JSON даже из длинного ответа с шумом."""
   if not text:
     return None
   try:
-    # Найдем JSON блок даже при тексте до/после
-    match = re.search(r'(\{(?:[^{}]|(?R))*\})', text, flags=re.DOTALL)
-    if match:
-      json_candidate = match.group(1)
-      return json.loads(json_candidate)
+    # Ищем первый открывающий '{' и последний закрывающий '}', берём всё между ними
+    match = re.search(r'(\{.*\})', text, flags=re.DOTALL)
+    if not match:
+      logger.warning("JSON не найден в ответе LLM")
+      return None
+    json_str = match.group(1)
+    return json5.loads(json_str)
   except Exception as e:
     logger.warning(f"Не удалось извлечь JSON: {e}")
-  return None
+    return None
 
-executor = ThreadPoolExecutor(max_workers=5)
 
-def interpret_spread(question: str, spread_labels: List[str], cards: List[Dict[str, str]]) -> Dict[str, Any]:
+async def interpret_spread(question: str, spread_labels: List[str], cards: List[Dict[str, str]]) -> Dict[str, Any]:
   prompt = build_user_prompt(question, spread_labels, cards)
   try:
-    future = executor.submit(call_groq_sync, prompt)
-    raw_text = future.result(timeout=60)
+    raw_text = await call_groq_async(prompt)
     parsed = extract_json(raw_text)
     if parsed:
       return parsed
-  except TimeoutError:
-    logger.error("Groq API не ответил вовремя.")
   except Exception as e:
     logger.error(f"Ошибка интерпретации: {e}")
 

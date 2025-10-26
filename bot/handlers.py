@@ -9,6 +9,9 @@ from aiogram.fsm.context import FSMContext
 import json
 import asyncio
 
+import logging
+logger = logging.getLogger(__name__)
+
 from core.tarot import draw_cards
 from core.utils import is_valid_question
 from core.emotion import detect_emotion, generate_mirror
@@ -162,7 +165,11 @@ async def handle_period(message: Message, state: FSMContext):
 # Callback: пользователь нажал "Расшифровать"
 @router.callback_query(lambda cq: cq.data == "tarot:interpret")
 async def callback_interpret(callback: CallbackQuery, state: FSMContext):
-  await callback.answer()  # убирает "часики" у пользователя
+  try:
+    await callback.answer("🕒 Обрабатываю расклад…", show_alert=False)
+  except Exception as e:
+    logger.warning(f"Не удалось сразу ответить на callback: {e}")
+
   data = await state.get_data()
   question = data.get("last_question")
   positions = data.get("last_positions") or []
@@ -172,66 +179,49 @@ async def callback_interpret(callback: CallbackQuery, state: FSMContext):
     await callback.message.answer("Контекст расклада не найден. Попробуй сделать расклад ещё раз.")
     return
 
-  # отправляем "печатает..." индикатор
-  typing_task = asyncio.create_task(
-    callback.bot.send_chat_action(
-      chat_id=callback.message.chat.id,
-      action="typing"
-    )
-  )
+  await callback.bot.send_chat_action(chat_id=callback.message.chat.id, action="typing")
 
-  loop = asyncio.get_event_loop()
   try:
-    # вызов блокирующего интерпретатора в пуле
-    result = await loop.run_in_executor(
-      None,
-      lambda: interpret_spread(question=question, spread_labels=positions, cards=cards, use_async=False)
-    )
-  finally:
-    typing_task.cancel()
+    result = await asyncio.wait_for(interpret_spread(question, positions, cards), timeout=60.0)
+  except asyncio.TimeoutError:
+    logger.warning("LLM таймаут, используем fallback")
+    from core.tarot_interpreter import fallback_interpretation
+    result = fallback_interpretation(question, positions, cards)
+  except Exception as e:
+    logger.error(f"Ошибка интерпретации: {e}")
+    from core.tarot_interpreter import fallback_interpretation
+    result = fallback_interpretation(question, positions, cards)
 
-  # Обработка результата и отправка пользователю
   short_answer = result.get("short_answer", "")
   cards_block = result.get("cards", [])
   conclusion = result.get("conclusion", "")
   tone = result.get("tone", "")
-  confidence = result.get("confidence", None)
+  confidence = result.get("confidence")
 
-  # Форматируем вывод
-  header_lines = []
+  parts = []
   if short_answer:
-    header_lines.append(f"🔮 {short_answer}")
+    parts.append(f"🔮 {short_answer}")
   if conclusion:
-    header_lines.append(f"\n{conclusion}")
+    parts.append(f"\n{conclusion}")
   if tone:
-    header_lines.append(f"\nТон: {tone}")
+    parts.append(f"\nТон: {tone}")
   if confidence is not None:
-    header_lines.append(f"\nУверенность: {round(float(confidence) * 100)}%")
-  header_text = "\n".join(header_lines).strip()
+    parts.append(f"\nУверенность: {round(float(confidence) * 100)}%")
 
-  await callback.message.answer(header_text)
+  await callback.message.answer("\n".join(parts).strip())
 
-  # Отдельно — разбор по картам (компактно)
-  for card_info in cards_block:
-    pos = card_info.get("position", "")
-    label = card_info.get("label", "")
-    card_name = card_info.get("card", "")
-    interp = card_info.get("interpretation", "")
-    advice = card_info.get("advice", "")
-    text_lines = []
-    if label:
-      text_lines.append(f"— {label}")
-    if card_name:
-      text_lines.append(f"Карта: «{card_name}»")
-    if interp:
-      text_lines.append(f"Значение: {interp}")
-    if advice:
-      text_lines.append(f"Совет: {advice}")
-    text = "\n".join(text_lines)
-    await callback.message.answer(text)
+  for info in cards_block:
+    label = info.get("label", "")
+    card_name = info.get("card", "")
+    interp = info.get("interpretation", "")
+    advice = info.get("advice", "")
+    text = f"— {label}\nКарта: «{card_name}»\nЗначение: {interp}\nСовет: {advice}"
+    await callback.message.answer(text.strip())
 
-  # финальная подсказка и кнопки снова
-  await callback.message.answer("🔮 Расшифровка завершена. Хотите новый расклад?", reply_markup=make_after_cards_kb())
+  await callback.message.answer(
+    "✨ Расшифровка завершена. Хочешь сделать новый расклад?",
+    reply_markup=make_after_cards_kb()
+  )
 
 # Callback: пользователь нажал "Новый расклад"
 @router.callback_query(lambda cq: cq.data == "tarot:new")
