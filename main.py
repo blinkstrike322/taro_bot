@@ -12,7 +12,7 @@ load_dotenv()
 
 class Settings(BaseSettings):
   BOT_TOKEN: str
-
+  GROQ_API_KEY: str | None = None
   class Config:
     env_file = ".env"
     env_file_encoding = "utf-8"
