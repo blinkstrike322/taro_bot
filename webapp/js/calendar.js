@@ -2,6 +2,30 @@ let currentMonth = new Date().getMonth();
 let currentYear = new Date().getFullYear();
 let readingsData = {};
 
+async function fetchReadings() {
+    const tgId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id || 0;
+    if (!tgId) {
+        readingsData = {};
+        renderCalendar();
+        return;
+    }
+    const year = String(currentYear);
+    const month = String(currentMonth + 1).padStart(2, '0');
+    try {
+        const resp = await fetch(`/api/readings?tg_id=${tgId}&year=${year}&month=${month}`);
+        const data = await resp.json();
+        readingsData = {};
+        if (data.readings) {
+            for (const r of data.readings) {
+                readingsData[r.date] = { card_name: r.card_name, interpretation: r.interpretation };
+            }
+        }
+    } catch (e) {
+        readingsData = {};
+    }
+    renderCalendar();
+}
+
 function renderCalendar() {
     const grid = document.getElementById('calendar-grid');
     if (!grid) return;
@@ -50,13 +74,13 @@ function showReadingForDate(dateStr) {
 function prevMonth() {
     currentMonth--;
     if (currentMonth < 0) { currentMonth = 11; currentYear--; }
-    renderCalendar();
+    fetchReadings();
 }
 
 function nextMonth() {
     currentMonth++;
     if (currentMonth > 11) { currentMonth = 0; currentYear++; }
-    renderCalendar();
+    fetchReadings();
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -64,5 +88,5 @@ document.addEventListener('DOMContentLoaded', () => {
     const nextBtn = document.getElementById('cal-next');
     if (prevBtn) prevBtn.addEventListener('click', prevMonth);
     if (nextBtn) nextBtn.addEventListener('click', nextMonth);
-    renderCalendar();
+    fetchReadings();
 });

@@ -10,15 +10,29 @@ from config import settings, logger
 from core.reminder import reminder_loop
 from bot.router import register_handlers
 from bot.webapp_handler import router as webapp_router
-from storage.db import create_tables
+import aiosqlite
+
+from storage.db import create_tables, get_user_readings_by_month
 
 
 async def start_polling(bot: Bot, dp: Dispatcher) -> None:
     await dp.start_polling(bot)
 
 
+async def handle_readings(request):
+    tg_id = int(request.query.get('tg_id', 0))
+    year = request.query.get('year', '')
+    month = request.query.get('month', '')
+    if not tg_id or not year or not month:
+        return web.json_response({"readings": []})
+    async with aiosqlite.connect(settings.DB_PATH) as db:
+        rows = await get_user_readings_by_month(db, tg_id, year, month)
+    return web.json_response({"readings": rows})
+
+
 def create_webapp() -> web.Application:
     app = web.Application()
+    app.router.add_get('/api/readings', handle_readings)
     webapp_dir = Path(__file__).parent / "webapp"
     if webapp_dir.is_dir():
         app.router.add_static("/", webapp_dir, append_version=True)
