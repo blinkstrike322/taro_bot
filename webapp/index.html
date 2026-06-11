@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Мистическое Таро</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;700&display=swap" rel="stylesheet">
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+
+  <div class="stars-container" id="stars"></div>
+
+  <div id="screen-character" class="screen active">
+    <h1 class="screen-title">Выбери проводника</h1>
+
+    <div class="character-cards">
+      <div class="character-card" data-character="shadow_walker">
+        <div class="character-icon">/|\
+|^|</div>
+        <div class="character-info">
+          <div class="character-name">Странница Теней</div>
+          <div class="character-desc">Ходит между светом и мраком. Её слова -- шёпот из-за завесы.</div>
+        </div>
+      </div>
+
+      <div class="character-card" data-character="ruin_keeper">
+        <div class="character-icon">[+]
+|#|</div>
+        <div class="character-info">
+          <div class="character-name">Хранитель Руин</div>
+          <div class="character-desc">Страж забытых истин. Читает судьбу в прахе древних камней.</div>
+        </div>
+      </div>
+
+      <div class="character-card" data-character="spark_of_chaos">
+        <div class="character-icon">* *
+(X)
+ * *</div>
+        <div class="character-info">
+          <div class="character-name">Искра Хаоса</div>
+          <div class="character-desc">Пламя, что не гаснет. Видит скрытое в пламени перемен.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="screen-daily" class="screen">
+    <h1 class="screen-title">Мистическое Таро</h1>
+    <p class="screen-subtitle">Выбери свою карту</p>
+
+    <div class="cards-row">
+      <div class="card-back" data-position="0"></div>
+      <div class="card-back" data-position="1"></div>
+      <div class="card-back" data-position="2"></div>
+    </div>
+  </div>
+
+  <div id="screen-result" class="screen">
+    <div class="result-card-container">
+      <div class="result-card-frame" id="result-card-image"></div>
+    </div>
+    <h2 class="result-card-name" id="result-card-name"></h2>
+    <div class="result-interpretation" id="result-interpretation"></div>
+    <div class="result-actions">
+      <button class="btn" id="btn-calendar">Календарь</button>
+      <button class="btn btn-primary" id="btn-back-bot">В бота</button>
+    </div>
+  </div>
+
+  <div id="screen-calendar" class="screen">
+    <div class="calendar-header">
+      <button class="calendar-nav-btn" id="cal-prev">&lt;</button>
+      <div class="calendar-month-year" id="cal-month-year"></div>
+      <button class="calendar-nav-btn" id="cal-next">&gt;</button>
+    </div>
+
+    <div class="calendar-weekdays">
+      <div class="calendar-weekday">Пн</div>
+      <div class="calendar-weekday">Вт</div>
+      <div class="calendar-weekday">Ср</div>
+      <div class="calendar-weekday">Чт</div>
+      <div class="calendar-weekday">Пт</div>
+      <div class="calendar-weekday">Сб</div>
+      <div class="calendar-weekday">Вс</div>
+    </div>
+
+    <div class="calendar-grid" id="cal-grid"></div>
+
+    <button class="btn calendar-back-btn" id="btn-cal-back">Назад</button>
+  </div>
+
+  <script src="js/app.js"></script>
+  <script src="js/cards.js"></script>
+  <script src="js/calendar.js"></script>
+</body>
+</html>
