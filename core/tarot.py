@@ -31,7 +31,7 @@ def validate_cards() -> None:
         if not filename:
             missing.append(f"card {c.get('id') or c.get('name')} missing filename")
             continue
-        image_path = PROJECT_ROOT / "static" / filename
+        image_path = PROJECT_ROOT / "static" / "pixel" / filename
         if not image_path.exists():
             missing.append(str(image_path))
     if missing:
@@ -43,14 +43,15 @@ def validate_cards() -> None:
 def _card_payload(card: Dict[str, Any]) -> Dict[str, Any]:
     is_reversed = random.choice([True, False])
     filename = card.get("filename", "")
-    image_path = str(PROJECT_ROOT / "static" / filename)
+    image_path = str(PROJECT_ROOT / "static" / "pixel" / filename)
     return {
         "id": card.get("id"),
         "name": card.get("name"),
         "upright": card.get("upright"),
         "reversed": card.get("reversed"),
         "image_path": image_path,
-        "is_reversed": is_reversed
+        "is_reversed": is_reversed,
+        "orientation": "reversed" if is_reversed else "upright",
     }
 
 def draw_cards(n: int) -> List[Dict[str, Any]]:
@@ -61,12 +62,11 @@ def draw_cards(n: int) -> List[Dict[str, Any]]:
     selected = random.sample(cards, k)
     return [_card_payload(c) for c in selected]
 
-# backward-compatible wrappers
-def draw_card() -> Dict[str, Any]:
-    return draw_cards(1)[0]
-
-def draw_three_cards() -> List[Dict[str, Any]]:
-    return draw_cards(3)
-
-
+def get_card_image(card_id: str) -> str:
+    cards = load_cards()
+    for c in cards:
+        if c.get("id") == card_id:
+            filename = c.get("filename", "")
+            return str(PROJECT_ROOT / "static" / "pixel" / filename)
+    raise ValueError(f"Card not found: {card_id}")
 

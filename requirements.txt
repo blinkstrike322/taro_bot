@@ -1,5 +1,9 @@
 aiogram>=3.0.0
 python-dotenv
 pydantic-settings
+aiosqlite
+Pillow
+httpx
+aiohttp
 pytest
-requests
+pytest-asyncio
