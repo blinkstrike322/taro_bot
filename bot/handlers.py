@@ -14,6 +14,27 @@ _CHARACTERS_PATH = Path(__file__).resolve().parent.parent / "data" / "characters
 _DEFAULT_CHARACTER_ID = "shadow_walker"
 _CHARACTER_IDS = ("shadow_walker", "ruin_keeper", "spark_of_chaos")
 
+# ── zalgo / cursed helpers ──────────────────────────────────────
+_ABOVE = '\u0300\u0301\u0302\u0303\u0304\u0305\u0306\u0307\u0308\u030A\u030B\u030C\u030D\u030E\u030F\u0310\u0311\u0312\u0313\u0314\u033D\u033E\u033F\u0340\u0341\u0342\u0343\u0344\u0346\u034A\u034B\u034C\u0350\u0351\u0352\u0353\u0354\u0355\u0356\u0357\u035B\u035C\u035D\u035E\u035F\u0360\u0361\u0362\u0363\u0364\u0365\u0366\u0367\u0368\u0369\u036A\u036B\u036C\u036D\u036E\u036F'
+_BELOW = '\u0316\u0317\u0318\u0319\u031C\u031D\u031E\u031F\u0320\u0321\u0322\u0323\u0324\u0325\u0326\u0327\u0328\u0329\u032A\u032B\u032C\u032D\u032E\u032F\u0330\u0331\u0332\u0333\u0339\u033A\u033B\u033C'
+_CURSED_SYMS = ('†', '‡', '♰', '♱', '⚹', '☠', '○', '◇', '◎', '※', '⁂', 'Ξ', 'Ψ', 'Ж', 'ᛉ')
+
+import random
+
+def _zalgo(text: str, intensity: int = 2) -> str:
+    result = []
+    for ch in text:
+        result.append(ch)
+        for _ in range(random.randint(0, intensity)):
+            result.append(random.choice(_ABOVE))
+        for _ in range(random.randint(0, max(0, intensity - 1))):
+            result.append(random.choice(_BELOW))
+    return ''.join(result)
+
+def _cursed_text(prefix: str = '') -> str:
+    sym = random.choice(_CURSED_SYMS)
+    return f'{prefix}{sym}' if prefix else sym
+
 
 def _load_characters() -> dict[str, dict]:
     with open(_CHARACTERS_PATH, encoding="utf-8") as f:
@@ -36,13 +57,22 @@ def _character_selection_keyboard() -> InlineKeyboardMarkup:
 
 
 def _main_menu_keyboard() -> InlineKeyboardMarkup:
+    url = settings.WEBAPP_URL
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(
-            text="Карта дня",
-            web_app=WebAppInfo(url=settings.WEBAPP_URL),
+            text=f'{_zalgo("1 ")}{random.choice(_CURSED_SYMS)}',
+            web_app=WebAppInfo(url=f"{url}?type=1"),
         )],
         [InlineKeyboardButton(
-            text="Сменить проводника",
+            text=f'{_zalgo("3 ")}{random.choice(_CURSED_SYMS)}',
+            web_app=WebAppInfo(url=f"{url}?type=3"),
+        )],
+        [InlineKeyboardButton(
+            text=_zalgo("Карта дня"),
+            web_app=WebAppInfo(url=f"{url}?type=daily"),
+        )],
+        [InlineKeyboardButton(
+            text=_zalgo("Сменить проводника"),
             callback_data="char:select",
         )],
     ])
