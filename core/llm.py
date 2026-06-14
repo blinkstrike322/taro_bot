@@ -12,9 +12,8 @@ from config import settings
 logger = logging.getLogger(__name__)
 
 FALLBACK_MODELS = [
-    "deepseek/deepseek-v4-flash:free",
-    "deepseek/deepseek-chat-v3-0324:free",
-    "deepseek/deepseek-r1:free",
+    "nvidia/nemotron-nano-12b-v2-vl:free",
+    "openrouter/free",
 ]
 
 EMOJI_PATTERN = re.compile(
@@ -102,14 +101,58 @@ async def interpret_reading(
     return fallback_from_cards_db(cards, character_id)
 
 
+def _parse_text_format(text: str) -> Optional[dict]:
+    """Try to parse text-format LLM response like:
+    short_answer: ...
+    card_meaning: [...]
+    advice: ...
+    """
+    result = {}
+
+    m = re.search(
+        r"short_answer\s*:\s*(.+?)(?=\n\s*(?:card_meaning|advice)\s*:|\Z)",
+        text,
+        re.DOTALL,
+    )
+    if m:
+        result["short_answer"] = m.group(1).strip()
+
+    m = re.search(
+        r"card_meaning\s*:\s*(\[.*?\])(?=\n\s*(?:short_answer|advice)\s*:|\Z)",
+        text,
+        re.DOTALL,
+    )
+    if m:
+        try:
+            result["card_meaning"] = json.loads(m.group(1))
+        except (json.JSONDecodeError, ValueError):
+            result["card_meaning"] = [m.group(1).strip()]
+
+    m = re.search(r"advice\s*:\s*(.+?)$", text, re.DOTALL)
+    if m:
+        result["advice"] = m.group(1).strip()
+
+    if "short_answer" in result:
+        return result
+    return None
+
+
 def parse_llm_response(text: str) -> Optional[dict]:
     text = strip_emojis(text)
-    match = re.search(r"\{[^{}]*\}", text, re.DOTALL)
+
+    # Try JSON first
+    match = re.search(r"\{(?:[^{}]|\{[^{}]*\})*\}", text, re.DOTALL)
     if match:
         try:
             return json.loads(match.group())
         except json.JSONDecodeError:
             pass
+
+    # Fallback: try text format (when LLM ignores JSON instruction)
+    parsed = _parse_text_format(text)
+    if parsed:
+        return parsed
+
     return {
         "short_answer": text.strip(),
         "card_meaning": [],
@@ -129,7 +172,7 @@ def fallback_from_cards_db(cards: list[dict], character_id: str = "shadow_walker
         orientation = card.get("orientation", "upright")
         card_data = cards_by_name.get(name, {})
         meaning = card_data.get(orientation, card_data.get("upright", ""))
-        meanings.append({"card": name, "meaning": meaning})
+        meanings.append(f"{name}: {meaning}")
 
     tone_prefix = ""
     if character_id == "shadow_walker":

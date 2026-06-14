@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="ru" class="bg-black">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#000000" />
+  <title>РАСКЛАД ТАРО · OCGV</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            pixel: ['"Press Start 2P"', 'monospace'],
+            mono: ['VT323', 'monospace'],
+          },
+        },
+      },
+    };
+  </script>
+  <style>
+    html, body { -webkit-tap-highlight-color: transparent; }
+    body {
+      background: #000;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
+
+    /* ============ CRT SHELL ============ */
+    .crt { position: relative; overflow: hidden; }
+    /* fine vertical mask + faint horizontal scan */
+    .crt::before {
+      content: ""; position: absolute; inset: 0; z-index: 40;
+      background:
+        repeating-linear-gradient(90deg, #000 0px, #000 1px, transparent 1px, transparent 3px),
+        repeating-linear-gradient(0deg, transparent 0px, transparent 2px, rgba(255,255,255,0.05) 2px, rgba(255,255,255,0.05) 4px);
+      pointer-events: none; opacity: .55;
+    }
+    /* rolling scanline */
+    .crt::after {
+      content: ""; position: absolute; left: 0; right: 0; height: 60px; z-index: 41;
+      background: linear-gradient(to bottom, transparent, rgba(255,255,255,0.06), transparent);
+      pointer-events: none; animation: roll 6s linear infinite;
+    }
+    @keyframes roll { 0% { top: -60px; } 100% { top: 100%; } }
+
+    /* dithered checkerboard fills */
+    .dither-fill {
+      background: repeating-conic-gradient(#fff 0% 25%, #000 0% 50%) 0 0 / 2px 2px;
+    }
+    .dither-bar {
+      height: 8px;
+      background: repeating-conic-gradient(#fff 0% 25%, #000 0% 50%) 0 0 / 2px 2px;
+    }
+
+    /* halftone/dither treatment for the generated art */
+    .dither-img { filter: grayscale(1) contrast(1.4) brightness(1.02); }
+    .scan-soft::after {
+      content: ""; position: absolute; inset: 0; pointer-events: none;
+      background: repeating-linear-gradient(to bottom, rgba(0,0,0,0) 0px, rgba(0,0,0,0) 2px, rgba(0,0,0,0.28) 3px);
+      mix-blend-mode: multiply;
+    }
+
+    /* ============ FLIP ============ */
+    .flip { perspective: 1000px; }
+    .flip-inner {
+      position: relative; width: 100%; height: 100%;
+      transition: transform .7s cubic-bezier(.2,.85,.25,1);
+      transform-style: preserve-3d;
+    }
+    .flip.is-flipped .flip-inner { transform: rotateY(180deg); }
+    .flip-face { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; overflow: hidden; }
+    .flip-back { transform: rotateY(180deg); }
+    .raise { transform: translateY(-12px); }
+
+    /* ============ PROCEDURAL OCCULT CARD BACK ============ */
+    .cardback { width: 100%; height: 100%; background: #000; position: relative; overflow: hidden; }
+    .cardback .cb-dither {
+      position: absolute; inset: 3px; z-index: 1; opacity: .55;
+      background: repeating-conic-gradient(#fff 0% 25%, #000 0% 50%) 0 0 / 2px 2px;
+      mix-blend-mode: screen;
+    }
+    .cardback .cb-vines {
+      position: absolute; inset: 0; z-index: 1; pointer-events: none;
+      background:
+        repeating-linear-gradient(45deg, transparent 0 11px, rgba(255,255,255,.16) 11px 12px),
+        repeating-linear-gradient(-45deg, transparent 0 11px, rgba(255,255,255,.13) 11px 12px);
+    }
+    .cardback .cb-frame { position: absolute; inset: 4px; border: 1px solid #fff; z-index: 3; }
+    .cardback .cb-frame2 { position: absolute; inset: 7px; border: 1px solid rgba(255,255,255,.5); z-index: 3; }
+    .cb-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); z-index: 4; }
+    .cb-star {
+      width: 60%; aspect-ratio: 1; background: #fff;
+      clip-path: polygon(50% 0%,61% 39%,100% 50%,61% 61%,50% 100%,39% 61%,0% 50%,39% 39%);
+    }
+    .cb-star-in {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+      width: 62%; height: 62%; background: #000;
+      clip-path: polygon(50% 0%,61% 39%,100% 50%,61% 61%,50% 100%,39% 61%,0% 50%,39% 39%);
+    }
+    .cb-rose {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%) rotate(45deg);
+      width: 34%; height: 34%; border: 2px solid #fff;
+      background: repeating-linear-gradient(45deg, transparent 0 4px, rgba(255,255,255,.5) 4px 5px);
+    }
+    .cb-dot {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+      width: 16%; height: 16%; border: 2px solid #fff; border-radius: 50%; background: #000; z-index: 5;
+    }
+    .cb-hex { position: absolute; left: 50%; transform: translateX(-50%); width: 18px; height: 18px; z-index: 4; }
+    .cb-hex.top { top: 14%; } .cb-hex.bot { bottom: 14%; }
+    .cb-hex::before, .cb-hex::after {
+      content: ""; position: absolute; inset: 0; background: #fff;
+      clip-path: polygon(50% 0%,100% 50%,50% 100%,0% 50%);
+    }
+    .cb-hex::after { transform: rotate(180deg); }
+    .cb-corner { position: absolute; z-index: 6; color: #fff; font-size: 8px; line-height: 1; }
+    .cb-corner.tl { top: 2px; left: 3px; } .cb-corner.tr { top: 2px; right: 3px; }
+    .cb-corner.bl { bottom: 2px; left: 3px; } .cb-corner.br { bottom: 2px; right: 3px; }
+
+    /* glitch on title */
+    @keyframes glitch {
+      0%,92%,100% { transform: translate(0,0); opacity: 1; }
+      93% { transform: translate(-1px,0); opacity: .8; }
+      95% { transform: translate(1px,0); }
+      97% { transform: translate(0,1px); }
+    }
+    .glitch { animation: glitch 3.6s steps(2) infinite; }
+
+    .btn { transition: transform .08s steps(2); position: relative; }
+    .btn:active { transform: translate(2px,2px); }
+    .blink { animation: blink 1s steps(2) infinite; }
+    @keyframes blink { 50% { opacity: 0; } }
+    ::selection { background: #fff; color: #000; }
+  </style>
+</head>
+<body class="font-mono text-white min-h-screen flex items-start sm:items-center justify-center">
+
+  <div class="crt w-full max-w-[440px] m-2 border-4 border-white bg-black">
+
+    <!-- ===== terminal pseudo header ===== -->
+    <div class="flex justify-between bg-black text-white font-pixel text-[7px] leading-none px-2 py-2 border-b-2 border-white tracking-tight">
+      <span>┌─[OCGV_V1.0]─[root@taro]─[~]</span>
+      <span>││ 0x3F ││</span>
+    </div>
+
+    <!-- ===== title bracket ===== -->
+    <div class="flex items-stretch bg-white text-black font-pixel">
+      <div class="flex flex-col items-center justify-center px-2 text-[12px] leading-none select-none">┌┐<br>└┘</div>
+      <div class="flex-1 flex items-center justify-center border-x-2 border-black px-2 py-3 text-center">
+        <span class="glitch text-[11px] tracking-[0.12em] leading-relaxed">[ РАСКЛАД ТАРО ]</span>
+      </div>
+      <div class="flex flex-col items-center justify-center px-2 text-[12px] leading-none select-none">┌┐<br>└┘</div>
+    </div>
+
+    <!-- ===== info strip ===== -->
+    <div class="flex justify-between font-pixel text-[6px] text-white px-3 py-2 border-b-2 border-white tracking-wide select-none">
+      <span>✦ SPREAD: PAST—PRES—FUT</span>
+      <span id="arcanaCount">ARCANA: ✦ 3/78 ✦</span>
+    </div>
+
+    <!-- ===== separator ===== -->
+    <div class="text-center text-white text-base py-1 tracking-[0.3em] select-none">═══ ❖ ═══ ═══ ❖ ═══</div>
+
+    <!-- ===== cards ===== -->
+    <div class="px-3 pb-2 border-b-2 border-white">
+      <div id="cardRow" class="grid grid-cols-3 gap-2 items-end pt-1"></div>
+    </div>
+
+    <!-- ===== hint ===== -->
+    <div id="hint" class="flex items-center justify-center gap-2 font-pixel text-[7px] text-white py-3 border-b-2 border-white tracking-widest text-center px-3">
+      <span class="blink">▼</span> КОСНИСЬ КАРТЫ <span class="blink" style="animation-delay:.5s">▼</span>
+    </div>
+
+    <!-- ===== reading readout ===== -->
+    <div class="px-3 py-3 border-b-2 border-white">
+      <div class="border border-white/70 bg-black scan-soft relative p-3 min-h-[120px]">
+        <div class="font-pixel text-[6px] text-white/60 mb-2 tracking-wider">&gt;&gt; READOUT.LOG</div>
+        <div id="readingText" class="text-xl leading-snug text-white/90"></div>
+      </div>
+    </div>
+
+    <!-- ===== buttons ===== -->
+    <div class="flex flex-wrap justify-center gap-2 px-3 py-4">
+      <button id="newSpread" class="btn flex items-center gap-1 bg-white text-black border-[3px] border-black font-pixel text-[7px] px-3 py-2 tracking-wide" style="outline:2px solid #fff">
+        <span class="text-[9px]">✦</span> НОВЫЙ РАСКЛАД
+      </button>
+      <button id="libraryBtn" class="btn flex items-center gap-1 bg-white text-black border-[3px] border-black font-pixel text-[7px] px-3 py-2 tracking-wide" style="outline:2px solid #fff">
+        <span class="text-[9px]">☰</span> КАТАЛОГ
+      </button>
+      <button id="settingsBtn" class="btn flex items-center gap-1 bg-white text-black border-[3px] border-black font-pixel text-[7px] px-3 py-2 tracking-wide" style="outline:2px solid #fff">
+        <span class="text-[9px]">⚙</span> НАСТРОЙКИ
+      </button>
+    </div>
+
+    <div class="dither-bar"></div>
+
+    <!-- toast -->
+    <div id="toast" class="pointer-events-none absolute bottom-4 left-1/2 -translate-x-1/2 z-50 bg-black border-2 border-white text-white font-pixel text-[7px] px-3 py-2 opacity-0 transition-opacity duration-200 whitespace-nowrap"></div>
+  </div>
+
+  <script>
+    // ---- Telegram WebApp init ----
+    const tg = window.Telegram && window.Telegram.WebApp;
+    if (tg) { try { tg.ready(); tg.expand(); tg.setHeaderColor && tg.setHeaderColor('#000000'); } catch (e) {} }
+    const haptic = (type) => {
+      try {
+        if (tg && tg.HapticFeedback) {
+          if (type === 'impact') tg.HapticFeedback.impactOccurred('medium');
+          else tg.HapticFeedback.selectionChanged();
+        }
+      } catch (e) {}
+    };
+
+    // ---- procedural occult card back markup (net-art / dark-fantasy) ----
+    function cardBackHTML() {
+      return (
+        '<div class="cardback">' +
+          '<div class="cb-vines"></div>' +
+          '<div class="cb-dither"></div>' +
+          '<div class="cb-frame"></div>' +
+          '<div class="cb-frame2"></div>' +
+          '<div class="cb-hex top"></div>' +
+          '<div class="cb-center" style="width:62%;aspect-ratio:1">' +
+            '<div class="cb-star"></div><div class="cb-star-in"></div>' +
+            '<div class="cb-rose"></div><div class="cb-dot"></div>' +
+          '</div>' +
+          '<div class="cb-hex bot"></div>' +
+          '<span class="cb-corner tl">╳</span><span class="cb-corner tr">╳</span>' +
+          '<span class="cb-corner bl">╳</span><span class="cb-corner br">╳</span>' +
+        '</div>'
+      );
+    }
+
+    // ---- Deck ----
+    const DECK = [
+      { id: 0,  name: 'ШУТ',             num: '0',     img: '/cards/the-fool.png',       up: 'Начало пути, спонтанность, вера в неизвестное.', rev: 'Безрассудство, наивность, упущенный шанс.' },
+      { id: 2,  name: 'ВЕРХОВНАЯ ЖРИЦА', num: 'II',    img: '/cards/high-priestess.png', up: 'Интуиция, тайное знание, внутренний голос.',     rev: 'Скрытые мотивы, отрыв от чувств.' },
+      { id: 6,  name: 'ВЛЮБЛЁННЫЕ',      num: 'VI',    img: '/cards/the-lovers.png',     up: 'Выбор, союз, гармония и притяжение.',            rev: 'Разлад, сомнения, неверное решение.' },
+      { id: 16, name: 'БАШНЯ',           num: 'XVI',   img: '/cards/the-tower.png',      up: 'Внезапные перемены, разрушение иллюзий.',        rev: 'Оттянутый кризис, страх перемен.' },
+      { id: 17, name: 'ЗВЕЗДА',          num: 'XVII',  img: '/cards/the-star.png',       up: 'Надежда, вдохновение, исцеление души.',          rev: 'Уныние, потеря веры, разочарование.' },
+      { id: 18, name: 'ЛУНА',            num: 'XVIII', img: '/cards/the-moon.png',       up: 'Иллюзии, тревога, скрытые страхи.',              rev: 'Прояснение, спадает туман обмана.' },
+      { id: 19, name: 'СОЛНЦЕ',          num: 'XIX',   img: '/cards/the-sun.png',        up: 'Радость, успех, ясность и жизненная сила.',      rev: 'Временная тень, отложенная радость.' },
+    ];
+
+    const POSITIONS = [
+      { key: 'past',    label: 'ПРОШЛОЕ',   roman: 'I',   raise: false },
+      { key: 'present', label: 'НАСТОЯЩЕЕ', roman: 'II',  raise: true  },
+      { key: 'future',  label: 'БУДУЩЕЕ',   roman: 'III', raise: false },
+    ];
+
+    const cardRow = document.getElementById('cardRow');
+    const readingText = document.getElementById('readingText');
+    const toast = document.getElementById('toast');
+    let toastTmr = null;
+    let current = [];
+
+    function showToast(msg) {
+      toast.textContent = msg;
+      toast.style.opacity = '1';
+      if (toastTmr) clearTimeout(toastTmr);
+      toastTmr = setTimeout(() => { toast.style.opacity = '0'; }, 1700);
+    }
+
+    function shuffleDraw(n) {
+      const pool = [...DECK];
+      const out = [];
+      for (let i = 0; i < n; i++) {
+        const idx = Math.floor(Math.random() * pool.length);
+        const card = pool.splice(idx, 1)[0];
+        out.push({ card, reversed: Math.random() < 0.32, flipped: false });
+      }
+      return out;
+    }
+
+    function renderCards() {
+      cardRow.innerHTML = '';
+      current.forEach((slot, i) => {
+        const pos = POSITIONS[i];
+        const wrap = document.createElement('div');
+        wrap.className = 'flex flex-col items-center gap-2';
+
+        const labelTop = document.createElement('div');
+        labelTop.className = 'font-pixel text-[6px] tracking-widest text-center ' + (pos.raise ? 'text-white' : 'text-white/55');
+        labelTop.textContent = pos.label;
+
+        const flip = document.createElement('button');
+        flip.className = 'flip block w-full aspect-[2/3] ' + (pos.raise ? 'raise z-10' : '');
+        flip.setAttribute('aria-label', pos.label + ' — перевернуть карту');
+
+        const inner = document.createElement('div');
+        inner.className = 'flip-inner border-2 border-white';
+        inner.style.boxShadow = '3px 3px 0 #000, 0 0 0 1px #000';
+
+        // visible face = procedural occult back
+        const back = document.createElement('div');
+        back.className = 'flip-face';
+        back.innerHTML = cardBackHTML();
+
+        // hidden face = generated dithered art
+        const front = document.createElement('div');
+        front.className = 'flip-face flip-back bg-white scan-soft flex items-center justify-center';
+        front.innerHTML =
+          '<img src="' + slot.card.img + '" alt="' + slot.card.name + '" ' +
+          'class="dither-img w-full h-full object-contain ' + (slot.reversed ? 'rotate-180' : '') + '" />';
+
+        inner.appendChild(back);
+        inner.appendChild(front);
+        flip.appendChild(inner);
+        flip.addEventListener('click', () => toggleFlip(i, flip));
+
+        const labelBottom = document.createElement('div');
+        labelBottom.className = 'font-pixel text-[6px] tracking-wide text-center min-h-[1.4em] leading-relaxed ' + (pos.raise ? 'text-white' : 'text-white/55');
+        labelBottom.textContent = slot.flipped ? slot.card.name + (slot.reversed ? ' (ПЕР.)' : '') : pos.roman;
+        slot._labelEl = labelBottom;
+
+        wrap.appendChild(labelTop);
+        wrap.appendChild(flip);
+        wrap.appendChild(labelBottom);
+        cardRow.appendChild(wrap);
+      });
+    }
+
+    function toggleFlip(i, flipEl) {
+      const slot = current[i];
+      if (slot.flipped) return;
+      slot.flipped = true;
+      flipEl.classList.add('is-flipped');
+      slot._labelEl.textContent = slot.card.name + (slot.reversed ? ' (ПЕР.)' : '');
+      haptic('impact');
+      showToast('▸ ' + POSITIONS[i].label + ': ' + slot.card.name);
+      updateReading();
+    }
+
+    function updateReading() {
+      const lines = current.map((slot, i) => {
+        const pos = POSITIONS[i];
+        if (!slot.flipped) {
+          return '<p><span class="text-white">[' + pos.label + ']</span> <span class="text-white/45">рубашкой вверх…</span></p>';
+        }
+        const meaning = slot.reversed ? slot.card.rev : slot.card.up;
+        const tag = slot.reversed ? ' (ПЕРЕВ.)' : '';
+        return '<p><span class="text-white">[' + pos.label + ']: ' + slot.card.name + tag + '</span> — ' + meaning + '</p>';
+      });
+      readingText.innerHTML = '<div class="space-y-2 text-white/90">' + lines.join('') + '</div>';
+    }
+
+    function newSpread() {
+      current = shuffleDraw(3).map((s, i) => ({ ...s, pos: POSITIONS[i].key }));
+      renderCards();
+      readingText.innerHTML =
+        '<p class="text-white/70">Карты розданы. Коснись <span class="text-white">ПРОШЛОГО</span>, ' +
+        '<span class="text-white">НАСТОЯЩЕГО</span> и <span class="text-white">БУДУЩЕГО</span>, чтобы открыть послание.</p>';
+      haptic('select');
+      showToast('✦ НОВЫЙ РАСКЛАД');
+    }
+
+    document.getElementById('newSpread').addEventListener('click', newSpread);
+    const stub = (msg) => () => { haptic('select'); showToast(msg); };
+    document.getElementById('libraryBtn').addEventListener('click', stub('☰ КАТАЛОГ — СКОРО'));
+    document.getElementById('settingsBtn').addEventListener('click', stub('⚙ НАСТРОЙКИ — СКОРО'));
+
+    newSpread();
+  </script>
+</body>
+</html>

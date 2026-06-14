@@ -87,8 +87,10 @@ def build_reading_prompt(
     lines.append("Дай толкование этого расклада.")
     lines.append("")
     lines.append(
-        "Формат ответа: short_answer (2-3 предложения), "
-        "card_meaning для каждой карты, advice."
+        "ВАЖНО: Ответ должен быть ТОЛЬКО в формате JSON, без markdown, без дополнительного текста. "
+        'Формат: {"short_answer": "2-3 предложения", '
+        '"card_meaning": ["Название карты: значение"], '
+        '"advice": "совет"}'
     )
 
     return "\n".join(lines)
