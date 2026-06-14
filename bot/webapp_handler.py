@@ -51,6 +51,7 @@ async def handle_webapp_data(message: Message):
                 question=None,
                 cards=[chosen_card],
                 character_id=user.character_id,
+                spread_type=1,
             )
 
             await save_reading(

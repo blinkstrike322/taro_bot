@@ -75,11 +75,12 @@ async def interpret_reading(
     question: Optional[str],
     cards: list[dict],
     character_id: str = "shadow_walker",
+    spread_type: int = 1,
 ) -> dict:
     from core.prompts import get_system_prompt, build_reading_prompt
 
     system_prompt = get_system_prompt(character_id)
-    user_prompt = build_reading_prompt(cards, question, character_id)
+    user_prompt = build_reading_prompt(cards, question, character_id, spread_type)
 
     messages = [
         {"role": "system", "content": system_prompt},
@@ -102,35 +103,31 @@ async def interpret_reading(
 
 
 def _parse_text_format(text: str) -> Optional[dict]:
-    """Try to parse text-format LLM response like:
-    short_answer: ...
-    card_meaning: [...]
-    advice: ...
-    """
+    """Try to parse text-format LLM response in any field order."""
     result = {}
 
-    m = re.search(
-        r"short_answer\s*:\s*(.+?)(?=\n\s*(?:card_meaning|advice)\s*:|\Z)",
-        text,
-        re.DOTALL,
+    field_pat = re.compile(
+        r"^\s*(intro|short_answer|card_meaning|advice)\s*:\s*",
+        re.MULTILINE | re.IGNORECASE,
     )
-    if m:
-        result["short_answer"] = m.group(1).strip()
 
-    m = re.search(
-        r"card_meaning\s*:\s*(\[.*?\])(?=\n\s*(?:short_answer|advice)\s*:|\Z)",
-        text,
-        re.DOTALL,
-    )
-    if m:
-        try:
-            result["card_meaning"] = json.loads(m.group(1))
-        except (json.JSONDecodeError, ValueError):
-            result["card_meaning"] = [m.group(1).strip()]
+    parts = list(field_pat.finditer(text))
+    if not parts:
+        return None
 
-    m = re.search(r"advice\s*:\s*(.+?)$", text, re.DOTALL)
-    if m:
-        result["advice"] = m.group(1).strip()
+    for i, m in enumerate(parts):
+        field = m.group(1).lower()
+        val_start = m.end()
+        val_end = parts[i + 1].start() if i + 1 < len(parts) else len(text)
+        value = text[val_start:val_end].strip()
+
+        if field == "card_meaning":
+            try:
+                result[field] = json.loads(value)
+            except (json.JSONDecodeError, ValueError):
+                result[field] = [value]
+        else:
+            result[field] = value
 
     if "short_answer" in result:
         return result
@@ -154,6 +151,7 @@ def parse_llm_response(text: str) -> Optional[dict]:
         return parsed
 
     return {
+        "intro": "Карты готовы поведать свою историю...",
         "short_answer": text.strip(),
         "card_meaning": [],
         "advice": "",
@@ -193,6 +191,7 @@ def fallback_from_cards_db(cards: list[dict], character_id: str = "shadow_walker
         short_answer = short_base
 
     return {
+        "intro": "Карты раскрывают свои тайны...",
         "short_answer": short_answer,
         "card_meaning": meanings,
         "advice": "Обдумай значение карт в контексте своего вопроса.",

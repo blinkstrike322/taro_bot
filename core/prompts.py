@@ -49,6 +49,7 @@ def build_reading_prompt(
     cards: list[dict],
     question: str | None,
     character_id: str,
+    spread_type: int = 1,
 ) -> str:
     """Construct the user-facing prompt for a tarot reading.
 
@@ -57,7 +58,9 @@ def build_reading_prompt(
                'orientation' ('upright' or 'reversed').
         question: The user's question, or None if no question was asked.
         character_id: The character reading the cards (used for future
-                      character-specific prompt tweaks).
+                       character-specific prompt tweaks).
+        spread_type: Number of cards in spread (1 or 3). For 3-card spreads,
+                     includes positional labels (Прошлое/Настоящее/Будущее).
 
     Returns:
         A formatted user prompt string.
@@ -72,12 +75,21 @@ def build_reading_prompt(
     header = character_headers.get(character_id, "Расклад карт:")
     lines.append(header)
 
-    lines.append("Расклад карт:")
-    for i, card in enumerate(cards, 1):
-        orientation = (
-            "прямое" if card.get("orientation") == "upright" else "перевернутое"
-        )
-        lines.append(f"{i}. {card['name']} ({orientation})")
+    positions = ["Прошлое", "Настоящее", "Будущее"]
+    if spread_type == 3 and len(cards) == 3:
+        lines.append("Расклад 3 карты (Прошлое — Настоящее — Будущее):")
+        for i, card in enumerate(cards, 1):
+            orientation = (
+                "прямое" if card.get("orientation") == "upright" else "перевернутое"
+            )
+            lines.append(f"{i}. {card['name']} ({orientation}) — позиция {positions[i-1]}")
+    else:
+        lines.append("Расклад карт:")
+        for i, card in enumerate(cards, 1):
+            orientation = (
+                "прямое" if card.get("orientation") == "upright" else "перевернутое"
+            )
+            lines.append(f"{i}. {card['name']} ({orientation})")
 
     if question:
         lines.append("")
@@ -88,7 +100,8 @@ def build_reading_prompt(
     lines.append("")
     lines.append(
         "ВАЖНО: Ответ должен быть ТОЛЬКО в формате JSON, без markdown, без дополнительного текста. "
-        'Формат: {"short_answer": "2-3 предложения", '
+        'Формат: {"intro": "вступительная фраза", '
+        '"short_answer": "2-3 предложения", '
         '"card_meaning": ["Название карты: значение"], '
         '"advice": "совет"}'
     )

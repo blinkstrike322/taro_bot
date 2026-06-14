@@ -49,6 +49,7 @@ async def handle_spread(request):
         question=question,
         cards=cards,
         character_id=character_id,
+        spread_type=spread_type,
     )
     async with aiosqlite.connect(settings.DB_PATH) as db:
         user = await get_or_create_user(db, tg_id)
@@ -64,41 +65,10 @@ async def handle_spread(request):
     return web.json_response({"cards": cards, "interpretation": interpretation})
 
 
-async def handle_card_pick(request):
-    try:
-        body = await request.json()
-    except Exception:
-        return web.json_response({"error": "invalid json"}, status=400)
-    tg_id = body.get('tg_id', 0)
-    card_index = body.get('card_index', 0)
-    if not tg_id:
-        return web.json_response({"error": "tg_id required"}, status=400)
-    cards = draw_cards(3)
-    chosen = cards[card_index] if 0 <= card_index < len(cards) else cards[0]
-    interpretation = await interpret_reading(
-        question=None,
-        cards=[chosen],
-        character_id='shadow_walker',
-    )
-    async with aiosqlite.connect(settings.DB_PATH) as db:
-        user = await get_or_create_user(db, tg_id)
-        await save_reading(
-            db=db,
-            user_id=user.id,
-            type="daily",
-            question=None,
-            cards_data={"chosen_index": card_index, "chosen_card": chosen},
-            interpretation=interpretation,
-            character_id='shadow_walker',
-        )
-    return web.json_response({"cards": [chosen], "interpretation": interpretation})
-
-
 def create_webapp() -> web.Application:
     app = web.Application()
     app.router.add_get('/api/readings', handle_readings)
     app.router.add_post('/api/spread', handle_spread)
-    app.router.add_post('/api/card_pick', handle_card_pick)
     webapp_dir = Path(__file__).parent / "static" / "webapp"
     if webapp_dir.is_dir():
         index = webapp_dir / "index.html"
