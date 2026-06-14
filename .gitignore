@@ -17,3 +17,4 @@ build/
 .mypy_cache/
 .venv/
 .ruff_cache/
+static/default/
