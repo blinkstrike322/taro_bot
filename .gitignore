@@ -1,6 +1,5 @@
 .sisyphus/
 .env
-static/webapp/
 web/node_modules/
 web/.next/
 webapp/
