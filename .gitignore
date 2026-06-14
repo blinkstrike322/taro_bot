@@ -2,7 +2,7 @@
 .env
 web/node_modules/
 web/.next/
-webapp/
+/webapp/
 static/pixel/
 __pycache__/
 .idea/
