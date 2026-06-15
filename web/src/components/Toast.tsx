@@ -24,7 +24,10 @@ export default function Toast({ message, visible, onHide }: ToastProps) {
       setShow(false);
     }
     return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
     };
   }, [visible, onHide]);
 

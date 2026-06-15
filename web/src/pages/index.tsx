@@ -231,7 +231,7 @@ export default function Home() {
       <CalendarModal
         isOpen={calendarOpen}
         onClose={() => setCalendarOpen(false)}
-        tgId={API.getTgId()}
+        initData={API.getInitData()}
       />
     </Layout>
   );
