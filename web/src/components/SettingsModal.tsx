@@ -88,7 +88,7 @@ export default function SettingsModal({
         className="w-full max-w-[440px] m-2 border-4 border-white bg-black relative"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex justify-between bg-black text-white font-pixel text-[9px] leading-none px-2 py-2 border-b-2 border-white tracking-tight">
+        <div className="flex justify-between bg-black text-white font-pixel text-[11px] leading-none px-2 py-2 border-b-2 border-white tracking-tight">
           <span>{'>> SETTINGS.LOG'}</span>
           <span className="blink">█</span>
         </div>
@@ -96,7 +96,7 @@ export default function SettingsModal({
         <div className="dither-bar" />
 
         <div className="p-4">
-          <div className="font-pixel text-[9px] text-white/55 tracking-wide mb-4">
+          <div className="font-pixel text-[11px] text-white/55 tracking-wide mb-4">
             ПРОВОДНИК
           </div>
 
@@ -114,7 +114,7 @@ export default function SettingsModal({
                   }`}
                   onClick={() => handleSelect(guide.id)}
                 >
-                  <span className="font-pixel text-[9px] text-white tracking-wide">
+                  <span className="font-pixel text-[11px] text-white tracking-wide">
                     {guide.name}
                   </span>
                   <span className="font-mono-crt text-sm text-white/55 mt-1">

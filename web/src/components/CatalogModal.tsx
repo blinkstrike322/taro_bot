@@ -53,7 +53,7 @@ export default function CatalogModal({ isOpen, onClose, onSelect }: CatalogModal
         className="w-full max-w-[440px] m-2 border-4 border-white bg-black relative"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex justify-between bg-black text-white font-pixel text-[9px] leading-none px-2 py-2 border-b-2 border-white tracking-tight">
+        <div className="flex justify-between bg-black text-white font-pixel text-[11px] leading-none px-2 py-2 border-b-2 border-white tracking-tight">
           <span>{'>> CATALOGUE.LOG'}</span>
           <span className="blink">█</span>
         </div>
@@ -71,7 +71,7 @@ export default function CatalogModal({ isOpen, onClose, onSelect }: CatalogModal
                 onClose();
               }}
             >
-              <span className="font-pixel text-[9px] tracking-wide">{spread.title}</span>
+              <span className="font-pixel text-[11px] tracking-wide">{spread.title}</span>
               <span className="font-mono-crt text-sm text-white/55 mt-1">{spread.subtitle}</span>
             </button>
           ))}

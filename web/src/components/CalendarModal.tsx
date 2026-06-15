@@ -134,7 +134,7 @@ export default function CalendarModal({ isOpen, onClose, tgId }: CalendarModalPr
         className="w-full max-w-[440px] m-2 border-4 border-white bg-black relative max-h-[70dvh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex justify-between bg-black text-white font-pixel text-[11px] leading-none px-2 py-2 border-b-2 border-white tracking-tight">
+        <div className="flex justify-between bg-black text-white font-pixel text-[13px] leading-none px-2 py-2 border-b-2 border-white tracking-tight">
           <span>{'>> CALENDAR.LOG'}</span>
           <span className="blink">█</span>
         </div>
@@ -144,17 +144,17 @@ export default function CalendarModal({ isOpen, onClose, tgId }: CalendarModalPr
             <div className="flex items-center justify-between mb-4">
               <button
                 type="button"
-                className="btn font-pixel text-[11px] text-white px-2 py-1 border border-white/30 hover:border-white"
+                className="btn font-pixel text-[13px] text-white px-2 py-1 border border-white/30 hover:border-white"
                 onClick={handlePrevMonth}
               >
                 &lt;
               </button>
-              <span className="font-pixel text-[11px] text-white tracking-wide">
+              <span className="font-pixel text-[13px] text-white tracking-wide">
                 {MONTH_NAMES[month]} {year}
               </span>
               <button
                 type="button"
-                className="btn font-pixel text-[11px] text-white px-2 py-1 border border-white/30 hover:border-white"
+                className="btn font-pixel text-[13px] text-white px-2 py-1 border border-white/30 hover:border-white"
                 onClick={handleNextMonth}
               >
                 &gt;
@@ -165,7 +165,7 @@ export default function CalendarModal({ isOpen, onClose, tgId }: CalendarModalPr
               {WEEKDAY_HEADERS.map((wd) => (
                 <div
                   key={wd}
-                  className="font-pixel text-[8px] text-white/40 text-center tracking-wider"
+                  className="font-pixel text-[10px] text-white/40 text-center tracking-wider"
                 >
                   {wd}
                 </div>
@@ -183,7 +183,7 @@ export default function CalendarModal({ isOpen, onClose, tgId }: CalendarModalPr
                   <button
                     key={day}
                     type="button"
-                    className={`btn flex flex-col items-center justify-center aspect-square font-pixel text-[9px] text-white relative ${
+                    className={`btn flex flex-col items-center justify-center aspect-square font-pixel text-[11px] text-white relative ${
                       isToday ? 'border-2 border-white' : 'border border-white/10'
                     } hover:bg-white/10 cursor-pointer ${hasReadings ? '' : 'opacity-60'}`}
                     onClick={() => setSelectedDay(day)}
@@ -207,13 +207,13 @@ export default function CalendarModal({ isOpen, onClose, tgId }: CalendarModalPr
           <div className="p-4">
             <button
               type="button"
-              className="btn font-pixel text-[9px] text-white/55 px-2 py-1 border border-white/30 mb-3 hover:border-white"
+              className="btn font-pixel text-[11px] text-white/55 px-2 py-1 border border-white/30 mb-3 hover:border-white"
               onClick={() => setSelectedDay(null)}
             >
               &lt; НАЗАД
             </button>
 
-            <div className="font-pixel text-[11px] text-white tracking-wide mb-3">
+            <div className="font-pixel text-[13px] text-white tracking-wide mb-3">
               {selectedDay} {MONTH_NAMES[month]} {year}
             </div>
 
@@ -225,7 +225,7 @@ export default function CalendarModal({ isOpen, onClose, tgId }: CalendarModalPr
                     key={r.id}
                     className="border border-white/30 px-3 py-2"
                   >
-                    <span className="font-pixel text-[9px] text-white/70 tracking-wide">
+                    <span className="font-pixel text-[11px] text-white/70 tracking-wide">
                       {TYPE_LABELS[r.type] || r.type.toUpperCase()}
                     </span>
                     {r.question && (
