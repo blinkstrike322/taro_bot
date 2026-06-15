@@ -29,7 +29,7 @@ export default function QuestionInput({ spreadType, onSubmit, loading = false }:
 
   return (
     <div className="px-3 py-3">
-      <div className="font-pixel text-[9px] text-white/60 mb-2 tracking-wide">
+      <div className="font-pixel text-[11px] text-white/60 mb-2 tracking-wide">
         &gt;&gt; ENTER_QUERY
       </div>
 
@@ -40,10 +40,10 @@ export default function QuestionInput({ spreadType, onSubmit, loading = false }:
         placeholder="Задай вопрос картам..."
         disabled={loading}
         rows={3}
-        className="w-full border-2 border-white bg-black text-white font-mono-crt text-[15px] leading-snug p-2 resize-none placeholder:text-white/30 focus:outline-none focus:border-white disabled:opacity-50"
+        className="w-full border-2 border-white bg-black text-white font-mono-crt text-[18px] leading-snug p-2 resize-none placeholder:text-white/30 focus:outline-none focus:border-white disabled:opacity-50"
       />
 
-      <div className="font-pixel text-[9px] text-white/40 mt-1 tracking-wide text-center">
+      <div className="font-pixel text-[11px] text-white/40 mt-1 tracking-wide text-center">
         {hint}
       </div>
 
