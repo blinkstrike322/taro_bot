@@ -1,6 +1,10 @@
 import asyncio
+import hashlib
+import hmac
+import json
 import logging
 from pathlib import Path
+from urllib.parse import parse_qs
 
 from aiohttp import web
 from aiogram import Bot, Dispatcher
@@ -16,12 +20,53 @@ from core.tarot import draw_cards
 from core.llm import interpret_reading
 
 
+def verify_telegram_init_data(init_data: str) -> dict | None:
+    """Verify Telegram WebApp initData and return parsed user data."""
+    try:
+        parsed = parse_qs(init_data)
+        hash_value = parsed.pop('hash', [None])[0]
+        if not hash_value:
+            return None
+
+        items = sorted(
+            [(k, v[0]) for k, v in parsed.items()],
+            key=lambda x: x[0]
+        )
+        check_string = '\n'.join(f"{k}={v}" for k, v in items)
+
+        secret_key = hmac.new(
+            b"WebAppData",
+            settings.BOT_TOKEN.encode(),
+            hashlib.sha256
+        ).digest()
+
+        signature = hmac.new(
+            secret_key,
+            check_string.encode(),
+            hashlib.sha256
+        ).hexdigest()
+
+        if signature != hash_value:
+            return None
+
+        user_data = parsed.get('user', [None])[0]
+        if user_data:
+            return json.loads(user_data)
+        return None
+    except Exception:
+        return None
+
+
 async def start_polling(bot: Bot, dp: Dispatcher) -> None:
     await dp.start_polling(bot)
 
 
 async def handle_readings(request):
-    tg_id = int(request.query.get('tg_id', 0))
+    init_data = request.query.get('init_data', '')
+    user = verify_telegram_init_data(init_data)
+    if not user:
+        return web.json_response({"readings": []})
+    tg_id = user.get('id', 0)
     year = request.query.get('year', '')
     month = request.query.get('month', '')
     if not tg_id or not year or not month:
@@ -36,7 +81,11 @@ async def handle_spread(request):
         body = await request.json()
     except Exception:
         return web.json_response({"error": "invalid json"}, status=400)
-    tg_id = body.get('tg_id', 0)
+    init_data = body.get('init_data', '')
+    user = verify_telegram_init_data(init_data)
+    if not user:
+        return web.json_response({"error": "unauthorized"}, status=403)
+    tg_id = user.get('id', 0)
     spread_type = body.get('spread_type', 1)
     question = body.get('question')
     character_id = body.get('character_id', 'shadow_walker')
