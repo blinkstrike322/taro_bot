@@ -1,5 +1,13 @@
 const API_BASE = '';
 
+export function getInitData(): string {
+  try {
+    return (window as any).Telegram?.WebApp?.initData || '';
+  } catch {
+    return '';
+  }
+}
+
 export interface TarotCardData {
   id: string;
   name: string;
@@ -35,26 +43,20 @@ export interface ReadingsResponse {
   readings: ReadingEntry[];
 }
 
-export function getTgId(): number {
-  try {
-    const tg = (window as any).Telegram?.WebApp;
-    return tg?.initDataUnsafe?.user?.id || 0;
-  } catch {
-    return 0;
-  }
-}
-
 export async function spread(
   spreadType: 1 | 3,
   question: string | null,
   characterId: string = 'shadow_walker',
 ): Promise<SpreadResponse> {
-  const tgId = getTgId();
+  let initData = '';
+  try {
+    initData = (window as any).Telegram?.WebApp?.initData || '';
+  } catch {}
   const res = await fetch(`${API_BASE}/api/spread`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      tg_id: tgId,
+      init_data: initData,
       spread_type: spreadType,
       question,
       character_id: characterId,
@@ -68,10 +70,13 @@ export async function getReadings(
   year: number,
   month: number,
 ): Promise<ReadingsResponse> {
-  const tgId = getTgId();
+  let initData = '';
+  try {
+    initData = (window as any).Telegram?.WebApp?.initData || '';
+  } catch {}
   const monthStr = String(month).padStart(2, '0');
   const res = await fetch(
-    `${API_BASE}/api/readings?tg_id=${tgId}&year=${year}&month=${monthStr}`,
+    `${API_BASE}/api/readings?init_data=${encodeURIComponent(initData)}&year=${year}&month=${monthStr}`,
   );
   if (!res.ok) throw new Error('Get readings failed');
   return res.json();

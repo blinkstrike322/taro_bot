@@ -18,16 +18,14 @@ export default function Button({
   const base =
     'btn flex items-center gap-1 border-[3px] border-black font-pixel text-[13px] px-3 py-2 tracking-wide font-bold';
   const variants = {
-    primary: 'bg-white text-black',
+    primary: 'bg-white text-black outline outline-2 outline-white',
     secondary: 'bg-transparent border-white text-white',
   };
-  const outline =
-    variant === 'primary' ? 'outline outline-2 outline-white' : '';
 
   return (
     <button
       type="button"
-      className={`${base} ${variants[variant]} ${outline} ${className}`}
+      className={`${base} ${variants[variant]} ${className}`}
       onClick={onClick}
     >
       {children}

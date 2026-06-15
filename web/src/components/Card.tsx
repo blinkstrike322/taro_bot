@@ -80,7 +80,7 @@ export default function Card({
     onFlip?.();
   }, [flipped, onFlip]);
 
-  const auraDots = useMemo(() => makeAuraDots(200, 0), []);
+  const auraDots = useMemo(() => makeAuraDots(50, 0), []);
 
   return (
     <div className="flex flex-col items-center gap-2">

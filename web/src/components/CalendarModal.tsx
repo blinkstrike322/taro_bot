@@ -14,7 +14,7 @@ interface ReadingEntry {
 interface CalendarModalProps {
   isOpen: boolean;
   onClose: () => void;
-  tgId: number;
+  initData: string;
 }
 
 const MONTH_NAMES = [
@@ -51,7 +51,7 @@ function parseCardsData(cardsData: string): string[] {
   }
 }
 
-export default function CalendarModal({ isOpen, onClose, tgId }: CalendarModalProps) {
+export default function CalendarModal({ isOpen, onClose, initData }: CalendarModalProps) {
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth());
@@ -69,13 +69,18 @@ export default function CalendarModal({ isOpen, onClose, tgId }: CalendarModalPr
 
   useEffect(() => {
     if (!isOpen) return;
+    const controller = new AbortController();
     setLoading(true);
-      fetch(`/api/readings?tg_id=${tgId}&year=${year}&month=${String(month + 1).padStart(2, '0')}`)
+    fetch(`/api/readings?init_data=${encodeURIComponent(initData)}&year=${year}&month=${String(month + 1).padStart(2, '0')}`, { signal: controller.signal })
       .then((res) => res.json())
       .then((data) => setReadings(data.readings || []))
-      .catch(() => setReadings([]))
+      .catch((err) => {
+        if (err instanceof DOMException && err.name === 'AbortError') return;
+        setReadings([]);
+      })
       .finally(() => setLoading(false));
-  }, [isOpen, tgId, year, month]);
+    return () => controller.abort();
+  }, [isOpen, initData, year, month]);
 
   const handlePrevMonth = useCallback(() => {
     setMonth((m) => {
