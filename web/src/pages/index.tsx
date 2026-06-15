@@ -145,19 +145,23 @@ export default function Home() {
 
       {screen === 'daily-pick' && (
         <div className="flex flex-col items-center py-4 px-3">
-          <div className="font-pixel text-[9px] text-white/60 mb-4 text-center tracking-wider">
+          <div className="font-pixel text-[11px] text-white/60 mb-4 text-center tracking-wider">
             {'>> ВЫБЕРИ КАРТУ ДНЯ'}
           </div>
-          <div className="w-32">
-            <Card
-              card={{ id: 'daily', name: '', image_url: '', is_reversed: false }}
-              position="КАРТА ДНЯ"
-              flipped={false}
-              onFlip={handleDailyCardTap}
-            />
+          <div className="flex items-end justify-center gap-3 w-full max-w-md">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="w-32 sm:w-36 flex-shrink-0">
+                <Card
+                  card={{ id: 'daily', name: '', image_url: '', is_reversed: false }}
+                  position=""
+                  flipped={false}
+                  onFlip={handleDailyCardTap}
+                />
+              </div>
+            ))}
           </div>
           {dailyLoading && (
-            <div className="font-pixel text-[9px] text-white/40 mt-3 text-center blink">
+            <div className="font-pixel text-[11px] text-white/40 mt-3 text-center blink">
               ГАДАНИЕ...
             </div>
           )}
@@ -166,7 +170,7 @@ export default function Home() {
 
       {screen === 'daily-result' && dailyData && (
         <div className="flex flex-col items-center py-4 px-3">
-          <div className="w-32">
+          <div className="w-48 sm:w-56">
             <Card
               card={dailyData.cards[0]}
               position="КАРТА ДНЯ"
@@ -175,7 +179,7 @@ export default function Home() {
             />
           </div>
           {!dailyFlipped && (
-            <div className="font-pixel text-[9px] text-white/40 mt-3 blink">
+            <div className="font-pixel text-[11px] text-white/40 mt-3 blink">
               НАЖМИ НА КАРТУ
             </div>
           )}
