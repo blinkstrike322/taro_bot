@@ -58,7 +58,7 @@ export default function Spread1Card({ apiCall }: Spread1CardProps) {
 
     return (
       <div className="flex flex-col items-center py-4 px-3 w-full">
-        <div className="w-56 sm:w-64">
+        <div className="w-48 sm:w-56">
           <Card
             card={card}
             position="ТВОЯ КАРТА"

@@ -28,7 +28,7 @@ export default function QuestionInput({ spreadType, onSubmit, loading = false }:
     : 'ПРОШЛОЕ · НАСТОЯЩЕЕ · БУДУЩЕЕ';
 
   return (
-    <div className="px-3 py-3">
+    <div className="px-3 py-3 w-full">
       <div className="font-pixel text-[11px] text-white/60 mb-2 tracking-wide">
         &gt;&gt; ENTER_QUERY
       </div>
