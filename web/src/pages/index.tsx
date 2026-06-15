@@ -40,6 +40,7 @@ export default function Home() {
   const [dailyData, setDailyData] = useState<ReadingData | null>(null);
   const [dailyFlipped, setDailyFlipped] = useState(false);
   const [dailyLoading, setDailyLoading] = useState(false);
+  const [spreadKey, setSpreadKey] = useState(0);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -96,6 +97,7 @@ export default function Home() {
       setScreen('daily-pick');
     } else {
       setScreen('spread');
+      setSpreadKey(k => k + 1);
     }
   }, [spreadType]);
 
@@ -186,7 +188,7 @@ export default function Home() {
       )}
 
       {screen === 'spread' && spreadType === '1' && (
-        <Spread1Card
+        <Spread1Card key={spreadKey}
           apiCall={(question) =>
             API.spread(1, question, characterId).then((res) => ({
               cards: res.cards.map((c) => ({
@@ -200,7 +202,7 @@ export default function Home() {
       )}
 
       {screen === 'spread' && spreadType === '3' && (
-        <Spread3Cards
+        <Spread3Cards key={spreadKey}
           apiCall={(question) =>
             API.spread(3, question, characterId).then((res) => ({
               cards: res.cards.map((c) => ({

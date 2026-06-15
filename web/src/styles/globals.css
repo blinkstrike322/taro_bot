@@ -452,7 +452,7 @@ body {
    ================================================================ */
 .card-aura {
   position: absolute;
-  inset: -50px;
+  inset: -70px;
   pointer-events: none;
   z-index: 0;
   transition: transform 0.8s ease, filter 0.8s ease;
