@@ -3,7 +3,7 @@
 import { ReactNode } from 'react';
 import CrtOverlay from './CrtOverlay';
 import Button from './Button';
-import CursedFooter from './CursedFooter';
+// import CursedFooter from './CursedFooter';
 import Toast from './Toast';
 
 interface LayoutProps {
@@ -85,7 +85,7 @@ export default function Layout({
           </Button>
         </div>
 
-        <CursedFooter />
+        {/* <CursedFooter /> */}
 
         <Toast message={toastMessage} visible={toastVisible} onHide={onToastHide} />
       </div>
