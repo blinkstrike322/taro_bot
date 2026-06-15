@@ -12,6 +12,7 @@ from config import settings
 logger = logging.getLogger(__name__)
 
 FALLBACK_MODELS = [
+    "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
     "nvidia/nemotron-nano-12b-v2-vl:free",
     "openrouter/free",
 ]
