@@ -67,38 +67,9 @@ def build_reading_prompt(
     """
     lines: list[str] = []
 
-    character_headers = {
-        "shadow_walker": "Странница Теней читает твой расклад.",
-        "ruin_keeper": "Хранитель Руин смотрит на карты.",
-        "spark_of_chaos": "Искра Хаоса проглядывает расклад.",
-    }
-    header = character_headers.get(character_id, "Расклад карт.")
-    lines.append(header)
+    lines.append("Вопрос пользователя:")
+    lines.append(question if question else "(спонтанный расклад — пользователь не задавал вопроса)")
     lines.append("")
-
-    # Character-specific voice instruction for stronger character influence
-    character_instruction = {
-        "shadow_walker": (
-            "Говори загадочно, поэтично, словно открываешь тайну, "
-            "которую никто до этого не видел."
-        ),
-        "ruin_keeper": (
-            "Говори весомо, мудро, как древний страж, "
-            "видевший тысячи судеб."
-        ),
-        "spark_of_chaos": (
-            "Говори дерзко, энергично, с неожиданными поворотами — "
-            "как трюкстер, играющий с судьбой."
-        ),
-    }
-    char_style = character_instruction.get(character_id, "")
-    if char_style:
-        lines.append(char_style)
-        lines.append("")
-
-    if question:
-        lines.append(f"Вопрос пользователя: {question}")
-        lines.append("")
 
     positions = ["Прошлое", "Настоящее", "Будущее"]
     if spread_type == 3 and len(cards) == 3:
@@ -119,9 +90,19 @@ def build_reading_prompt(
     lines.append("")
     if question:
         if spread_type == 3 and len(cards) == 3:
-            lines.append("Для каждой позиции объясни, как эта карта отвечает на вопрос пользователя. Свяжи значение карты с вопросом — это самое важное.")
+            lines.append(
+                "СВЯЖИ КАЖДУЮ КАРТУ С ВОПРОСОМ ПОЛЬЗОВАТЕЛЯ. "
+                "Не просто опиши значение карты — объясни, как именно эта карта "
+                "в этой позиции отвечает на его ситуацию. "
+                "card_meaning: напиши три строки, по одной на каждую позицию, "
+                "где каждая строка привязана к вопросу."
+            )
         else:
-            lines.append("Объясни, как эта карта отвечает на вопрос пользователя.")
+            lines.append(
+                "СВЯЖИ КАРТУ С ВОПРОСОМ ПОЛЬЗОВАТЕЛЯ. "
+                "Не просто опиши значение — объясни, что эта карта значит "
+                "именно для его ситуации."
+            )
     else:
         if spread_type == 3 and len(cards) == 3:
             lines.append("Дай толкование этого расклада по позициям.")
@@ -132,7 +113,7 @@ def build_reading_prompt(
         "ВАЖНО: Ответ должен быть ТОЛЬКО в формате JSON, без markdown, без дополнительного текста. "
         'Формат: {"intro": "вступительная фраза", '
         '"short_answer": "2-3 предложения", '
-        '"card_meaning": ["Название карты: значение"], '
+        '"card_meaning": ["Название карты: значение, привязанное к вопросу"], '
         '"advice": "совет"}'
     )
 

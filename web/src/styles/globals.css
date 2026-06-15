@@ -90,7 +90,7 @@ body {
 
 /* halftone / dither treatment for generated art */
 .dither-img {
-  filter: grayscale(1) contrast(1.4) brightness(1.02);
+  filter: grayscale(1) contrast(1.6) brightness(1.05);
 }
 
 .scan-soft::after {
