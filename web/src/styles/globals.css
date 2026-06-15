@@ -53,7 +53,6 @@ body {
   inset: 0;
   z-index: 40;
   background:
-    repeating-linear-gradient(90deg, #000 0px, #000 1px, transparent 1px, transparent 3px),
     repeating-linear-gradient(0deg, transparent 0px, transparent 2px, rgba(255,255,255,0.05) 2px, rgba(255,255,255,0.05) 4px);
   pointer-events: none;
   opacity: .55;

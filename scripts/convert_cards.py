@@ -8,7 +8,7 @@ Produces a JRPG 90s aesthetic (Final Fantasy, Chrono Trigger):
 - Card back with rune/star pattern
 
 Usage:
-    python scripts/convert_cards.py [--force]
+    python scripts/convert_cards.py [--force] [--x2]
 """
 
 import argparse
@@ -132,7 +132,7 @@ def add_border(img, outer_px=2, inner_px=1, outer_color=(0, 0, 0), inner_color=(
     return bordered
 
 
-def create_card_back(width=256, height=384):
+def create_card_back(width=256, height=384, small_w=64, small_h=96, outer_px=2, inner_px=1):
     """Generate a pixel art card back with rune/star patterns and gold accents."""
     img = Image.new("RGB", (width, height), (15, 8, 30))  # dark purple bg
     draw = ImageDraw.Draw(img)
@@ -236,18 +236,20 @@ def create_card_back(width=256, height=384):
         draw.rectangle([sx + 1, sy + 1, sx + 1, sy + 1], fill=dark_gold)
 
     # Pixelate the card back for consistency with the converted cards
-    img = pixelate(img, small_w=64, small_h=96, big_w=width, big_h=height)
+    img = pixelate(img, small_w=small_w, small_h=small_h, big_w=width, big_h=height)
     # Quantize to the custom palette
     palette_img = build_palette_image()
     img = quantize_to_palette(img, palette_img)
     img = img.convert("RGB")
     # Add border matching the cards
-    img = add_border(img)
+    img = add_border(img, outer_px=outer_px, inner_px=inner_px)
 
     return img
 
 
-def convert_card(src_path, dst_path, palette_img, force=False):
+def convert_card(src_path, dst_path, palette_img, force=False,
+                 small_w=64, small_h=96, big_w=256, big_h=384,
+                 outer_px=2, inner_px=1):
     """Convert a single card image to pixel art style."""
     if dst_path.exists() and not force:
         return False
@@ -262,7 +264,7 @@ def convert_card(src_path, dst_path, palette_img, force=False):
         img = img.convert("RGB")
 
     # Pixelate: downscale then upscale with NEAREST
-    img = pixelate(img)
+    img = pixelate(img, small_w=small_w, small_h=small_h, big_w=big_w, big_h=big_h)
 
     # Quantize to custom palette
     img = quantize_to_palette(img, palette_img)
@@ -271,7 +273,7 @@ def convert_card(src_path, dst_path, palette_img, force=False):
     img = img.convert("RGB")
 
     # Add pixel border
-    img = add_border(img)
+    img = add_border(img, outer_px=outer_px, inner_px=inner_px)
 
     # Save
     dst_path.parent.mkdir(parents=True, exist_ok=True)
@@ -282,6 +284,7 @@ def convert_card(src_path, dst_path, palette_img, force=False):
 def main():
     parser = argparse.ArgumentParser(description="Convert tarot card PNGs to 16-bit pixel art")
     parser.add_argument("--force", action="store_true", help="Overwrite existing converted files")
+    parser.add_argument("--x2", action="store_true", help="Generate 2x resolution cards")
     args = parser.parse_args()
 
     # Paths
@@ -310,14 +313,26 @@ def main():
     # Build palette once
     palette_img = build_palette_image()
 
+    # Choose resolution params
+    if args.x2:
+        small_w, small_h, big_w, big_h = 128, 192, 512, 768
+        outer_px, inner_px = 4, 2
+        label = "2x"
+    else:
+        small_w, small_h, big_w, big_h = 64, 96, 256, 384
+        outer_px, inner_px = 2, 1
+        label = "1x"
+
     # Convert each card
     converted = 0
     skipped = 0
     for i, src_path in enumerate(source_files, 1):
         dst_path = pixel_dir / src_path.name
-        print(f"Converting card {i}/{total}: {src_path.name}", end="")
+        print(f"Converting card {i}/{total}: {src_path.name} ({label})", end="")
         try:
-            did_convert = convert_card(src_path, dst_path, palette_img, force=args.force)
+            did_convert = convert_card(src_path, dst_path, palette_img, force=args.force,
+                                       small_w=small_w, small_h=small_h, big_w=big_w, big_h=big_h,
+                                       outer_px=outer_px, inner_px=inner_px)
             if did_convert:
                 print(" [done]")
                 converted += 1
@@ -331,14 +346,16 @@ def main():
     back_path = pixel_dir / "back.png"
     if not back_path.exists() or args.force:
         print("Creating card back: back.png")
-        card_back = create_card_back()
+        card_back = create_card_back(width=big_w, height=big_h,
+                                      small_w=small_w, small_h=small_h,
+                                      outer_px=outer_px, inner_px=inner_px)
         pixel_dir.mkdir(parents=True, exist_ok=True)
         card_back.save(back_path, "PNG")
         print("Card back [done]")
     else:
         print("Card back [skip]")
 
-    print(f"Done: {converted} cards + 1 card back converted to static/pixel/")
+    print(f"Done: {converted} cards + 1 card back converted to static/pixel/ ({label})")
     if skipped:
         print(f"Skipped: {skipped} (use --force to overwrite)")
 
