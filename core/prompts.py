@@ -76,6 +76,26 @@ def build_reading_prompt(
     lines.append(header)
     lines.append("")
 
+    # Character-specific voice instruction for stronger character influence
+    character_instruction = {
+        "shadow_walker": (
+            "Говори загадочно, поэтично, словно открываешь тайну, "
+            "которую никто до этого не видел."
+        ),
+        "ruin_keeper": (
+            "Говори весомо, мудро, как древний страж, "
+            "видевший тысячи судеб."
+        ),
+        "spark_of_chaos": (
+            "Говори дерзко, энергично, с неожиданными поворотами — "
+            "как трюкстер, играющий с судьбой."
+        ),
+    }
+    char_style = character_instruction.get(character_id, "")
+    if char_style:
+        lines.append(char_style)
+        lines.append("")
+
     if question:
         lines.append(f"Вопрос пользователя: {question}")
         lines.append("")
