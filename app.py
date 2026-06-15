@@ -10,9 +10,8 @@ from config import settings, logger
 from core.reminder import reminder_loop
 from bot.router import register_handlers
 from bot.webapp_handler import router as webapp_router
-import aiosqlite
 
-from storage.db import create_tables, get_user_readings_by_month, save_reading, get_or_create_user
+from storage.db import init_db, get_db, get_user_readings_by_month, save_reading, get_or_create_user
 from core.tarot import draw_cards
 from core.llm import interpret_reading
 
@@ -27,8 +26,8 @@ async def handle_readings(request):
     month = request.query.get('month', '')
     if not tg_id or not year or not month:
         return web.json_response({"readings": []})
-    async with aiosqlite.connect(settings.DB_PATH) as db:
-        rows = await get_user_readings_by_month(db, tg_id, year, month)
+    db = await get_db()
+    rows = await get_user_readings_by_month(db, tg_id, year, month)
     return web.json_response({"readings": rows})
 
 
@@ -51,17 +50,17 @@ async def handle_spread(request):
         character_id=character_id,
         spread_type=spread_type,
     )
-    async with aiosqlite.connect(settings.DB_PATH) as db:
-        user = await get_or_create_user(db, tg_id)
-        await save_reading(
-            db=db,
-            user_id=user.id,
-            type=f"spread_{spread_type}",
-            question=question,
-            cards_data={"cards": cards, "spread_type": spread_type},
-            interpretation=interpretation,
-            character_id=character_id,
-        )
+    db = await get_db()
+    user = await get_or_create_user(db, tg_id)
+    await save_reading(
+        db=db,
+        user_id=user.id,
+        type=f"spread_{spread_type}",
+        question=question,
+        cards_data={"cards": cards, "spread_type": spread_type},
+        interpretation=interpretation,
+        character_id=character_id,
+    )
     return web.json_response({"cards": cards, "interpretation": interpretation})
 
 
@@ -89,7 +88,7 @@ async def run_webapp(app: web.Application) -> None:
 
 
 async def main() -> None:
-    await create_tables(settings.DB_PATH)
+    await init_db(settings.DB_PATH)
 
     bot = Bot(token=settings.BOT_TOKEN)
     dp = Dispatcher(storage=MemoryStorage())
