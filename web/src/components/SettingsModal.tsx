@@ -17,6 +17,12 @@ interface SettingsModalProps {
   onCharacterChange: (characterId: string) => void;
 }
 
+const CHARACTER_COLORS: Record<string, string> = {
+  shadow_walker: '#7B2D8E',
+  ruin_keeper: '#B8860B',
+  spark_of_chaos: '#E63946',
+};
+
 const GUIDES: Guide[] = [
   {
     id: 'shadow_walker',
@@ -114,8 +120,14 @@ export default function SettingsModal({
                   }`}
                   onClick={() => handleSelect(guide.id)}
                 >
-                  <span className="font-pixel text-[11px] text-white tracking-wide">
-                    {guide.name}
+                  <span className="flex items-center gap-2">
+                    <span
+                      className="inline-block w-3 h-3 border border-white/30 flex-shrink-0"
+                      style={{ backgroundColor: CHARACTER_COLORS[guide.id] }}
+                    />
+                    <span className="font-pixel text-[11px] text-white tracking-wide">
+                      {guide.name}
+                    </span>
                   </span>
                   <span className="font-mono-crt text-sm text-white/55 mt-1">
                     {guide.description}

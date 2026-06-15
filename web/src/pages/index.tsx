@@ -130,6 +130,7 @@ export default function Home() {
     <Layout
       spreadType={spreadType ?? '—'}
       arcanaCount={arcanaCount}
+      characterId={characterId}
       onOpenCatalog={() => setCatalogOpen(true)}
       onOpenSettings={() => setSettingsOpen(true)}
       onOpenCalendar={() => setCalendarOpen(true)}

@@ -6,6 +6,12 @@ import Button from './Button';
 // import CursedFooter from './CursedFooter';
 import Toast from './Toast';
 
+const CHARACTER_INFO: Record<string, { name: string; color: string }> = {
+  shadow_walker: { name: 'Странница Теней', color: '#7B2D8E' },
+  ruin_keeper: { name: 'Хранитель Руин', color: '#B8860B' },
+  spark_of_chaos: { name: 'Искра Хаоса', color: '#E63946' },
+};
+
 interface LayoutProps {
   children: ReactNode;
   onOpenCatalog?: () => void;
@@ -17,6 +23,7 @@ interface LayoutProps {
   onToastHide?: () => void;
   spreadType?: string;
   arcanaCount?: number;
+  characterId?: string;
 }
 
 export default function Layout({
@@ -30,6 +37,7 @@ export default function Layout({
   onToastHide,
   spreadType,
   arcanaCount,
+  characterId,
 }: LayoutProps) {
   return (
     <CrtOverlay>
@@ -59,7 +67,17 @@ export default function Layout({
 
         <div className="flex justify-between font-pixel text-[11px] text-white px-3 py-2 border-b-2 border-white tracking-wide select-none">
           <span>✦ SPREAD: {spreadType ?? '—'}</span>
-          <span>ARCANA: ✦ {arcanaCount ?? 0}/78 ✦</span>
+          <span className="flex items-center gap-1.5">
+            {characterId && CHARACTER_INFO[characterId] && (
+              <>
+                <span
+                  className="inline-block w-2.5 h-2.5 border border-white/30 flex-shrink-0"
+                  style={{ backgroundColor: CHARACTER_INFO[characterId].color }}
+                />
+                <span className="text-[10px]">{CHARACTER_INFO[characterId].name}</span>
+              </>
+            )}
+          </span>
         </div>
 
         <div className="text-center text-white text-base py-1 tracking-[0.3em] select-none">
