@@ -70,7 +70,7 @@ export default function Spread3Cards({ apiCall }: Spread3CardsProps) {
             const isCenter = i === 1;
 
             return (
-              <div key={rawCard.id} className="w-28 flex-shrink-0">
+              <div key={rawCard.id} className="w-32 sm:w-36 flex-shrink-0">
                 <Card
                   card={card}
                   position={POSITIONS[i]}
@@ -84,7 +84,7 @@ export default function Spread3Cards({ apiCall }: Spread3CardsProps) {
         </div>
 
         {!allFlipped && (
-          <div className="font-pixel text-[9px] text-white/40 mt-3 blink">
+          <div className="font-pixel text-[11px] text-white/40 mt-3 blink">
             НАЖМИ НА ВСЕ КАРТЫ
           </div>
         )}
