@@ -68,12 +68,17 @@ def build_reading_prompt(
     lines: list[str] = []
 
     character_headers = {
-        "shadow_walker": "Странница Теней читает твой расклад:",
-        "ruin_keeper": "Хранитель Руин смотрит на карты:",
-        "spark_of_chaos": "Искра Хаоса проглядывает расклад:",
+        "shadow_walker": "Странница Теней читает твой расклад.",
+        "ruin_keeper": "Хранитель Руин смотрит на карты.",
+        "spark_of_chaos": "Искра Хаоса проглядывает расклад.",
     }
-    header = character_headers.get(character_id, "Расклад карт:")
+    header = character_headers.get(character_id, "Расклад карт.")
     lines.append(header)
+    lines.append("")
+
+    if question:
+        lines.append(f"Вопрос пользователя: {question}")
+        lines.append("")
 
     positions = ["Прошлое", "Настоящее", "Будущее"]
     if spread_type == 3 and len(cards) == 3:
@@ -84,19 +89,24 @@ def build_reading_prompt(
             )
             lines.append(f"{i}. {card['name']} ({orientation}) — позиция {positions[i-1]}")
     else:
-        lines.append("Расклад карт:")
+        lines.append("Карта:" if spread_type == 1 else "Расклад карт:")
         for i, card in enumerate(cards, 1):
             orientation = (
                 "прямое" if card.get("orientation") == "upright" else "перевернутое"
             )
             lines.append(f"{i}. {card['name']} ({orientation})")
 
-    if question:
-        lines.append("")
-        lines.append(f"Вопрос: {question}")
-
     lines.append("")
-    lines.append("Дай толкование этого расклада.")
+    if question:
+        if spread_type == 3 and len(cards) == 3:
+            lines.append("Для каждой позиции объясни, как эта карта отвечает на вопрос пользователя. Свяжи значение карты с вопросом — это самое важное.")
+        else:
+            lines.append("Объясни, как эта карта отвечает на вопрос пользователя.")
+    else:
+        if spread_type == 3 and len(cards) == 3:
+            lines.append("Дай толкование этого расклада по позициям.")
+        else:
+            lines.append("Дай толкование этой карты.")
     lines.append("")
     lines.append(
         "ВАЖНО: Ответ должен быть ТОЛЬКО в формате JSON, без markdown, без дополнительного текста. "
