@@ -60,19 +60,19 @@ def _main_menu_keyboard() -> InlineKeyboardMarkup:
     url = settings.WEBAPP_URL
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(
-            text=f'{_zalgo("1 ")}{random.choice(_CURSED_SYMS)}',
+            text="РАСКЛАД 1 КАРТА",
             web_app=WebAppInfo(url=f"{url}?type=1"),
         )],
         [InlineKeyboardButton(
-            text=f'{_zalgo("3 ")}{random.choice(_CURSED_SYMS)}',
+            text="РАСКЛАД 3 КАРТЫ",
             web_app=WebAppInfo(url=f"{url}?type=3"),
         )],
         [InlineKeyboardButton(
-            text=_zalgo("Карта дня"),
+            text="КАРТА ДНЯ",
             web_app=WebAppInfo(url=f"{url}?type=daily"),
         )],
         [InlineKeyboardButton(
-            text=_zalgo("Сменить проводника"),
+            text="СМЕНИТЬ ПРОВОДНИКА",
             callback_data="char:select",
         )],
     ])
