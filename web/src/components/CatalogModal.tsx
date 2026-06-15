@@ -13,7 +13,7 @@ const SPREADS = [
   {
     type: 'daily' as const,
     title: '✦ КАРТА ДНЯ',
-    subtitle: 'Три карты — выбери одну',
+    subtitle: 'Одна карта — ответ на сегодня',
   },
   {
     type: '1' as const,
