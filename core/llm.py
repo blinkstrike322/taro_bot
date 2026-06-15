@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import re
@@ -12,7 +13,13 @@ from config import settings
 logger = logging.getLogger(__name__)
 
 FALLBACK_MODELS = [
+    "nvidia/nemotron-3-super-120b-a12b:free",
     "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
+    "nvidia/nemotron-3-ultra-550b-a55b:free",
+    "nvidia/nemotron-3-nano-30b-a3b:free",
+    "google/gemma-3-27b-it:free",
+    "meta-llama/llama-3.3-70b-instruct:free",
+    "microsoft/phi-3-medium-128k-instruct:free",
     "nvidia/nemotron-nano-12b-v2-vl:free",
     "openrouter/free",
 ]
@@ -45,7 +52,7 @@ def strip_emojis(text: str) -> str:
 
 
 async def call_llm(messages: list[dict], model: str, max_tokens: int = 1500) -> str:
-    async with httpx.AsyncClient(timeout=30.0) as client:
+    async with httpx.AsyncClient(timeout=60.0) as client:
         response = await client.post(
             "https://openrouter.ai/api/v1/chat/completions",
             headers={
@@ -64,12 +71,28 @@ async def call_llm(messages: list[dict], model: str, max_tokens: int = 1500) -> 
 
 
 async def call_llm_with_fallback(messages: list[dict]) -> str:
+    last_error = None
     for model in FALLBACK_MODELS:
-        try:
-            return await call_llm(messages, model)
-        except Exception as e:
-            logger.warning(f"Model {model} failed: {e}")
-    raise RuntimeError("All LLM models failed")
+        for attempt in range(3):
+            try:
+                return await call_llm(messages, model)
+            except httpx.HTTPStatusError as e:
+                if e.response.status_code == 429 and attempt < 2:
+                    delay = 1 + attempt * 2
+                    logger.warning(
+                        f"Model {model} rate limited (429), "
+                        f"retry {attempt + 1}/3 in {delay}s"
+                    )
+                    await asyncio.sleep(delay)
+                    continue
+                last_error = e
+                logger.warning(f"Model {model} failed: {e}")
+                break
+            except Exception as e:
+                last_error = e
+                logger.warning(f"Model {model} failed: {e}")
+                break
+    raise RuntimeError("All LLM models failed") from last_error
 
 
 async def interpret_reading(
@@ -100,7 +123,7 @@ async def interpret_reading(
     except RuntimeError:
         logger.error("All LLM models failed, using fallback")
 
-    return fallback_from_cards_db(cards, character_id)
+    return fallback_from_cards_db(cards, question, character_id)
 
 
 def _parse_text_format(text: str) -> Optional[dict]:
@@ -138,7 +161,27 @@ def _parse_text_format(text: str) -> Optional[dict]:
 def parse_llm_response(text: str) -> Optional[dict]:
     text = strip_emojis(text)
 
-    # Try JSON first
+    # 1. Strip markdown code blocks if present
+    text = re.sub(r'```(?:json)?\s*', '', text)
+    text = text.strip()
+
+    # 2. Try to extract first complete JSON object via brace matching
+    brace_depth = 0
+    json_start = -1
+    for i, ch in enumerate(text):
+        if ch == '{':
+            if brace_depth == 0:
+                json_start = i
+            brace_depth += 1
+        elif ch == '}':
+            brace_depth -= 1
+            if brace_depth == 0 and json_start >= 0:
+                try:
+                    return json.loads(text[json_start:i + 1])
+                except json.JSONDecodeError:
+                    json_start = -1
+
+    # 3. Fallback: regex JSON (original approach)
     match = re.search(r"\{(?:[^{}]|\{[^{}]*\})*\}", text, re.DOTALL)
     if match:
         try:
@@ -146,7 +189,7 @@ def parse_llm_response(text: str) -> Optional[dict]:
         except json.JSONDecodeError:
             pass
 
-    # Fallback: try text format (when LLM ignores JSON instruction)
+    # 4. Fallback: try text format (when LLM ignores JSON instruction)
     parsed = _parse_text_format(text)
     if parsed:
         return parsed
@@ -159,41 +202,77 @@ def parse_llm_response(text: str) -> Optional[dict]:
     }
 
 
-def fallback_from_cards_db(cards: list[dict], character_id: str = "shadow_walker") -> dict:
+def fallback_from_cards_db(
+    cards: list[dict],
+    question: str | None = None,
+    character_id: str = "shadow_walker",
+) -> dict:
     from core.tarot import load_cards
 
     all_cards = load_cards()
     cards_by_name = {c["name"]: c for c in all_cards}
 
+    # Character-specific intros and tones
+    character_intros = {
+        "shadow_walker": "Тени сгущаются над древними символами...",
+        "ruin_keeper": "Пыль веков оседает на камнях судьбы...",
+        "spark_of_chaos": "Искры истины пробиваются сквозь пустоту!",
+    }
+    character_voices = {
+        "shadow_walker": "Странница Теней",
+        "ruin_keeper": "Хранитель Руин",
+        "spark_of_chaos": "Искра Хаоса",
+    }
+
     meanings = []
-    for card in cards:
+    for i, card in enumerate(cards):
         name = card.get("name", "")
         orientation = card.get("orientation", "upright")
         card_data = cards_by_name.get(name, {})
-        meaning = card_data.get(orientation, card_data.get("upright", ""))
-        meanings.append(f"{name}: {meaning}")
+        meaning = card_data.get(orientation, card_data.get("upright", "—"))
 
-    tone_prefix = ""
-    if character_id == "shadow_walker":
-        tone_prefix = "Тени шепчут: "
-    elif character_id == "ruin_keeper":
-        tone_prefix = ""
-    elif character_id == "spark_of_chaos":
-        tone_prefix = "А вот и нет: "
+        prefix = ""
+        if len(cards) == 3:
+            positions = ["Прошлое", "Настоящее", "Будущее"]
+            prefix = f"[{positions[i]}] "
+        elif len(cards) == 1:
+            prefix = ""
 
-    short_base = "Трактовка на основе базы карт."
-    if character_id == "shadow_walker":
-        short_answer = tone_prefix + short_base
-    elif character_id == "ruin_keeper":
-        short_answer = short_base
-    elif character_id == "spark_of_chaos":
-        short_answer = tone_prefix + short_base
+        meanings.append(f"{prefix}{name}: {meaning}")
+
+    intro = character_intros.get(character_id, "Карты раскрывают свои тайны...")
+    voice = character_voices.get(character_id, "Проводник")
+
+    if question:
+        short_answer = (
+            f"{voice} отмечает: в контексте твоего вопроса — "
+            f"{question[:100]}... Карты указывают на скрытые связи."
+        )
     else:
-        short_answer = short_base
+        short_answer = f"{voice} видит в раскладе важный узор судьбы."
+
+    advice_templates = {
+        "shadow_walker": (
+            "Прислушайся к шёпоту теней — они указывают путь, "
+            "даже если ты его не видишь."
+        ),
+        "ruin_keeper": (
+            "Не торопись. Древние знаки требуют осмысления. "
+            "Вернись к раскладу на рассвете."
+        ),
+        "spark_of_chaos": (
+            "Действуй! Карты лишь подтверждают то, "
+            "что ты уже знаешь внутри себя."
+        ),
+    }
+    advice = advice_templates.get(
+        character_id,
+        "Обдумай значение карт в контексте своего вопроса.",
+    )
 
     return {
-        "intro": "Карты раскрывают свои тайны...",
+        "intro": intro,
         "short_answer": short_answer,
         "card_meaning": meanings,
-        "advice": "Обдумай значение карт в контексте своего вопроса.",
+        "advice": advice,
     }
