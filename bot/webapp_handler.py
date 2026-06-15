@@ -2,6 +2,7 @@ import json
 import logging
 from datetime import datetime
 
+import aiosqlite
 from aiogram import Router, F
 from aiogram.types import Message
 from aiogram.enums import ContentType
