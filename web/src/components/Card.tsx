@@ -140,7 +140,7 @@ export default function Card({
       </div>
 
       <div
-        className={`font-pixel text-[9px] tracking-wide text-center min-h-[1.4em] leading-relaxed ${raised ? 'text-white' : 'text-white/55'}`}
+        className={`font-pixel text-[11px] tracking-wide text-center min-h-[1.4em] leading-relaxed ${raised ? 'text-white' : 'text-white/55'}`}
       >
         {flipped
           ? `${card.name}${card.is_reversed ? ' (ПЕР.)' : ''}`
