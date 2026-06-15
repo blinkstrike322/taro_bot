@@ -33,6 +33,30 @@ CREATE TABLE IF NOT EXISTS readings (
 """
 
 
+_db_connection: Optional[aiosqlite.Connection] = None
+
+
+async def init_db(db_path: str = "taro_bot.db") -> aiosqlite.Connection:
+    """Create persistent connection, enable WAL mode, create tables."""
+    global _db_connection
+    conn = await aiosqlite.connect(db_path)
+    conn.row_factory = aiosqlite.Row
+    await conn.execute("PRAGMA journal_mode=WAL")
+    await conn.execute("PRAGMA foreign_keys=ON")
+    await conn.execute(_CREATE_USERS_TABLE)
+    await conn.execute(_CREATE_READINGS_TABLE)
+    await conn.commit()
+    _db_connection = conn
+    return conn
+
+
+async def get_db() -> aiosqlite.Connection:
+    """Return the persistent connection. Raises if not initialized."""
+    if _db_connection is None:
+        raise RuntimeError("Database not initialized. Call init_db() first.")
+    return _db_connection
+
+
 async def create_tables(db_path: str = "taro_bot.db") -> None:
     """Create database tables if they do not exist."""
     async with aiosqlite.connect(db_path) as db:
