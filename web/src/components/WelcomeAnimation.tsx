@@ -67,7 +67,7 @@ export default function WelcomeAnimation({ onComplete, spreadType }: WelcomeAnim
     <div
       className={`flex items-center justify-center w-full min-h-[60vh] bg-black transition-opacity duration-300 ${fading ? 'opacity-0' : 'opacity-100'}`}
     >
-      <div className="font-pixel text-[9px] text-white space-y-2 px-4">
+      <div className="font-pixel text-[11px] text-white space-y-2 px-4">
         {lines.map((line, i) => {
           if (line.type === 'header') {
             return (

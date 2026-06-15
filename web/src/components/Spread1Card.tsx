@@ -58,7 +58,7 @@ export default function Spread1Card({ apiCall }: Spread1CardProps) {
 
     return (
       <div className="flex flex-col items-center py-4 px-3 w-full">
-        <div className="w-44 max-w-full">
+        <div className="w-56 sm:w-64">
           <Card
             card={card}
             position="ТВОЯ КАРТА"
@@ -67,7 +67,7 @@ export default function Spread1Card({ apiCall }: Spread1CardProps) {
           />
         </div>
         {!flipped && (
-          <div className="font-pixel text-[9px] text-white/40 mt-3 blink">
+          <div className="font-pixel text-[11px] text-white/40 mt-3 blink">
             НАЖМИ НА КАРТУ
           </div>
         )}
