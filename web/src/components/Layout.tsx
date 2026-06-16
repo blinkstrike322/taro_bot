@@ -108,17 +108,17 @@ export default function Layout({
         <div className="flex flex-col gap-2 px-3 py-2">
           <div className="flex flex-nowrap justify-center gap-1.5">
             <Button onClick={onNewSpread} className="!px-2 !text-[12px]">
-              <span className="text-[11px]">✦</span> RETRY
+              <span className="text-[11px]">✦</span> НOВЫЙ РАСКЛАД
             </Button>
             <Button onClick={onOpenCatalog} className="!px-2 !text-[12px]">
-              <span className="text-[11px]">☰</span> MENU
+              <span className="text-[11px]">☰</span> КАТАЛOГ
             </Button>
             <Button onClick={onOpenSettings} className="!px-2 !text-[12px]">
-              <span className="text-[11px]">⚙</span> SETTINGS
+              <span className="text-[11px]">⚙</span> НАСТРOЙКИ
             </Button>
           </div>
           <Button onClick={onOpenCalendar} className="w-full" variant="secondary">
-            <span className="text-[13px]">◈</span> HISTORY
+            <span className="text-[13px]">◈</span> КАЛЕНДАРЬ
           </Button>
         </div>
 
