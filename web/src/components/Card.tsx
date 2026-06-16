@@ -132,7 +132,7 @@ export default function Card({
           >
             <div className="flip-face">
               <img
-                src="/cards/back_test.png"
+                src="/cards/back.png"
                 alt=""
                 className="dither-img w-full h-full object-contain"
                 style={{ imageRendering: 'pixelated' }}
