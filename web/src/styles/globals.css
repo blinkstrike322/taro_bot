@@ -537,56 +537,175 @@ body {
 .frame-ritual .corner-br { bottom: -6px; right: 4px; }
 
 /* ================================================================
-   DECORATIVE FRAME — pixel corner brackets for header title
+   HEADER BANNER — redesigned two-line ARCANA / •LINK• banner
    ================================================================ */
-.frame-title {
+.header-banner {
+  display: flex;
+  align-items: stretch;
+  background: #fff;
+  color: #000;
+  font-family: var(--font-system);
   position: relative;
-  display: inline-block;
-  padding: 0.5rem 1.75rem;
+  overflow: hidden;
+  /* multi-layered glow: terminal phosphor cyan/teal */
+  box-shadow:
+    inset 0 0 6px rgba(0, 200, 255, 0.15),
+    0 0 4px rgba(0, 200, 255, 0.3),
+    0 0 12px rgba(0, 200, 255, 0.2),
+    0 0 28px rgba(0, 200, 255, 0.1);
 }
 
-.frame-title::before,
-.frame-title::after {
-  content: "";
+.header-sigil {
+  position: relative;
+  width: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+}
+
+/* left sigil — column of blocks via ::before + ::after with box-shadow offsets */
+.header-sigil--left::before {
+  content: '';
+  display: block;
+  width: 6px;
+  height: 6px;
+  background: rgba(0, 0, 0, 0.25);
+  box-shadow:
+    0 10px 0 rgba(0, 0, 0, 0.25),
+    0 20px 0 rgba(0, 0, 0, 0.25),
+    0 30px 0 rgba(0, 0, 0, 0.25),
+    0 40px 0 rgba(0, 0, 0, 0.25);
+}
+
+.header-sigil--left::after {
+  content: '';
   position: absolute;
-  width: 10px;
-  height: 10px;
-  border-color: rgba(255,255,255,0.6);
-  border-style: solid;
-  pointer-events: none;
+  top: 5px;
+  left: 14px;
+  width: 6px;
+  height: 6px;
+  background: rgba(0, 0, 0, 0.25);
+  box-shadow:
+    0 10px 0 rgba(0, 0, 0, 0.25),
+    0 20px 0 rgba(0, 0, 0, 0.25),
+    0 30px 0 rgba(0, 0, 0, 0.25);
 }
 
-.frame-title::before {
-  top: -2px;
-  left: -2px;
-  border-width: 2px 0 0 2px;
+/* right sigil — same pattern but offset blocks on the left side */
+.header-sigil--right::before {
+  content: '';
+  display: block;
+  width: 6px;
+  height: 6px;
+  background: rgba(0, 0, 0, 0.25);
+  box-shadow:
+    0 10px 0 rgba(0, 0, 0, 0.25),
+    0 20px 0 rgba(0, 0, 0, 0.25),
+    0 30px 0 rgba(0, 0, 0, 0.25),
+    0 40px 0 rgba(0, 0, 0, 0.25);
 }
 
-.frame-title::after {
-  bottom: -2px;
-  right: -2px;
-  border-width: 0 2px 2px 0;
+.header-sigil--right::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 14px;
+  width: 6px;
+  height: 6px;
+  background: rgba(0, 0, 0, 0.25);
+  box-shadow:
+    0 10px 0 rgba(0, 0, 0, 0.25),
+    0 20px 0 rgba(0, 0, 0, 0.25),
+    0 30px 0 rgba(0, 0, 0, 0.25),
+    0 40px 0 rgba(0, 0, 0, 0.25);
 }
 
-/* inner pair */
-.frame-title .title-ornament-inner-tl,
-.frame-title .title-ornament-inner-br {
+.header-center {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-left: 2px solid #000;
+  border-right: 2px solid #000;
+  padding: 6px 8px;
+  position: relative;
+  font-family: var(--font-system);
+  color: #000;
+}
+
+.header-text-top {
+  font-size: 16px;
+  letter-spacing: 0.15em;
+  line-height: 1.4;
+  user-select: none;
+  font-family: var(--font-system);
+}
+
+.header-text-bottom {
+  font-size: 14px;
+  letter-spacing: 0.15em;
+  line-height: 1.4;
+  user-select: none;
+  font-family: var(--font-system);
+}
+
+/* ================================================================
+   EYE GLYPH — CSS-drawn all-seeing eye between ARCANA and •LINK•
+   ================================================================ */
+.eye-glyph {
+  position: relative;
+  display: block;
+  width: 28px;
+  height: 28px;
+  margin: 2px auto;
+}
+
+/* Outer eye shape */
+.eye-glyph::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid rgba(0, 0, 0, 0.7);
+  background: transparent;
+}
+
+/* Pupil + radiating lines via box-shadow */
+.eye-glyph::after {
+  content: '';
   position: absolute;
   width: 6px;
   height: 6px;
-  border-color: rgba(255,255,255,0.25);
-  border-style: solid;
-  pointer-events: none;
+  background: rgba(0, 0, 0, 0.8);
+  border-radius: 50%;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow:
+    0 -9px 0 -2px rgba(0, 0, 0, 0.3),
+    0 9px 0 -2px rgba(0, 0, 0, 0.3),
+    -9px 0 0 -2px rgba(0, 0, 0, 0.3),
+    9px 0 0 -2px rgba(0, 0, 0, 0.3),
+    -6px -6px 0 -2px rgba(0, 0, 0, 0.2),
+    6px -6px 0 -2px rgba(0, 0, 0, 0.2),
+    -6px 6px 0 -2px rgba(0, 0, 0, 0.2),
+    6px 6px 0 -2px rgba(0, 0, 0, 0.2);
 }
-.frame-title .title-ornament-inner-tl {
-  top: 6px;
-  left: 6px;
-  border-width: 1px 0 0 1px;
+
+/* Subtle glitch animation for header text */
+@keyframes header-glitch {
+  0%, 90%, 100% { transform: translate(0); }
+  92% { transform: translate(-1px, 0.5px); }
+  94% { transform: translate(1px, -0.5px); }
+  96% { transform: translate(-0.5px, 0); }
+  98% { transform: translate(0.5px, 0.5px); }
 }
-.frame-title .title-ornament-inner-br {
-  bottom: 6px;
-  right: 6px;
-  border-width: 0 1px 1px 0;
+
+.header-text-top,
+.header-text-bottom {
+  animation: header-glitch 4s ease-in-out infinite;
 }
 
 /* ================================================================
