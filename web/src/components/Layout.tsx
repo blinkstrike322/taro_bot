@@ -44,9 +44,10 @@ export default function Layout({
       <div className="w-full max-w-screen overflow-x-hidden border-y-4 border-white bg-black relative flex flex-col min-h-dvh">
         <div className="arcanum-header">
           <div className="corner-decor top-left" aria-hidden="true">☩</div>
-          <div className="corner-decor top-right" aria-hidden="true">☡</div>
+          <div className="corner-decor top-right" aria-hidden="true">⚹</div>
           <div className="corner-decor bottom-left" aria-hidden="true">‡</div>
-          <div className="corner-decor bottom-right" aria-hidden="true">☤</div>
+          <div className="corner-decor bottom-right" aria-hidden="true">⛧</div>
+          <div className="header-artifacts" aria-hidden="true" />
 
           <div className="header-content">
             <span className="sparkle" aria-hidden="true">✦</span>
