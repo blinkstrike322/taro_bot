@@ -537,175 +537,140 @@ body {
 .frame-ritual .corner-br { bottom: -6px; right: 4px; }
 
 /* ================================================================
-   HEADER BANNER — redesigned two-line ARCANA / •LINK• banner
+   ARCANUM HEADER — dark banner with pink glow and all-seeing eye
    ================================================================ */
-.header-banner {
-  display: flex;
-  align-items: stretch;
-  background: #fff;
-  color: #000;
-  font-family: var(--font-system);
+.arcanum-header {
   position: relative;
-  overflow: hidden;
-  /* multi-layered glow: terminal phosphor cyan/teal */
+  width: 100%;
+  border: 3px double #ffb7ef;
   box-shadow:
-    inset 0 0 6px rgba(0, 200, 255, 0.15),
-    0 0 4px rgba(0, 200, 255, 0.3),
-    0 0 12px rgba(0, 200, 255, 0.2),
-    0 0 28px rgba(0, 200, 255, 0.1);
+    0 0 10px rgba(255, 183, 239, 0.3),
+    inset 0 0 10px rgba(255, 183, 239, 0.3);
+  padding: 15px 10px 35px 10px;
+  box-sizing: border-box;
+  background: rgba(10, 20, 13, 0.9);
+  text-align: center;
 }
 
-.header-sigil {
-  position: relative;
-  width: 32px;
+.header-content {
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.brand-title {
+  color: #ffb7ef;
+  font-size: 14px;
+  line-height: 1.6;
+  letter-spacing: 2px;
+  margin: 0;
+  font-family: 'Press Start 2P', monospace;
+  font-weight: normal;
+  text-shadow:
+    0 0 5px rgba(255, 183, 239, 0.8),
+    0 0 10px rgba(255, 183, 239, 0.5);
+  word-break: break-all;
   user-select: none;
 }
 
-/* left sigil — column of blocks via ::before + ::after with box-shadow offsets */
-.header-sigil--left::before {
-  content: '';
-  display: block;
-  width: 6px;
-  height: 6px;
-  background: rgba(0, 0, 0, 0.25);
-  box-shadow:
-    0 10px 0 rgba(0, 0, 0, 0.25),
-    0 20px 0 rgba(0, 0, 0, 0.25),
-    0 30px 0 rgba(0, 0, 0, 0.25),
-    0 40px 0 rgba(0, 0, 0, 0.25);
+.brand-title .highlight {
+  color: #ffb7ef;
+  text-shadow:
+    0 0 5px rgba(255, 183, 239, 0.8),
+    0 0 10px rgba(255, 183, 239, 0.5);
 }
 
-.header-sigil--left::after {
-  content: '';
+.sparkle {
+  color: #ffb7ef;
+  font-size: 14px;
+  text-shadow: 0 0 8px #ffb7ef;
+  animation: arcanum-blink 2s infinite alternate;
+  user-select: none;
+}
+
+/* Eye logo at bottom of header, overlapping border */
+.eye-logo {
   position: absolute;
-  top: 5px;
-  left: 14px;
-  width: 6px;
-  height: 6px;
-  background: rgba(0, 0, 0, 0.25);
-  box-shadow:
-    0 10px 0 rgba(0, 0, 0, 0.25),
-    0 20px 0 rgba(0, 0, 0, 0.25),
-    0 30px 0 rgba(0, 0, 0, 0.25);
-}
-
-/* right sigil — same pattern but offset blocks on the left side */
-.header-sigil--right::before {
-  content: '';
-  display: block;
-  width: 6px;
-  height: 6px;
-  background: rgba(0, 0, 0, 0.25);
-  box-shadow:
-    0 10px 0 rgba(0, 0, 0, 0.25),
-    0 20px 0 rgba(0, 0, 0, 0.25),
-    0 30px 0 rgba(0, 0, 0, 0.25),
-    0 40px 0 rgba(0, 0, 0, 0.25);
-}
-
-.header-sigil--right::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 14px;
-  width: 6px;
-  height: 6px;
-  background: rgba(0, 0, 0, 0.25);
-  box-shadow:
-    0 10px 0 rgba(0, 0, 0, 0.25),
-    0 20px 0 rgba(0, 0, 0, 0.25),
-    0 30px 0 rgba(0, 0, 0, 0.25),
-    0 40px 0 rgba(0, 0, 0, 0.25);
-}
-
-.header-center {
-  flex: 1;
+  bottom: -18px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #0a140d;
+  padding: 0 15px;
   display: flex;
   flex-direction: column;
   align-items: center;
+}
+
+.eye-ball {
+  width: 32px;
+  height: 18px;
+  border: 2px solid #ffb7ef;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
   justify-content: center;
-  border-left: 2px solid #000;
-  border-right: 2px solid #000;
-  padding: 6px 8px;
   position: relative;
-  font-family: var(--font-system);
-  color: #000;
+  box-shadow: 0 0 8px rgba(255, 183, 239, 0.6);
+  background: #0a140d;
+  z-index: 2;
 }
 
-.header-text-top {
-  font-size: 16px;
-  letter-spacing: 0.15em;
-  line-height: 1.4;
-  user-select: none;
-  font-family: var(--font-system);
-}
-
-.header-text-bottom {
-  font-size: 14px;
-  letter-spacing: 0.15em;
-  line-height: 1.4;
-  user-select: none;
-  font-family: var(--font-system);
-}
-
-/* ================================================================
-   EYE GLYPH — CSS-drawn all-seeing eye between ARCANA and •LINK•
-   ================================================================ */
-.eye-glyph {
-  position: relative;
-  display: block;
-  width: 28px;
-  height: 28px;
-  margin: 2px auto;
-}
-
-/* Outer eye shape */
-.eye-glyph::before {
-  content: '';
-  position: absolute;
-  inset: 0;
+.pupil {
+  width: 8px;
+  height: 8px;
+  background: #ffb7ef;
   border-radius: 50%;
-  border: 2px solid rgba(0, 0, 0, 0.7);
-  background: transparent;
+  box-shadow: 0 0 5px #ffb7ef;
 }
 
-/* Pupil + radiating lines via box-shadow */
-.eye-glyph::after {
-  content: '';
-  position: absolute;
-  width: 6px;
+/* Rays above the eye */
+.eye-rays {
+  display: flex;
+  gap: 4px;
+  margin-bottom: -2px;
+  position: relative;
+  z-index: 1;
+}
+
+.eye-rays span {
+  width: 2px;
+  height: 8px;
+  background: #ffb7ef;
+  box-shadow: 0 0 4px #ffb7ef;
+}
+
+.eye-rays span:nth-child(1),
+.eye-rays span:nth-child(5) {
+  height: 4px;
+}
+
+.eye-rays span:nth-child(2),
+.eye-rays span:nth-child(4) {
   height: 6px;
-  background: rgba(0, 0, 0, 0.8);
-  border-radius: 50%;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  box-shadow:
-    0 -9px 0 -2px rgba(0, 0, 0, 0.3),
-    0 9px 0 -2px rgba(0, 0, 0, 0.3),
-    -9px 0 0 -2px rgba(0, 0, 0, 0.3),
-    9px 0 0 -2px rgba(0, 0, 0, 0.3),
-    -6px -6px 0 -2px rgba(0, 0, 0, 0.2),
-    6px -6px 0 -2px rgba(0, 0, 0, 0.2),
-    -6px 6px 0 -2px rgba(0, 0, 0, 0.2),
-    6px 6px 0 -2px rgba(0, 0, 0, 0.2);
 }
 
-/* Subtle glitch animation for header text */
-@keyframes header-glitch {
-  0%, 90%, 100% { transform: translate(0); }
-  92% { transform: translate(-1px, 0.5px); }
-  94% { transform: translate(1px, -0.5px); }
-  96% { transform: translate(-0.5px, 0); }
-  98% { transform: translate(0.5px, 0.5px); }
+/* Corner decor symbols */
+.corner-decor {
+  position: absolute;
+  color: #ffb7ef;
+  font-size: 12px;
+  opacity: 0.7;
+  text-shadow: 0 0 5px #ffb7ef;
+  user-select: none;
+  pointer-events: none;
 }
 
-.header-text-top,
-.header-text-bottom {
-  animation: header-glitch 4s ease-in-out infinite;
+.corner-decor.top-left     { top: 5px; left: 8px; }
+.corner-decor.top-right    { top: 5px; right: 8px; }
+.corner-decor.bottom-left  { bottom: 5px; left: 8px; }
+.corner-decor.bottom-right { bottom: 5px; right: 8px; }
+
+/* Blink animation */
+@keyframes arcanum-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
 }
 
 /* ================================================================
