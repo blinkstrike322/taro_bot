@@ -92,7 +92,7 @@ export default function Card({
         </div>
       )}
 
-      <div className="relative w-full">
+      <div className="relative w-full overflow-hidden">
         <div
           className={`card-aura ${flipped ? 'card-aura--expanded' : ''}`}
           aria-hidden="true"
