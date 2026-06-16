@@ -43,30 +43,49 @@ export default function Layout({
     <CrtOverlay>
       <div className="w-full border-y-4 border-white bg-black relative flex flex-col min-h-screen">
         <div className="flex justify-between bg-black text-white font-pixel text-[11px] leading-none px-2 py-2 border-b-2 border-white tracking-tight">
-          <span>┌─[OCGV_V1.0]─[root@taro]─[~]</span>
-          <span>││ 0x3F ││</span>
+          <span>┌─[DEUS_EX_TAROT]─[root@arcana]─[~]</span>
+          <span className="tracking-[0.2em]">││ 0xDE ││ 0x10 ││</span>
         </div>
 
-        <div className="flex items-stretch bg-white text-black font-pixel">
-          <div className="flex flex-col items-center justify-center px-2 text-[16px] leading-none select-none">
-            ┌┐
-            <br />
-            └┘
+        <div className="flex items-stretch bg-white text-black font-pixel relative overflow-hidden">
+          {/* circuit trace decoration */}
+          <div className="circuit-trace circuit-trace--h" style={{ top: '50%' }} />
+
+          <div className="ornament-side px-2">
+            <span>╔</span>
+            <span>║</span>
+            <span>║</span>
+            <span>║</span>
+            <span>╚</span>
           </div>
-          <div className="flex-1 flex items-center justify-center border-x-2 border-black px-2 py-3 text-center">
-            <span className="text-[22px] tracking-[0.12em] leading-relaxed">
-              [ ~/TAROT.bot ]*
+
+          <div className="flex-1 flex items-center justify-center border-x-2 border-black px-2 py-3 text-center relative">
+            {/* occult corner symbols */}
+            <span className="absolute top-1 left-1 text-[9px] text-black/30 select-none" aria-hidden="true">♰</span>
+            <span className="absolute top-1 right-1 text-[9px] text-black/30 select-none" aria-hidden="true">⚹</span>
+            <span className="absolute bottom-1 left-1 text-[9px] text-black/30 select-none" aria-hidden="true">♱</span>
+            <span className="absolute bottom-1 right-1 text-[9px] text-black/30 select-none" aria-hidden="true">†</span>
+
+            <span className="frame-title text-[18px] tracking-[0.08em] leading-relaxed">
+              <span className="title-ornament-inner-tl" />
+              <span className="title-ornament-inner-br" />
+              ARCANA.LINK
+              <span className="text-black/40 mx-1">//</span>
+              DEUS_EX_TAROT
             </span>
           </div>
-          <div className="flex flex-col items-center justify-center px-2 text-[16px] leading-none select-none">
-            ┌┐
-            <br />
-            └┘
+
+          <div className="ornament-side px-2">
+            <span>╔</span>
+            <span>║</span>
+            <span>║</span>
+            <span>║</span>
+            <span>╚</span>
           </div>
         </div>
 
         <div className="flex justify-between font-pixel text-[11px] text-white px-3 py-2 border-b-2 border-white tracking-wide select-none">
-          <span>✦ SPREAD: {spreadType ?? '—'}</span>
+          <span>♰ SPREAD: {spreadType ?? '—'}</span>
           <span className="flex items-center gap-1.5">
             {characterId && CHARACTER_INFO[characterId] && (
               <>
