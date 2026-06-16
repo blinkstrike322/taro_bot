@@ -16,23 +16,49 @@ export default function ReadingResult({ interpretation }: ReadingResultProps) {
 
   return (
     <div className="px-3 py-2">
-      <div className="font-pixel text-[11px] text-white/60 tracking-wide mb-2">
-        &gt;&gt; READOUT.LOG
+      <div className="stream-label mb-2">
+        DIVINATION.STREAM
+        <span className="text-white/20 mx-1">//</span>
+        PAGE
+        <span className="text-white/20 mx-1">//</span>
+        READOUT
       </div>
 
-      <div className="relative scan-soft border-2 border-white p-3">
+      <div className="relative frame-ritual noise-bg p-3 min-h-[120px]">
+        {/* asymmetrical corner ornaments */}
+        <span className="corner-tl">╔</span>
+        <span className="corner-tr">┐</span>
+        <span className="corner-bl">└</span>
+        <span className="corner-br">╝</span>
+
+        {/* circuit traces */}
+        <div
+          className="circuit-trace circuit-trace--v"
+          style={{ left: '12%', top: 0, bottom: 0 }}
+        />
+        <div
+          className="circuit-trace circuit-trace--h"
+          style={{ bottom: '20%', left: 0, right: 0 }}
+        />
+
+        {/* glyph fragments */}
+        <span className="glyph-fragment" style={{ top: '8px', right: '16px' }}>⌘</span>
+        <span className="glyph-fragment" style={{ bottom: '10px', left: '14px' }}>⚡</span>
+        <span className="glyph-fragment" style={{ top: '50%', right: '8px' }}>⊚</span>
+        <span className="glyph-fragment" style={{ bottom: '30%', left: '8px' }}>⏘</span>
+
         {intro && (
-          <p className="font-mono-crt text-[16px] text-white/70 italic leading-snug mb-2">
+          <p className="font-mono-crt text-[16px] text-white/70 italic leading-snug mb-2 relative z-10">
             {intro}
           </p>
         )}
 
-        <p className="font-mono-crt text-[18px] text-white/90 leading-snug">
+        <p className="font-mono-crt text-[18px] text-white/90 leading-snug relative z-10">
           {short_answer}
         </p>
 
         {card_meaning.length > 0 && (
-          <div className="mt-2 space-y-1">
+          <div className="mt-2 space-y-1 relative z-10">
             {card_meaning.map((meaning, i) => (
               <p key={i} className="font-mono-crt text-[16px] text-white/80 leading-snug">
                 {meaning}
@@ -42,7 +68,7 @@ export default function ReadingResult({ interpretation }: ReadingResultProps) {
         )}
 
         {advice && (
-          <div className="mt-3 pt-2 border-t border-white/20">
+          <div className="mt-3 pt-2 border-t border-white/20 relative z-10">
             <span className="font-pixel text-[11px] text-white/50">&gt; </span>
             <span className="font-mono-crt text-[16px] text-white/50 leading-snug">
               {advice}

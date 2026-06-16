@@ -104,8 +104,8 @@ export default function Card({
               style={{
                 left: `${d.x}%`,
                 top: `${d.y}%`,
-                fontSize: `${d.size}px`,
-                '--max-op': d.op,
+                fontSize: `${Math.min(d.size + 3, 12)}px`,
+                '--max-op': Math.min(d.op + 0.08, 0.45),
                 '--ad': `${d.delay}s`,
                 '--a-dur': `${d.dur}s`,
               } as React.CSSProperties}
@@ -121,8 +121,14 @@ export default function Card({
           onClick={handleClick}
           aria-label={position ? `${position} — перевернуть карту` : 'Перевернуть карту'}
         >
+          {/* arcane corner symbols */}
+          <span className="card-corner" style={{ top: '-6px', left: '-4px' }}>♰</span>
+          <span className="card-corner" style={{ top: '-6px', right: '-4px' }}>⚹</span>
+          <span className="card-corner" style={{ bottom: '-6px', left: '-4px' }}>♱</span>
+          <span className="card-corner" style={{ bottom: '-6px', right: '-4px' }}>†</span>
+
           <div
-            className="flip-inner border-2 border-white"
+            className="flip-inner border-2 border-white glow-purple scan-heavy"
             style={{ boxShadow: '3px 3px 0 #000, 0 0 0 1px #000' }}
           >
             <div className="flip-face">
@@ -132,7 +138,7 @@ export default function Card({
               <img
                 src={card.image_url}
                 alt={card.name}
-                className={`dither-img w-full h-full object-contain ${card.is_reversed ? 'rotate-180' : ''}`}
+                className={`dither-img w-full h-full object-contain crt-distort ${card.is_reversed ? 'rotate-180' : ''}`}
               />
             </div>
           </div>
