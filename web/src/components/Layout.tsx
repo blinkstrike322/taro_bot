@@ -42,25 +42,33 @@ export default function Layout({
   return (
     <CrtOverlay>
       <div className="w-full max-w-screen overflow-x-hidden border-y-4 border-white bg-black relative flex flex-col min-h-dvh">
-        <div className="header-banner">
-          {/* left corner sigil */}
-          <div className="header-sigil header-sigil--left" />
+        <div className="arcanum-header">
+          <div className="corner-decor top-left" aria-hidden="true">☩</div>
+          <div className="corner-decor top-right" aria-hidden="true">☡</div>
+          <div className="corner-decor bottom-left" aria-hidden="true">‡</div>
+          <div className="corner-decor bottom-right" aria-hidden="true">☤</div>
 
-          {/* center: text + eye glyph */}
-          <div className="header-center">
-            <span className="header-text-top">ARCANA</span>
-            <span className="eye-glyph" aria-hidden="true" />
-            <span className="header-text-bottom">•LINK•</span>
-
-            {/* decorative corner marks */}
-            <span className="absolute top-1 left-1 text-[9px] text-black/25 select-none" aria-hidden="true">◈</span>
-            <span className="absolute top-1 right-1 text-[9px] text-black/25 select-none" aria-hidden="true">◈</span>
-            <span className="absolute bottom-1 left-1 text-[9px] text-black/25 select-none" aria-hidden="true">◈</span>
-            <span className="absolute bottom-1 right-1 text-[9px] text-black/25 select-none" aria-hidden="true">◈</span>
+          <div className="header-content">
+            <span className="sparkle" aria-hidden="true">✦</span>
+            <h1 className="brand-title">
+              ARCANA<br />
+              <span className="highlight">LINK</span>
+            </h1>
+            <span className="sparkle" aria-hidden="true">✦</span>
           </div>
 
-          {/* right corner sigil */}
-          <div className="header-sigil header-sigil--right" />
+          <div className="eye-logo" aria-hidden="true">
+            <div className="eye-rays">
+              <span></span>
+              <span></span>
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+            <div className="eye-ball">
+              <div className="pupil"></div>
+            </div>
+          </div>
         </div>
 
         <div className="flex justify-between font-pixel text-[11px] text-white px-3 py-2 border-b-2 border-white tracking-wide select-none">
