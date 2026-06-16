@@ -59,15 +59,19 @@ export default function Layout({
             <span>╚</span>
           </div>
 
-          <div className="flex-1 flex flex-col items-center justify-center border-x-2 border-black px-2 py-2 text-center relative">
-            <img
-              src="/header-logo.png"
-              alt="DEUS_EX_TAROT"
-              className="dither-img w-auto h-[52px] object-contain"
-              style={{ imageRendering: 'pixelated' }}
-            />
-            <span className="font-pixel text-[9px] tracking-[0.15em] text-black/50 mt-0.5">
-              ARCANA.LINK // DEUS_EX_TAROT
+          <div className="flex-1 flex items-center justify-center border-x-2 border-black px-2 py-3 text-center relative">
+            {/* occult corner symbols */}
+            <span className="absolute top-1 left-1 text-[9px] text-black/30 select-none" aria-hidden="true">♰</span>
+            <span className="absolute top-1 right-1 text-[9px] text-black/30 select-none" aria-hidden="true">⚹</span>
+            <span className="absolute bottom-1 left-1 text-[9px] text-black/30 select-none" aria-hidden="true">♱</span>
+            <span className="absolute bottom-1 right-1 text-[9px] text-black/30 select-none" aria-hidden="true">†</span>
+
+            <span className="frame-title text-[18px] tracking-[0.08em] leading-relaxed">
+              <span className="title-ornament-inner-tl" />
+              <span className="title-ornament-inner-br" />
+              ARCANA.LINK
+              <span className="text-black/40 mx-1">//</span>
+              DEUS_EX_TAROT
             </span>
           </div>
 

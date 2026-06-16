@@ -1,7 +1,6 @@
 'use client';
 
 import { useCallback, useMemo } from 'react';
-import CardBack from './CardBack';
 
 export interface TarotCard {
   id: string;
@@ -132,7 +131,12 @@ export default function Card({
             style={{ boxShadow: '3px 3px 0 #000, 0 0 0 1px #000' }}
           >
             <div className="flip-face">
-              <CardBack />
+              <img
+                src="/cards/back_test.png"
+                alt=""
+                className="dither-img w-full h-full object-contain"
+                style={{ imageRendering: 'pixelated' }}
+              />
             </div>
             <div className="flip-face flip-back bg-white scan-soft flex items-center justify-center">
               <img
