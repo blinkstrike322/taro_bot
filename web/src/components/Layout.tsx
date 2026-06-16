@@ -42,40 +42,25 @@ export default function Layout({
   return (
     <CrtOverlay>
       <div className="w-full max-w-screen overflow-x-hidden border-y-4 border-white bg-black relative flex flex-col min-h-dvh">
-        <div className="flex items-stretch bg-white text-black font-pixel relative overflow-hidden">
-          {/* circuit trace decoration */}
-          <div className="circuit-trace circuit-trace--h" style={{ top: '50%' }} />
+        <div className="header-banner">
+          {/* left corner sigil */}
+          <div className="header-sigil header-sigil--left" />
 
-          <div className="ornament-side px-2">
-            <span>╔</span>
-            <span>║</span>
-            <span>║</span>
-            <span>║</span>
-            <span>╚</span>
+          {/* center: text + eye glyph */}
+          <div className="header-center">
+            <span className="header-text-top">ARCANA</span>
+            <span className="eye-glyph" aria-hidden="true" />
+            <span className="header-text-bottom">•LINK•</span>
+
+            {/* decorative corner marks */}
+            <span className="absolute top-1 left-1 text-[9px] text-black/25 select-none" aria-hidden="true">◈</span>
+            <span className="absolute top-1 right-1 text-[9px] text-black/25 select-none" aria-hidden="true">◈</span>
+            <span className="absolute bottom-1 left-1 text-[9px] text-black/25 select-none" aria-hidden="true">◈</span>
+            <span className="absolute bottom-1 right-1 text-[9px] text-black/25 select-none" aria-hidden="true">◈</span>
           </div>
 
-          <div className="flex-1 flex items-center justify-center border-x-2 border-black px-2 py-3 text-center relative">
-            {/* occult corner symbols */}
-            <span className="absolute top-1 left-1 text-[9px] text-black/30 select-none" aria-hidden="true">♰</span>
-            <span className="absolute top-1 right-1 text-[9px] text-black/30 select-none" aria-hidden="true">⚹</span>
-            <span className="absolute bottom-1 left-1 text-[9px] text-black/30 select-none" aria-hidden="true">♱</span>
-            <span className="absolute bottom-1 right-1 text-[9px] text-black/30 select-none" aria-hidden="true">†</span>
-
-            <span className="frame-title text-[18px] tracking-[0.08em] leading-relaxed">
-              <span className="title-ornament-inner-tl" />
-              <span className="title-ornament-inner-br" />
-              ARCANA.LINK
-
-            </span>
-          </div>
-
-          <div className="ornament-side px-2">
-            <span>╔</span>
-            <span>║</span>
-            <span>║</span>
-            <span>║</span>
-            <span>╚</span>
-          </div>
+          {/* right corner sigil */}
+          <div className="header-sigil header-sigil--right" />
         </div>
 
         <div className="flex justify-between font-pixel text-[11px] text-white px-3 py-2 border-b-2 border-white tracking-wide select-none">
