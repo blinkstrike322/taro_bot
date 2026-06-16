@@ -24,8 +24,8 @@ export default function QuestionInput({ spreadType, onSubmit, loading = false }:
   };
 
   const hint = spreadType === 1
-    ? 'ОДНА КАРТА — ПРЯМОЙ ОТВЕТ'
-    : 'ПРОШЛОЕ · НАСТОЯЩЕЕ · БУДУЩЕЕ';
+    ? 'OДНА КАРТА — ПРЯМOЙ OТВЕТ'
+    : 'ПРOШЛOЕ · НАСТOЯЩЕЕ · БУДУЩЕЕ';
 
   return (
     <div className="px-3 py-3 w-full">
@@ -49,7 +49,7 @@ export default function QuestionInput({ spreadType, onSubmit, loading = false }:
 
       <div className="mt-3 flex justify-center">
         <Button onClick={handleSubmit} variant="primary">
-          {loading ? 'ГАДАНИЕ...' : 'ПОЛУЧИТЬ ОТВЕТ'}
+          {loading ? 'ГАДАНИЕ...' : 'ПOЛУЧИТЬ OТВЕТ'}
         </Button>
       </div>
     </div>
