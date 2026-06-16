@@ -42,11 +42,6 @@ export default function Layout({
   return (
     <CrtOverlay>
       <div className="w-full max-w-screen overflow-x-hidden border-y-4 border-white bg-black relative flex flex-col min-h-dvh">
-        <div className="flex justify-between bg-black text-white font-pixel text-[11px] leading-none px-2 py-2 border-b-2 border-white tracking-tight">
-          <span>┌─[DEUS_EX_TAROT]─[root@arcana]─[~]</span>
-          <span className="tracking-[0.2em]">││ 0xDE ││ 0x10 ││</span>
-        </div>
-
         <div className="flex items-stretch bg-white text-black font-pixel relative overflow-hidden">
           {/* circuit trace decoration */}
           <div className="circuit-trace circuit-trace--h" style={{ top: '50%' }} />
@@ -70,8 +65,7 @@ export default function Layout({
               <span className="title-ornament-inner-tl" />
               <span className="title-ornament-inner-br" />
               ARCANA.LINK
-              <span className="text-black/40 mx-1">//</span>
-              DEUS_EX_TAROT
+
             </span>
           </div>
 
