@@ -61,7 +61,7 @@ export default function Spread1Card({ apiCall }: Spread1CardProps) {
         <div className="w-48 sm:w-56">
           <Card
             card={card}
-            position="ТВОЯ КАРТА"
+            position="ТВOЯ КАРТА"
             flipped={flipped}
             onFlip={handleFlip}
           />

@@ -22,7 +22,7 @@ interface Spread3CardsProps {
   apiCall: (question: string | null) => Promise<ReadingData>;
 }
 
-const POSITIONS = ['ПРОШЛОЕ', 'НАСТОЯЩЕЕ', 'БУДУЩЕЕ'];
+const POSITIONS = ['ПРOШЛOЕ', 'НАСТOЯЩЕЕ', 'БУДУЩЕЕ'];
 
 export default function Spread3Cards({ apiCall }: Spread3CardsProps) {
   const [phase, setPhase] = useState<Phase>('input');

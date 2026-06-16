@@ -87,7 +87,7 @@ export default function Home() {
     try {
       localStorage.setItem('taro_character', id);
     } catch {}
-    showToast('ПРОВОДНИК СМЕНЕН');
+    showToast('ПРOВOДНИК СМЕНЕН');
   }, [showToast]);
 
   const handleNewSpread = useCallback(() => {
@@ -114,7 +114,7 @@ export default function Home() {
       setDailyFlipped(false);
       setScreen('daily-result');
     } catch {
-      showToast('ОШИБКА. ПОПРОБУЙ СНОВА');
+      showToast('OШИБКА. ПOПРOБУЙ СНOВА');
     } finally {
       setDailyLoading(false);
     }
