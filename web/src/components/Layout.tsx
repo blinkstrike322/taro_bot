@@ -50,24 +50,8 @@ export default function Layout({
 
           <div className="header-content">
             <span className="sparkle" aria-hidden="true">✦</span>
-            <h1 className="brand-title">
-              ARCANA<br />
-              <span className="highlight">LINK</span>
-            </h1>
+            <h1 className="brand-title">ARCANUM.ocv</h1>
             <span className="sparkle" aria-hidden="true">✦</span>
-          </div>
-
-          <div className="eye-logo" aria-hidden="true">
-            <div className="eye-rays">
-              <span></span>
-              <span></span>
-              <span></span>
-              <span></span>
-              <span></span>
-            </div>
-            <div className="eye-ball">
-              <div className="pupil"></div>
-            </div>
           </div>
         </div>
 
