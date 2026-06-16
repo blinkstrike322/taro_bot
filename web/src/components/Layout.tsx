@@ -79,7 +79,7 @@ export default function Layout({
         </div>
 
         <div className="flex justify-between font-pixel text-[11px] text-white px-3 py-2 border-b-2 border-white tracking-wide select-none">
-          <span>♰ SPREAD: {spreadType ?? '—'}</span>
+          <span><span className="blink">■</span> SPREAD: {spreadType ?? '—'}</span>
           <span className="flex items-center gap-1.5">
             {characterId && CHARACTER_INFO[characterId] && (
               <>
