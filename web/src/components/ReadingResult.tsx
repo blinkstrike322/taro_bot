@@ -19,8 +19,6 @@ export default function ReadingResult({ interpretation }: ReadingResultProps) {
       <div className="stream-label mb-2">
         DIVINATION.STREAM
         <span className="text-white/20 mx-1">//</span>
-        PAGE
-        <span className="text-white/20 mx-1">//</span>
         READOUT
       </div>
 
@@ -41,11 +39,15 @@ export default function ReadingResult({ interpretation }: ReadingResultProps) {
           style={{ bottom: '20%', left: 0, right: 0 }}
         />
 
-        {/* glyph fragments */}
-        <span className="glyph-fragment" style={{ top: '8px', right: '16px' }}>⌘</span>
-        <span className="glyph-fragment" style={{ bottom: '10px', left: '14px' }}>⚡</span>
-        <span className="glyph-fragment" style={{ top: '50%', right: '8px' }}>⊚</span>
-        <span className="glyph-fragment" style={{ bottom: '30%', left: '8px' }}>⏘</span>
+        {/* square and dot ornaments along edges */}
+        <span className="glyph-fragment" style={{ top: '8px', right: '20%' }}>■</span>
+        <span className="glyph-fragment" style={{ top: '8px', right: '12%' }}>·</span>
+        <span className="glyph-fragment" style={{ bottom: '8px', right: '20%' }}>·</span>
+        <span className="glyph-fragment" style={{ bottom: '8px', right: '12%' }}>■</span>
+        <span className="glyph-fragment" style={{ top: '8px', left: '20%' }}>·</span>
+        <span className="glyph-fragment" style={{ top: '8px', left: '12%' }}>■</span>
+        <span className="glyph-fragment" style={{ bottom: '8px', left: '20%' }}>■</span>
+        <span className="glyph-fragment" style={{ bottom: '8px', left: '12%' }}>·</span>
 
         {intro && (
           <p className="font-mono-crt text-[16px] text-white/70 italic leading-snug mb-2 relative z-10">
