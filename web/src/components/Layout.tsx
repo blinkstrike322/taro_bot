@@ -9,7 +9,7 @@ import Toast from './Toast';
 const CHARACTER_INFO: Record<string, { name: string; color: string }> = {
   shadow_walker: { name: 'Странница Теней', color: '#7B2D8E' },
   ruin_keeper: { name: 'Хранитель Руин', color: '#B8860B' },
-  spark_of_chaos: { name: 'Искра Хаоса', color: '#E63946' },
+  spark_of_chaos: { name: 'Искра Хаoса', color: '#E63946' },
 };
 
 interface LayoutProps {

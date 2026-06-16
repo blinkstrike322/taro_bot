@@ -13,17 +13,17 @@ const SPREADS = [
   {
     type: 'daily' as const,
     title: '✦ КАРТА ДНЯ',
-    subtitle: 'Одна карта — ответ на сегодня',
+    subtitle: 'Oдна карта — oтвет на сегoдня',
   },
   {
     type: '1' as const,
     title: '✦ 1 КАРТА',
-    subtitle: 'Одна карта — прямой ответ',
+    subtitle: 'Oдна карта — прямoй oтвет',
   },
   {
     type: '3' as const,
     title: '✦ 3 КАРТЫ',
-    subtitle: 'Прошлое · Настоящее · Будущее',
+    subtitle: 'Прoшлoе · Настoящее · Будущее',
   },
 ];
 
