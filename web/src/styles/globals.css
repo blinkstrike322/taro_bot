@@ -457,7 +457,7 @@ body {
    ================================================================ */
 .card-aura {
   position: absolute;
-  inset: -70px;
+  inset: -75px -88px;
   pointer-events: none;
   z-index: 0;
   transition: transform 0.8s ease, filter 0.8s ease;
