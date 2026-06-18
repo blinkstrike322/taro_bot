@@ -64,7 +64,10 @@ async def call_llm(messages: list[dict], model: str, max_tokens: int = 1500) -> 
             },
         )
         response.raise_for_status()
-        return response.json()["choices"][0]["message"]["content"]
+        content = response.json()["choices"][0]["message"]["content"]
+        if content is None:
+            raise ValueError(f"Model {model} returned null content")
+        return content
 
 
 async def call_llm_with_fallback(messages: list[dict]) -> str:
