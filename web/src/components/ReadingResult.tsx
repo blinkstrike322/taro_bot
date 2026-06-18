@@ -3,7 +3,7 @@
 interface Interpretation {
   intro: string;
   short_answer: string;
-  card_meaning: string[];
+  card_meaning: string[] | string;
   advice: string;
 }
 
@@ -59,9 +59,9 @@ export default function ReadingResult({ interpretation }: ReadingResultProps) {
           {short_answer}
         </p>
 
-        {card_meaning.length > 0 && (
+        {card_meaning && (Array.isArray(card_meaning) ? card_meaning.length > 0 : card_meaning) && (
           <div className="mt-2 space-y-1 relative z-10">
-            {card_meaning.map((meaning, i) => (
+            {(Array.isArray(card_meaning) ? card_meaning : [card_meaning]).map((meaning, i) => (
               <p key={i} className="font-mono-crt text-[16px] text-white/80 leading-snug">
                 {meaning}
               </p>

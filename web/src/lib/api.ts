@@ -21,7 +21,7 @@ export interface TarotCardData {
 export interface Interpretation {
   intro: string;
   short_answer: string;
-  card_meaning: string[];
+  card_meaning: string[] | string;
   advice: string;
 }
 

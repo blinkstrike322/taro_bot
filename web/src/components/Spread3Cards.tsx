@@ -13,7 +13,7 @@ interface ReadingData {
   interpretation: {
     intro: string;
     short_answer: string;
-    card_meaning: string[];
+    card_meaning: string[] | string;
     advice: string;
   };
 }
