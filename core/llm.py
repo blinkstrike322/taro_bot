@@ -13,11 +13,18 @@ from config import settings
 logger = logging.getLogger(__name__)
 
 FALLBACK_MODELS = [
-    "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
-    "nvidia/nemotron-3-super-120b-a12b:free",
-    "meta-llama/llama-3.3-70b-instruct:free",
-    "google/gemma-4-31b-it:free",
+    # #1: Qwen3-Next 80B MoE (3B active) — best Russian creative writing,
+    #    fast inference, strong multilingual support (119 languages)
     "qwen/qwen3-next-80b-a3b-instruct:free",
+    # #2: Qwen3.6 35B MoE (3B active) — newer Qwen, excellent multilingual
+    "qwen/qwen3.6-35b-a3b:free",
+    # #3: Llama 3.3 70B — solid general model, good Russian, reliable
+    "meta-llama/llama-3.3-70b-instruct:free",
+    # #4: Gemma 4 31B — decent general fallback
+    "google/gemma-4-31b-it:free",
+    # #5: Nemotron 3 Super 120B — bigger fallback, slower but capable
+    "nvidia/nemotron-3-super-120b-a12b:free",
+    # #6: Ultimate catch-all router
     "openrouter/free",
 ]
 
@@ -48,7 +55,7 @@ def strip_emojis(text: str) -> str:
     return EMOJI_PATTERN.sub("", text)
 
 
-async def call_llm(messages: list[dict], model: str, max_tokens: int = 1500) -> str:
+async def call_llm(messages: list[dict], model: str, max_tokens: int = 2000) -> str:
     async with httpx.AsyncClient(timeout=60.0) as client:
         response = await client.post(
             "https://openrouter.ai/api/v1/chat/completions",
@@ -60,7 +67,7 @@ async def call_llm(messages: list[dict], model: str, max_tokens: int = 1500) -> 
                 "model": model,
                 "messages": messages,
                 "max_tokens": max_tokens,
-                "temperature": 0.7,
+                "temperature": 0.8,
             },
         )
         response.raise_for_status()
