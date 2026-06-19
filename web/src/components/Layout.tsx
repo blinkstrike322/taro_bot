@@ -75,7 +75,7 @@ export default function Layout({
           ═══ ❖ ═══ ═══ ❖ ═══
         </div>
 
-        <div className="flex-1 overflow-y-auto">{children}</div>
+        <div className="flex-1 overflow-y-auto overflow-x-hidden">{children}</div>
 
         <div className="flex flex-col gap-2 px-3 py-2">
           <div className="flex flex-nowrap justify-center gap-1.5">
