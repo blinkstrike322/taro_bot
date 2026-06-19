@@ -13,16 +13,13 @@ from config import settings
 logger = logging.getLogger(__name__)
 
 FALLBACK_MODELS = [
-    # #1: DeepSeek V3 Chat (paid, ~$0.098/M tok) — excellent Russian,
-    #    high rate limits, reliable. 1 reading ~0.5K tok = ~16000 readings/$
-    "deepseek/deepseek-chat-v3-0324",
-    # #2: Qwen3-Next 80B MoE (free) — good Russian, fast when not rate-limited
+    # #1: Qwen3-Next 80B MoE (free) — best Russian among free models
     "qwen/qwen3-next-80b-a3b-instruct:free",
-    # #3: Meta Llama 3.3 70B (free) — solid general fallback
+    # #2: Meta Llama 3.3 70B (free) — solid general fallback
     "meta-llama/llama-3.3-70b-instruct:free",
-    # #4: Nemotron 3 Super 120B (free) — big capable fallback
+    # #3: Nemotron 3 Super 120B (free) — big capable fallback
     "nvidia/nemotron-3-super-120b-a12b:free",
-    # #5: Ultimate catch-all router
+    # #4: Ultimate catch-all router
     "openrouter/free",
 ]
 
