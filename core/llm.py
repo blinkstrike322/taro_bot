@@ -13,18 +13,16 @@ from config import settings
 logger = logging.getLogger(__name__)
 
 FALLBACK_MODELS = [
-    # #1: Qwen3-Next 80B MoE (3B active) — best Russian creative writing,
-    #    fast inference, strong multilingual support (119 languages)
+    # #1: DeepSeek V3 Chat (paid, ~$0.098/M tok) — excellent Russian,
+    #    high rate limits, reliable. 1 reading ~0.5K tok = ~16000 readings/$
+    "deepseek/deepseek-chat-v3-0324",
+    # #2: Qwen3-Next 80B MoE (free) — good Russian, fast when not rate-limited
     "qwen/qwen3-next-80b-a3b-instruct:free",
-    # #2: Qwen3.6 35B MoE (3B active) — newer Qwen, excellent multilingual
-    "qwen/qwen3.6-35b-a3b:free",
-    # #3: Llama 3.3 70B — solid general model, good Russian, reliable
+    # #3: Meta Llama 3.3 70B (free) — solid general fallback
     "meta-llama/llama-3.3-70b-instruct:free",
-    # #4: Gemma 4 31B — decent general fallback
-    "google/gemma-4-31b-it:free",
-    # #5: Nemotron 3 Super 120B — bigger fallback, slower but capable
+    # #4: Nemotron 3 Super 120B (free) — big capable fallback
     "nvidia/nemotron-3-super-120b-a12b:free",
-    # #6: Ultimate catch-all router
+    # #5: Ultimate catch-all router
     "openrouter/free",
 ]
 
@@ -80,18 +78,13 @@ async def call_llm(messages: list[dict], model: str, max_tokens: int = 2000) -> 
 async def call_llm_with_fallback(messages: list[dict]) -> str:
     last_error = None
     for model in FALLBACK_MODELS:
-        for attempt in range(3):
+        for attempt in range(2):
             try:
                 return await call_llm(messages, model)
             except httpx.HTTPStatusError as e:
-                if e.response.status_code == 429 and attempt < 2:
-                    delay = 1 + attempt * 2
-                    logger.warning(
-                        f"Model {model} rate limited (429), "
-                        f"retry {attempt + 1}/3 in {delay}s"
-                    )
-                    await asyncio.sleep(delay)
-                    continue
+                if e.response.status_code == 429 and attempt == 0:
+                    logger.warning(f"Model {model} rate limited (429), skip")
+                    break
                 last_error = e
                 logger.warning(f"Model {model} failed: {e}")
                 break
