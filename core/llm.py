@@ -13,13 +13,10 @@ from config import settings
 logger = logging.getLogger(__name__)
 
 FALLBACK_MODELS = [
-    # #1: Qwen3-Next 80B MoE (free) — best Russian among free models
     "qwen/qwen3-next-80b-a3b-instruct:free",
-    # #2: Meta Llama 3.3 70B (free) — solid general fallback
     "meta-llama/llama-3.3-70b-instruct:free",
-    # #3: Nemotron 3 Super 120B (free) — big capable fallback
+    "google/gemma-4-31b-it:free",
     "nvidia/nemotron-3-super-120b-a12b:free",
-    # #4: Ultimate catch-all router
     "openrouter/free",
 ]
 
@@ -75,13 +72,18 @@ async def call_llm(messages: list[dict], model: str, max_tokens: int = 2000) -> 
 async def call_llm_with_fallback(messages: list[dict]) -> str:
     last_error = None
     for model in FALLBACK_MODELS:
-        for attempt in range(2):
+        for attempt in range(3):
             try:
                 return await call_llm(messages, model)
             except httpx.HTTPStatusError as e:
-                if e.response.status_code == 429 and attempt == 0:
-                    logger.warning(f"Model {model} rate limited (429), skip")
-                    break
+                if e.response.status_code == 429 and attempt < 2:
+                    delay = (attempt + 1) * 2
+                    logger.warning(
+                        f"Model {model} rate limited (429), "
+                        f"retry {attempt + 1}/3 in {delay}s"
+                    )
+                    await asyncio.sleep(delay)
+                    continue
                 last_error = e
                 logger.warning(f"Model {model} failed: {e}")
                 break
