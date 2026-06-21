@@ -174,7 +174,7 @@ async def get_user_readings_by_month(
 ) -> list[dict]:
     """Return readings for a tg_id in given month/year, ordered by day."""
     cursor = await db.execute(
-        """SELECT r.created_at, r.interpretation, r.cards_data
+        """SELECT r.id, r.type, r.question, r.created_at, r.cards_data
            FROM readings r
            JOIN users u ON r.user_id = u.id
            WHERE u.tg_id = ?
@@ -184,18 +184,16 @@ async def get_user_readings_by_month(
         (tg_id, year, month),
     )
     rows = await cursor.fetchall()
-    result = []
-    for row in rows:
-        interpretation = json.loads(row[1])
-        cards_data = json.loads(row[2])
-        date_str = row[0][:10]
-        chosen_card = cards_data.get("chosen_card", {}) if isinstance(cards_data, dict) else {}
-        result.append({
-            "date": date_str,
-            "card_name": chosen_card.get("name", "") if isinstance(chosen_card, dict) else "",
-            "interpretation": interpretation.get("short_answer", "") if isinstance(interpretation, dict) else "",
-        })
-    return result
+    return [
+        {
+            "id": row[0],
+            "type": row[1],
+            "question": row[2],
+            "created_at": row[3],
+            "cards_data": row[4],
+        }
+        for row in rows
+    ]
 
 
 async def update_character(db: aiosqlite.Connection, tg_id: int, character_id: str) -> None:
