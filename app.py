@@ -168,22 +168,6 @@ async def main() -> None:
         BotCommand(command="my", description="Статус подписки"),
     ])
 
-    await bot.set_my_short_description(
-        "⚡ amotaro_bot :: digital occult"
-    )
-    await bot.set_my_description(
-        "[amotaro_bot] digital occult interface initialized\n\n"
-        "проводники:\n"
-        "  Странница Теней    · тени и поэзия\n"
-        "  Хранитель Руин     · древняя мудрость\n"
-        "  Искра Хаоса        · огонь и правда\n\n"
-        "расклады: 1 карта · 3 карты · карта дня\n"
-        "ядро: нейросеть\n\n"
-        "[age_restriction] 18+\n"
-        f"[manifest] {settings.OFFER_URL}\n"
-        "[status] online"
-    )
-
     dp = Dispatcher(storage=MemoryStorage())
 
     register_handlers(dp)
