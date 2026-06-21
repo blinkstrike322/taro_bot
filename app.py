@@ -158,6 +158,7 @@ async def main() -> None:
         BotCommand(command="start", description="Запустить бота"),
         BotCommand(command="subscribe", description="Купить подписку"),
         BotCommand(command="my", description="Статус подписки"),
+        BotCommand(command="offer", description="Оферта и условия"),
     ])
 
     dp = Dispatcher(storage=MemoryStorage())
