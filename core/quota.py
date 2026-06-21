@@ -3,7 +3,7 @@ import logging
 
 import aiosqlite
 from config import settings
-from storage.db import is_subscribed, get_monthly_non_daily_count
+from storage.db import is_subscribed, get_monthly_non_daily_count, get_daily_card_count_today
 
 logger = logging.getLogger(__name__)
 
@@ -38,11 +38,20 @@ async def check_quota(
     Returns {"ok": True, "remaining": N, "limit": N}
     or {"ok": False, "reason": str, "needs_subscription": bool, "remaining": 0}
 
-    - daily card: always ok
+    - daily card: 1 per day
     - non-daily: both free and paid use monthly limits
     """
     if spread_type == "daily":
-        return {"ok": True, "remaining": None, "limit": None}
+        daily_count = await get_daily_card_count_today(db, user_id)
+        if daily_count >= 1:
+            return {
+                "ok": False,
+                "reason": "Карту дня можно получить только один раз в день. Возвращайся завтра.",
+                "needs_subscription": False,
+                "remaining": 0,
+                "limit": 1,
+            }
+        return {"ok": True, "remaining": 1, "limit": 1}
 
     if _is_admin(tg_id):
         return {"ok": True, "remaining": None, "limit": None, "admin": True}

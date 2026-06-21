@@ -102,7 +102,8 @@ async def handle_spread(request):
     if not quota["ok"]:
         return web.json_response({"error": quota["reason"]}, status=429)
 
-    count = 3 if spread_type == 3 else 1
+    is_daily = spread_type_str == "daily"
+    count = 3 if not is_daily and spread_type == 3 else 1
     cards = draw_cards(count)
     interpretation = await interpret_reading(
         question=question,
@@ -113,7 +114,7 @@ async def handle_spread(request):
     await save_reading(
         db=db,
         user_id=user.id,
-        type=f"spread_{spread_type}",
+        type="daily" if is_daily else f"spread_{spread_type}",
         question=question,
         cards_data={"cards": cards, "spread_type": spread_type},
         interpretation=interpretation,
