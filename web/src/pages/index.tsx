@@ -113,8 +113,9 @@ export default function Home() {
       setDailyData({ cards, interpretation: result.interpretation });
       setDailyFlipped(false);
       setScreen('daily-result');
-    } catch {
-      showToast('OШИБКА. ПOПРOБУЙ СНOВА');
+    } catch (err: any) {
+      const msg = err?.response?.error || err?.message || 'OШИБКА. ПOПРOБУЙ СНOВА';
+      showToast(msg);
     } finally {
       setDailyLoading(false);
     }

@@ -46,7 +46,7 @@ async def check_quota(
         if daily_count >= 1:
             return {
                 "ok": False,
-                "reason": "Карту дня можно получить только один раз в день. Возвращайся завтра.",
+                "reason": "ТЕНЬ УЖЕ ПОГЛОТИЛА СЕГОДНЯШНИЙ ДЕНЬ. ВОЗВРАЩАЙСЯ С РАССВЕТОМ.",
                 "needs_subscription": False,
                 "remaining": 0,
                 "limit": 1,

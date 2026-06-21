@@ -62,7 +62,13 @@ export async function spread(
       character_id: characterId,
     }),
   });
-  if (!res.ok) throw new Error('Spread failed');
+  if (!res.ok) {
+    let msg = 'Расклад не удался';
+    try { const body = await res.json(); msg = body.error || msg; } catch {}
+    const err: any = new Error(msg);
+    err.response = { error: msg };
+    throw err;
+  }
   return res.json();
 }
 
