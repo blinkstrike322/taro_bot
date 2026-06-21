@@ -36,6 +36,20 @@ CREATE TABLE IF NOT EXISTS readings (
 _db_connection: Optional[aiosqlite.Connection] = None
 
 
+async def _migrate_schema(db: aiosqlite.Connection) -> None:
+    """Idiomatic SQLite migrations — try ALTER, ignore if exists."""
+    migrations = [
+        "ALTER TABLE users ADD COLUMN subscription_end TEXT",
+        "ALTER TABLE users ADD COLUMN first_month_done INTEGER DEFAULT 0",
+    ]
+    for sql in migrations:
+        try:
+            await db.execute(sql)
+            await db.commit()
+        except aiosqlite.OperationalError:
+            pass  # column already exists
+
+
 async def init_db(db_path: str = "taro_bot.db") -> aiosqlite.Connection:
     """Create persistent connection, enable WAL mode, create tables."""
     global _db_connection
@@ -45,6 +59,7 @@ async def init_db(db_path: str = "taro_bot.db") -> aiosqlite.Connection:
     await conn.execute("PRAGMA foreign_keys=ON")
     await conn.execute(_CREATE_USERS_TABLE)
     await conn.execute(_CREATE_READINGS_TABLE)
+    await _migrate_schema(conn)
     await conn.commit()
     _db_connection = conn
     return conn
@@ -228,6 +243,73 @@ async def update_reminder_sent(db: aiosqlite.Connection, tg_id: int) -> None:
     """Update the last_reminder_sent_at timestamp for a user."""
     await db.execute(
         "UPDATE users SET last_reminder_sent_at = datetime('now') WHERE tg_id = ?",
+        (tg_id,),
+    )
+    await db.commit()
+
+
+async def is_subscribed(db: aiosqlite.Connection, tg_id: int) -> bool:
+    """Check if user has active subscription (not expired)."""
+    cursor = await db.execute(
+        "SELECT subscription_end FROM users WHERE tg_id = ?",
+        (tg_id,),
+    )
+    row = await cursor.fetchone()
+    if row is None or row[0] is None:
+        return False
+    return row[0] > datetime.utcnow().isoformat()[:19]
+
+
+async def get_daily_non_daily_count(db: aiosqlite.Connection, user_id: int) -> int:
+    """Count non-daily readings today for a user."""
+    cursor = await db.execute(
+        "SELECT COUNT(*) FROM readings WHERE user_id = ? AND type != 'daily' AND date(created_at) = date('now')",
+        (user_id,),
+    )
+    row = await cursor.fetchone()
+    return row[0]
+
+
+async def get_monthly_non_daily_count(db: aiosqlite.Connection, user_id: int) -> int:
+    """Count non-daily readings this month for a user."""
+    cursor = await db.execute(
+        "SELECT COUNT(*) FROM readings WHERE user_id = ? AND type != 'daily' AND strftime('%Y-%m', created_at) = strftime('%Y-%m', 'now')",
+        (user_id,),
+    )
+    row = await cursor.fetchone()
+    return row[0]
+
+
+async def get_user_by_tg_id(db: aiosqlite.Connection, tg_id: int) -> Optional[User]:
+    """Get full user row by tg_id."""
+    cursor = await db.execute(
+        "SELECT id, tg_id, character_id, created_at, last_active_at, last_reminder_sent_at, subscription_end, first_month_done FROM users WHERE tg_id = ?",
+        (tg_id,),
+    )
+    row = await cursor.fetchone()
+    if row is None:
+        return None
+    return User(
+        id=row[0], tg_id=row[1], character_id=row[2],
+        created_at=row[3], last_active_at=row[4],
+        last_reminder_sent_at=row[5],
+        subscription_end=row[6], first_month_done=row[7],
+    )
+
+
+async def activate_subscription(db: aiosqlite.Connection, tg_id: int, first_month: bool = False) -> None:
+    """Set subscription_end to 30 days from now."""
+    await db.execute(
+        "UPDATE users SET subscription_end = datetime('now', '+30 days'), first_month_done = ? WHERE tg_id = ?",
+        (1 if first_month else 0, tg_id),
+    )
+    await db.commit()
+
+
+async def update_first_month_done(db: aiosqlite.Connection, tg_id: int) -> None:
+    """Mark that user has used their first-month discount."""
+    await db.execute(
+        "UPDATE users SET first_month_done = 1 WHERE tg_id = ?",
         (tg_id,),
     )
     await db.commit()
