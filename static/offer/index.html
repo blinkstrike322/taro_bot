@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>@amotaro_bot — Оферта и Политика конфиденциальности</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Nunito+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0e0c0b;
+    --bg-card: #1a1714;
+    --fg: #e8e0d4;
+    --fg-muted: #9a9186;
+    --accent: #c9a243;
+    --accent-dim: rgba(201,162,67,0.15);
+    --accent-glow: rgba(201,162,67,0.25);
+    --border: rgba(201,162,67,0.2);
+    --radius: 12px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Nunito Sans', sans-serif;
+    background: var(--bg);
+    color: var(--fg);
+    line-height: 1.75;
+    font-size: 15px;
+    font-weight: 300;
+  }
+
+  /* === Фоновая атмосфера === */
+  .atmosphere {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+  }
+  .atmosphere .orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(120px);
+    opacity: 0.35;
+  }
+  .atmosphere .orb-1 {
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(201,162,67,0.3), transparent 70%);
+    top: -200px; left: -100px;
+    animation: orbFloat1 20s ease-in-out infinite;
+  }
+  .atmosphere .orb-2 {
+    width: 500px; height: 500px;
+    background: radial-gradient(circle, rgba(160,120,40,0.25), transparent 70%);
+    bottom: -150px; right: -100px;
+    animation: orbFloat2 25s ease-in-out infinite;
+  }
+  .atmosphere .orb-3 {
+    width: 300px; height: 300px;
+    background: radial-gradient(circle, rgba(201,162,67,0.15), transparent 70%);
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    animation: orbFloat3 18s ease-in-out infinite;
+  }
+  @keyframes orbFloat1 {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(60px, 40px) scale(1.1); }
+  }
+  @keyframes orbFloat2 {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(-50px, -30px) scale(1.15); }
+  }
+  @keyframes orbFloat3 {
+    0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.15; }
+    50% { transform: translate(-50%, -50%) scale(1.3); opacity: 0.3; }
+  }
+
+  /* === Звёздочки === */
+  .stars {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .star {
+    position: absolute;
+    width: 2px; height: 2px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: twinkle var(--dur) ease-in-out infinite;
+    opacity: 0;
+  }
+  @keyframes twinkle {
+    0%, 100% { opacity: 0; transform: scale(0.5); }
+    50% { opacity: var(--max-o); transform: scale(1); }
+  }
+
+  /* === Контейнер === */
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+  }
+
+  /* === Шапка === */
+  .header {
+    text-align: center;
+    padding: 60px 0 50px;
+    position: relative;
+  }
+  .header-symbol {
+    font-size: 48px;
+    color: var(--accent);
+    margin-bottom: 16px;
+    display: block;
+    animation: symbolPulse 4s ease-in-out infinite;
+    filter: drop-shadow(0 0 20px var(--accent-glow));
+  }
+  @keyframes symbolPulse {
+    0%, 100% { transform: scale(1); filter: drop-shadow(0 0 20px var(--accent-glow)); }
+    50% { transform: scale(1.05); filter: drop-shadow(0 0 35px var(--accent-glow)); }
+  }
+  .header h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(28px, 5vw, 42px);
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 0.02em;
+    line-height: 1.2;
+    margin-bottom: 8px;
+  }
+  .header .bot-handle {
+    font-size: 18px;
+    color: var(--fg-muted);
+    font-weight: 400;
+    letter-spacing: 0.04em;
+  }
+  .header .date-line {
+    margin-top: 16px;
+    font-size: 13px;
+    color: var(--fg-muted);
+    opacity: 0.7;
+  }
+  .header-divider {
+    width: 120px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    margin: 30px auto 0;
+  }
+
+  /* === Кнопка PDF === */
+  .pdf-btn-wrap {
+    text-align: center;
+    margin-bottom: 40px;
+  }
+  .pdf-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 32px;
+    background: linear-gradient(135deg, var(--accent), #a8852e);
+    color: #0e0c0b;
+    font-family: 'Nunito Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 24px rgba(201,162,67,0.3);
+    letter-spacing: 0.03em;
+  }
+  .pdf-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 36px rgba(201,162,67,0.45);
+  }
+  .pdf-btn:active { transform: translateY(0); }
+  .pdf-btn svg { width: 18px; height: 18px; }
+
+  /* === Навигация по секциям === */
+  .toc {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px 32px;
+    margin-bottom: 48px;
+  }
+  .toc-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 16px;
+  }
+  .toc-columns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px 24px;
+  }
+  .toc a {
+    color: var(--fg-muted);
+    text-decoration: none;
+    font-size: 13.5px;
+    padding: 4px 0;
+    display: block;
+    transition: color 0.2s;
+    border-bottom: 1px solid transparent;
+  }
+  .toc a:hover {
+    color: var(--accent);
+    border-bottom-color: var(--border);
+  }
+  .toc a .toc-num {
+    color: var(--accent);
+    font-weight: 600;
+    margin-right: 6px;
+    opacity: 0.7;
+  }
+
+  /* === Секция документа === */
+  .doc-section {
+    margin-bottom: 56px;
+  }
+  .doc-section-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(24px, 4vw, 32px);
+    font-weight: 700;
+    color: var(--fg);
+    margin-bottom: 8px;
+    line-height: 1.3;
+  }
+  .doc-section-sub {
+    font-size: 14px;
+    color: var(--fg-muted);
+    margin-bottom: 28px;
+    line-height: 1.6;
+  }
+  .section-divider {
+    width: 100%;
+    height: 1px;
+    background: linear-gradient(90deg, var(--accent), var(--border), transparent);
+    margin-bottom: 32px;
+  }
+
+  /* === Подсекции === */
+  .sub-heading {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--accent);
+    margin: 36px 0 12px;
+    padding-left: 16px;
+    border-left: 2px solid var(--accent);
+  }
+
+  /* === Параграфы и списки === */
+  .doc-section p {
+    margin-bottom: 12px;
+    text-align: justify;
+  }
+  .doc-section ul, .doc-section ol {
+    margin: 10px 0 14px 24px;
+  }
+  .doc-section li {
+    margin-bottom: 6px;
+    padding-left: 4px;
+  }
+  .doc-section li::marker {
+    color: var(--accent);
+  }
+
+  /* === Жирный текст === */
+  .doc-section strong {
+    color: var(--fg);
+    font-weight: 600;
+  }
+
+  /* === Определения === */
+  .definition {
+    background: var(--accent-dim);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 8px;
+  }
+  .definition strong {
+    color: var(--accent);
+  }
+
+  /* === Таблица === */
+  .doc-table-wrap {
+    overflow-x: auto;
+    margin: 16px 0 20px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+  }
+  .doc-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+  .doc-table th {
+    background: var(--accent-dim);
+    color: var(--accent);
+    font-weight: 600;
+    text-align: left;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .doc-table td {
+    padding: 10px 16px;
+    border-bottom: 1px solid rgba(201,162,67,0.08);
+    vertical-align: top;
+  }
+  .doc-table tr:last-child td { border-bottom: none; }
+
+  /* === Важные блоки === */
+  .callout {
+    background: linear-gradient(135deg, rgba(201,162,67,0.12), rgba(201,162,67,0.05));
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 8px 8px 0;
+    padding: 16px 20px;
+    margin: 16px 0;
+    font-size: 14px;
+  }
+  .callout strong {
+    color: var(--accent);
+  }
+
+  /* === Реквизиты === */
+  .requisites {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px 28px;
+    margin: 24px 0;
+  }
+  .requisites .req-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 6px;
+    font-size: 14px;
+  }
+  .requisites .req-label {
+    color: var(--fg-muted);
+    min-width: 160px;
+    flex-shrink: 0;
+  }
+  .requisites .req-value {
+    color: var(--fg);
+    font-weight: 600;
+  }
+
+  /* === Футер === */
+  .footer {
+    text-align: center;
+    padding: 40px 0 20px;
+    border-top: 1px solid var(--border);
+    margin-top: 40px;
+  }
+  .footer p {
+    color: var(--fg-muted);
+    font-size: 13px;
+    opacity: 0.6;
+  }
+
+  /* === Скролл-анимация === */
+  .fade-in {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+  .fade-in.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* === Печать / PDF === */
+  @media print {
+    @page {
+      size: A4;
+      margin: 20mm 18mm 20mm 18mm;
+    }
+    body {
+      background: #fff !important;
+      color: #1a1a1a !important;
+      font-size: 11pt !important;
+      line-height: 1.65 !important;
+    }
+    .atmosphere, .stars, .pdf-btn-wrap, .toc, .footer { display: none !important; }
+    .container { padding: 0 !important; max-width: 100% !important; }
+    .header {
+      padding: 0 0 20px !important;
+      text-align: left !important;
+    }
+    .header-symbol {
+      font-size: 32px !important;
+      animation: none !important;
+      filter: none !important;
+      margin-bottom: 8px !important;
+      color: #8a6d1b !important;
+    }
+    .header h1 {
+      font-size: 22pt !important;
+      color: #1a1a1a !important;
+      margin-bottom: 4px !important;
+    }
+    .header .bot-handle {
+      color: #555 !important;
+      font-size: 12pt !important;
+    }
+    .header .date-line {
+      color: #777 !important;
+      margin-top: 8px !important;
+    }
+    .header-divider {
+      background: linear-gradient(90deg, #c9a243, #ddd, transparent) !important;
+      margin: 16px 0 0 !important;
+    }
+    .doc-section { margin-bottom: 28px !important; page-break-inside: avoid; }
+    .doc-section-title {
+      font-size: 16pt !important;
+      color: #1a1a1a !important;
+      margin-bottom: 4px !important;
+    }
+    .doc-section-sub {
+      color: #666 !important;
+      font-size: 10pt !important;
+      margin-bottom: 16px !important;
+    }
+    .section-divider {
+      background: #ccc !important;
+      margin-bottom: 16px !important;
+    }
+    .sub-heading {
+      font-size: 13pt !important;
+      color: #8a6d1b !important;
+      border-left-color: #c9a243 !important;
+      margin: 20px 0 8px !important;
+    }
+    .doc-section strong { color: #1a1a1a !important; }
+    .definition {
+      background: #f8f5ef !important;
+      border-color: #e0d5c0 !important;
+      padding: 8px 12px !important;
+    }
+    .definition strong { color: #8a6d1b !important; }
+    .doc-table-wrap { border-color: #ccc !important; }
+    .doc-table th {
+      background: #f5f0e5 !important;
+      color: #8a6d1b !important;
+      border-bottom-color: #ccc !important;
+    }
+    .doc-table td { border-bottom-color: #eee !important; }
+    .callout {
+      background: #faf7f0 !important;
+      border-left-color: #c9a243 !important;
+      border-color: #e0d5c0 !important;
+      padding: 10px 14px !important;
+    }
+    .callout strong { color: #8a6d1b !important; }
+    .requisites {
+      background: #f9f7f2 !important;
+      border-color: #e0d5c0 !important;
+      padding: 16px 20px !important;
+    }
+    .requisites .req-label { color: #666 !important; }
+    .requisites .req-value { color: #1a1a1a !important; }
+    .doc-section ul, .doc-section ol { margin-left: 18px !important; }
+    .doc-section li::marker { color: #8a6d1b !important; }
+    .fade-in { opacity: 1 !important; transform: none !important; transition: none !important; }
+  }
+
+  /* === Мобильная адаптация === */
+  @media (max-width: 640px) {
+    .container { padding: 20px 16px 60px; }
+    .header { padding: 40px 0 36px; }
+    .header-symbol { font-size: 36px; }
+    .toc-columns { grid-template-columns: 1fr; }
+    .requisites .req-row { flex-direction: column; gap: 2px; }
+    .requisites .req-label { min-width: unset; }
+    .definition { padding: 10px 12px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Фоновая атмосфера -->
+<div class="atmosphere" aria-hidden="true">
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+</div>
+<div class="stars" id="stars" aria-hidden="true"></div>
+
+<div class="container">
+
+  <!-- Шапка -->
+  <header class="header fade-in">
+    <span class="header-symbol" aria-hidden="true">&#x2726;</span>
+    <h1>Пользовательское соглашение<br>и Политика конфиденциальности</h1>
+    <div class="bot-handle">@amotaro_bot</div>
+    <div class="date-line">Дата публикации: 22 июня 2026 г.</div>
+    <div class="header-divider"></div>
+  </header>
+
+  <!-- Кнопка PDF -->
+  <div class="pdf-btn-wrap fade-in">
+    <button class="pdf-btn" onclick="window.print()" aria-label="Сохранить как PDF">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      Сохранить как PDF
+    </button>
+  </div>
+
+  <!-- Оглавление -->
+  <nav class="toc fade-in" aria-label="Оглавление">
+    <div class="toc-title">Содержание</div>
+    <div class="toc-columns">
+      <a href="#s1"><span class="toc-num">I.</span>Термины и определения</a>
+      <a href="#s2"><span class="toc-num">II.</span>Общие положения</a>
+      <a href="#s3"><span class="toc-num">III.</span>Предмет соглашения</a>
+      <a href="#s4"><span class="toc-num">IV.</span>Порядок использования</a>
+      <a href="#s5"><span class="toc-num">V.</span>ИИ и сгенерированный контент</a>
+      <a href="#s6"><span class="toc-num">VI.</span>Условия подписки</a>
+      <a href="#s7"><span class="toc-num">VII.</span>Акцепт оферты</a>
+      <a href="#s8"><span class="toc-num">VIII.</span>Права и обязанности</a>
+      <a href="#s9"><span class="toc-num">IX.</span>Ограничения и запреты</a>
+      <a href="#s10"><span class="toc-num">X.</span>Ответственность</a>
+      <a href="#s11"><span class="toc-num">XI.</span>Интеллектуальная собственность</a>
+      <a href="#s12"><span class="toc-num">XII.</span>Персональные данные</a>
+      <a href="#s13"><span class="toc-num">XIII.</span>Заключительные положения</a>
+      <a href="#s14"><span class="toc-num">XIV.</span>Реквизиты Правообладателя</a>
+      <a href="#p1"><span class="toc-num">XV.</span>Политика: общие положения</a>
+      <a href="#p2"><span class="toc-num">XVI.</span>Состав обрабатываемых данных</a>
+      <a href="#p3"><span class="toc-num">XVII.</span>Цели обработки</a>
+      <a href="#p4"><span class="toc-num">XVIII.</span>Правовые основания</a>
+      <a href="#p5"><span class="toc-num">XIX.</span>Порядок и условия обработки</a>
+      <a href="#p6"><span class="toc-num">XX.</span>Сроки хранения</a>
+      <a href="#p7"><span class="toc-num">XXI.</span>Права Пользователя</a>
+      <a href="#p8"><span class="toc-num">XXII.</span>Защита данных</a>
+      <a href="#p9"><span class="toc-num">XXIII.</span>Cookie и аналитика</a>
+      <a href="#p10"><span class="toc-num">XXIV.</span>Заключительные положения</a>
+    </div>
+  </nav>
+
+  <!-- ==================== ЧАСТЬ I: ОФЕРТА ==================== -->
+  <section class="doc-section fade-in">
+    <div class="doc-section-title">Пользовательское соглашение (Публичная оферта)</div>
+    <div class="doc-section-sub">Настоящий документ является публичной офертой в соответствии со ст. 437 Гражданского кодекса Российской Федерации. Используя функционал Telegram-бота @amotaro_bot, Пользователь принимает условия настоящего Соглашения в полном объёме.</div>
+    <div class="section-divider"></div>
+
+    <h2 class="sub-heading" id="s1">1. Термины и определения</h2>
+    <div class="definition"><strong>1.1. Правообладатель</strong> — физическое лицо omar333, являющееся создателем и администратором Бота. Не зарегистрировано в качестве индивидуального предпринимателя.</div>
+    <div class="definition"><strong>1.2. Бот</strong> — Telegram-бот @amotaro_bot (далее — «Бот»), программное обеспечение, функционирующее на платформе Telegram и предоставляющее Пользователю доступ к услугам информационно-развлекательного характера с использованием технологий искусственного интеллекта.</div>
+    <div class="definition"><strong>1.3. Пользователь</strong> — дееспособное физическое лицо, достигшее возраста 18 лет, использующее функционал Бота.</div>
+    <div class="definition"><strong>1.4. ИИ-функции</strong> — функционал Бота, основанный на технологиях искусственного интеллекта (языковых моделях и/или алгоритмах машинного обучения), предназначенный для генерации текстового и визуального контента по запросу Пользователя.</div>
+    <div class="definition"><strong>1.5. Сгенерированный контент</strong> — текстовые и/или визуальные материалы, созданные ИИ-функциями Бота на основании запроса (промпта) Пользователя.</div>
+    <div class="definition"><strong>1.6. Подписка</strong> — платный доступ к расширенному функционалу Бота на срок 30 (тридцать) календарных дней, предоставляемый на условиях автоматического продления.</div>
+    <div class="definition"><strong>1.7. Telegram Stars (XTR)</strong> — внутренняя валюта платформы Telegram, используемая для приобретения цифровых товаров и услуг, в том числе Подписки.</div>
+    <div class="definition"><strong>1.8. Сторонние сервисы</strong> — сервисы генерации контента на основе искусственного интеллекта, предоставляемые третьими лицами (включая, но не ограничиваясь: Google LLC, OpenAI LLC, ООО «Яндекс.Облако»), на базе которых функционируют ИИ-функции Бота.</div>
+
+    <h2 class="sub-heading" id="s2">2. Общие положения</h2>
+    <p>2.1. Настоящее Соглашение регулирует отношения между Правообладателем и Пользователем по использованию функционала Бота.</p>
+    <p>2.2. Начиная использовать Бот (в том числе путём отправки команды /start, отправки сообщения, оплаты Подписки), Пользователь подтверждает, что:</p>
+    <ul>
+      <li>ознакомился с условиями настоящего Соглашения в полном объёме;</li>
+      <li>принимает все условия настоящего Соглашения без каких-либо изъятий и ограничений;</li>
+      <li>ознакомился с Политикой конфиденциальности и принимает условия обработки персональных данных;</li>
+      <li>ему исполнилось 18 (восемнадцать) лет, и он является полностью дееспособным лицом.</li>
+    </ul>
+    <p>2.3. Если Пользователь не согласен с условиями настоящего Соглашения, он обязан немедленно прекратить использование Бота.</p>
+    <p>2.4. Настоящее Соглашение может быть изменено Правообладателем в одностороннем порядке. Изменения вступают в силу с момента публикации новой версии Соглашения. Продолжение использования Бота после внесения изменений означает согласие Пользователя с новой редакцией.</p>
+    <p>2.5. Правообладатель уведомляет Пользователей об изменениях Соглашения через публикацию обновлённого текста в Боте (команда /offer). Правообладатель рекомендует Пользователю регулярно ознакомляться с актуальной версией Соглашения.</p>
+    <p>2.6. Настоящее Соглашение регулируется законодательством Российской Федерации.</p>
+
+    <h2 class="sub-heading" id="s3">3. Предмет соглашения</h2>
+    <p>3.1. Правообладатель предоставляет Пользователю возможность использования функционала Бота для генерации текстовых предсказаний, интерпретаций и изображений на основе карт Таро с использованием технологий искусственного интеллекта.</p>
+    <div class="callout"><strong>3.2. Все материалы, генерируемые Ботом, носят исключительно информационно-развлекательный характер.</strong> Правообладатель не оказывает услуг в области магии, оккультизма, эзотерики, религиозных или ритуальных услуг. Результаты работы Бота не являются предсказаниями, пророчествами, диагностикой событий или лиц.</div>
+    <p>3.3. ИИ-функции не предназначены для получения Пользователем информации, консультационных услуг, экспертного мнения или рекомендаций. Пользователь не должен полагаться на Сгенерированный контент при принятии каких-либо решений.</p>
+    <p>3.4. Правообладатель не даёт гарантий совпадения сгенерированных текстов с реальными событиями, а также не гарантирует актуальность, точность, полноту или достоверность Сгенерированного контента.</p>
+
+    <h2 class="sub-heading" id="s4">4. Порядок использования Бота</h2>
+    <p>4.1. Для использования Бота Пользователю необходимо иметь аккаунт в мессенджере Telegram. Взаимодействие с Ботом осуществляется посредством отправки команд, текстовых сообщений и использования интерфейса WebApp.</p>
+    <p>4.2. Бот предоставляется в состоянии «как есть» (as is). Правообладатель не гарантирует безошибочную или бесперебойную работу Бота, а также его соответствие ожиданиям Пользователя.</p>
+    <p>4.3. Правообладатель вправе устанавливать лимиты на использование функционала Бота, в том числе:</p>
+    <ul>
+      <li>бесплатный лимит: 10 (десять) не-дневных раскладов в месяц на одного Пользователя;</li>
+      <li>карта дня — неограниченно (не чаще 1 раза в день);</li>
+      <li>лимиты для подписчиков: 100 (сто) не-дневных раскладов в месяц.</li>
+    </ul>
+    <p>4.4. Бесплатный лимит обнуляется первого числа каждого календарного месяца.</p>
+    <p>4.5. Правообладатель вправе изменять лимиты, предварительно уведомив Пользователей.</p>
+
+    <h2 class="sub-heading" id="s5">5. Искусственный интеллект и Сгенерированный контент</h2>
+    <p>5.1. Функционал Бота реализован с применением технологий искусственного интеллекта. Любой ответ или иной вид предоставленного контента формируется автоматически с применением языковых моделей и алгоритмов ИИ на основе запроса (промпта) Пользователя и не является результатом действий человека.</p>
+    <p>5.2. ИИ-функции Бота обеспечивают возможность использования языковых моделей, предоставленных Сторонними сервисами (включая Google LLC, OpenAI LLC, ООО «Яндекс.Облако» и/или иных поставщиков). Выбор конкретного Стороннего сервиса осуществляется по усмотрению Правообладателя исходя из технической совместимости, функциональных возможностей и качества обработки соответствующего типа запросов.</p>
+    <p>5.3. Используя ИИ-функции, Пользователь также соглашается с условиями соответствующих Сторонних сервисов, включая:</p>
+    <ul>
+      <li>Условия использования Google (https://policies.google.com/terms);</li>
+      <li>Политику распространения и публикации OpenAI (https://openai.com/policies/sharing-publication-policy);</li>
+      <li>Условия использования Сервиса Яндекс Фундаментальные Модели (https://yandex.ru/legal/cloud_terms_yandex_foundation_models/).</li>
+    </ul>
+    <div class="callout"><strong>5.4. Отсутствие гарантий.</strong> Правообладатель не имеет технической возможности в полной мере контролировать содержание Сгенерированного контента. Правообладатель не гарантирует, что Сгенерированный контент: является актуальным, корректным или допустимым; соответствует общепринятым правилам приличия и морально-этическим нормам; является уникальным и не основан на материалах, являющихся интеллектуальной собственностью третьих лиц; не нарушает действующее законодательство и/или права третьих лиц.</div>
+    <p><strong>5.5. Обязанность проверки.</strong> Пользователь обязан самостоятельно проверять Сгенерированный контент на предмет соответствия применимому законодательству. Ответственность за публикацию, распространение, хранение и передачу Сгенерированного контента полностью лежит на Пользователе.</p>
+
+    <h2 class="sub-heading" id="s6">6. Условия подписки</h2>
+    <p>6.1. Подписка предоставляет доступ к расширенному функционалу Бота на 30 (тридцать) календарных дней.</p>
+    <p><strong>6.2. Стоимость подписки:</strong></p>
+    <ul>
+      <li>Первый месяц (для новых Пользователей): <strong>100 (сто) Telegram Stars (XTR)</strong> — одноразовая скидка при первой оплате;</li>
+      <li>Последующие месяцы: <strong>600 (шестьсот) Telegram Stars (XTR)</strong>.</li>
+    </ul>
+    <p><strong>6.3. Автоматическое продление.</strong> Начиная со второго месяца Подписка продлевается автоматически каждые 30 (тридцать) календарных дней. Списание средств производится платформой Telegram автоматически в соответствии с условиями, установленными платформой Telegram.</p>
+    <p>6.4. Пользователь может отменить Подписку в любой момент через настройки Telegram (Telegram Settings → Telegram Stars → Active subscriptions). Отмена не приводит к возврату средств за уже оплаченный период.</p>
+    <p>6.5. При отмене Подписки доступ к платному функционалу сохраняется до окончания оплаченного периода. Возврат средств за неиспользованный период не производится, за исключением случаев, прямо предусмотренных законодательством Российской Федерации.</p>
+    <p>6.6. Правообладатель вправе в одностороннем порядке изменять стоимость подписки, уведомляя Пользователей через Бот не менее чем за 14 (четырнадцать) календарных дней до вступления изменений в силу.</p>
+    <p>6.7. В случае технической невозможности оказания услуг по вине Правообладателя, Правообладатель вправе продлить подписку Пользователя на соответствующий период без дополнительной оплаты.</p>
+
+    <h2 class="sub-heading" id="s7">7. Акцепт оферты</h2>
+    <p>7.1. Акцептом (принятием) настоящей оферты считается одно из следующих действий Пользователя:</p>
+    <ul>
+      <li>отправка команды /start;</li>
+      <li>оплата Подписки через Telegram Stars;</li>
+      <li>любое фактическое использование функционала Бота.</li>
+    </ul>
+    <p>7.2. Акцепт оферты равносилен заключению договора на условиях, изложенных в настоящем документе.</p>
+    <p>7.3. Моментом заключения договора считается момент совершения Пользователем одного из действий, указанных в п. 7.1.</p>
+
+    <h2 class="sub-heading" id="s8">8. Права и обязанности сторон</h2>
+    <p><strong>8.1. Пользователь обязуется:</strong></p>
+    <ul>
+      <li>использовать Бот исключительно в личных некоммерческих и развлекательных целях;</li>
+      <li>не предпринимать попыток нарушить работоспособность Бота;</li>
+      <li>не использовать автоматизированные средства (скрипты, ботов) для взаимодействия с Ботом без письменного разрешения Правообладателя;</li>
+      <li>не направлять запросы, заведомо нацеленные на создание контента, противоречащего законодательству, принципам морали и нравственности;</li>
+      <li>не указывать в запросах свои персональные данные или персональные данные третьих лиц;</li>
+      <li>не распространять Сгенерированный контент, нарушающий права третьих лиц.</li>
+    </ul>
+    <p><strong>8.2. Правообладатель обязуется:</strong></p>
+    <ul>
+      <li>обеспечить доступ к функционалу Бота в соответствии с условиями настоящего Соглашения;</li>
+      <li>не разглашать персональные данные Пользователей третьим лицам, за исключением случаев, предусмотренных законодательством;</li>
+      <li>прилагать разумные усилия для обеспечения стабильной работы Бота.</li>
+    </ul>
+
+    <h2 class="sub-heading" id="s9">9. Ограничения и запреты</h2>
+    <p>9.1. При использовании Бота запрещается:</p>
+    <ul>
+      <li>передавать Боту команды или запросы с целью создания контента, пропагандирующего насилие, дискриминацию, экстремизм, терроризм, незаконную деятельность;</li>
+      <li>использовать Бот для получения коммерческой выгоды или в предпринимательской деятельности;</li>
+      <li>предпринимать любые попытки обойти технические ограничения, установленные Правообладателем или Сторонними сервисами;</li>
+      <li>использовать Бот для сбора персональных данных третьих лиц;</li>
+      <li>нарушать права интеллектуальной собственности Правообладателя или третьих лиц.</li>
+    </ul>
+    <div class="callout"><strong>9.2. Возрастные ограничения.</strong> Использование Бота лицами, не достигшими 18 (восемнадцати) лет, запрещено. Принимая настоящее Соглашение, Пользователь подтверждает, что ему исполнилось 18 лет.</div>
+
+    <h2 class="sub-heading" id="s10">10. Ответственность</h2>
+    <div class="callout"><strong>10.1. Содержание Сгенерированного контента носит ознакомительный характер и ни при каких обстоятельствах не может считаться мнением Правообладателя, а также расцениваться в качестве совета, рекомендации или побуждения к совершению какого-либо действия.</strong></div>
+    <p>10.2. Правообладатель не несёт ответственности за содержание Сгенерированного контента и результат его использования Пользователем.</p>
+    <p>10.3. Пользователь несёт полную ответственность за содержание своих запросов, а также за публикацию, распространение, хранение и передачу Сгенерированного контента.</p>
+    <p>10.4. Правообладатель не несёт ответственности за убытки любого рода, возникшие в результате использования или невозможности использования Бота.</p>
+    <p>10.5. Правообладатель не несёт ответственности за действия платформы Telegram, Сторонних сервисов и иных третьих лиц, задействованных в процессе предоставления услуг.</p>
+    <p>10.6. Совокупная ответственность Правообладателя по настоящему Соглашению ограничивается суммой, уплаченной Пользователем за Подписку в течение последних 30 (тридцати) дней.</p>
+    <p>10.7. Все споры разрешаются путём переговоров. При недостижении согласия — в судебном порядке по месту нахождения Правообладателя в соответствии с законодательством Российской Федерации.</p>
+
+    <h2 class="sub-heading" id="s11">11. Интеллектуальная собственность</h2>
+    <p>11.1. Все исключительные права на Бот (включая программу для ЭВМ, дизайн-макеты, интерфейс, за исключением элементов Сторонних сервисов) принадлежат Правообладателю.</p>
+    <p>11.2. Ни при каких обстоятельствах Сгенерированный контент не может считаться результатом творческого труда Пользователя и/или объектом интеллектуальной собственности, права на который принадлежат Пользователю.</p>
+    <p>11.3. Пользователь осознаёт, что Сгенерированный контент создаётся с использованием технологий искусственного интеллекта, в связи с чем может не обладать уникальностью и совпадать полностью или частично с контентом, созданным по запросам других пользователей.</p>
+
+    <h2 class="sub-heading" id="s12">12. Персональные данные и конфиденциальность</h2>
+    <p>12.1. Используя Бот, Пользователь предоставляет Правообладателю согласие на обработку персональных данных в соответствии с Политикой конфиденциальности.</p>
+    <p>12.2. Порядок сбора, хранения и обработки персональных данных регулируется Политикой конфиденциальности, доступной по команде /privacy.</p>
+    <p>12.3. Пользователь гарантирует, что не будет передавать Боту персональные данные третьих лиц без их согласия.</p>
+
+    <h2 class="sub-heading" id="s13">13. Заключительные положения</h2>
+    <p>13.1. Настоящее Соглашение вступает в силу с момента его публикации и действует до момента его отзыва или замены новой редакцией.</p>
+    <p>13.2. В случае признания какого-либо положения настоящего Соглашения недействительным, остальные положения остаются в силе.</p>
+    <p>13.3. Настоящее Соглашение регулируется законодательством Российской Федерации.</p>
+    <p>13.4. Правообладатель вправе уступать свои права и переводить обязанности по настоящему Соглашению третьим лицам без согласия Пользователя. Пользователь не вправе уступать свои права по настоящему Соглашению без письменного согласия Правообладателя.</p>
+    <p>13.5. Текст настоящей оферты доступен в Боте по команде /offer, а также в виде PDF-документа.</p>
+
+    <h2 class="sub-heading" id="s14">14. Реквизиты Правообладателя</h2>
+    <div class="requisites">
+      <div class="req-row"><span class="req-label">Правообладатель:</span><span class="req-value">omar333</span></div>
+      <div class="req-row"><span class="req-label">Telegram (контакт):</span><span class="req-value">@blinkstrike</span></div>
+      <div class="req-row"><span class="req-label">Бот:</span><span class="req-value">@amotaro_bot</span></div>
+      <div class="req-row"><span class="req-label">Статус:</span><span class="req-value">Физическое лицо, действующее без регистрации в качестве ИП</span></div>
+    </div>
+    <p>Для обращений по вопросам, связанным с работой Бота, используйте Telegram: @blinkstrike.</p>
+  </section>
+
+  <!-- ==================== ЧАСТЬ II: КОНФИДЕНЦИАЛЬНОСТЬ ==================== -->
+  <section class="doc-section fade-in">
+    <div class="doc-section-title">Политика конфиденциальности</div>
+    <div class="doc-section-sub">Настоящая Политика конфиденциальности (далее — «Политика») определяет порядок обработки и защиты персональных данных пользователей Telegram-бота @amotaro_bot и разработана в соответствии с Конституцией Российской Федерации, Федеральным законом от 27.07.2006 № 152-ФЗ «О персональных данных», а также иным применимым законодательством Российской Федерации.</div>
+    <div class="section-divider"></div>
+
+    <h2 class="sub-heading" id="p1">1. Общие положения</h2>
+    <p>1.1. Настоящая Политика является неотъемлемой частью Пользовательского соглашения (Публичной оферты), доступного по команде /offer.</p>
+    <p>1.2. Используя функционал Бота, Пользователь выражает своё полное и безоговорочное согласие с настоящей Политикой и указанными в ней условиями обработки его персональных данных.</p>
+    <p>1.3. Если Пользователь не согласен с условиями настоящей Политики, он обязан немедленно прекратить использование Бота.</p>
+    <p>1.4. Оператором, осуществляющим обработку персональных данных Пользователей, является:</p>
+    <div class="requisites">
+      <div class="req-row"><span class="req-label">Правообладатель:</span><span class="req-value">omar333</span></div>
+      <div class="req-row"><span class="req-label">Telegram:</span><span class="req-value">@blinkstrike</span></div>
+      <div class="req-row"><span class="req-label">Бот:</span><span class="req-value">@amotaro_bot</span></div>
+      <div class="req-row"><span class="req-label">Статус:</span><span class="req-value">Физическое лицо, без регистрации в качестве ИП</span></div>
+    </div>
+    <p>1.5. Настоящая Политика может быть изменена Оператором в одностороннем порядке. Изменения вступают в силу с момента публикации новой версии Политики. Продолжение использования Бота после внесения изменений означает согласие Пользователя с новой редакцией.</p>
+
+    <h2 class="sub-heading" id="p2">2. Состав обрабатываемых данных</h2>
+    <p>2.1. Оператор обрабатывает следующие персональные данные Пользователя:</p>
+    <ul>
+      <li><strong>Telegram ID</strong> — уникальный числовой идентификатор аккаунта Пользователя в мессенджере Telegram;</li>
+      <li><strong>Имя пользователя (username)</strong> — публичное имя учётной записи Пользователя в Telegram (при наличии);</li>
+      <li><strong>Имя и фамилия</strong> — данные, указанные Пользователем в профиле Telegram (при наличии);</li>
+      <li><strong>История обращений</strong> — дата и время отправки запросов, тип запроса, количество обращений;</li>
+      <li><strong>Дата регистрации</strong> — дата первого использования Бота Пользователем;</li>
+      <li><strong>Дата последней активности</strong> — дата последнего взаимодействия Пользователя с Ботом;</li>
+      <li><strong>Информация о подписке</strong> — статус подписки, дата окончания подписки, история платежей.</li>
+    </ul>
+    <p>2.2. Оператор не обрабатывает данные, которые Пользователь может указать в тексте запросов (промптов) к ИИ-функциям. Пользователю настоятельно рекомендуется <strong>не указывать</strong> в запросах свои персональные данные или персональные данные третьих лиц.</p>
+    <p>2.3. Оператор не собирает и не обрабатывает специальные категории персональных данных: расовая, национальная принадлежность, политические взгляды, религиозные убеждения, состояние здоровья, биометрические данные.</p>
+
+    <h2 class="sub-heading" id="p3">3. Цели обработки персональных данных</h2>
+    <p>3.1. Оператор обрабатывает персональные данные Пользователя исключительно в следующих целях:</p>
+    <div class="doc-table-wrap">
+      <table class="doc-table">
+        <thead><tr><th>Цель</th><th>Обрабатываемые данные</th></tr></thead>
+        <tbody>
+          <tr><td>Идентификация Пользователя в системе</td><td>Telegram ID, username</td></tr>
+          <tr><td>Предоставление доступа к функционалу Бота</td><td>Telegram ID</td></tr>
+          <tr><td>Учёт лимитов бесплатного и платного функционала</td><td>Telegram ID, история обращений, информация о подписке</td></tr>
+          <tr><td>Оформление и обслуживание подписки</td><td>Telegram ID, информация о подписке</td></tr>
+          <tr><td>Техническая поддержка Пользователей</td><td>Telegram ID, username, история обращений</td></tr>
+          <tr><td>Улучшение работы Бота</td><td>Анонимизированные данные об использовании</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>3.2. Обработка персональных данных Пользователя осуществляется строго в объёме, необходимом для достижения указанных целей.</p>
+
+    <h2 class="sub-heading" id="p4">4. Правовые основания обработки</h2>
+    <p>4.1. Правовыми основаниями обработки персональных данных являются:</p>
+    <ul>
+      <li>Федеральный закон от 27.07.2006 № 152-ФЗ «О персональных данных»;</li>
+      <li>Гражданский кодекс Российской Федерации;</li>
+      <li>Пользовательское соглашение (Публичная оферта), акцептованное Пользователем;</li>
+      <li>Согласие Пользователя на обработку персональных данных, предоставленное при начале использования Бота.</li>
+    </ul>
+    <p>4.2. Обработка персональных данных осуществляется на основании п. 5 ч. 1 ст. 6 Федерального закона № 152-ФЗ — обработка необходима для исполнения договора, стороной которого является Пользователь.</p>
+
+    <h2 class="sub-heading" id="p5">5. Порядок и условия обработки</h2>
+    <p>5.1. Обработка персональных данных осуществляется Оператором с использованием средств автоматизации и без использования средств автоматизации, с соблюдением принципов и правил, предусмотренных Федеральным законом № 152-ФЗ.</p>
+    <p><strong>5.2. Сбор данных.</strong> Сбор персональных данных Пользователя осуществляется непосредственно при взаимодействии Пользователя с Ботом через платформу Telegram.</p>
+    <p><strong>5.3. Хранение данных.</strong> Персональные данные хранятся на сервере базы данных (SQLite/PostgreSQL) с ограниченным доступом. Доступ к базе данных имеет только Оператор.</p>
+    <p><strong>5.4. Передача данных.</strong> Оператор не передаёт персональные данные Пользователя третьим лицам, за исключением следующих случаев:</p>
+    <ul>
+      <li>передача предусмотрена законодательством Российской Федерации (по запросу уполномоченных органов);</li>
+      <li>передача связана с исполнением договора с Пользователем (обработка платежей осуществляется платформой Telegram);</li>
+      <li>передача осуществляется с согласия Пользователя.</li>
+    </ul>
+    <p>5.5. Оператор не осуществляет трансграничную передачу персональных данных.</p>
+    <p><strong>5.6. Локализация данных.</strong> Обработка персональных данных осуществляется на территории Российской Федерации.</p>
+
+    <h2 class="sub-heading" id="p6">6. Сроки хранения персональных данных</h2>
+    <p>6.1. Персональные данные Пользователя хранятся в течение всего срока использования Пользователем функционала Бота и в течение 1 (одного) года после последнего взаимодействия Пользователя с Ботом.</p>
+    <p>6.2. По истечении указанного срока персональные данные подлежат автоматическому удалению.</p>
+    <p>6.3. В случае досрочного удаления данных по запросу Пользователя (п. 7.2), данные удаляются в течение 30 (тридцати) календарных дней с момента получения запроса, за исключением случаев, когда законодательством Российской Федерации предусмотрено обязательное хранение.</p>
+
+    <h2 class="sub-heading" id="p7">7. Права Пользователя</h2>
+    <p>7.1. Пользователь имеет право:</p>
+    <ul>
+      <li>получить информацию, касающуюся обработки его персональных данных;</li>
+      <li>требовать уточнения своих персональных данных, их блокирования или уничтожения — в случаях, когда персональные данные являются неполными, устаревшими, недостоверными, незаконно полученными или не являются необходимыми для заявленной цели обработки;</li>
+      <li>отозвать согласие на обработку персональных данных в любое время;</li>
+      <li>обжаловать действия или бездействие Оператора в уполномоченный орган по защите прав субъектов персональных данных (Роскомнадзор).</li>
+    </ul>
+    <p><strong>7.2. Запрос на удаление данных.</strong> Пользователь может направить запрос на удаление своих персональных данных через Telegram: @blinkstrike — прямая связь с Оператором.</p>
+    <p>7.3. Для получения полной информации о своих персональных данных, обрабатываемых Оператором, Пользователь может направить соответствующий запрос по тем же контактам. Оператор обязан предоставить запрашиваемую информацию в течение 30 (тридцати) календарных дней.</p>
+
+    <h2 class="sub-heading" id="p8">8. Защита персональных данных</h2>
+    <p>8.1. Оператор принимает необходимые и достаточные правовые, организационные и технические меры для защиты персональных данных Пользователя от неправомерного или случайного доступа, уничтожения, изменения, блокирования, копирования, распространения, а также от иных неправомерных действий третьих лиц.</p>
+    <p>8.2. Меры защиты включают:</p>
+    <ul>
+      <li>ограничение доступа к персональным данным — только Оператор имеет доступ к базе данных;</li>
+      <li>использование безопасных протоколов для передачи данных;</li>
+      <li>регулярный мониторинг безопасности информационной системы;</li>
+      <li>своевременное удаление устаревших данных.</li>
+    </ul>
+    <p>8.3. Оператор не несёт ответственности за действия третьих лиц, получивших доступ к персональным данным Пользователя не по вине Оператора, в том числе в результате нарушения Пользователем правил безопасности при использовании мессенджера Telegram.</p>
+
+    <h2 class="sub-heading" id="p9">9. Использование файлов cookie и аналитики</h2>
+    <p>9.1. WebApp Бота может использовать стандартные технические файлы (cookie) и средства веб-аналитики, необходимые для обеспечения работоспособности и улучшения пользовательского опыта.</p>
+    <p>9.2. Сбор технической информации (IP-адрес, тип браузера, версия операционной системы) осуществляется автоматически при использовании WebApp Бота и носит анонимный характер.</p>
+
+    <h2 class="sub-heading" id="p10">10. Заключительные положения</h2>
+    <p>10.1. Настоящая Политика регулируется законодательством Российской Федерации.</p>
+    <p>10.2. Во всём, что не предусмотрено настоящей Политикой, Оператор и Пользователь руководствуются Пользовательским соглашением (Публичной офертой) и законодательством Российской Федерации.</p>
+    <p>10.3. В случае признания какого-либо положения настоящей Политики недействительным, остальные положения остаются в силе.</p>
+    <p>10.4. Актуальная версия Политики доступна в Боте по команде /privacy, а также в виде PDF-документа.</p>
+    <p>10.5. Пользователь может направить вопросы, замечания или предложения по настоящей Политике через Telegram: @blinkstrike.</p>
+
+    <h2 class="sub-heading" id="p11">11. Контакты Оператора</h2>
+    <div class="requisites">
+      <div class="req-row"><span class="req-label">Правообладатель:</span><span class="req-value">omar333</span></div>
+      <div class="req-row"><span class="req-label">Telegram:</span><span class="req-value">@blinkstrike</span></div>
+      <div class="req-row"><span class="req-label">Бот:</span><span class="req-value">@amotaro_bot</span></div>
+      <div class="req-row"><span class="req-label">Статус:</span><span class="req-value">Физическое лицо, без регистрации в качестве ИП</span></div>
+    </div>
+    <p>Для всех вопросов, связанных с обработкой персональных данных: <strong>@blinkstrike</strong></p>
+  </section>
+
+  <footer class="footer fade-in">
+    <p>&#x2726; @amotaro_bot &mdash; Пользовательское соглашение и Политика конфиденциальности &#x2726;</p>
+  </footer>
+
+</div>
+
+<script>
+  // Генерация звёздочек на фоне
+  (function() {
+    const container = document.getElementById('stars');
+    const count = 60;
+    for (let i = 0; i < count; i++) {
+      const star = document.createElement('div');
+      star.className = 'star';
+      star.style.left = Math.random() * 100 + '%';
+      star.style.top = Math.random() * 100 + '%';
+      star.style.setProperty('--dur', (3 + Math.random() * 5) + 's');
+      star.style.setProperty('--max-o', (0.2 + Math.random() * 0.5).toFixed(2));
+      star.style.animationDelay = (Math.random() * 6) + 's';
+      const size = 1 + Math.random() * 2;
+      star.style.width = size + 'px';
+      star.style.height = size + 'px';
+      container.appendChild(star);
+    }
+  })();
+
+  // Scroll-reveal анимация
+  (function() {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+        }
+      });
+    }, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
+
+    document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+  })();
+
+  // Плавная прокрутка по якорям из оглавления
+  document.querySelectorAll('.toc a').forEach(link => {
+    link.addEventListener('click', function(e) {
+      e.preventDefault();
+      const target = document.querySelector(this.getAttribute('href'));
+      if (target) {
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+  });
+</script>
+</body>
+</html>
