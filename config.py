@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     OPENROUTER_API_KEY: str
     DB_PATH: str = "/data/taro_bot.db"
     WEBAPP_URL: str = "http://localhost:8080"
+    ADMIN_IDS: str = ""  # comma-separated tg_ids, e.g. "123456,789012"
 
     class Config:
         env_file = ".env"
