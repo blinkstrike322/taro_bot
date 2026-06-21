@@ -7,9 +7,10 @@ from aiogram import Router, F
 from aiogram.types import Message
 from aiogram.enums import ContentType
 
+from core.quota import check_quota
 from core.tarot import draw_cards
 from core.llm import interpret_reading
-from storage.db import get_or_create_user, save_reading, update_last_active, get_db
+from storage.db import get_or_create_user, save_reading, update_last_active, get_db, get_monthly_non_daily_count
 
 router = Router()
 logger = logging.getLogger(__name__)
@@ -70,5 +71,10 @@ async def handle_webapp_data(message: Message):
         result = f"-- {chosen_card['name']} ({orientation}) --\n\n{short_answer}"
         if advice:
             result += f"\n\nСовет: {advice}"
+
+        monthly_count = await get_monthly_non_daily_count(db, user.id)
+        remaining = max(0, 10 - monthly_count)
+        if remaining > 0:
+            result += f"\n\nПелена приоткрыта. Осталось {remaining} призывов из 10 в этом месяце."
 
         await message.answer(result)

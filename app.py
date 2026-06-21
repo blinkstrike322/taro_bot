@@ -119,7 +119,12 @@ async def handle_spread(request):
         interpretation=interpretation,
         character_id=character_id,
     )
-    return web.json_response({"cards": cards, "interpretation": interpretation})
+    return web.json_response({
+        "cards": cards,
+        "interpretation": interpretation,
+        "remaining": quota.get("remaining"),
+        "limit": quota.get("limit"),
+    })
 
 
 def create_webapp() -> web.Application:

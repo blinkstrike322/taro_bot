@@ -2,7 +2,7 @@
 import pytest
 import pytest_asyncio
 import aiosqlite
-from core.quota import check_quota, DAILY_LIMIT_FREE, MONTHLY_LIMIT_PAID
+from core.quota import check_quota, MONTHLY_LIMIT_FREE, MONTHLY_LIMIT_PAID
 
 
 @pytest_asyncio.fixture
@@ -39,20 +39,22 @@ async def db():
 async def test_daily_card_always_free(db):
     """Daily card не проверяет квоту."""
     result = await check_quota(db, user_id=1, tg_id=1, spread_type="daily")
-    assert result == {"ok": True}
+    assert result["ok"] is True
+    assert result["remaining"] is None
 
 
 @pytest.mark.asyncio
 async def test_free_user_under_limit(db):
-    """Free пользователь с 0 раскладами сегодня — может делать расклад."""
+    """Free пользователь с 0 раскладами в месяце — может делать расклад."""
     result = await check_quota(db, user_id=1, tg_id=1, spread_type="spread_1")
-    assert result == {"ok": True}
+    assert result["ok"] is True
+    assert result["remaining"] == MONTHLY_LIMIT_FREE
 
 
 @pytest.mark.asyncio
 async def test_free_user_over_limit(db):
-    """Free пользователь с DAILY_LIMIT_FREE раскладами сегодня — отказано."""
-    for i in range(DAILY_LIMIT_FREE):
+    """Free пользователь превысил месячный лимит — отказано."""
+    for _ in range(MONTHLY_LIMIT_FREE):
         await db.execute(
             "INSERT INTO readings (user_id, type, created_at) VALUES (?, 'spread_1', datetime('now'))",
             (1,),
@@ -61,6 +63,7 @@ async def test_free_user_over_limit(db):
     result = await check_quota(db, user_id=1, tg_id=1, spread_type="spread_1")
     assert result["ok"] is False
     assert result["needs_subscription"] is True
+    assert result["remaining"] == 0
 
 
 @pytest.mark.asyncio
@@ -71,7 +74,8 @@ async def test_paid_user_under_limit(db):
     )
     await db.commit()
     result = await check_quota(db, user_id=1, tg_id=1, spread_type="spread_1")
-    assert result == {"ok": True}
+    assert result["ok"] is True
+    assert result["remaining"] == MONTHLY_LIMIT_PAID
 
 
 @pytest.mark.asyncio
@@ -81,7 +85,7 @@ async def test_paid_user_over_limit(db):
         "UPDATE users SET subscription_end = datetime('now', '+30 days') WHERE tg_id = 1"
     )
     await db.commit()
-    for i in range(MONTHLY_LIMIT_PAID):
+    for _ in range(MONTHLY_LIMIT_PAID):
         await db.execute(
             "INSERT INTO readings (user_id, type, created_at) VALUES (?, 'spread_1', datetime('now'))",
             (1,),
@@ -90,3 +94,4 @@ async def test_paid_user_over_limit(db):
     result = await check_quota(db, user_id=1, tg_id=1, spread_type="spread_1")
     assert result["ok"] is False
     assert result["needs_subscription"] is True
+    assert result["remaining"] == 0
