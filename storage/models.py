@@ -11,6 +11,8 @@ class User(BaseModel):
     created_at: str
     last_active_at: str
     last_reminder_sent_at: Optional[str] = None
+    subscription_end: Optional[str] = None
+    first_month_done: int = 0
 
 
 class Reading(BaseModel):

@@ -5,7 +5,7 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     BOT_TOKEN: str
     OPENROUTER_API_KEY: str
-    DB_PATH: str = "taro_bot.db"
+    DB_PATH: str = "/data/taro_bot.db"
     WEBAPP_URL: str = "http://localhost:8080"
 
     class Config:
