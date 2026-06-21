@@ -12,7 +12,7 @@ from core.payments import get_subscription_price, FIRST_MONTH_PRICE, REGULAR_PRI
 from storage.db import create_tables, get_or_create_user, update_character, update_last_active
 from storage.db import (
     get_user_by_tg_id, activate_subscription,
-    get_daily_non_daily_count, get_monthly_non_daily_count,
+    get_monthly_non_daily_count,
     is_subscribed,
 )
 
@@ -186,19 +186,24 @@ async def cmd_my_status(message: types.Message) -> None:
 
         if subscribed:
             monthly = await get_monthly_non_daily_count(db, user.id)
-            remaining_monthly = max(0, 100 - monthly)
+            remaining = max(0, 100 - monthly)
             sub_end = user.subscription_end or "?"
             await message.answer(
                 f"Подписка активна до {sub_end[:10]}\n"
-                f"Осталось раскладов: {remaining_monthly} из 100",
+                f"Осталось призывов: {remaining} из 100",
             )
         else:
+            monthly = await get_monthly_non_daily_count(db, user.id)
+            remaining = max(0, 10 - monthly)
             is_first = user is not None and user.first_month_done == 0
             price = FIRST_MONTH_PRICE if is_first else REGULAR_PRICE
-            await message.answer(
-                "Подписка даёт 100 раскладов в месяц.\n"
-                f"Напиши /subscribe — {price} Telegram Stars",
+            msg = (
+                f"Пелена приоткрыта. Осталось {remaining} призывов из 10 в этом месяце."
+                if remaining > 0
+                else "Пелена сомкнулась. Призывы иссякли до следующего месяца."
             )
+            msg += f"\n\nПодписка — 100 призывов в месяц. Напиши /subscribe — {price} \u2605."
+            await message.answer(msg)
     finally:
         await db.close()
 
