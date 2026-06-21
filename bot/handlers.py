@@ -152,18 +152,6 @@ async def set_character(callback: types.CallbackQuery) -> None:
 # ── Subscription / payments ──────────────────────────────────────
 
 
-@start_router.message(Command("offer"))
-async def cmd_offer(message: types.Message) -> None:
-    offer_path = Path(__file__).resolve().parent.parent / "OFFER.md"
-    if not offer_path.exists():
-        await message.answer("Оферта временно недоступна.")
-        return
-    text = offer_path.read_text(encoding="utf-8")
-    # Telegram limit 4096 chars per message
-    for i in range(0, len(text), 4000):
-        await message.answer(text[i:i+4000])
-
-
 @start_router.message(Command("subscribe"))
 async def cmd_subscribe(message: types.Message) -> None:
     db = await aiosqlite.connect(settings.DB_PATH)

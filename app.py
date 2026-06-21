@@ -139,6 +139,10 @@ def create_webapp() -> web.Application:
                 return web.FileResponse(index)
             app.router.add_get("/", index_handler)
         app.router.add_static("/", webapp_dir)
+
+    offer_dir = Path(__file__).parent / "static" / "offer"
+    if offer_dir.is_dir():
+        app.router.add_static("/offer", offer_dir)
     return app
 
 
@@ -154,12 +158,22 @@ async def main() -> None:
     await init_db(settings.DB_PATH)
 
     bot = Bot(token=settings.BOT_TOKEN)
+
     await bot.set_my_commands([
         BotCommand(command="start", description="Запустить бота"),
         BotCommand(command="subscribe", description="Купить подписку"),
         BotCommand(command="my", description="Статус подписки"),
-        BotCommand(command="offer", description="Оферта и условия"),
     ])
+
+    await bot.set_my_short_description(
+        "🔮 Гадания Таро с ИИ. Расклады 1/3 карты + карта дня."
+    )
+    await bot.set_my_description(
+        "🔮 Амотар — твой проводник в мире Таро.\n\n"
+        "Расклады на 1 и 3 карты, карта дня. "
+        "Всё генерируется нейросетью.\n\n"
+        f"📄 Оферта и политика: {settings.OFFER_URL}"
+    )
 
     dp = Dispatcher(storage=MemoryStorage())
 
