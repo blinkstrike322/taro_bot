@@ -94,8 +94,8 @@ async def handle_spread(request):
     if not tg_id:
         return web.json_response({"error": "tg_id required"}, status=400)
 
-    # Quota check
-    spread_type_str = "daily" if spread_type == "daily" else "non_daily"
+    # Quota check — frontend sends spread_type=1 with no question for daily card
+    spread_type_str = "daily" if (spread_type == "daily" or (spread_type in (1, "1") and not question)) else "non_daily"
     db = await get_db()
     user = await get_or_create_user(db, tg_id)
     quota = await check_quota(db, user.id, tg_id, spread_type_str)
