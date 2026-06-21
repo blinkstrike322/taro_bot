@@ -9,6 +9,7 @@ from urllib.parse import parse_qs
 from aiohttp import web
 from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
+from aiogram.types import BotCommand
 
 from config import settings, logger
 from core.reminder import reminder_loop
@@ -148,6 +149,12 @@ async def main() -> None:
     await init_db(settings.DB_PATH)
 
     bot = Bot(token=settings.BOT_TOKEN)
+    await bot.set_my_commands([
+        BotCommand(command="start", description="Запустить бота"),
+        BotCommand(command="subscribe", description="Купить подписку"),
+        BotCommand(command="my", description="Статус подписки"),
+    ])
+
     dp = Dispatcher(storage=MemoryStorage())
 
     register_handlers(dp)
