@@ -140,9 +140,12 @@ def create_webapp() -> web.Application:
             app.router.add_get("/", index_handler)
         app.router.add_static("/", webapp_dir)
 
-    offer_dir = Path(__file__).parent / "static" / "offer"
-    if offer_dir.is_dir():
-        app.router.add_static("/offer", offer_dir)
+    offer_file = Path(__file__).parent / "static" / "offer" / "index.html"
+    if offer_file.exists():
+        async def offer_handler(_):
+            return web.FileResponse(offer_file)
+        app.router.add_get("/offer", offer_handler)
+        app.router.add_get("/offer/", offer_handler)
     return app
 
 
