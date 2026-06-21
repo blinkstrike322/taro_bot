@@ -1,13 +1,20 @@
 import json
+from datetime import datetime
 from pathlib import Path
 
 import aiosqlite
 from aiogram import Router, types, F
-from aiogram.filters import CommandStart
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo
+from aiogram.filters import Command, CommandStart
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo, LabeledPrice, PreCheckoutQuery, SuccessfulPayment
 
 from config import settings
+from core.payments import get_subscription_price, FIRST_MONTH_PRICE, REGULAR_PRICE, SUBSCRIPTION_TITLE, SUBSCRIPTION_DESCRIPTION_FIRST, SUBSCRIPTION_DESCRIPTION_REGULAR
 from storage.db import create_tables, get_or_create_user, update_character, update_last_active
+from storage.db import (
+    get_user_by_tg_id, activate_subscription,
+    get_daily_non_daily_count, get_monthly_non_daily_count,
+    is_subscribed,
+)
 
 _CHARACTERS_PATH = Path(__file__).resolve().parent.parent / "data" / "characters.json"
 
@@ -70,6 +77,10 @@ def _main_menu_keyboard() -> InlineKeyboardMarkup:
         [InlineKeyboardButton(
             text="КАРТА ДНЯ",
             web_app=WebAppInfo(url=f"{url}?type=daily"),
+        )],
+        [InlineKeyboardButton(
+            text="МОЯ ПОДПИСКА",
+            callback_data="subscribe",
         )],
         [InlineKeyboardButton(
             text="СМЕНИТЬ ПРОВОДНИКА",
@@ -140,3 +151,173 @@ async def set_character(callback: types.CallbackQuery) -> None:
         reply_markup=_main_menu_keyboard(),
     )
     await callback.answer()
+
+
+# ── Subscription / payments ──────────────────────────────────────
+
+
+@start_router.callback_query(F.data == "subscribe")
+async def subscribe_menu(callback: types.CallbackQuery) -> None:
+    db = await aiosqlite.connect(settings.DB_PATH)
+    try:
+        user = await get_user_by_tg_id(db, callback.from_user.id)
+    finally:
+        await db.close()
+
+    if user and user.subscription_end and user.subscription_end > datetime.utcnow().isoformat()[:19]:
+        days_left = (datetime.fromisoformat(user.subscription_end) - datetime.utcnow()).days
+        await callback.message.edit_text(
+            f"Подписка активна ещё {days_left} дн.\n\nПродлить?",
+            reply_markup=_subscription_keyboard(first_month=False),
+        )
+    else:
+        await callback.message.edit_text(
+            "Нет активной подписки.\n\n"
+            "• Бесплатно — 3 не-дневных расклада в день\n"
+            "• По подписке — 100 раскладов в месяц\n\n"
+            "Выбери тариф:",
+            reply_markup=_subscription_keyboard(first_month=True),
+        )
+    await callback.answer()
+
+
+def _subscription_keyboard(first_month: bool = False) -> InlineKeyboardMarkup:
+    buttons = []
+    if first_month:
+        buttons.append([InlineKeyboardButton(
+            text=f"Первый месяц — {FIRST_MONTH_PRICE} \u2605",
+            callback_data="buy_subscription:first",
+        )])
+    buttons.append([InlineKeyboardButton(
+        text=f"Обычный месяц — {REGULAR_PRICE} \u2605",
+        callback_data="buy_subscription:regular",
+    )])
+    buttons.append([InlineKeyboardButton(
+        text="\u00ab Назад",
+        callback_data="back_to_menu",
+    )])
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+
+@start_router.callback_query(F.data == "back_to_menu")
+async def back_to_menu(callback: types.CallbackQuery) -> None:
+    await callback.message.edit_text(
+        _CHARACTERS.get(_DEFAULT_CHARACTER_ID, {}).get("greeting", "Главное меню."),
+        reply_markup=_main_menu_keyboard(),
+    )
+    await callback.answer()
+
+
+@start_router.callback_query(F.data.startswith("buy_subscription:"))
+async def buy_subscription(callback: types.CallbackQuery) -> None:
+    is_first = callback.data.split(":", 1)[1] == "first"
+    prices = get_subscription_price(first_month=is_first)
+
+    db = await aiosqlite.connect(settings.DB_PATH)
+    try:
+        user = await get_user_by_tg_id(db, callback.from_user.id)
+    finally:
+        await db.close()
+
+    if is_first and user and user.first_month_done:
+        await callback.answer("Первомесячная скидка уже использована.", show_alert=True)
+        return
+
+    title = f"{SUBSCRIPTION_TITLE} {'(со скидкой)' if is_first else ''}"
+    desc = SUBSCRIPTION_DESCRIPTION_FIRST if is_first else SUBSCRIPTION_DESCRIPTION_REGULAR
+    payload = f"sub:{callback.from_user.id}:{'first' if is_first else 'regular'}"
+
+    await callback.message.answer_invoice(
+        title=title,
+        description=desc,
+        payload=payload,
+        currency="XTR",
+        prices=prices,
+    )
+    await callback.answer()
+
+
+@start_router.message(Command("subscribe"))
+async def cmd_subscribe(message: types.Message) -> None:
+    db = await aiosqlite.connect(settings.DB_PATH)
+    try:
+        user = await get_user_by_tg_id(db, message.from_user.id)
+        first_month = user is not None and user.first_month_done == 0
+        prices = get_subscription_price(first_month=first_month)
+
+        await message.answer_invoice(
+            title=SUBSCRIPTION_TITLE,
+            description=SUBSCRIPTION_DESCRIPTION_FIRST if first_month else SUBSCRIPTION_DESCRIPTION_REGULAR,
+            payload=f"sub:{message.from_user.id}:{'first' if first_month else 'regular'}",
+            currency="XTR",
+            prices=prices,
+            start_parameter="subscribe",
+        )
+    finally:
+        await db.close()
+
+
+@start_router.message(Command("my"))
+async def cmd_my_status(message: types.Message) -> None:
+    db = await aiosqlite.connect(settings.DB_PATH)
+    try:
+        user = await get_user_by_tg_id(db, message.from_user.id)
+        if user is None:
+            await message.answer("Ты ещё не начал. Напиши /start")
+            return
+
+        subscribed = await is_subscribed(db, message.from_user.id)
+
+        if subscribed:
+            daily = await get_daily_non_daily_count(db, user.id)
+            monthly = await get_monthly_non_daily_count(db, user.id)
+            remaining_monthly = max(0, 100 - monthly)
+            sub_end = user.subscription_end or "?"
+            await message.answer(
+                f"\u2b50 Подписка активна до {sub_end[:10]}\n"
+                f"Осталось раскладов в месяце: {remaining_monthly}\n"
+                f"Сегодня использовано: {daily} из 3 (бесплатные не считаются)",
+            )
+        else:
+            await message.answer(
+                "У тебя пока нет подписки.\n"
+                "Бесплатно: 3 расклада в день.\n"
+                "Подписка: 100 раскладов в месяц.\n"
+                "Первый месяц — 100 \u2605, далее — 600 \u2605 в месяц.\n"
+                "/subscribe — оформить",
+            )
+    finally:
+        await db.close()
+
+
+@start_router.pre_checkout_query()
+async def on_pre_checkout(pre_checkout: PreCheckoutQuery) -> None:
+    await pre_checkout.answer(ok=True)
+
+
+@start_router.message(F.successful_payment)
+async def on_successful_payment(message: types.Message) -> None:
+    payload = message.successful_payment.invoice_payload
+    parts = payload.split(":")
+    if len(parts) < 2 or parts[0] != "sub":
+        await message.answer("Ошибка платежа. Свяжись с поддержкой.")
+        return
+
+    tg_id = int(parts[1])
+    is_first = len(parts) >= 3 and parts[2] == "first"
+
+    if tg_id != message.from_user.id:
+        await message.answer("Ошибка: неверный пользователь.")
+        return
+
+    db = await aiosqlite.connect(settings.DB_PATH)
+    try:
+        await activate_subscription(db, tg_id, first_month=is_first)
+    finally:
+        await db.close()
+
+    await message.answer(
+        "Подписка активирована!\n"
+        "Тебе доступно 100 раскладов в месяц.",
+        reply_markup=_main_menu_keyboard(),
+    )
