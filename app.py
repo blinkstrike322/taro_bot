@@ -169,13 +169,19 @@ async def main() -> None:
     ])
 
     await bot.set_my_short_description(
-        "🔮 Гадания Таро с ИИ. Расклады 1/3 карты + карта дня."
+        "⚡ amotaro_bot :: digital occult"
     )
     await bot.set_my_description(
-        "🔮 Амотар — твой проводник в мире Таро.\n\n"
-        "Расклады на 1 и 3 карты, карта дня. "
-        "Всё генерируется нейросетью.\n\n"
-        f"📄 Оферта и политика: {settings.OFFER_URL}"
+        "[amotaro_bot] digital occult interface initialized\n\n"
+        "проводники:\n"
+        "  Странница Теней    · тени и поэзия\n"
+        "  Хранитель Руин     · древняя мудрость\n"
+        "  Искра Хаоса        · огонь и правда\n\n"
+        "расклады: 1 карта · 3 карты · карта дня\n"
+        "ядро: нейросеть\n\n"
+        "[age_restriction] 18+\n"
+        f"[manifest] {settings.OFFER_URL}\n"
+        "[status] online"
     )
 
     dp = Dispatcher(storage=MemoryStorage())
