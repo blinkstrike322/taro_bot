@@ -18,6 +18,7 @@ from bot.webapp_handler import router as webapp_router
 from storage.db import init_db, get_db, get_user_readings_by_month, save_reading, get_or_create_user
 from core.tarot import draw_cards
 from core.llm import interpret_reading
+from core.quota import check_quota
 
 
 def verify_telegram_init_data(init_data: str) -> dict | None:
@@ -82,15 +83,24 @@ async def handle_spread(request):
     except Exception:
         return web.json_response({"error": "invalid json"}, status=400)
     init_data = body.get('init_data', '')
-    user = verify_telegram_init_data(init_data)
-    if not user:
+    user_data = verify_telegram_init_data(init_data)
+    if not user_data:
         return web.json_response({"error": "unauthorized"}, status=403)
-    tg_id = user.get('id', 0)
+    tg_id = user_data.get('id', 0)
     spread_type = body.get('spread_type', 1)
     question = body.get('question')
     character_id = body.get('character_id', 'shadow_walker')
     if not tg_id:
         return web.json_response({"error": "tg_id required"}, status=400)
+
+    # Quota check
+    spread_type_str = "daily" if spread_type == "daily" else "non_daily"
+    db = await get_db()
+    user = await get_or_create_user(db, tg_id)
+    quota = await check_quota(db, user.id, tg_id, spread_type_str)
+    if not quota["ok"]:
+        return web.json_response({"error": quota["reason"]}, status=429)
+
     count = 3 if spread_type == 3 else 1
     cards = draw_cards(count)
     interpretation = await interpret_reading(
@@ -99,8 +109,6 @@ async def handle_spread(request):
         character_id=character_id,
         spread_type=spread_type,
     )
-    db = await get_db()
-    user = await get_or_create_user(db, tg_id)
     await save_reading(
         db=db,
         user_id=user.id,
