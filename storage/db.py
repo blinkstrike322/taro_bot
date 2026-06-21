@@ -259,9 +259,12 @@ async def is_subscribed(db: aiosqlite.Connection, tg_id: int) -> bool:
 
 
 async def get_daily_non_daily_count(db: aiosqlite.Connection, user_id: int) -> int:
-    """Count non-daily readings today for a user."""
+    """Count non-daily readings today for a user.
+
+    Excludes old-format daily cards (type='spread_1' with no question).
+    """
     cursor = await db.execute(
-        "SELECT COUNT(*) FROM readings WHERE user_id = ? AND type != 'daily' AND date(created_at) = date('now')",
+        "SELECT COUNT(*) FROM readings WHERE user_id = ? AND type != 'daily' AND NOT (type = 'spread_1' AND question IS NULL) AND date(created_at) = date('now')",
         (user_id,),
     )
     row = await cursor.fetchone()
@@ -269,9 +272,12 @@ async def get_daily_non_daily_count(db: aiosqlite.Connection, user_id: int) -> i
 
 
 async def get_monthly_non_daily_count(db: aiosqlite.Connection, user_id: int) -> int:
-    """Count non-daily readings this month for a user."""
+    """Count non-daily readings this month for a user.
+
+    Excludes old-format daily cards (type='spread_1' with no question).
+    """
     cursor = await db.execute(
-        "SELECT COUNT(*) FROM readings WHERE user_id = ? AND type != 'daily' AND strftime('%Y-%m', created_at) = strftime('%Y-%m', 'now')",
+        "SELECT COUNT(*) FROM readings WHERE user_id = ? AND type != 'daily' AND NOT (type = 'spread_1' AND question IS NULL) AND strftime('%Y-%m', created_at) = strftime('%Y-%m', 'now')",
         (user_id,),
     )
     row = await cursor.fetchone()
