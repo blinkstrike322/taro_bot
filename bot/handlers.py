@@ -152,16 +152,38 @@ async def set_character(callback: types.CallbackQuery) -> None:
 # ── Subscription / payments ──────────────────────────────────────
 
 
+@start_router.message(Command("offer"))
+async def cmd_offer(message: types.Message) -> None:
+    offer_path = Path(__file__).resolve().parent.parent / "OFFER.md"
+    if not offer_path.exists():
+        await message.answer("Оферта временно недоступна.")
+        return
+    text = offer_path.read_text(encoding="utf-8")
+    # Telegram limit 4096 chars per message
+    for i in range(0, len(text), 4000):
+        await message.answer(text[i:i+4000])
+
+
 @start_router.message(Command("subscribe"))
 async def cmd_subscribe(message: types.Message) -> None:
     db = await aiosqlite.connect(settings.DB_PATH)
     try:
         user = await get_user_by_tg_id(db, message.from_user.id)
+        subscribed = user and user.subscription_end and user.subscription_end > datetime.utcnow().isoformat()[:19]
+
+        if subscribed:
+            days_left = (datetime.fromisoformat(user.subscription_end) - datetime.utcnow()).days
+            await message.answer(
+                f"Подписка активна ещё {days_left} дн. "
+                f"Следующее списание — 600 \u2605."
+            )
+            return
+
         is_first = user is not None and user.first_month_done == 0
         prices = get_subscription_price(first_month=is_first)
         desc = SUBSCRIPTION_DESCRIPTION_FIRST if is_first else SUBSCRIPTION_DESCRIPTION_REGULAR
 
-        await message.answer_invoice(
+        kwargs = dict(
             title=SUBSCRIPTION_TITLE,
             description=desc,
             payload=f"sub:{message.from_user.id}",
@@ -169,6 +191,11 @@ async def cmd_subscribe(message: types.Message) -> None:
             prices=prices,
             start_parameter="subscribe",
         )
+        # Auto-renewal for return buyers
+        if not is_first:
+            kwargs["subscription_period"] = 2_592_000  # 30 days
+
+        await message.answer_invoice(**kwargs)
     finally:
         await db.close()
 
@@ -188,9 +215,11 @@ async def cmd_my_status(message: types.Message) -> None:
             monthly = await get_monthly_non_daily_count(db, user.id)
             remaining = max(0, 100 - monthly)
             sub_end = user.subscription_end or "?"
+            days_left = (datetime.fromisoformat(sub_end) - datetime.utcnow()).days
             await message.answer(
-                f"Подписка активна до {sub_end[:10]}\n"
-                f"Осталось призывов: {remaining} из 100",
+                f"Подписка активна до {sub_end[:10]} (осталось {days_left} дн.)\n"
+                f"Осталось призывов: {remaining} из 100\n"
+                f"Следующее списание: 600 \u2605 — авто",
             )
         else:
             monthly = await get_monthly_non_daily_count(db, user.id)
@@ -208,6 +237,23 @@ async def cmd_my_status(message: types.Message) -> None:
         await db.close()
 
 
+@start_router.callback_query(F.data == "renew_subscription")
+async def renew_subscription(callback: types.CallbackQuery) -> None:
+    """Callback from expiry reminder — sends subscription invoice with auto-renewal."""
+    prices = get_subscription_price(first_month=False)
+
+    await callback.message.answer_invoice(
+        title=SUBSCRIPTION_TITLE,
+        description=SUBSCRIPTION_DESCRIPTION_REGULAR,
+        payload=f"sub:{callback.from_user.id}",
+        currency="XTR",
+        prices=prices,
+        start_parameter="subscribe",
+        subscription_period=2_592_000,
+    )
+    await callback.answer()
+
+
 @start_router.pre_checkout_query()
 async def on_pre_checkout(pre_checkout: PreCheckoutQuery) -> None:
     await pre_checkout.answer(ok=True)
@@ -215,19 +261,34 @@ async def on_pre_checkout(pre_checkout: PreCheckoutQuery) -> None:
 
 @start_router.message(F.successful_payment)
 async def on_successful_payment(message: types.Message) -> None:
-    payload = message.successful_payment.invoice_payload
-    if not payload.startswith("sub:"):
+    sp = message.successful_payment
+    if not sp.invoice_payload.startswith("sub:"):
         return
 
-    tg_id = int(payload.split(":")[1])
+    tg_id = int(sp.invoice_payload.split(":")[1])
     if tg_id != message.from_user.id:
         return
 
     db = await aiosqlite.connect(settings.DB_PATH)
     try:
         user = await get_user_by_tg_id(db, tg_id)
-        is_first = user is not None and user.first_month_done == 0
-        await activate_subscription(db, tg_id, first_month=is_first)
+        if sp.subscription_expiration_date:
+            # Telegram subscription (with auto-renewal)
+            end_iso = datetime.fromtimestamp(sp.subscription_expiration_date).isoformat()[:19]
+            await db.execute(
+                "UPDATE users SET subscription_end = ? WHERE tg_id = ?",
+                (end_iso, tg_id),
+            )
+            # Mark first_month_done if this is the first recurring
+            if sp.is_first_recurring and user and not user.first_month_done:
+                await db.execute(
+                    "UPDATE users SET first_month_done = 1 WHERE tg_id = ?",
+                    (tg_id,),
+                )
+            await db.commit()
+        else:
+            # One-time payment (first month 100 Stars)
+            await activate_subscription(db, tg_id, first_month=True)
     finally:
         await db.close()
 
