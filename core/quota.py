@@ -2,9 +2,26 @@
 import logging
 
 import aiosqlite
+from config import settings
 from storage.db import is_subscribed, get_monthly_non_daily_count
 
 logger = logging.getLogger(__name__)
+
+_admin_ids: set[int] = set()
+
+
+def _load_admin_ids() -> set[int]:
+    raw = settings.ADMIN_IDS
+    if not raw:
+        return set()
+    return {int(x.strip()) for x in raw.split(",") if x.strip().isdigit()}
+
+
+def _is_admin(tg_id: int) -> bool:
+    global _admin_ids
+    if not _admin_ids:
+        _admin_ids = _load_admin_ids()
+    return tg_id in _admin_ids
 
 MONTHLY_LIMIT_FREE = 10
 MONTHLY_LIMIT_PAID = 100
@@ -26,6 +43,9 @@ async def check_quota(
     """
     if spread_type == "daily":
         return {"ok": True, "remaining": None, "limit": None}
+
+    if _is_admin(tg_id):
+        return {"ok": True, "remaining": None, "limit": None, "admin": True}
 
     subscribed = await is_subscribed(db, tg_id)
     monthly_count = await get_monthly_non_daily_count(db, user_id)
