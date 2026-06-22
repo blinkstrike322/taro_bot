@@ -50,7 +50,7 @@ export default function QuestionInput({ spreadType, onSubmit, loading = false, c
       </div>
 
       {/* ── per-guide pixel sigil ── */}
-      <GuideSigil guideId={characterId} size={320} />
+      <GuideSigil guideId={characterId} />
 
       <div className="flex justify-center">
         <Button onClick={handleSubmit} variant="primary">

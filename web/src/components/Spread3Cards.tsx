@@ -72,7 +72,7 @@ export default function Spread3Cards({ apiCall, characterId }: Spread3CardsProps
             const isCenter = i === 1;
 
             return (
-              <div key={rawCard.id} className="flex-1 max-w-[140px] sm:max-w-[160px] min-w-0 overflow-x-hidden">
+              <div key={rawCard.id} className="flex-1 max-w-[140px] sm:max-w-[180px] lg:max-w-[200px] min-w-0 overflow-x-hidden">
                 <Card
                   card={card}
                   position={POSITIONS[i]}
