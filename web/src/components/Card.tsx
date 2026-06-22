@@ -189,7 +189,7 @@ export default function Card({
               <img
                 src={guide.cardBack}
                 alt=""
-                className="dither-img w-full h-full object-cover"
+                className="dither-img w-full h-full object-contain"
                 style={{ imageRendering: 'pixelated' }}
               />
               {/* subtle accent overlay on back */}
