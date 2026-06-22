@@ -293,6 +293,20 @@ async def get_monthly_non_daily_count(db: aiosqlite.Connection, user_id: int) ->
     return row[0]
 
 
+async def get_daily_card_count_today(db: aiosqlite.Connection, user_id: int) -> int:
+    """Count daily-card readings today for a user.
+
+    Matches both the new format (type='daily') and old format
+    (type='spread_1' with no question).
+    """
+    cursor = await db.execute(
+        "SELECT COUNT(*) FROM readings WHERE user_id = ? AND date(created_at) = date('now') AND (type = 'daily' OR (type = 'spread_1' AND question IS NULL))",
+        (user_id,),
+    )
+    row = await cursor.fetchone()
+    return row[0]
+
+
 async def get_user_by_tg_id(db: aiosqlite.Connection, tg_id: int) -> Optional[User]:
     """Get full user row by tg_id."""
     cursor = await db.execute(
