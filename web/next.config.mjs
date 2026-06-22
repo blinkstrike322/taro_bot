@@ -1,12 +1,14 @@
 /** @type {import('next').NextConfig} */
+const isProd = process.env.NODE_ENV === 'production';
+
 const nextConfig = {
-  output: 'export',
-  distDir: '../static/webapp',
+  output: isProd ? 'export' : undefined,
+  distDir: isProd ? '../static/webapp' : '.next',
   images: {
     unoptimized: true,
   },
   // Use assetPrefix for production when behind aiohttp
-  assetPrefix: process.env.NODE_ENV === 'production' ? '' : '',
+  assetPrefix: isProd ? '' : '',
   // Ensure trailing slashes for static export compatibility
   trailingSlash: true,
 };

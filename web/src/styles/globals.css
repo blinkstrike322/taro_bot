@@ -845,3 +845,497 @@ body {
   );
   mix-blend-mode: multiply;
 }
+
+/* ================================================================
+   GUIDE PORTRAIT — pixel-art sprite with CRT scan overlay
+   ================================================================ */
+.guide-portrait-frame {
+  position: relative;
+  background: #000;
+}
+
+.guide-portrait-frame::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 1px,
+    rgba(0,0,0,0.45) 1px,
+    rgba(0,0,0,0.45) 2px
+  );
+}
+
+.guide-portrait-frame::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  border: 1px solid rgba(255,255,255,0.15);
+}
+
+.guide-portrait-scan {
+  filter: grayscale(1) contrast(1.5) brightness(0.85);
+  animation: portrait-flicker 5s steps(5) infinite;
+}
+
+@keyframes portrait-flicker {
+  0%, 100% { opacity: 0.95; filter: grayscale(1) contrast(1.5) brightness(0.85); }
+  23% { opacity: 0.85; filter: grayscale(1) contrast(1.7) brightness(0.78); }
+  47% { opacity: 0.95; filter: grayscale(1) contrast(1.5) brightness(0.85); }
+  73% { opacity: 0.75; filter: grayscale(1) contrast(1.4) brightness(0.7); }
+}
+
+/* ================================================================
+   FLIP GLITCH — split-second RGB-shift when card flips
+   ================================================================ */
+@keyframes flip-glitch {
+  0%   { filter: grayscale(1) contrast(1.6) brightness(1.05); transform: translate(0, 0); }
+  20%  { filter: grayscale(1) contrast(2.0) brightness(1.15) hue-rotate(0deg); transform: translate(-2px, 1px); }
+  35%  { filter: grayscale(1) contrast(0.6) brightness(1.4) invert(0.15); transform: translate(2px, -1px); }
+  50%  { filter: grayscale(1) contrast(2.2) brightness(0.9); transform: translate(-1px, 0); }
+  65%  { filter: grayscale(1) contrast(1.0) brightness(1.2) invert(0.08); transform: translate(1px, 1px); }
+  80%  { filter: grayscale(1) contrast(1.8) brightness(1.05); transform: translate(0, -1px); }
+  100% { filter: grayscale(1) contrast(1.6) brightness(1.05); transform: translate(0, 0); }
+}
+
+.flip.is-flipped .flip-glitch {
+  animation: flip-glitch 0.7s steps(7) 1;
+}
+
+/* ================================================================
+   GUIDE AMBIENT — daily-pick background pattern + per-guide particles
+   ================================================================ */
+.guide-ambient {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.85;
+}
+
+.guide-particles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  overflow: hidden;
+}
+
+.guide-particle {
+  position: absolute;
+  font-family: var(--font-pixel), monospace;
+  line-height: 1;
+  white-space: nowrap;
+  user-select: none;
+  pointer-events: none;
+  animation: guide-particle-drift var(--gp-dur, 18s) ease-in-out infinite;
+  animation-delay: var(--gp-delay, 0s);
+}
+
+@keyframes guide-particle-drift {
+  0% {
+    opacity: 0;
+    transform: translateY(0) translateX(0) rotate(0deg);
+  }
+  12% { opacity: var(--gp-op, 0.35); }
+  50% {
+    opacity: var(--gp-op, 0.35);
+    transform: translateY(-30px) translateX(var(--gp-x, 8px)) rotate(var(--gp-rot, 6deg));
+  }
+  88% { opacity: var(--gp-op, 0.35); }
+  100% {
+    opacity: 0;
+    transform: translateY(-60px) translateX(0) rotate(0deg);
+  }
+}
+
+/* ================================================================
+   GUIDE LOADING — pixel idle indicator (replaces "ГАДАНИЕ...")
+   ================================================================ */
+.guide-loading {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-pixel);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  color: rgba(255,255,255,0.5);
+  margin-top: 12px;
+  text-align: center;
+}
+
+.guide-loading-dot {
+  width: 6px;
+  height: 6px;
+  background: var(--guide-accent, #fff);
+  display: inline-block;
+  animation: guide-loading-pulse 1.2s steps(3) infinite;
+  animation-delay: var(--dot-delay, 0s);
+}
+
+@keyframes guide-loading-pulse {
+  0%, 100% { opacity: 0.25; transform: scale(1); }
+  40% { opacity: 1; transform: scale(1.4); }
+}
+
+/* ================================================================
+   BUTTON VIBE — double frame, scanlines, corner ticks, glitch hover
+   ================================================================ */
+.btn-vibe {
+  position: relative;
+  border: 2px solid #fff;
+  background: #000;
+  color: #fff;
+  overflow: hidden;
+  transition: transform 0.08s steps(2), background 0.12s steps(2), color 0.12s steps(2);
+  isolation: isolate;
+}
+
+/* inner hairline border */
+.btn-vibe::before {
+  content: "";
+  position: absolute;
+  inset: 2px;
+  border: 1px solid rgba(255,255,255,0.25);
+  pointer-events: none;
+  z-index: 1;
+  transition: border-color 0.12s steps(2);
+}
+
+/* CRT scanlines on the button face */
+.btn-vibe-scan {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 1px,
+    rgba(255,255,255,0.04) 1px,
+    rgba(255,255,255,0.04) 2px
+  );
+  mix-blend-mode: screen;
+}
+
+/* tiny corner ticks — pixel-art corner markers */
+.btn-vibe-corners {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.bvc {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  background: #fff;
+  transition: background 0.12s steps(2);
+}
+
+.bvc-tl { top: -1px;    left: -1px; }
+.bvc-tr { top: -1px;    right: -1px; }
+.bvc-bl { bottom: -1px; left: -1px; }
+.bvc-br { bottom: -1px; right: -1px; }
+
+/* primary variant — solid black, white border */
+.btn-vibe--primary {
+  background: #000;
+  color: #fff;
+}
+
+/* secondary variant — even more minimal */
+.btn-vibe--secondary {
+  background: #000;
+  color: #fff;
+  border-color: rgba(255,255,255,0.6);
+}
+
+.btn-vibe--secondary::before {
+  border-color: rgba(255,255,255,0.15);
+}
+
+/* hover — invert + subtle glitch shift */
+.btn-vibe:hover {
+  background: #fff;
+  color: #000;
+}
+
+.btn-vibe:hover::before {
+  border-color: rgba(0,0,0,0.3);
+}
+
+.btn-vibe:hover .bvc {
+  background: #000;
+}
+
+/* active — pressed look */
+.btn-vibe:active {
+  transform: translate(1px, 1px);
+}
+
+/* keep secondary distinct on hover */
+.btn-vibe--secondary:hover {
+  background: rgba(255,255,255,0.08);
+  color: #fff;
+}
+
+.btn-vibe--secondary:hover::before {
+  border-color: rgba(255,255,255,0.4);
+}
+
+.btn-vibe--secondary:hover .bvc {
+  background: #fff;
+}
+
+.btn-vibe--secondary:active {
+  background: rgba(255,255,255,0.15);
+}
+
+/* disabled */
+.btn-vibe:disabled,
+.btn-vibe[disabled] {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ================================================================
+   CARD EDGES — pixel-artifact notches on card frame
+   Larger artifact pattern: chunky pixel notches, scattered dots,
+   sparkle clusters, and small ASCII-like glyph fragments along
+   the border. Purely decorative.
+   ================================================================ */
+.card-edges {
+  position: relative;
+}
+
+/* Pixel notches on the outer border — chunkier, more numerous */
+.card-edges::before {
+  content: "";
+  position: absolute;
+  top: -1px;
+  left: 12%;
+  width: 5px;
+  height: 5px;
+  background: #000;
+  z-index: 4;
+  box-shadow:
+    /* top edge — chunky black notches */
+    14% 0 0 #000,
+    15% 0 0 #000,
+    32% 0 0 #000,
+    56% 0 0 #000,
+    57% 0 0 #000,
+    58% 0 0 #000,
+    81% 0 0 #000,
+    /* bottom edge — chunky black notches */
+    8% calc(100% + 1px) 0 #000,
+    27% calc(100% + 1px) 0 #000,
+    28% calc(100% + 1px) 0 #000,
+    51% calc(100% + 1px) 0 #000,
+    74% calc(100% + 1px) 0 #000,
+    75% calc(100% + 1px) 0 #000,
+    92% calc(100% + 1px) 0 #000,
+    /* left edge — chunky black notches */
+    -1px 14% 0 #000,
+    -1px 38% 0 #000,
+    -1px 39% 0 #000,
+    -1px 67% 0 #000,
+    -1px 85% 0 #000,
+    /* right edge — chunky black notches */
+    calc(100% + 1px) 18% 0 #000,
+    calc(100% + 1px) 19% 0 #000,
+    calc(100% + 1px) 47% 0 #000,
+    calc(100% + 1px) 72% 0 #000,
+    calc(100% + 1px) 73% 0 #000;
+  pointer-events: none;
+}
+
+/* Pixel sparkles + dot clusters on the outer border — denser, more varied */
+.card-edges::after {
+  content: "";
+  position: absolute;
+  top: -3px;
+  left: 22%;
+  width: 2px;
+  height: 2px;
+  background: rgba(255,255,255,0.7);
+  z-index: 4;
+  box-shadow:
+    /* top edge — white sparkle dots */
+    8% 0 0 rgba(255,255,255,0.5),
+    9% 0 0 rgba(255,255,255,0.4),
+    24% 0 0 rgba(255,255,255,0.6),
+    44% 0 0 rgba(255,255,255,0.4),
+    45% 0 0 rgba(255,255,255,0.5),
+    46% 0 0 rgba(255,255,255,0.35),
+    68% 0 0 rgba(255,255,255,0.5),
+    88% 0 0 rgba(255,255,255,0.4),
+    89% 0 0 rgba(255,255,255,0.5),
+    /* left edge — white sparkle dots */
+    -3px 22% 0 rgba(255,255,255,0.5),
+    -3px 50% 0 rgba(255,255,255,0.4),
+    -3px 51% 0 rgba(255,255,255,0.5),
+    -3px 78% 0 rgba(255,255,255,0.4),
+    -3px 92% 0 rgba(255,255,255,0.5),
+    /* right edge — white sparkle dots */
+    calc(100% + 3px) 12% 0 rgba(255,255,255,0.4),
+    calc(100% + 3px) 13% 0 rgba(255,255,255,0.5),
+    calc(100% + 3px) 38% 0 rgba(255,255,255,0.5),
+    calc(100% + 3px) 62% 0 rgba(255,255,255,0.4),
+    calc(100% + 3px) 88% 0 rgba(255,255,255,0.5),
+    /* bottom edge — white sparkle dots */
+    16% calc(100% + 3px) 0 rgba(255,255,255,0.5),
+    36% calc(100% + 3px) 0 rgba(255,255,255,0.4),
+    37% calc(100% + 3px) 0 rgba(255,255,255,0.5),
+    60% calc(100% + 3px) 0 rgba(255,255,255,0.5),
+    82% calc(100% + 3px) 0 rgba(255,255,255,0.4),
+    83% calc(100% + 3px) 0 rgba(255,255,255,0.5);
+  pointer-events: none;
+}
+
+/* ================================================================
+   GUIDE SIGIL — mystical pixel-art emblem on question-input screen
+   ================================================================ */
+.sigil-rotate {
+  transform-origin: 100px 100px;
+  animation: sigil-rotate 60s linear infinite;
+}
+
+@keyframes sigil-rotate {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+.sigil-dot {
+  animation: sigil-dot-blink var(--dot-dur, 2s) steps(2) infinite;
+  animation-delay: var(--dot-delay, 0s);
+  opacity: var(--dot-op, 0.5);
+}
+
+@keyframes sigil-dot-blink {
+  0%, 100% { opacity: var(--dot-op, 0.5); }
+  50%      { opacity: 0; }
+}
+
+/* Falling stars — diagonal streaks that fade in/out */
+.falling-star {
+  opacity: 0;
+  animation: falling-star-pulse var(--fs-dur, 3s) ease-in-out infinite;
+  animation-delay: var(--fs-delay, 0s);
+}
+
+@keyframes falling-star-pulse {
+  0%   { opacity: 0.2; }
+  20%  { opacity: 1; }
+  50%  { opacity: 0.5; }
+  80%  { opacity: 0.8; }
+  100% { opacity: 0.2; }
+}
+
+/* ================================================================
+   MODAL FRAME — subtle CRT vibe for modal windows
+   ================================================================ */
+.modal-frame {
+  box-shadow: 0 0 0 1px #000, 0 0 24px rgba(255,255,255,0.05);
+}
+
+/* ================================================================
+   CARD FLIP BURST — one-shot symbol explosion when card is flipped
+   Per-guide accent color + guide auraAlphabet symbols
+   ================================================================ */
+.burst-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 8;
+  opacity: 0;
+}
+
+.flip.is-flipped ~ .burst-layer,
+.flip.is-flipped .burst-layer {
+  animation: burst-show 0.9s ease-out 1;
+}
+
+@keyframes burst-show {
+  0%   { opacity: 0; }
+  20%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.burst-particle {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  font-family: var(--font-pixel), monospace;
+  line-height: 1;
+  white-space: nowrap;
+  transform: translate(-50%, -50%);
+  --bx: 0px;
+  --by: 0px;
+  --brot: 0deg;
+  --bsize: 12px;
+  animation: burst-particle-fly var(--bdur, 0.9s) cubic-bezier(0.15, 0.85, 0.4, 1) 1;
+  animation-delay: var(--bdelay, 0s);
+  opacity: 0;
+}
+
+@keyframes burst-particle-fly {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.4) rotate(0deg);
+  }
+  15% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.3) rotate(calc(var(--brot) * 0.3));
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(-50% + var(--bx)), calc(-50% + var(--by))) scale(0.7) rotate(var(--brot));
+  }
+}
+
+/* Flash overlay on flip — accent color glow */
+.burst-flash {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 7;
+  opacity: 0;
+  background: radial-gradient(circle at 50% 50%, var(--guide-accent, #fff) 0%, transparent 60%);
+  mix-blend-mode: screen;
+}
+
+.flip.is-flipped ~ .burst-flash,
+.flip.is-flipped .burst-flash {
+  animation: burst-flash 0.7s ease-out 1;
+}
+
+@keyframes burst-flash {
+  0%   { opacity: 0; }
+  10%  { opacity: 0.65; }
+  100% { opacity: 0; }
+}
+
+/* ================================================================
+   WELCOME SIGIL — materializing pixel orbits during boot
+   ================================================================ */
+.welcome-sigil {
+  position: relative;
+  filter: drop-shadow(0 0 8px rgba(255,255,255,0.05));
+}
+
+.welcome-orbit-dot {
+  animation: welcome-dot-blink 2.4s ease-in-out infinite;
+}
+
+@keyframes welcome-dot-blink {
+  0%, 100% { opacity: var(--init-op, 0.5); }
+  50%      { opacity: 0; }
+}
