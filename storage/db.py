@@ -172,9 +172,14 @@ async def get_user_readings_by_month(
     year: str,
     month: str,
 ) -> list[dict]:
-    """Return readings for a tg_id in given month/year, ordered by day."""
+    """Return full readings for a tg_id in given month/year, ordered by day.
+
+    Returns full data: id, type, question, cards_data, interpretation,
+    character_id, created_at — so the frontend can render cards + reading.
+    """
     cursor = await db.execute(
-        """SELECT r.id, r.type, r.question, r.created_at, r.cards_data
+        """SELECT r.id, r.type, r.question, r.cards_data, r.interpretation,
+                  r.character_id, r.created_at
            FROM readings r
            JOIN users u ON r.user_id = u.id
            WHERE u.tg_id = ?
@@ -184,16 +189,26 @@ async def get_user_readings_by_month(
         (tg_id, year, month),
     )
     rows = await cursor.fetchall()
-    return [
-        {
+    result = []
+    for row in rows:
+        try:
+            interpretation = json.loads(row[4]) if row[4] else {}
+        except (json.JSONDecodeError, TypeError):
+            interpretation = {}
+        try:
+            cards_data = json.loads(row[3]) if row[3] else {}
+        except (json.JSONDecodeError, TypeError):
+            cards_data = {}
+        result.append({
             "id": row[0],
-            "type": row[1],
+            "type": row[1] or "",
             "question": row[2],
-            "created_at": row[3],
-            "cards_data": row[4],
-        }
-        for row in rows
-    ]
+            "cards_data": cards_data,
+            "interpretation": interpretation,
+            "character_id": row[5] or "shadow_walker",
+            "created_at": row[6] or "",
+        })
+    return result
 
 
 async def update_character(db: aiosqlite.Connection, tg_id: int, character_id: str) -> None:
@@ -259,12 +274,9 @@ async def is_subscribed(db: aiosqlite.Connection, tg_id: int) -> bool:
 
 
 async def get_daily_non_daily_count(db: aiosqlite.Connection, user_id: int) -> int:
-    """Count non-daily readings today for a user.
-
-    Excludes old-format daily cards (type='spread_1' with no question).
-    """
+    """Count non-daily readings today for a user."""
     cursor = await db.execute(
-        "SELECT COUNT(*) FROM readings WHERE user_id = ? AND type != 'daily' AND NOT (type = 'spread_1' AND question IS NULL) AND date(created_at) = date('now')",
+        "SELECT COUNT(*) FROM readings WHERE user_id = ? AND type != 'daily' AND date(created_at) = date('now')",
         (user_id,),
     )
     row = await cursor.fetchone()
@@ -272,26 +284,9 @@ async def get_daily_non_daily_count(db: aiosqlite.Connection, user_id: int) -> i
 
 
 async def get_monthly_non_daily_count(db: aiosqlite.Connection, user_id: int) -> int:
-    """Count non-daily readings this month for a user.
-
-    Excludes old-format daily cards (type='spread_1' with no question).
-    """
+    """Count non-daily readings this month for a user."""
     cursor = await db.execute(
-        "SELECT COUNT(*) FROM readings WHERE user_id = ? AND type != 'daily' AND NOT (type = 'spread_1' AND question IS NULL) AND strftime('%Y-%m', created_at) = strftime('%Y-%m', 'now')",
-        (user_id,),
-    )
-    row = await cursor.fetchone()
-    return row[0]
-
-
-async def get_daily_card_count_today(db: aiosqlite.Connection, user_id: int) -> int:
-    """Count daily-card readings today for a user.
-
-    Matches both the new format (type='daily') and old format
-    (type='spread_1' with no question).
-    """
-    cursor = await db.execute(
-        "SELECT COUNT(*) FROM readings WHERE user_id = ? AND date(created_at) = date('now') AND (type = 'daily' OR (type = 'spread_1' AND question IS NULL))",
+        "SELECT COUNT(*) FROM readings WHERE user_id = ? AND type != 'daily' AND strftime('%Y-%m', created_at) = strftime('%Y-%m', 'now')",
         (user_id,),
     )
     row = await cursor.fetchone()
