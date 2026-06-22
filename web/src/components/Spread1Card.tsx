@@ -20,9 +20,10 @@ interface ReadingData {
 
 interface Spread1CardProps {
   apiCall: (question: string | null) => Promise<ReadingData>;
+  characterId?: string;
 }
 
-export default function Spread1Card({ apiCall }: Spread1CardProps) {
+export default function Spread1Card({ apiCall, characterId }: Spread1CardProps) {
   const [phase, setPhase] = useState<Phase>('input');
   const [data, setData] = useState<ReadingData | null>(null);
   const [flipped, setFlipped] = useState(false);
@@ -49,6 +50,7 @@ export default function Spread1Card({ apiCall }: Spread1CardProps) {
         spreadType={1}
         onSubmit={handleSubmit}
         loading={phase === 'loading'}
+        characterId={characterId}
       />
     );
   }
@@ -64,6 +66,7 @@ export default function Spread1Card({ apiCall }: Spread1CardProps) {
             position="ТВOЯ КАРТА"
             flipped={flipped}
             onFlip={handleFlip}
+            characterId={characterId}
           />
         </div>
         {!flipped && (

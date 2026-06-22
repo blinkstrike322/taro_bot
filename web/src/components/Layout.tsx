@@ -3,14 +3,8 @@
 import { ReactNode } from 'react';
 import CrtOverlay from './CrtOverlay';
 import Button from './Button';
-// import CursedFooter from './CursedFooter';
 import Toast from './Toast';
-
-const CHARACTER_INFO: Record<string, { name: string; color: string }> = {
-  shadow_walker: { name: 'Странница Теней', color: '#7B2D8E' },
-  ruin_keeper: { name: 'Хранитель Руин', color: '#B8860B' },
-  spark_of_chaos: { name: 'Искра Хаoса', color: '#E63946' },
-};
+import { getGuide } from '@/lib/guides';
 
 interface LayoutProps {
   children: ReactNode;
@@ -39,14 +33,29 @@ export default function Layout({
   arcanaCount,
   characterId,
 }: LayoutProps) {
+  const guide = getGuide(characterId);
+
   return (
     <CrtOverlay>
-      <div className="w-full max-w-screen overflow-x-hidden border-y-4 border-white bg-black relative flex flex-col min-h-dvh">
+      <div
+        className="w-full max-w-screen overflow-x-hidden bg-black relative flex flex-col min-h-dvh"
+        style={{ '--guide-accent': guide.accent } as React.CSSProperties}
+      >
+        {/* ─── HEADER — minimal, monochrome ─── */}
         <div className="arcanum-header">
-          <div className="corner-decor top-left" aria-hidden="true">☩</div>
-          <div className="corner-decor top-right" aria-hidden="true">⚹</div>
-          <div className="corner-decor bottom-left" aria-hidden="true">‡</div>
-          <div className="corner-decor bottom-right" aria-hidden="true">⛧</div>
+          {/* per-guide corner symbols — subtle, dim white */}
+          <div className="corner-decor top-left" aria-hidden="true">
+            {guide.cornerSymbols.tl}
+          </div>
+          <div className="corner-decor top-right" aria-hidden="true">
+            {guide.cornerSymbols.tr}
+          </div>
+          <div className="corner-decor bottom-left" aria-hidden="true">
+            {guide.cornerSymbols.bl}
+          </div>
+          <div className="corner-decor bottom-right" aria-hidden="true">
+            {guide.cornerSymbols.br}
+          </div>
           <div className="header-artifacts" aria-hidden="true" />
 
           <div className="header-content">
@@ -56,45 +65,65 @@ export default function Layout({
           </div>
         </div>
 
-        <div className="flex justify-between font-pixel text-[11px] text-white px-3 py-2 border-b-2 border-white tracking-wide select-none">
-          <span><span className="blink">■</span> SPREAD: {spreadType ?? '—'}</span>
-          <span className="flex items-center gap-1.5">
-            {characterId && CHARACTER_INFO[characterId] && (
-              <>
-                <span
-                  className="inline-block w-2.5 h-2.5 border border-white/30 flex-shrink-0"
-                  style={{ backgroundColor: CHARACTER_INFO[characterId].color }}
-                />
-                <span className="text-[10px]">{CHARACTER_INFO[characterId].name}</span>
-              </>
-            )}
-          </span>
-        </div>
+        {/* ─── GUIDE BAR — minimal, black background, single accent dot ─── */}
+        <div className="relative flex items-center gap-2 px-3 py-2 border-b border-white/40 select-none overflow-hidden bg-black">
+          {/* guide portrait pixel-art sprite — small, monochrome */}
+          <div className="relative flex-shrink-0">
+            <div
+              className="w-8 h-8 border border-white/60 relative overflow-hidden guide-portrait-frame"
+            >
+              <img
+                src={guide.portrait}
+                alt={guide.name}
+                className="w-full h-full object-cover guide-portrait-scan"
+                style={{ imageRendering: 'pixelated' }}
+              />
+            </div>
+            {/* tiny accent dot — only splash of color in the bar */}
+            <span
+              className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5"
+              style={{ backgroundColor: guide.accent }}
+              aria-hidden="true"
+            />
+          </div>
 
-        <div className="text-center text-white text-base py-1 tracking-[0.3em] select-none">
-          ═══ ❖ ═══ ═══ ❖ ═══
+          {/* guide name + tag — white, monochrome */}
+          <div className="flex flex-col flex-1 min-w-0 leading-none">
+            <span className="font-pixel text-[11px] text-white tracking-wide truncate">
+              {guide.name}
+            </span>
+            <span className="font-pixel text-[7px] tracking-[0.18em] uppercase mt-1 text-white/40">
+              {guide.tag}
+            </span>
+          </div>
+
+          {/* spread type indicator (right side) — minimal */}
+          <div className="flex flex-col items-end leading-none">
+            <span className="font-pixel text-[9px] text-white/80 tracking-wide">
+              <span className="blink">■</span> {spreadType ?? '—'}
+            </span>
+          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto overflow-x-hidden">{children}</div>
 
-        <div className="flex flex-col gap-2 px-3 py-2">
+        {/* ─── FOOTER NAV — vibe buttons ─── */}
+        <div className="flex flex-col gap-2 px-3 py-2 border-t border-white/40 bg-black">
           <div className="flex flex-nowrap justify-center gap-1.5">
-            <Button onClick={onNewSpread} className="!px-2 !text-[12px]">
-              <span className="text-[11px]">✦</span> НOВЫЙ РАСКЛАД
+            <Button onClick={onNewSpread} className="!px-2 !text-[11px]">
+              <span className="text-[10px]">✦</span> НOВЫЙ
             </Button>
-            <Button onClick={onOpenCatalog} className="!px-2 !text-[12px]">
-              <span className="text-[11px]">☰</span> КАТАЛOГ
+            <Button onClick={onOpenCatalog} className="!px-2 !text-[11px]">
+              <span className="text-[10px]">☰</span> КАТАЛOГ
             </Button>
-            <Button onClick={onOpenSettings} className="!px-2 !text-[12px]">
-              <span className="text-[11px]">⚙</span> НАСТРOЙКИ
+            <Button onClick={onOpenSettings} className="!px-2 !text-[11px]">
+              <span className="text-[10px]">⚙</span> ПРOВOДНИК
             </Button>
           </div>
           <Button onClick={onOpenCalendar} className="w-full" variant="secondary">
-            <span className="text-[13px]">◈</span> КАЛЕНДАРЬ
+            <span className="text-[12px]">◈</span> ИСТOРИЯ РАСКЛАДOВ
           </Button>
         </div>
-
-        {/* <CursedFooter /> */}
 
         <Toast message={toastMessage} visible={toastVisible} onHide={onToastHide} />
       </div>

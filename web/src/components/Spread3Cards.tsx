@@ -20,11 +20,12 @@ interface ReadingData {
 
 interface Spread3CardsProps {
   apiCall: (question: string | null) => Promise<ReadingData>;
+  characterId?: string;
 }
 
 const POSITIONS = ['ПРOШЛOЕ', 'НАСТOЯЩЕЕ', 'БУДУЩЕЕ'];
 
-export default function Spread3Cards({ apiCall }: Spread3CardsProps) {
+export default function Spread3Cards({ apiCall, characterId }: Spread3CardsProps) {
   const [phase, setPhase] = useState<Phase>('input');
   const [data, setData] = useState<ReadingData | null>(null);
   const [flippedCards, setFlippedCards] = useState<boolean[]>([false, false, false]);
@@ -55,6 +56,7 @@ export default function Spread3Cards({ apiCall }: Spread3CardsProps) {
         spreadType={3}
         onSubmit={handleSubmit}
         loading={phase === 'loading'}
+        characterId={characterId}
       />
     );
   }
@@ -77,6 +79,7 @@ export default function Spread3Cards({ apiCall }: Spread3CardsProps) {
                   raised={isCenter}
                   flipped={flippedCards[i]}
                   onFlip={() => handleFlip(i)}
+                  characterId={characterId}
                 />
               </div>
             );

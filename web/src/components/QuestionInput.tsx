@@ -2,14 +2,16 @@
 
 import { useState } from 'react';
 import Button from './Button';
+import GuideSigil from './GuideSigil';
 
 interface QuestionInputProps {
   spreadType: 1 | 3;
   onSubmit: (question: string | null) => void;
   loading?: boolean;
+  characterId?: string;
 }
 
-export default function QuestionInput({ spreadType, onSubmit, loading = false }: QuestionInputProps) {
+export default function QuestionInput({ spreadType, onSubmit, loading = false, characterId }: QuestionInputProps) {
   const [question, setQuestion] = useState('');
 
   const handleSubmit = () => {
@@ -28,8 +30,8 @@ export default function QuestionInput({ spreadType, onSubmit, loading = false }:
     : 'ПРOШЛOЕ · НАСТOЯЩЕЕ · БУДУЩЕЕ';
 
   return (
-    <div className="px-3 py-3 w-full">
-      <div className="font-pixel text-[11px] text-white/60 mb-2 tracking-wide">
+    <div className="px-3 py-3 w-full flex flex-col items-center">
+      <div className="font-pixel text-[11px] text-white/60 mb-2 tracking-wide self-start w-full">
         &gt;&gt; ENTER_QUERY
       </div>
 
@@ -47,7 +49,10 @@ export default function QuestionInput({ spreadType, onSubmit, loading = false }:
         {hint}
       </div>
 
-      <div className="mt-3 flex justify-center">
+      {/* ── per-guide pixel sigil ── */}
+      <GuideSigil guideId={characterId} size={320} />
+
+      <div className="flex justify-center">
         <Button onClick={handleSubmit} variant="primary">
           {loading ? 'ГАДАНИЕ...' : 'ПOЛУЧИТЬ OТВЕТ'}
         </Button>
