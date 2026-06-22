@@ -125,16 +125,16 @@ export default function WelcomeAnimation({ onComplete, spreadType, characterId =
 
   return (
     <div
-      className={`relative flex flex-col items-center justify-center w-full min-h-full bg-black transition-opacity duration-400 overflow-hidden px-3 py-4 ${fading ? 'opacity-0' : 'opacity-100'}`}
+      className={`relative flex flex-col items-center justify-center w-full min-h-[60vh] bg-black transition-opacity duration-400 overflow-hidden ${fading ? 'opacity-0' : 'opacity-100'}`}
       style={{ '--guide-accent': guide.accent } as React.CSSProperties}
     >
       {/* ── materializing sigil (background, behind boot text) ── */}
       <div
-        className="absolute inset-0 flex items-center justify-center pointer-events-none px-4"
+        className="absolute inset-0 flex items-center justify-center pointer-events-none"
         aria-hidden="true"
       >
         <div
-          className="welcome-sigil w-48 h-48 sm:w-56 sm:h-56 lg:w-64 lg:h-64"
+          className="welcome-sigil"
           style={{
             opacity: showSigil ? 1 : 0,
             transition: 'opacity 1.2s ease-out, transform 1.5s ease-out',
@@ -146,7 +146,7 @@ export default function WelcomeAnimation({ onComplete, spreadType, characterId =
       </div>
 
       {/* ── boot text overlay ── */}
-      <div className="relative z-10 font-pixel text-[10px] sm:text-[11px] text-white space-y-2 px-3 max-w-full overflow-x-hidden">
+      <div className="relative z-10 font-pixel text-[11px] text-white space-y-2 px-4 max-w-full">
         {lines.map((line, i) => {
           if (line.type === 'header') {
             return (
@@ -193,7 +193,8 @@ function WelcomeSigil({ guide }: { guide: ReturnType<typeof getGuide> }) {
   return (
     <svg
       viewBox="0 0 400 400"
-      className="w-full h-full"
+      width="320"
+      height="320"
       style={{ imageRendering: 'pixelated' }}
       shapeRendering="crispEdges"
     >

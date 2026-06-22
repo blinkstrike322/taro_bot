@@ -7,7 +7,7 @@ from aiogram import Bot
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 from config import settings
-from storage.db import get_inactive_users, get_db
+from storage.db import get_inactive_users
 
 logger = logging.getLogger(__name__)
 
@@ -22,19 +22,9 @@ _last_sub_reminder: dict[int, str] = {}
 
 
 async def check_and_send_reminders(bot: Bot) -> None:
-    """Use the shared DB connection (initialized by main()) instead of
-    opening a fresh connection every loop iteration. Falls back to a
-    short-lived connection if the shared pool isn't ready (e.g. tests).
-    """
-    try:
-        db = await get_db()
+    async with aiosqlite.connect(settings.DB_PATH) as db:
         await _send_inactive_reminders(db, bot)
         await _send_expiry_reminders(db, bot)
-    except RuntimeError:
-        # DB not initialized in this context — open a temporary connection.
-        async with aiosqlite.connect(settings.DB_PATH) as db:
-            await _send_inactive_reminders(db, bot)
-            await _send_expiry_reminders(db, bot)
 
 
 async def _send_inactive_reminders(db: aiosqlite.Connection, bot: Bot) -> None:

@@ -49,40 +49,14 @@ async def _migrate_schema(db: aiosqlite.Connection) -> None:
         except aiosqlite.OperationalError:
             pass  # column already exists
 
-    # Indexes for hot read paths (quota checks, history lookups, reminders).
-    # IF NOT EXISTS keeps this idempotent across restarts.
-    index_migrations = [
-        "CREATE INDEX IF NOT EXISTS idx_readings_user_created ON readings(user_id, created_at)",
-        "CREATE INDEX IF NOT EXISTS idx_readings_user_type_created ON readings(user_id, type, created_at)",
-        "CREATE INDEX IF NOT EXISTS idx_readings_type_created ON readings(type, created_at)",
-        "CREATE INDEX IF NOT EXISTS idx_users_last_active ON users(last_active_at)",
-        "CREATE INDEX IF NOT EXISTS idx_users_sub_end ON users(subscription_end)",
-    ]
-    for sql in index_migrations:
-        try:
-            await db.execute(sql)
-            await db.commit()
-        except aiosqlite.OperationalError:
-            pass
-
 
 async def init_db(db_path: str = "taro_bot.db") -> aiosqlite.Connection:
     """Create persistent connection, enable WAL mode, create tables."""
     global _db_connection
     conn = await aiosqlite.connect(db_path)
     conn.row_factory = aiosqlite.Row
-    # WAL mode allows concurrent readers while a write is in progress —
-    # critical for the read-heavy /api/spread + /api/readings hot path.
     await conn.execute("PRAGMA journal_mode=WAL")
     await conn.execute("PRAGMA foreign_keys=ON")
-    # Normal sync mode lets WAL checkpoints happen in the background
-    # without blocking the request thread on every commit.
-    await conn.execute("PRAGMA synchronous=NORMAL")
-    # 10s busy timeout smooths over short write-contention spikes
-    # (e.g. many users hitting /api/spread at the same minute).
-    await conn.execute("PRAGMA busy_timeout=10000")
-    # Larger cache lets SQLite keep more index/pages in RAM, fewer disk reads.
-    await conn.execute("PRAGMA cache_size=-8000")  # ~8MB
     await conn.execute(_CREATE_USERS_TABLE)
     await conn.execute(_CREATE_READINGS_TABLE)
     await _migrate_schema(conn)

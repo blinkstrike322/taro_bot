@@ -153,17 +153,13 @@ export default function GuideSigil({ guideId, size }: GuideSigilProps) {
 
   const isFixedSize = size !== undefined;
 
-  // Default (responsive) sizing — kept compact so surrounding CTAs (e.g. "ПOЛУЧИТЬ OТВЕТ")
-  // stay in the visible viewport on small phones. Override with `size` prop when needed.
-  const containerCls = isFixedSize ? '' : 'w-28 h-28 sm:w-32 sm:h-32 lg:w-40 lg:h-40';
-
   return (
     <div
-      className={`relative flex items-center justify-center my-3 sm:my-4 ${containerCls}`}
+      className="relative flex items-center justify-center my-4"
       style={
         isFixedSize
           ? { width: size, height: size }
-          : undefined
+          : { width: '100%', maxWidth: '320px', aspectRatio: '1/1' }
       }
     >
       {/* central accent glow (soft aura behind everything) */}
@@ -179,7 +175,7 @@ export default function GuideSigil({ guideId, size }: GuideSigilProps) {
         viewBox="0 0 400 400"
         width={isFixedSize ? size : undefined}
         height={isFixedSize ? size : undefined}
-        className={`relative z-10 ${isFixedSize ? '' : 'w-full h-full'}`}
+        className={`relative z-10 ${isFixedSize ? '' : 'w-full h-auto'}`}
         style={{ imageRendering: 'pixelated' }}
         shapeRendering="crispEdges"
       >
