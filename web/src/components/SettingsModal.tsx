@@ -2,13 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Button from './Button';
-
-interface Guide {
-  id: string;
-  name: string;
-  description: string;
-  greeting: string;
-}
+import { getGuide, GUIDE_IDS, GuideMeta } from '@/lib/guides';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -16,33 +10,6 @@ interface SettingsModalProps {
   currentCharacter: string;
   onCharacterChange: (characterId: string) => void;
 }
-
-const CHARACTER_COLORS: Record<string, string> = {
-  shadow_walker: '#7B2D8E',
-  ruin_keeper: '#B8860B',
-  spark_of_chaos: '#E63946',
-};
-
-const GUIDES: Guide[] = [
-  {
-    id: 'shadow_walker',
-    name: 'Странница Теней',
-    description: 'Мистическая гадалка из темного леса. Говорит стихами и тенями.',
-    greeting: 'Сядь у огня. Я вижу твой путь даже в темноте.',
-  },
-  {
-    id: 'ruin_keeper',
-    name: 'Хранитель Руин',
-    description: 'Древний страж руин. Мудрый, спокойный, серьезный.',
-    greeting: 'Ты пришел за ответами. Что ж, смотри.',
-  },
-  {
-    id: 'spark_of_chaos',
-    name: 'Искра Хаоса',
-    description: 'Хаотичная искра, живая и дерзкая. Читает карты с юмором и проницательностью.',
-    greeting: 'О, интересный расклад! Давай посмотрим, что судьба намешала.',
-  },
-];
 
 export default function SettingsModal({
   isOpen,
@@ -91,64 +58,126 @@ export default function SettingsModal({
       onClick={onClose}
     >
       <div
-        className="w-full max-w-[440px] m-2 border-4 border-white bg-black relative"
+        className="w-full max-w-[440px] m-2 border-4 border-white bg-black relative modal-frame"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex justify-between bg-black text-white font-pixel text-[11px] leading-none px-2 py-2 border-b-2 border-white tracking-tight">
-          <span>{'>> SETTINGS.LOG'}</span>
-          <span className="blink">█</span>
+        {/* header bar */}
+        <div className="relative flex items-center justify-between bg-black text-white font-pixel text-[11px] leading-none px-3 py-2 border-b-2 border-white tracking-tight">
+          <span className="flex items-center gap-2">
+            <span className="text-white/50" aria-hidden="true">{'>'}</span>
+            <span>{'GUIDE.SELECT'}</span>
+          </span>
+          <span className="blink text-white/60">█</span>
         </div>
 
         <div className="dither-bar" />
 
-        <div className="p-4">
-          <div className="font-pixel text-[11px] text-white/55 tracking-wide mb-4">
-            ПРOВOДНИК
+        {/* intro caption */}
+        <div className="px-4 pt-3 pb-2">
+          <div className="font-pixel text-[10px] text-white/45 tracking-[0.18em] uppercase">
+            выбери проводника
           </div>
+          <div className="font-mono-crt text-[14px] text-white/55 italic leading-snug mt-1">
+            каждый по-своему читает карты. кто скажет тебе правду?
+          </div>
+        </div>
 
-          <div className="flex flex-col gap-3">
-            {GUIDES.map((guide) => {
-              const isActive = selected === guide.id;
-              return (
-                <button
-                  key={guide.id}
-                  type="button"
-                  className={`btn flex flex-col items-start border-[3px] px-4 py-3 w-full text-left transition-colors ${
-                    isActive
-                      ? 'border-white bg-white/10'
-                      : 'border-white/30 bg-transparent hover:border-white/60 hover:bg-white/5'
-                  }`}
-                  onClick={() => handleSelect(guide.id)}
-                >
-                  <span className="flex items-center gap-2">
-                    <span
-                      className="inline-block w-3 h-3 border border-white/30 flex-shrink-0"
-                      style={{ backgroundColor: CHARACTER_COLORS[guide.id] }}
-                    />
-                    <span className="font-pixel text-[11px] text-white tracking-wide">
-                      {guide.name}
-                    </span>
-                  </span>
-                  <span className="font-mono-crt text-sm text-white/55 mt-1">
-                    {guide.description}
-                  </span>
-                  <span className="font-mono-crt text-sm text-white/40 italic mt-1">
-                    «{guide.greeting}»
-                  </span>
-                </button>
-              );
-            })}
-          </div>
+        <div className="flex flex-col gap-3 px-3 pb-2">
+          {GUIDE_IDS.map((id) => {
+            const guide = getGuide(id);
+            const isActive = selected === guide.id;
+            return (
+              <GuideCard
+                key={guide.id}
+                guide={guide}
+                isActive={isActive}
+                onSelect={handleSelect}
+              />
+            );
+          })}
         </div>
 
         <div className="dither-bar" />
 
-        <div className="flex justify-center p-4">
+        <div className="flex justify-center p-3">
           <Button variant="secondary" onClick={onClose}>
             ЗАКРЫТЬ
           </Button>
         </div>
       </div>
     </div>
+  );
+}
+
+// ── Sub-component: one guide card with portrait + meta ──
+function GuideCard({
+  guide,
+  isActive,
+  onSelect,
+}: {
+  guide: GuideMeta;
+  isActive: boolean;
+  onSelect: (id: string) => void;
+}) {
+  return (
+    <button
+      type="button"
+      className="btn flex w-full text-left transition-colors relative overflow-hidden"
+      style={{
+        border: `2px solid ${isActive ? '#fff' : 'rgba(255,255,255,0.3)'}`,
+        background: isActive
+          ? `linear-gradient(135deg, ${guide.accentDim} 0%, transparent 60%)`
+          : 'transparent',
+        boxShadow: isActive ? `0 0 0 1px ${guide.accentDim}` : 'none',
+      }}
+      onClick={() => onSelect(guide.id)}
+    >
+      {/* ── portrait (large, with CRT scan overlay) ── */}
+      <div className="flex-shrink-0 w-16 h-16 m-2 relative">
+        <div className="w-full h-full border border-white/60 relative overflow-hidden guide-portrait-frame">
+          <img
+            src={guide.portrait}
+            alt={guide.name}
+            className="w-full h-full object-cover guide-portrait-scan"
+            style={{ imageRendering: 'pixelated' }}
+          />
+        </div>
+        {/* accent corner dot */}
+        <span
+          className="absolute -top-1 -right-1 w-2 h-2"
+          style={{ backgroundColor: guide.accent }}
+          aria-hidden="true"
+        />
+        {/* active checkmark */}
+        {isActive && (
+          <span
+            className="absolute -bottom-1 -left-1 w-3 h-3 border border-white"
+            style={{ backgroundColor: guide.accent }}
+            aria-hidden="true"
+          />
+        )}
+      </div>
+
+      {/* ── text content ── */}
+      <div className="flex-1 min-w-0 py-2 pr-3 flex flex-col justify-center">
+        <span className="flex items-center gap-2">
+          <span className="font-pixel text-[12px] text-white tracking-wide truncate">
+            {guide.name}
+          </span>
+          <span
+            className="font-pixel text-[7px] tracking-[0.18em] uppercase"
+            style={{ color: guide.accent }}
+          >
+            {guide.tag}
+          </span>
+        </span>
+        <span className="font-mono-crt text-[13px] text-white/55 mt-1 leading-snug">
+          {guide.description}
+        </span>
+        <span className="font-mono-crt text-[13px] text-white/45 italic mt-1 leading-snug">
+          «{guide.greeting}»
+        </span>
+      </div>
+    </button>
   );
 }
