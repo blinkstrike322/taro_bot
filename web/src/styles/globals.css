@@ -670,7 +670,7 @@ body {
    AMBIENT FLOATING SYMBOLS — very subtle background artifacts
    ================================================================ */
 .ambient-layer {
-  position: fixed;
+  position: absolute;
   inset: 0;
   pointer-events: none;
   z-index: 0;

@@ -66,13 +66,13 @@ export default function Spread3Cards({ apiCall, characterId }: Spread3CardsProps
 
     return (
       <div className="flex flex-col items-center py-4 px-3 w-full">
-        <div className="flex items-end justify-center gap-3 w-full max-w-md">
+        <div className="flex items-end justify-center gap-2 sm:gap-3 w-full max-w-lg px-2">
           {data.cards.map((rawCard, i) => {
             const card = { ...rawCard, image_url: `/cards/${rawCard.id}.png` };
             const isCenter = i === 1;
 
             return (
-              <div key={rawCard.id} className="w-28 sm:w-32 flex-shrink-0 overflow-x-hidden">
+              <div key={rawCard.id} className="flex-1 max-w-[140px] sm:max-w-[160px] min-w-0 overflow-x-hidden">
                 <Card
                   card={card}
                   position={POSITIONS[i]}

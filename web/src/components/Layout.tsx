@@ -38,8 +38,12 @@ export default function Layout({
   return (
     <CrtOverlay>
       <div
-        className="w-full max-w-screen overflow-x-hidden bg-black relative flex flex-col min-h-dvh"
-        style={{ '--guide-accent': guide.accent } as React.CSSProperties}
+        className="w-full max-w-screen overflow-x-hidden bg-black relative flex flex-col"
+        style={{
+          '--guide-accent': guide.accent,
+          height: '100dvh',
+          boxSizing: 'border-box',
+        } as React.CSSProperties}
       >
         {/* ─── HEADER — minimal, monochrome ─── */}
         <div className="arcanum-header">
@@ -105,7 +109,7 @@ export default function Layout({
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto overflow-x-hidden">{children}</div>
+        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">{children}</div>
 
         {/* ─── FOOTER NAV — vibe buttons ─── */}
         <div className="flex flex-col gap-2 px-3 py-2 border-t border-white/40 bg-black">
