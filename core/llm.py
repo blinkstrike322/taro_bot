@@ -20,39 +20,6 @@ FALLBACK_MODELS = [
     "openrouter/free",
 ]
 
-# Shared HTTP client — reuses TCP connections across LLM calls (HTTP keep-alive),
-# avoiding the ~50-150ms TLS handshake penalty on every request under load.
-# Created lazily on first use so the module is import-safe.
-_shared_client: Optional[httpx.AsyncClient] = None
-_client_lock = asyncio.Lock()
-
-
-async def get_shared_client() -> httpx.AsyncClient:
-    """Return a process-wide httpx.AsyncClient. Created on first call."""
-    global _shared_client
-    if _shared_client is not None and not _shared_client.is_closed:
-        return _shared_client
-    async with _client_lock:
-        if _shared_client is None or _shared_client.is_closed:
-            _shared_client = httpx.AsyncClient(
-                timeout=60.0,
-                limits=httpx.Limits(
-                    max_keepalive_connections=20,
-                    max_connections=50,
-                    keepalive_expiry=30.0,
-                ),
-            )
-    return _shared_client
-
-
-async def close_shared_client() -> None:
-    """Close the shared HTTP client (call on app shutdown)."""
-    global _shared_client
-    if _shared_client is not None and not _shared_client.is_closed:
-        await _shared_client.aclose()
-    _shared_client = None
-
-
 EMOJI_PATTERN = re.compile(
     "["
     "\U0001F600-\U0001F64F"
@@ -81,25 +48,25 @@ def strip_emojis(text: str) -> str:
 
 
 async def call_llm(messages: list[dict], model: str, max_tokens: int = 2000) -> str:
-    client = await get_shared_client()
-    response = await client.post(
-        "https://openrouter.ai/api/v1/chat/completions",
-        headers={
-            "Authorization": f"Bearer {settings.OPENROUTER_API_KEY}",
-            "Content-Type": "application/json",
-        },
-        json={
-            "model": model,
-            "messages": messages,
-            "max_tokens": max_tokens,
-            "temperature": 0.8,
-        },
-    )
-    response.raise_for_status()
-    content = response.json()["choices"][0]["message"]["content"]
-    if content is None:
-        raise ValueError(f"Model {model} returned null content")
-    return content
+    async with httpx.AsyncClient(timeout=60.0) as client:
+        response = await client.post(
+            "https://openrouter.ai/api/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {settings.OPENROUTER_API_KEY}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "model": model,
+                "messages": messages,
+                "max_tokens": max_tokens,
+                "temperature": 0.8,
+            },
+        )
+        response.raise_for_status()
+        content = response.json()["choices"][0]["message"]["content"]
+        if content is None:
+            raise ValueError(f"Model {model} returned null content")
+        return content
 
 
 async def call_llm_with_fallback(messages: list[dict]) -> str:

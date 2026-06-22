@@ -61,7 +61,7 @@ export default function Spread1Card({ apiCall, characterId }: Spread1CardProps) 
     return (
       <div className="flex flex-col items-center py-4 px-3 w-full min-h-full">
         <div className={`flex-1 flex flex-col items-center justify-center w-full ${flipped ? 'justify-start' : ''}`}>
-          <div className="w-full max-w-[320px] sm:max-w-[380px] lg:max-w-[440px]">
+          <div className="w-full max-w-[280px] sm:max-w-sm lg:max-w-md px-4">
             <Card
               card={card}
               position="ТВOЯ КАРТА"
