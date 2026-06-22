@@ -137,7 +137,7 @@ function makePixels(seedOffset: number, count: number): Pixel[] {
   });
 }
 
-export default function GuideSigil({ guideId, size = 320 }: GuideSigilProps) {
+export default function GuideSigil({ guideId, size }: GuideSigilProps) {
   const guide = getGuide(guideId);
 
   // Per-guide seed offsets for variation
@@ -151,10 +151,16 @@ export default function GuideSigil({ guideId, size = 320 }: GuideSigilProps) {
   const fallingStars = useMemo(() => makeFallingStars(seedOffset), [seedOffset]);
   const pixels = useMemo(() => makePixels(seedOffset, 40), [seedOffset]);
 
+  const isFixedSize = size !== undefined;
+
   return (
     <div
       className="relative flex items-center justify-center my-4"
-      style={{ width: size, height: size }}
+      style={
+        isFixedSize
+          ? { width: size, height: size }
+          : { width: '100%', maxWidth: '320px', aspectRatio: '1/1' }
+      }
     >
       {/* central accent glow (soft aura behind everything) */}
       <div
@@ -167,9 +173,9 @@ export default function GuideSigil({ guideId, size = 320 }: GuideSigilProps) {
 
       <svg
         viewBox="0 0 400 400"
-        width={size}
-        height={size}
-        className="relative z-10"
+        width={isFixedSize ? size : undefined}
+        height={isFixedSize ? size : undefined}
+        className={`relative z-10 ${isFixedSize ? '' : 'w-full h-auto'}`}
         style={{ imageRendering: 'pixelated' }}
         shapeRendering="crispEdges"
       >
