@@ -59,21 +59,23 @@ export default function Spread1Card({ apiCall, characterId }: Spread1CardProps) 
     const card = { ...data.cards[0], image_url: `/cards/${data.cards[0].id}.png` };
 
     return (
-      <div className="flex flex-col items-center py-4 px-3 w-full">
-        <div className="w-64 sm:w-72 max-w-xs">
-          <Card
-            card={card}
-            position="ТВOЯ КАРТА"
-            flipped={flipped}
-            onFlip={handleFlip}
-            characterId={characterId}
-          />
-        </div>
-        {!flipped && (
-          <div className="font-pixel text-[11px] text-white/40 mt-3 blink">
-            НАЖМИ НА КАРТУ
+      <div className="flex flex-col items-center py-4 px-3 w-full min-h-full">
+        <div className={`flex-1 flex flex-col items-center justify-center w-full ${flipped ? 'justify-start' : ''}`}>
+          <div className="w-48 sm:w-56">
+            <Card
+              card={card}
+              position="ТВOЯ КАРТА"
+              flipped={flipped}
+              onFlip={handleFlip}
+              characterId={characterId}
+            />
           </div>
-        )}
+          {!flipped && (
+            <div className="font-pixel text-[11px] text-white/40 mt-3 blink">
+              НАЖМИ НА КАРТУ
+            </div>
+          )}
+        </div>
         {flipped && <ReadingResult interpretation={data.interpretation} />}
       </div>
     );
