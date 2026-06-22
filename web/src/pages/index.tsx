@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import Layout from '@/components/Layout';
 import WelcomeAnimation from '@/components/WelcomeAnimation';
 import Spread1Card from '@/components/Spread1Card';
@@ -11,6 +11,7 @@ import CalendarModal from '@/components/CalendarModal';
 import Card, { TarotCard } from '@/components/Card';
 import ReadingResult from '@/components/ReadingResult';
 import * as API from '@/lib/api';
+import { getGuide, GuideMeta } from '@/lib/guides';
 
 type SpreadType = 'daily' | '1' | '3';
 type Screen = 'welcome' | 'spread' | 'daily-pick' | 'daily-result';
@@ -23,6 +24,65 @@ interface ReadingData {
     card_meaning: string[] | string;
     advice: string;
   };
+}
+
+// ── per-guide particle layer (procedural, no images) ──
+function GuideParticles({ guide }: { guide: GuideMeta }) {
+  const particles = useMemo(() => {
+    const PHI = 1.618033988749;
+    const seeded = (s: number) => Math.abs((Math.sin(s * 12.9898 + 78.233) * 43758.5453) % 1);
+    return Array.from({ length: 22 }, (_, i) => {
+      const s = i * PHI + 7;
+      return {
+        symbol: guide.ambientSymbols[Math.floor(seeded(s) * guide.ambientSymbols.length)],
+        x: seeded(s * 3) * 100,
+        y: 60 + seeded(s * 5) * 40, // biased to bottom half, drifts up
+        size: 7 + Math.floor(seeded(s * 7) * 9),
+        op: 0.12 + seeded(s * 11) * 0.20,
+        delay: seeded(s * 13) * 18,
+        dur: 14 + seeded(s * 17) * 12,
+        xShift: (seeded(s * 19) - 0.5) * 24,
+        rot: (seeded(s * 23) - 0.5) * 14,
+      };
+    });
+  }, [guide.id]);
+
+  return (
+    <div className="guide-particles" aria-hidden="true">
+      {particles.map((p, i) => (
+        <span
+          key={i}
+          className="guide-particle"
+          style={{
+            left: `${p.x}%`,
+            top: `${p.y}%`,
+            fontSize: `${p.size}px`,
+            color: guide.accent,
+            textShadow: `0 0 4px ${guide.accentDim}`,
+            '--gp-op': p.op,
+            '--gp-delay': `${p.delay}s`,
+            '--gp-dur': `${p.dur}s`,
+            '--gp-x': `${p.xShift}px`,
+            '--gp-rot': `${p.rot}deg`,
+          } as React.CSSProperties}
+        >
+          {p.symbol}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+// ── guide loading indicator (3 pulsing pixels + phrase) ──
+function GuideLoading({ guide }: { guide: GuideMeta }) {
+  return (
+    <div className="guide-loading" style={{ '--guide-accent': guide.accent } as React.CSSProperties}>
+      <span className="guide-loading-dot" style={{ '--dot-delay': '0s' } as React.CSSProperties} />
+      <span className="guide-loading-dot" style={{ '--dot-delay': '0.2s' } as React.CSSProperties} />
+      <span className="guide-loading-dot" style={{ '--dot-delay': '0.4s' } as React.CSSProperties} />
+      <span>{guide.loadingPhrase}</span>
+    </div>
+  );
 }
 
 export default function Home() {
@@ -41,6 +101,8 @@ export default function Home() {
   const [dailyFlipped, setDailyFlipped] = useState(false);
   const [dailyLoading, setDailyLoading] = useState(false);
   const [spreadKey, setSpreadKey] = useState(0);
+
+  const guide = useMemo(() => getGuide(characterId), [characterId]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -113,9 +175,8 @@ export default function Home() {
       setDailyData({ cards, interpretation: result.interpretation });
       setDailyFlipped(false);
       setScreen('daily-result');
-    } catch (err: any) {
-      const msg = err?.response?.error || err?.message || 'OШИБКА. ПOПРOБУЙ СНOВА';
-      showToast(msg);
+    } catch {
+      showToast('OШИБКА. ПOПРOБУЙ СНOВА');
     } finally {
       setDailyLoading(false);
     }
@@ -144,53 +205,98 @@ export default function Home() {
         <WelcomeAnimation
           spreadType={spreadType}
           onComplete={handleWelcomeComplete}
+          characterId={characterId}
         />
       )}
 
+      {/* ─── DAILY-PICK with per-guide ambient + particles ─── */}
       {screen === 'daily-pick' && (
-        <div className="flex flex-col items-center py-4 px-3 w-full">
-          <div className="font-pixel text-[11px] text-white/60 mb-4 text-center tracking-wider">
+        <div
+          className="relative flex flex-col items-center py-4 px-3 w-full overflow-hidden"
+          style={{ '--guide-accent': guide.accent } as React.CSSProperties}
+        >
+          {/* per-guide ambient background pattern */}
+          <div
+            className="guide-ambient"
+            style={{ background: guide.ambientPattern }}
+            aria-hidden="true"
+          />
+          {/* per-guide floating particles */}
+          <GuideParticles guide={guide} />
+
+          <div
+            className="font-pixel text-[11px] mb-4 text-center tracking-wider relative z-10"
+            style={{ color: guide.accent }}
+          >
             {'>> ВЫБЕРИ КАРТУ ДНЯ'}
           </div>
-          <div className="w-48 sm:w-56">
+
+          <div className="w-48 sm:w-56 relative z-10">
             <Card
               card={{ id: 'daily', name: '', image_url: '', is_reversed: false }}
               position="КАРТА ДНЯ"
               flipped={false}
               onFlip={handleDailyCardTap}
+              characterId={characterId}
             />
           </div>
+
           {dailyLoading && (
-            <div className="font-pixel text-[11px] text-white/40 mt-3 text-center blink">
-              ГАДАНИЕ...
+            <div className="relative z-10">
+              <GuideLoading guide={guide} />
             </div>
           )}
+
+          {/* per-guide greeting whisper at the bottom */}
+          <div className="mt-5 relative z-10 text-center max-w-[280px]">
+            <span
+              className="font-mono-crt text-[14px] italic leading-snug"
+              style={{ color: 'rgba(255,255,255,0.55)' }}
+            >
+              «{guide.greeting}»
+            </span>
+          </div>
         </div>
       )}
 
+      {/* ─── DAILY-RESULT ─── */}
       {screen === 'daily-result' && dailyData && (
-        <div className="flex flex-col items-center py-4 px-3 w-full">
-          <div className="w-48 sm:w-56">
+        <div
+          className="relative flex flex-col items-center py-4 px-3 w-full overflow-hidden"
+          style={{ '--guide-accent': guide.accent } as React.CSSProperties}
+        >
+          <div
+            className="guide-ambient"
+            style={{ background: guide.ambientPattern }}
+            aria-hidden="true"
+          />
+          <GuideParticles guide={guide} />
+
+          <div className="w-48 sm:w-56 relative z-10">
             <Card
               card={dailyData.cards[0]}
               position="КАРТА ДНЯ"
               flipped={dailyFlipped}
               onFlip={handleDailyFlip}
+              characterId={characterId}
             />
           </div>
           {!dailyFlipped && (
-            <div className="font-pixel text-[11px] text-white/40 mt-3 blink">
+            <div className="font-pixel text-[11px] text-white/40 mt-3 blink relative z-10">
               НАЖМИ НА КАРТУ
             </div>
           )}
           {dailyFlipped && (
-            <ReadingResult interpretation={dailyData.interpretation} />
+            <div className="relative z-10 w-full">
+              <ReadingResult interpretation={dailyData.interpretation} />
+            </div>
           )}
         </div>
       )}
 
       {screen === 'spread' && spreadType === '1' && (
         <Spread1Card key={spreadKey}
+          characterId={characterId}
           apiCall={(question) =>
             API.spread(1, question, characterId).then((res) => ({
               cards: res.cards.map((c) => ({
@@ -205,6 +311,7 @@ export default function Home() {
 
       {screen === 'spread' && spreadType === '3' && (
         <Spread3Cards key={spreadKey}
+          characterId={characterId}
           apiCall={(question) =>
             API.spread(3, question, characterId).then((res) => ({
               cards: res.cards.map((c) => ({
