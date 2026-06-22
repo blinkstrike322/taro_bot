@@ -3,6 +3,7 @@ import hashlib
 import hmac
 import json
 import logging
+import time
 from pathlib import Path
 from urllib.parse import parse_qs
 
@@ -13,6 +14,7 @@ from aiogram.types import BotCommand
 
 from config import settings, logger
 from core.reminder import reminder_loop
+from core.llm import close_shared_client
 from bot.router import register_handlers
 from bot.webapp_handler import router as webapp_router
 
@@ -22,8 +24,64 @@ from core.llm import interpret_reading
 from core.quota import check_quota
 
 
+# LRU cache for Telegram initData verification results.
+# initData strings are large (often >1KB) but their HMAC result is stable for
+# the lifetime of a WebApp session (~minutes). Caching avoids re-running HMAC
+# + JSON parsing on every /api/spread and /api/readings call from the same
+# user within the same session. Entries expire after 5 min so a revoked
+# WebApp session won't be trusted indefinitely.
+_INIT_DATA_CACHE_TTL = 300  # seconds
+_INIT_DATA_CACHE_MAX = 1024
+_init_data_cache: dict[str, tuple[float, dict | None]] = {}
+
+
+class _Sentinel:
+    """Marker for cache miss — distinguishable from cached None (invalid sig)."""
+    pass
+
+
+_CACHE_MISS = _Sentinel()
+
+
+def _cache_get(key: str):
+    """Return cached value, or _CACHE_MISS if absent/expired."""
+    entry = _init_data_cache.get(key)
+    if entry is None:
+        return _CACHE_MISS
+    ts, value = entry
+    if time.monotonic() - ts > _INIT_DATA_CACHE_TTL:
+        _init_data_cache.pop(key, None)
+        return _CACHE_MISS
+    return value
+
+
+def _cache_set(key: str, value: dict | None) -> None:
+    # Bounded LRU: drop oldest if at capacity.
+    if len(_init_data_cache) >= _INIT_DATA_CACHE_MAX:
+        oldest = next(iter(_init_data_cache))
+        _init_data_cache.pop(oldest, None)
+    _init_data_cache[key] = (time.monotonic(), value)
+
+
 def verify_telegram_init_data(init_data: str) -> dict | None:
-    """Verify Telegram WebApp initData and return parsed user data."""
+    """Verify Telegram WebApp initData and return parsed user data.
+
+    Results are cached for ~5 minutes per initData string to avoid
+    re-computing HMAC-SHA256 on every API call from the same WebApp session.
+    """
+    if not init_data:
+        return None
+
+    cached = _cache_get(init_data)
+    if cached is not _CACHE_MISS:
+        return cached
+
+    result = _verify_telegram_init_data_uncached(init_data)
+    _cache_set(init_data, result)
+    return result
+
+
+def _verify_telegram_init_data_uncached(init_data: str) -> dict | None:
     try:
         parsed = parse_qs(init_data)
         hash_value = parsed.pop('hash', [None])[0]
@@ -128,8 +186,30 @@ async def handle_spread(request):
     })
 
 
+@web.middleware
+async def cache_control_middleware(request, handler):
+    """Add Cache-Control headers to static responses.
+
+    - Hashed assets under /_next/static/* → 1-year immutable cache.
+    - Card / guide PNG images → 7-day cache.
+    - Everything else (HTML, API) → no-cache.
+    """
+    response = await handler(request)
+    if not isinstance(response, web.FileResponse):
+        return response
+
+    path = request.path
+    if path.startswith('/_next/static/'):
+        response.headers['Cache-Control'] = 'public, max-age=31536000, immutable'
+    elif path.startswith('/cards/') or path.startswith('/guides/'):
+        response.headers['Cache-Control'] = 'public, max-age=604800'
+    else:
+        response.headers['Cache-Control'] = 'no-cache, max-age=0, must-revalidate'
+    return response
+
+
 def create_webapp() -> web.Application:
-    app = web.Application()
+    app = web.Application(middlewares=[cache_control_middleware])
     app.router.add_get('/api/readings', handle_readings)
     app.router.add_post('/api/spread', handle_spread)
     webapp_dir = Path(__file__).parent / "static" / "webapp"
@@ -137,23 +217,45 @@ def create_webapp() -> web.Application:
         index = webapp_dir / "index.html"
         if index.exists():
             async def index_handler(_):
-                return web.FileResponse(index)
+                # index.html should always revalidate so users get new builds
+                # without long cache stalls.
+                return web.FileResponse(index, headers={
+                    'Cache-Control': 'no-cache, max-age=0, must-revalidate',
+                })
             app.router.add_get("/", index_handler)
+        # Static assets — Cache-Control headers are injected by the middleware
+        # above based on path prefix.
         app.router.add_static("/", webapp_dir)
 
     offer_file = Path(__file__).parent / "static" / "offer" / "index.html"
     if offer_file.exists():
         async def offer_handler(_):
-            return web.FileResponse(offer_file)
+            return web.FileResponse(offer_file, headers={
+                'Cache-Control': 'no-cache, max-age=0, must-revalidate',
+            })
         app.router.add_get("/offer", offer_handler)
         app.router.add_get("/offer/", offer_handler)
+
+    # Cleanup shared resources on shutdown.
+    async def _on_cleanup(_app):
+        await close_shared_client()
+        logger.info("Shared resources cleaned up")
+    app.on_cleanup.append(_on_cleanup)
+
     return app
 
 
 async def run_webapp(app: web.Application) -> None:
-    runner = web.AppRunner(app)
+    runner = web.AppRunner(app, access_log=None, keepalive_timeout=65.0)
     await runner.setup()
-    site = web.TCPSite(runner, "0.0.0.0", 8080)
+    # Larger backlog so connection spikes (e.g. morning push notification wave)
+    # don't cause connection refused errors.
+    site = web.TCPSite(
+        runner,
+        "0.0.0.0",
+        8080,
+        backlog=2048,
+    )
     await site.start()
     logger.info("aiohttp server started on port 8080")
 
