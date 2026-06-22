@@ -63,7 +63,14 @@ export async function spread(
       character_id: characterId,
     }),
   });
-  if (!res.ok) throw new Error('Spread failed');
+  if (!res.ok) {
+    let msg = 'Spread failed';
+    try {
+      const body = await res.json();
+      if (body?.error) msg = body.error;
+    } catch {}
+    throw new Error(msg);
+  }
   return res.json();
 }
 
