@@ -213,7 +213,7 @@ export default function Home() {
       {/* ─── DAILY-PICK with per-guide ambient + particles ─── */}
       {screen === 'daily-pick' && (
         <div
-          className="relative flex flex-col items-center py-4 px-3 w-full overflow-hidden"
+          className="relative flex flex-col items-center py-4 px-3 w-full overflow-hidden min-h-full justify-center"
           style={{ '--guide-accent': guide.accent } as React.CSSProperties}
         >
           {/* per-guide ambient background pattern */}
@@ -263,7 +263,7 @@ export default function Home() {
       {/* ─── DAILY-RESULT ─── */}
       {screen === 'daily-result' && dailyData && (
         <div
-          className="relative flex flex-col items-center py-4 px-3 w-full overflow-hidden"
+          className="relative flex flex-col items-center py-4 px-3 w-full overflow-hidden min-h-full"
           style={{ '--guide-accent': guide.accent } as React.CSSProperties}
         >
           <div
@@ -273,20 +273,22 @@ export default function Home() {
           />
           <GuideParticles guide={guide} />
 
-          <div className="w-48 sm:w-56 relative z-10">
-            <Card
-              card={dailyData.cards[0]}
-              position="КАРТА ДНЯ"
-              flipped={dailyFlipped}
-              onFlip={handleDailyFlip}
-              characterId={characterId}
-            />
-          </div>
-          {!dailyFlipped && (
-            <div className="font-pixel text-[11px] text-white/40 mt-3 blink relative z-10">
-              НАЖМИ НА КАРТУ
+          <div className={`flex-1 flex flex-col items-center w-full ${dailyFlipped ? 'justify-start' : 'justify-center'}`}>
+            <div className="w-48 sm:w-56 relative z-10">
+              <Card
+                card={dailyData.cards[0]}
+                position="КАРТА ДНЯ"
+                flipped={dailyFlipped}
+                onFlip={handleDailyFlip}
+                characterId={characterId}
+              />
             </div>
-          )}
+            {!dailyFlipped && (
+              <div className="font-pixel text-[11px] text-white/40 mt-3 blink relative z-10">
+                НАЖМИ НА КАРТУ
+              </div>
+            )}
+          </div>
           {dailyFlipped && (
             <div className="relative z-10 w-full">
               <ReadingResult interpretation={dailyData.interpretation} />
