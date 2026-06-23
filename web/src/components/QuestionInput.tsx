@@ -52,24 +52,21 @@ export default function QuestionInput({ spreadType, onSubmit, loading = false, c
         {hint}
       </div>
 
-      {loading ? (
-        <div className="flex-1 min-h-0 flex items-center justify-center w-full">
-          <GuideLoading guide={guide} />
-        </div>
-      ) : (
-        <>
-          {/* ── per-guide pixel sigil — takes remaining space, shrinks to fit ── */}
-          <div className="flex-1 min-h-0 flex items-center justify-center w-full">
-            <GuideSigil guideId={characterId} />
-          </div>
+      {/* ── per-guide pixel sigil — takes remaining space, shrinks to fit ── */}
+      <div className="flex-1 min-h-0 flex items-center justify-center w-full">
+        <GuideSigil guideId={characterId} />
+      </div>
 
-          <div className="flex justify-center flex-shrink-0">
-            <Button onClick={handleSubmit} variant="primary">
-              ПOЛУЧИТЬ OТВЕТ
-            </Button>
-          </div>
-        </>
-      )}
+      {/* ── button (idle) or loading indicator (loading) at bottom ── */}
+      <div className="flex justify-center flex-shrink-0">
+        {loading ? (
+          <GuideLoading guide={guide} />
+        ) : (
+          <Button onClick={handleSubmit} variant="primary">
+            ПOЛУЧИТЬ OТВЕТ
+          </Button>
+        )}
+      </div>
     </div>
   );
 }
