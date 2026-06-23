@@ -1363,35 +1363,42 @@ body {
   50%      { opacity: 0; }
 }
 
-/* ── Binary ticker — animated 0101 stream, net-art vibe ── */
+/* ── Guide Sigil — occult magic circle animations ── */
 .guide-sigil-container {
   overflow: hidden;
 }
 
-.binary-ticker-row {
-  position: absolute;
-  left: 0;
-  width: 200%;
-  height: 1.4em;
-  overflow: hidden;
-  pointer-events: none;
-  z-index: 5;
-  font-family: 'VT323', 'Pixelify Sans', monospace;
-  letter-spacing: 0.2em;
-  white-space: nowrap;
-  animation: binary-scroll linear infinite;
-  display: block;
+/* Slow rotation — outer ring (clockwise) */
+.sigil-rotate-slow {
+  transform-origin: 200px 200px;
+  animation: sigil-rotate-cw 90s linear infinite;
 }
 
-.binary-ticker-text {
-  display: inline-block;
-  font-weight: normal;
-  text-shadow: 0 0 4px currentColor;
+/* Slow rotation — inner hexagram (counter-clockwise) */
+.sigil-rotate-slow-rev {
+  transform-origin: 200px 200px;
+  animation: sigil-rotate-ccw 70s linear infinite;
 }
 
-@keyframes binary-scroll {
-  from { transform: translateX(0); }
-  to   { transform: translateX(-50%); }
+/* Pulsing — pentagram layer (breathing) */
+.sigil-pulse {
+  transform-origin: 200px 200px;
+  animation: sigil-pulse 4s ease-in-out infinite;
+}
+
+@keyframes sigil-rotate-cw {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@keyframes sigil-rotate-ccw {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(-360deg); }
+}
+
+@keyframes sigil-pulse {
+  0%, 100% { opacity: 0.85; transform: scale(1); }
+  50%      { opacity: 1;    transform: scale(1.02); }
 }
 
 /* ================================================================
