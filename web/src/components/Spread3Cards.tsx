@@ -66,12 +66,47 @@ export default function Spread3Cards({ apiCall, characterId, onError }: Spread3C
   if (phase === 'cards' && data) {
     const allFlipped = flippedCards.every(Boolean);
 
+    if (!allFlipped) {
+      return (
+        <div className="flex flex-col items-center py-3 px-3 w-full h-full">
+          <div className="flex-1 min-h-0 flex flex-col items-center justify-center w-full">
+            {/* 2-column grid: 2 наверху, 1 снизу по центру */}
+            <div className="grid grid-cols-2 gap-2 sm:gap-3 w-full max-w-[300px] px-2 place-items-center">
+              {data.cards.map((rawCard, i) => {
+                const card = { ...rawCard, image_url: `/cards/${rawCard.id}.png` };
+                const isCenter = i === 1;
+                const isLast = i === 2;
+
+                return (
+                  <div key={rawCard.id} className={isLast ? 'col-span-2 flex justify-center w-full' : 'w-full'}>
+                    <div className="max-w-[140px] sm:max-w-[180px] mx-auto">
+                      <Card
+                        card={card}
+                        position={POSITIONS[i]}
+                        raised={isCenter}
+                        flipped={flippedCards[i]}
+                        onFlip={() => handleFlip(i)}
+                        characterId={characterId}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="font-pixel text-[11px] text-white/40 mt-3 blink flex-shrink-0">
+              НАЖМИ НА ВСЕ КАРТЫ
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     return (
-      <div className="flex flex-col items-center py-3 px-3 w-full h-full">
-        {/* cards area — shrinks to content after flip */}
-        <div className={`${allFlipped ? 'flex-shrink-0 pb-2' : 'flex-1 min-h-0'} flex flex-col items-center justify-center w-full`}>
-          {/* 2-column grid: 2 наверху, 1 снизу по центру */}
-          <div className="grid grid-cols-2 gap-2 sm:gap-3 w-full max-w-[300px] px-2 place-items-center">
+      <div className="flex flex-col items-center py-3 px-3 w-full">
+        {/* compact cards at top */}
+        <div className="flex flex-col items-center w-full flex-shrink-0 pb-2">
+          <div className="grid grid-cols-2 gap-2 sm:gap-3 w-full max-w-[250px] px-2 place-items-center">
             {data.cards.map((rawCard, i) => {
               const card = { ...rawCard, image_url: `/cards/${rawCard.id}.png` };
               const isCenter = i === 1;
@@ -79,13 +114,12 @@ export default function Spread3Cards({ apiCall, characterId, onError }: Spread3C
 
               return (
                 <div key={rawCard.id} className={isLast ? 'col-span-2 flex justify-center w-full' : 'w-full'}>
-                  <div className="max-w-[140px] sm:max-w-[180px] mx-auto">
+                  <div className="max-w-[110px] sm:max-w-[140px] mx-auto">
                     <Card
                       card={card}
                       position={POSITIONS[i]}
                       raised={isCenter}
-                      flipped={flippedCards[i]}
-                      onFlip={() => handleFlip(i)}
+                      flipped={true}
                       characterId={characterId}
                     />
                   </div>
@@ -93,20 +127,12 @@ export default function Spread3Cards({ apiCall, characterId, onError }: Spread3C
               );
             })}
           </div>
-
-          {!allFlipped && (
-            <div className="font-pixel text-[11px] text-white/40 mt-3 blink flex-shrink-0">
-              НАЖМИ НА ВСЕ КАРТЫ
-            </div>
-          )}
         </div>
 
-        {/* result area — scrollable, takes remaining space */}
-        {allFlipped && (
-          <div className="flex-1 min-h-0 overflow-y-auto w-full">
-            <ReadingResult interpretation={data.interpretation} />
-          </div>
-        )}
+        {/* result flows below — parent scrolls */}
+        <div className="w-full pb-4">
+          <ReadingResult interpretation={data.interpretation} />
+        </div>
       </div>
     );
   }
