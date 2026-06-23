@@ -185,11 +185,11 @@ export default function Card({
             }}
           >
             {/* ── face-down: per-guide card back ── */}
-            <div className="flip-face relative" style={{ background: '#000' }}>
+            <div className="flip-face relative overflow-hidden" style={{ background: '#000' }}>
               <img
                 src={guide.cardBack}
                 alt=""
-                className="dither-img w-full h-full object-contain"
+                className="dither-img w-full h-full object-cover"
                 style={{ imageRendering: 'pixelated' }}
               />
               {/* subtle accent overlay on back */}
@@ -200,16 +200,16 @@ export default function Card({
             </div>
 
             {/* ── face-up: card art with flip-glitch ── */}
-            <div className="flip-face flip-back bg-white scan-soft flex items-center justify-center relative">
+            <div className="flip-face flip-back bg-white scan-soft relative overflow-hidden">
               <img
                 src={card.image_url}
                 alt={card.name}
-                className={`dither-img w-full h-full object-contain crt-distort flip-glitch ${card.is_reversed ? 'rotate-180' : ''}`}
+                className={`dither-img w-full h-full object-cover crt-distort flip-glitch ${card.is_reversed ? 'rotate-180' : ''}`}
               />
               {/* reversed marker — pixel inversion hint */}
               {card.is_reversed && (
                 <span
-                  className="absolute top-1 right-1 font-pixel text-[7px] tracking-wider"
+                  className="absolute top-1 right-1 font-pixel text-[7px] tracking-wider z-10"
                   style={{ color: guide.accent, textShadow: '0 0 3px #000' }}
                   aria-hidden="true"
                 >

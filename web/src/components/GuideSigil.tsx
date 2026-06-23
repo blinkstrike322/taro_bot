@@ -5,7 +5,7 @@ import { getGuide } from '@/lib/guides';
 
 interface GuideSigilProps {
   guideId?: string;
-  /** size in px */
+  /** fixed size in px (when used standalone). If undefined, fills container. */
   size?: number;
 }
 
@@ -14,9 +14,66 @@ function seededRand(seed: number): number {
   return Math.abs((Math.sin(seed * 12.9898 + 78.233) * 43758.5453) % 1);
 }
 
-// ── Particle generators ──
+// ── Static star positions (constellation-like) ──
+interface StarPoint {
+  x: number;
+  y: number;
+  size: number;
+  op: number;
+  delay: number;
+  dur: number;
+}
 
-// Concentric ring of dots — like an "orbit"
+function makeStars(seedOffset: number, count: number): StarPoint[] {
+  return Array.from({ length: count }, (_, i) => {
+    const s = i + seedOffset * 1000;
+    return {
+      x: 20 + seededRand(s * 7) * 360,
+      y: 20 + seededRand(s * 11) * 360,
+      size: 1 + Math.floor(seededRand(s * 13) * 2.5),
+      op: 0.3 + seededRand(s * 17) * 0.6,
+      delay: seededRand(s * 19) * 4,
+      dur: 1.6 + seededRand(s * 23) * 2.8,
+    };
+  });
+}
+
+// ── Binary ticker — animated 0/1 stream, net-art vibe ──
+interface BinaryRow {
+  y: number;
+  speed: number;       // seconds for one full cycle
+  delay: number;
+  direction: 1 | -1;   // 1 = left-to-right, -1 = right-to-left
+  bits: string;        // pre-generated bit string
+  fontSize: number;
+  opacity: number;
+}
+
+function makeBinaryRows(seedOffset: number): BinaryRow[] {
+  const rows: BinaryRow[] = [];
+  const ys = [70, 110, 290, 330];
+  ys.forEach((y, i) => {
+    const s = i + seedOffset * 50;
+    const bitCount = 28;
+    let bits = '';
+    for (let b = 0; b < bitCount; b++) {
+      bits += seededRand(s * 7 + b * 13) > 0.5 ? '1' : '0';
+      if (b < bitCount - 1) bits += ' ';
+    }
+    rows.push({
+      y,
+      speed: 18 + seededRand(s * 11) * 12,
+      delay: seededRand(s * 13) * 8,
+      direction: i % 2 === 0 ? 1 : -1,
+      bits,
+      fontSize: 7 + Math.floor(seededRand(s * 17) * 2),
+      opacity: 0.18 + seededRand(s * 19) * 0.18,
+    });
+  });
+  return rows;
+}
+
+// ── Concentric orbit rings (kept, refined) ──
 interface RingDot {
   x: number;
   y: number;
@@ -40,7 +97,7 @@ function makeRing(radius: number, count: number, offset: number, sizeBase: numbe
   });
 }
 
-// Scattered pixel clusters — small groups of squares in corners
+// ── Pixel clusters in corners ──
 interface Cluster {
   x: number;
   y: number;
@@ -52,14 +109,12 @@ interface Cluster {
 
 function makeClusters(seedOffset: number): Cluster[] {
   const positions = [
-    { x: 60,  y: 60  },
-    { x: 340, y: 60  },
-    { x: 60,  y: 340 },
+    { x: 50,  y: 50  },
+    { x: 340, y: 50  },
+    { x: 50,  y: 340 },
     { x: 340, y: 340 },
-    { x: 90,  y: 200 },
-    { x: 310, y: 200 },
-    { x: 200, y: 80  },
-    { x: 200, y: 320 },
+    { x: 30,  y: 200 },
+    { x: 360, y: 200 },
   ];
   return positions.map((p, i) => {
     const s = i + seedOffset * 100;
@@ -74,44 +129,7 @@ function makeClusters(seedOffset: number): Cluster[] {
   });
 }
 
-// Falling stars — diagonal streaks with trail
-interface FallingStar {
-  startX: number;
-  startY: number;
-  endX: number;
-  endY: number;
-  delay: number;
-  dur: number;
-  length: number;
-}
-
-function makeFallingStars(seedOffset: number): FallingStar[] {
-  const stars: FallingStar[] = [];
-  // 5 falling stars from different angles, all going diagonally down-right
-  const configs = [
-    { sx: 80,  sy: 60,  angle: 35, len: 70 },
-    { sx: 320, sy: 50,  angle: 145, len: 60 },
-    { sx: 60,  sy: 320, angle: -25, len: 65 },
-    { sx: 330, sy: 330, angle: 215, len: 75 },
-    { sx: 200, sy: 40,  angle: 60,  len: 55 },
-  ];
-  configs.forEach((c, i) => {
-    const s = i + seedOffset * 50;
-    const rad = (c.angle * Math.PI) / 180;
-    stars.push({
-      startX: c.sx,
-      startY: c.sy,
-      endX: c.sx + Math.cos(rad) * c.len,
-      endY: c.sy + Math.sin(rad) * c.len,
-      delay: seededRand(s * 13) * 5,
-      dur: 2.5 + seededRand(s * 17) * 2,
-      length: c.len,
-    });
-  });
-  return stars;
-}
-
-// Scattered single pixels — net-art noise
+// ── Scattered noise pixels ──
 interface Pixel {
   x: number;
   y: number;
@@ -132,7 +150,7 @@ function makePixels(seedOffset: number, count: number): Pixel[] {
       op: 0.2 + seededRand(s * 17) * 0.5,
       delay: seededRand(s * 19) * 4,
       dur: 1.4 + seededRand(s * 23) * 2.8,
-      isAccent: seededRand(s * 29) > 0.7, // ~30% accent
+      isAccent: seededRand(s * 29) > 0.7,
     };
   });
 }
@@ -148,21 +166,22 @@ export default function GuideSigil({ guideId, size }: GuideSigilProps) {
   const outerRing = useMemo(() => makeRing(105, 32, seedOffset * 0.6, 2), [seedOffset]);
 
   const clusters = useMemo(() => makeClusters(seedOffset), [seedOffset]);
-  const fallingStars = useMemo(() => makeFallingStars(seedOffset), [seedOffset]);
-  const pixels = useMemo(() => makePixels(seedOffset, 40), [seedOffset]);
+  const stars = useMemo(() => makeStars(seedOffset, 30), [seedOffset]);
+  const binaryRows = useMemo(() => makeBinaryRows(seedOffset), [seedOffset]);
+  const pixels = useMemo(() => makePixels(seedOffset, 30), [seedOffset]);
 
   const isFixedSize = size !== undefined;
 
   return (
     <div
-      className="relative flex items-center justify-center my-4"
+      className="relative flex items-center justify-center my-2 guide-sigil-container"
       style={
         isFixedSize
           ? { width: size, height: size }
-          : { width: '100%', maxWidth: 'min(400px, 70vw)', aspectRatio: '1/1', maxHeight: '100%' }
+          : { width: '100%', maxWidth: 'min(460px, 85vw)', aspectRatio: '1/1', maxHeight: '100%' }
       }
     >
-      {/* central accent glow (soft aura behind everything) */}
+      {/* central accent glow */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
@@ -170,6 +189,28 @@ export default function GuideSigil({ guideId, size }: GuideSigilProps) {
         }}
         aria-hidden="true"
       />
+
+      {/* ── binary ticker rows — scrolling 0/1 streams ── */}
+      {binaryRows.map((row, i) => {
+        const tripled = `${row.bits} · ${row.bits} · ${row.bits}`;
+        return (
+          <div
+            key={`bin-${i}`}
+            className="binary-ticker-row"
+            style={{
+              top: `${(row.y / 400) * 100}%`,
+              color: i % 2 === 0 ? guide.accent : 'rgba(255,255,255,0.7)',
+              opacity: row.opacity + 0.3,
+              fontSize: `${row.fontSize * 1.8}px`,
+              animationDuration: `${row.speed}s`,
+              animationDelay: `${row.delay}s`,
+              animationDirection: row.direction === 1 ? 'normal' : 'reverse',
+            }}
+          >
+            <span className="binary-ticker-text">{tripled}</span>
+          </div>
+        );
+      })}
 
       <svg
         viewBox="0 0 400 400"
@@ -188,7 +229,7 @@ export default function GuideSigil({ guideId, size }: GuideSigilProps) {
           stroke="rgba(255,255,255,0.18)"
           strokeWidth="1"
         />
-        {/* inner empty circle — even fainter */}
+        {/* inner accent ring */}
         <circle
           cx="200"
           cy="200"
@@ -206,7 +247,7 @@ export default function GuideSigil({ guideId, size }: GuideSigilProps) {
           height="6"
           fill={guide.accent}
           className="sigil-dot"
-          style={{ '--dot-op': 0.8, '--dot-delay': '0s', '--dot-dur': '2.5s' } as React.CSSProperties}
+          style={{ '--dot-op': 0.85, '--dot-delay': '0s', '--dot-dur': '2.5s' } as React.CSSProperties}
         />
 
         {/* ── concentric orbit rings ── */}
@@ -261,6 +302,24 @@ export default function GuideSigil({ guideId, size }: GuideSigilProps) {
           />
         ))}
 
+        {/* ── scattered stars (constellation) — twinkle ── */}
+        {stars.map((s, i) => (
+          <rect
+            key={`star-${i}`}
+            x={s.x}
+            y={s.y}
+            width={s.size}
+            height={s.size}
+            fill={i % 5 === 0 ? guide.accent : '#fff'}
+            className="sigil-dot"
+            style={{
+              '--dot-op': s.op,
+              '--dot-delay': `${s.delay}s`,
+              '--dot-dur': `${s.dur}s`,
+            } as React.CSSProperties}
+          />
+        ))}
+
         {/* ── scattered pixel clusters (corners + sides) ── */}
         {clusters.map((c, i) => (
           <rect
@@ -279,49 +338,7 @@ export default function GuideSigil({ guideId, size }: GuideSigilProps) {
           />
         ))}
 
-        {/* ── falling stars (animated streaks) ── */}
-        {fallingStars.map((s, i) => (
-          <g key={`star-${i}`} className="falling-star" style={{ '--fs-delay': `${s.delay}s`, '--fs-dur': `${s.dur}s` } as React.CSSProperties}>
-            {/* glow trail (accent) */}
-            <line
-              x1={s.startX}
-              y1={s.startY}
-              x2={s.endX}
-              y2={s.endY}
-              stroke={guide.accent}
-              strokeWidth="3"
-              opacity="0.35"
-            />
-            {/* main trail (white) */}
-            <line
-              x1={s.startX}
-              y1={s.startY}
-              x2={s.endX}
-              y2={s.endY}
-              stroke="#fff"
-              strokeWidth="2"
-              opacity="0.85"
-            />
-            {/* head dot — bigger, accent color */}
-            <rect
-              x={s.endX - 3}
-              y={s.endY - 3}
-              width="6"
-              height="6"
-              fill={guide.accent}
-            />
-            {/* head core — white */}
-            <rect
-              x={s.endX - 1.5}
-              y={s.endY - 1.5}
-              width="3"
-              height="3"
-              fill="#fff"
-            />
-          </g>
-        ))}
-
-        {/* ── scattered noise pixels (net-art texture) ── */}
+        {/* ── scattered noise pixels ── */}
         {pixels.map((p, i) => (
           <rect
             key={`px-${i}`}
@@ -339,13 +356,13 @@ export default function GuideSigil({ guideId, size }: GuideSigilProps) {
           />
         ))}
 
-        {/* ── tick marks — 4 cardinal directions, longer ── */}
+        {/* ── tick marks ── */}
         <rect x="199" y="20"  width="2" height="14" fill="#fff" opacity="0.7" />
         <rect x="199" y="366" width="2" height="14" fill="#fff" opacity="0.7" />
         <rect x="20"  y="199" width="14" height="2" fill="#fff" opacity="0.7" />
         <rect x="366" y="199" width="14" height="2" fill="#fff" opacity="0.7" />
 
-        {/* ── diagonal accent marks (very subtle) ── */}
+        {/* ── diagonal accent marks ── */}
         <rect x="60"  y="60"  width="3" height="3" fill={guide.accent} opacity="0.6" />
         <rect x="337" y="60"  width="3" height="3" fill={guide.accent} opacity="0.6" />
         <rect x="60"  y="337" width="3" height="3" fill={guide.accent} opacity="0.6" />
