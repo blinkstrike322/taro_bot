@@ -18,3 +18,5 @@ build/
 .venv/
 .ruff_cache/
 static/default/
+art_references/
+temp/
