@@ -1363,19 +1363,35 @@ body {
   50%      { opacity: 0; }
 }
 
-/* Falling stars — diagonal streaks that fade in/out */
-.falling-star {
-  opacity: 0;
-  animation: falling-star-pulse var(--fs-dur, 3s) ease-in-out infinite;
-  animation-delay: var(--fs-delay, 0s);
+/* ── Binary ticker — animated 0101 stream, net-art vibe ── */
+.guide-sigil-container {
+  overflow: hidden;
 }
 
-@keyframes falling-star-pulse {
-  0%   { opacity: 0.2; }
-  20%  { opacity: 1; }
-  50%  { opacity: 0.5; }
-  80%  { opacity: 0.8; }
-  100% { opacity: 0.2; }
+.binary-ticker-row {
+  position: absolute;
+  left: 0;
+  width: 200%;
+  height: 1.4em;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 5;
+  font-family: 'VT323', 'Pixelify Sans', monospace;
+  letter-spacing: 0.2em;
+  white-space: nowrap;
+  animation: binary-scroll linear infinite;
+  display: block;
+}
+
+.binary-ticker-text {
+  display: inline-block;
+  font-weight: normal;
+  text-shadow: 0 0 4px currentColor;
+}
+
+@keyframes binary-scroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
 }
 
 /* ================================================================
