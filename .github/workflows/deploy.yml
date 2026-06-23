@@ -39,7 +39,17 @@ jobs:
         working-directory: ./web
         run: npm run build
 
+      - name: Check if build output changed
+        id: diff
+        run: |
+          if git diff --quiet -- static/webapp/; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Commit fresh build to repo
+        if: steps.diff.outputs.changed == 'true'
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: 'chore: rebuild static webapp [skip ci]'
