@@ -13,7 +13,7 @@ export default function Document() {
           rel="stylesheet"
         />
       </Head>
-      <body className="font-mono text-white min-h-screen flex items-start sm:items-center justify-center">
+      <body className="font-mono text-white flex items-center justify-center">
         <Main />
         <NextScript />
         <Script
