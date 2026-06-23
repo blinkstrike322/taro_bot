@@ -159,7 +159,7 @@ export default function GuideSigil({ guideId, size }: GuideSigilProps) {
       style={
         isFixedSize
           ? { width: size, height: size }
-          : { width: '100%', maxWidth: 'min(280px, 80vw)', aspectRatio: '1/1', maxHeight: '100%' }
+          : { width: '100%', maxWidth: 'min(400px, 70vw)', aspectRatio: '1/1', maxHeight: '100%' }
       }
     >
       {/* central accent glow (soft aura behind everything) */}

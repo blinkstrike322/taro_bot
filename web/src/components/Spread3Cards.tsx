@@ -70,25 +70,22 @@ export default function Spread3Cards({ apiCall, characterId, onError }: Spread3C
       return (
         <div className="flex flex-col items-center py-3 px-3 w-full h-full">
           <div className="flex-1 min-h-0 flex flex-col items-center justify-center w-full">
-            {/* 2-column grid: 2 наверху, 1 снизу по центру */}
-            <div className="grid grid-cols-2 gap-2 sm:gap-3 w-full max-w-[300px] px-2 place-items-center">
+            {/* 3 cards auto-fit row — flex-1 распределяет ширину равномерно */}
+            <div className="flex items-end justify-center gap-2 sm:gap-3 w-full max-w-lg sm:max-w-xl lg:max-w-2xl px-2">
               {data.cards.map((rawCard, i) => {
                 const card = { ...rawCard, image_url: `/cards/${rawCard.id}.png` };
                 const isCenter = i === 1;
-                const isLast = i === 2;
 
                 return (
-                  <div key={rawCard.id} className={isLast ? 'col-span-2 flex justify-center w-full' : 'w-full'}>
-                    <div className="max-w-[140px] sm:max-w-[180px] mx-auto">
-                      <Card
-                        card={card}
-                        position={POSITIONS[i]}
-                        raised={isCenter}
-                        flipped={flippedCards[i]}
-                        onFlip={() => handleFlip(i)}
-                        characterId={characterId}
-                      />
-                    </div>
+                  <div key={rawCard.id} className="flex-1 min-w-0 overflow-x-hidden">
+                    <Card
+                      card={card}
+                      position={POSITIONS[i]}
+                      raised={isCenter}
+                      flipped={flippedCards[i]}
+                      onFlip={() => handleFlip(i)}
+                      characterId={characterId}
+                    />
                   </div>
                 );
               })}
@@ -104,32 +101,27 @@ export default function Spread3Cards({ apiCall, characterId, onError }: Spread3C
 
     return (
       <div className="flex flex-col items-center py-3 px-3 w-full">
-        {/* compact cards at top */}
-        <div className="flex flex-col items-center w-full flex-shrink-0 pb-2">
-          <div className="grid grid-cols-2 gap-2 sm:gap-3 w-full max-w-[250px] px-2 place-items-center">
-            {data.cards.map((rawCard, i) => {
-              const card = { ...rawCard, image_url: `/cards/${rawCard.id}.png` };
-              const isCenter = i === 1;
-              const isLast = i === 2;
+        {/* 3 cards auto-fit row после флипа — чуть меньше, чтобы результат помещался */}
+        <div className="flex items-end justify-center gap-2 sm:gap-3 w-full max-w-sm sm:max-w-md lg:max-w-lg px-2 flex-shrink-0 pb-2">
+          {data.cards.map((rawCard, i) => {
+            const card = { ...rawCard, image_url: `/cards/${rawCard.id}.png` };
+            const isCenter = i === 1;
 
-              return (
-                <div key={rawCard.id} className={isLast ? 'col-span-2 flex justify-center w-full' : 'w-full'}>
-                  <div className="max-w-[110px] sm:max-w-[140px] mx-auto">
-                    <Card
-                      card={card}
-                      position={POSITIONS[i]}
-                      raised={isCenter}
-                      flipped={true}
-                      characterId={characterId}
-                    />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+            return (
+              <div key={rawCard.id} className="flex-1 min-w-0 overflow-x-hidden">
+                <Card
+                  card={card}
+                  position={POSITIONS[i]}
+                  raised={isCenter}
+                  flipped={true}
+                  characterId={characterId}
+                />
+              </div>
+            );
+          })}
         </div>
 
-        {/* result flows below — parent scrolls */}
+        {/* result flows below */}
         <div className="w-full pb-4">
           <ReadingResult interpretation={data.interpretation} />
         </div>
