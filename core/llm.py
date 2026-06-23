@@ -12,7 +12,28 @@ from config import settings
 
 logger = logging.getLogger(__name__)
 
-FALLBACK_MODELS = [
+# ── Provider configs ──────────────────────────────────────────────
+# Each entry: (model_id, base_url, api_key, label_for_logs)
+
+OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
+ZEN_URL = "https://opencode.ai/zen/v1/chat/completions"
+
+def _zen_key() -> str | None:
+    return settings.OPENCODE_ZEN_KEY or None
+
+# Primary — DeepSeek Flash via OpenCode Zen
+PRIMARY_MODEL = "deepseek-v4-flash-free"
+
+# Zen free-tier fallbacks (in order)
+ZEN_FALLBACKS = [
+    "deepseek-v4-flash-free",
+    "nemotron-3-ultra-free",
+    "north-mini-code-free",
+    "mimo-v2.5-free",
+]
+
+# OpenRouter fallbacks (kept as last resort)
+OPENROUTER_FALLBACKS = [
     "nvidia/nemotron-3-super-120b-a12b:free",
     "google/gemma-4-31b-it:free",
     "google/gemma-4-26b-a4b-it:free",
@@ -20,6 +41,41 @@ FALLBACK_MODELS = [
     "meta-llama/llama-3.3-70b-instruct:free",
     "openrouter/free",
 ]
+
+
+def _build_provider_list() -> list[tuple[str, str, str | None, str]]:
+    """Build ordered list of (model, base_url, api_key, label)."""
+    providers: list[tuple[str, str, str | None, str]] = []
+
+    # 1. Zen primary
+    key = _zen_key()
+    if key:
+        providers.append((PRIMARY_MODEL, ZEN_URL, key, "zen"))
+
+    # 2. Zen fallbacks
+    if key:
+        for m in ZEN_FALLBACKS:
+            if m != PRIMARY_MODEL:
+                providers.append((m, ZEN_URL, key, "zen"))
+
+    # 3. OpenRouter fallbacks
+    or_key = settings.OPENROUTER_API_KEY
+    if or_key:
+        for m in OPENROUTER_FALLBACKS:
+            providers.append((m, OPENROUTER_URL, or_key, "or"))
+
+    return providers
+
+
+def _get_primary_provider() -> tuple[str, str, str | None, str] | None:
+    key = _zen_key()
+    if key:
+        return (PRIMARY_MODEL, ZEN_URL, key, "zen")
+    or_key = settings.OPENROUTER_API_KEY
+    if or_key:
+        return (OPENROUTER_FALLBACKS[0], OPENROUTER_URL, or_key, "or")
+    return None
+
 
 EMOJI_PATTERN = re.compile(
     "["
@@ -48,12 +104,23 @@ def strip_emojis(text: str) -> str:
     return EMOJI_PATTERN.sub("", text)
 
 
-async def call_llm(messages: list[dict], model: str, max_tokens: int = 2000) -> str:
-    async with httpx.AsyncClient(timeout=120.0) as client:
+async def call_llm(
+    messages: list[dict],
+    model: str,
+    base_url: str,
+    api_key: str,
+    max_tokens: int = 2000,
+) -> str:
+    """Call a single LLM endpoint and return the text content.
+
+    Handles reasoning models that return content in ``reasoning_content``
+    when the visible ``content`` field is empty.
+    """
+    async with httpx.AsyncClient(timeout=180.0) as client:
         response = await client.post(
-            "https://openrouter.ai/api/v1/chat/completions",
+            base_url,
             headers={
-                "Authorization": f"Bearer {settings.OPENROUTER_API_KEY}",
+                "Authorization": f"Bearer {api_key}",
                 "Content-Type": "application/json",
             },
             json={
@@ -64,34 +131,75 @@ async def call_llm(messages: list[dict], model: str, max_tokens: int = 2000) -> 
             },
         )
         response.raise_for_status()
-        content = response.json()["choices"][0]["message"]["content"]
-        if content is None:
-            raise ValueError(f"Model {model} returned null content")
-        return content
+        data = response.json()
+        choice = data["choices"][0]
+        msg = choice["message"]
+
+        # DeepSeek-style reasoning: content may be in reasoning_content
+        content = msg.get("content")
+        if content and content.strip():
+            return content
+
+        # Some reasoning models return content in reasoning fields
+        reasoning = (
+            msg.get("reasoning_content")
+            or msg.get("reasoning")
+            or ""
+        )
+        if reasoning:
+            logger.warning(
+                "Model %s returned empty content — using reasoning as fallback",
+                model,
+            )
+            return reasoning
+
+        raise ValueError(f"Model {model} returned no content or reasoning")
 
 
-async def call_llm_with_fallback(messages: list[dict], max_tokens: int = 2000) -> str:
-    last_error = None
-    for model in FALLBACK_MODELS:
+async def call_llm_with_fallback(
+    messages: list[dict],
+    max_tokens: int = 2000,
+) -> str:
+    last_error: Exception | None = None
+    provider_list = _build_provider_list()
+
+    if not provider_list:
+        raise RuntimeError("No LLM providers configured — set OPENCODE_ZEN_KEY or OPENROUTER_API_KEY")
+
+    logger.info(
+        "Attempting LLM call with %d provider(s) total",
+        len(provider_list),
+    )
+
+    for model, base_url, api_key, label in provider_list:
         for attempt in range(3):
             try:
-                return await call_llm(messages, model, max_tokens=max_tokens)
+                result = await call_llm(
+                    messages, model, base_url, api_key,
+                    max_tokens=max_tokens,
+                )
+                logger.info(
+                    "OK: %s — %s (%d chars)",
+                    label, model, len(result),
+                )
+                return result
             except httpx.HTTPStatusError as e:
                 if e.response.status_code == 429 and attempt < 2:
                     delay = (attempt + 1) * 2
                     logger.warning(
-                        f"Model {model} rate limited (429), "
-                        f"retry {attempt + 1}/3 in {delay}s"
+                        "%s — %s rate limited (429), retry %d/3 in %ds",
+                        label, model, attempt + 1, delay,
                     )
                     await asyncio.sleep(delay)
                     continue
                 last_error = e
-                logger.warning(f"Model {model} failed: {e}")
+                logger.warning("%s — %s failed: %s", label, model, e)
                 break
             except Exception as e:
                 last_error = e
-                logger.warning(f"Model {model} failed: {e}")
+                logger.warning("%s — %s failed: %s", label, model, e)
                 break
+
     raise RuntimeError("All LLM models failed") from last_error
 
 
@@ -111,11 +219,12 @@ async def interpret_reading(
         {"role": "user", "content": user_prompt},
     ]
 
+    # Reasoning models need extra token budget
+    is_reasoning = _zen_key() is not None
+    token_base = 6000 if is_reasoning else 4000
+
     try:
-        model_kwargs = {}
-        if spread_type == 3 and len(cards) == 3:
-            model_kwargs["max_tokens"] = 4000
-        raw = await call_llm_with_fallback(messages, **model_kwargs)
+        raw = await call_llm_with_fallback(messages, max_tokens=token_base)
         cleaned = strip_emojis(raw)
         if len(cleaned) != len(raw):
             logger.warning("Emojis detected and removed from LLM response")
@@ -184,7 +293,7 @@ def parse_llm_response(text: str) -> Optional[dict]:
                 except json.JSONDecodeError:
                     json_start = -1
 
-    # 3. Fallback: regex JSON (original approach)
+    # 3. Fallback: regex JSON
     match = re.search(r"\{(?:[^{}]|\{[^{}]*\})*\}", text, re.DOTALL)
     if match:
         try:
@@ -192,7 +301,7 @@ def parse_llm_response(text: str) -> Optional[dict]:
         except json.JSONDecodeError:
             pass
 
-    # 4. Fallback: try text format (when LLM ignores JSON instruction)
+    # 4. Fallback: try text format
     parsed = _parse_text_format(text)
     if parsed:
         return parsed
@@ -215,7 +324,6 @@ def fallback_from_cards_db(
     all_cards = load_cards()
     cards_by_name = {c["name"]: c for c in all_cards}
 
-    # Character-specific intros and tones
     character_intros = {
         "shadow_walker": "Тени сгущаются над древними символами...",
         "ruin_keeper": "Пыль веков оседает на камнях судьбы...",
