@@ -60,31 +60,41 @@ export default function Spread1Card({ apiCall, characterId, onError }: Spread1Ca
   if (phase === 'cards' && data) {
     const card = { ...data.cards[0], image_url: `/cards/${data.cards[0].id}.png` };
 
-    return (
-      <div className="flex flex-col items-center py-3 px-3 w-full h-full">
-        {/* card area — shrinks after flip */}
-        <div className={`${flipped ? 'flex-shrink-0 pb-2' : 'flex-1 min-h-0'} flex flex-col items-center w-full ${flipped ? 'justify-start' : 'justify-center'}`}>
-          <div className="w-full max-w-[240px] sm:max-w-[326px] lg:max-w-[380px] max-h-full flex-shrink min-h-0">
-            <Card
-              card={card}
-              position="ТВOЯ КАРТА"
-              flipped={flipped}
-              onFlip={handleFlip}
-              characterId={characterId}
-            />
-          </div>
-          {!flipped && (
+    if (!flipped) {
+      return (
+        <div className="flex flex-col items-center py-3 px-3 w-full h-full">
+          <div className="flex-1 min-h-0 flex flex-col items-center justify-center w-full">
+            <div className="w-full max-w-[240px] sm:max-w-[326px] lg:max-w-[380px]">
+              <Card
+                card={card}
+                position="ТВOЯ КАРТА"
+                flipped={false}
+                onFlip={handleFlip}
+                characterId={characterId}
+              />
+            </div>
             <div className="font-pixel text-[11px] text-white/40 mt-3 blink flex-shrink-0">
               НАЖМИ НА КАРТУ
             </div>
-          )}
-        </div>
-        {/* result area — scrollable, takes remaining space */}
-        {flipped && (
-          <div className="flex-1 min-h-0 overflow-y-auto w-full">
-            <ReadingResult interpretation={data.interpretation} />
           </div>
-        )}
+        </div>
+      );
+    }
+
+    return (
+      <div className="flex flex-col items-center py-3 px-3 w-full">
+        {/* compact card at top */}
+        <div className="w-full max-w-[180px] sm:max-w-[220px] flex-shrink-0 pb-3">
+          <Card
+            card={card}
+            flipped={true}
+            characterId={characterId}
+          />
+        </div>
+        {/* result flows below — parent scrolls */}
+        <div className="w-full pb-4">
+          <ReadingResult interpretation={data.interpretation} />
+        </div>
       </div>
     );
   }
