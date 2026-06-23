@@ -41,6 +41,9 @@ async def check_quota(
     - daily card: 1 per day
     - non-daily: both free and paid use monthly limits
     """
+    if _is_admin(tg_id):
+        return {"ok": True, "remaining": None, "limit": None, "admin": True}
+
     if spread_type == "daily":
         daily_count = await get_daily_card_count_today(db, user_id)
         if daily_count >= 1:
@@ -52,9 +55,6 @@ async def check_quota(
                 "limit": 1,
             }
         return {"ok": True, "remaining": 1, "limit": 1}
-
-    if _is_admin(tg_id):
-        return {"ok": True, "remaining": None, "limit": None, "admin": True}
 
     subscribed = await is_subscribed(db, tg_id)
     monthly_count = await get_monthly_non_daily_count(db, user_id)
