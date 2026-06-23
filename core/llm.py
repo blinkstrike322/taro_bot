@@ -13,9 +13,10 @@ from config import settings
 logger = logging.getLogger(__name__)
 
 FALLBACK_MODELS = [
+    "google/gemma-4-31b-it:free",
+    "google/gemma-4-26b-a4b-it:free",
     "qwen/qwen3-next-80b-a3b-instruct:free",
     "meta-llama/llama-3.3-70b-instruct:free",
-    "google/gemma-4-31b-it:free",
     "nvidia/nemotron-3-super-120b-a12b:free",
     "openrouter/free",
 ]
@@ -48,7 +49,7 @@ def strip_emojis(text: str) -> str:
 
 
 async def call_llm(messages: list[dict], model: str, max_tokens: int = 2000) -> str:
-    async with httpx.AsyncClient(timeout=60.0) as client:
+    async with httpx.AsyncClient(timeout=120.0) as client:
         response = await client.post(
             "https://openrouter.ai/api/v1/chat/completions",
             headers={
@@ -69,12 +70,12 @@ async def call_llm(messages: list[dict], model: str, max_tokens: int = 2000) -> 
         return content
 
 
-async def call_llm_with_fallback(messages: list[dict]) -> str:
+async def call_llm_with_fallback(messages: list[dict], max_tokens: int = 2000) -> str:
     last_error = None
     for model in FALLBACK_MODELS:
         for attempt in range(3):
             try:
-                return await call_llm(messages, model)
+                return await call_llm(messages, model, max_tokens=max_tokens)
             except httpx.HTTPStatusError as e:
                 if e.response.status_code == 429 and attempt < 2:
                     delay = (attempt + 1) * 2
@@ -111,7 +112,10 @@ async def interpret_reading(
     ]
 
     try:
-        raw = await call_llm_with_fallback(messages)
+        model_kwargs = {}
+        if spread_type == 3 and len(cards) == 3:
+            model_kwargs["max_tokens"] = 4000
+        raw = await call_llm_with_fallback(messages, **model_kwargs)
         cleaned = strip_emojis(raw)
         if len(cleaned) != len(raw):
             logger.warning("Emojis detected and removed from LLM response")
