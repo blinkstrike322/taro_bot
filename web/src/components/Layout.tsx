@@ -41,7 +41,7 @@ export default function Layout({
         className="w-full max-w-screen overflow-x-hidden bg-black relative flex flex-col"
         style={{
           '--guide-accent': guide.accent,
-          height: '100dvh',
+          height: 'var(--app-height, 100dvh)',
           boxSizing: 'border-box',
         } as React.CSSProperties}
       >

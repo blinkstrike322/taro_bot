@@ -18,18 +18,14 @@ html {
   -webkit-tap-highlight-color: transparent;
   overflow-x: hidden;
   max-width: 100vw;
-  /* fallback for browsers without dvh support */
-  height: 100vh;
-  height: 100dvh;
+  height: var(--app-height, 100dvh);
 }
 
 body {
   background: #000;
   margin: 0;
   padding: 0;
-  /* fallback for browsers without dvh support */
-  height: 100vh;
-  height: 100dvh;
+  height: var(--app-height, 100dvh);
   /* prevent body from scrolling — Layout handles its own scroll */
   overflow: hidden;
   max-width: 100vw;
