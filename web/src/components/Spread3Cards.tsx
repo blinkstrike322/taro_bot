@@ -65,32 +65,34 @@ export default function Spread3Cards({ apiCall, characterId }: Spread3CardsProps
     const allFlipped = flippedCards.every(Boolean);
 
     return (
-      <div className="flex flex-col items-center py-4 px-3 w-full min-h-full">
-        <div className="flex flex-wrap items-end justify-center gap-2 sm:gap-3 w-full max-w-lg px-2">
-          {data.cards.map((rawCard, i) => {
-            const card = { ...rawCard, image_url: `/cards/${rawCard.id}.png` };
-            const isCenter = i === 1;
+      <div className="flex flex-col items-center py-3 px-3 w-full h-full overflow-hidden">
+        <div className="flex-1 min-h-0 flex flex-col items-center justify-center w-full">
+          <div className="flex flex-wrap items-end justify-center gap-2 sm:gap-3 w-full max-w-lg px-2 flex-shrink min-h-0">
+            {data.cards.map((rawCard, i) => {
+              const card = { ...rawCard, image_url: `/cards/${rawCard.id}.png` };
+              const isCenter = i === 1;
 
-            return (
-              <div key={rawCard.id} className="flex-[1_1_120px] max-w-[140px] sm:max-w-[180px] lg:max-w-[200px] min-w-0">
-                <Card
-                  card={card}
-                  position={POSITIONS[i]}
-                  raised={isCenter}
-                  flipped={flippedCards[i]}
-                  onFlip={() => handleFlip(i)}
-                  characterId={characterId}
-                />
-              </div>
-            );
-          })}
-        </div>
-
-        {!allFlipped && (
-          <div className="font-pixel text-[11px] text-white/40 mt-3 blink">
-            НАЖМИ НА ВСЕ КАРТЫ
+              return (
+                <div key={rawCard.id} className="flex-[1_1_120px] max-w-[140px] sm:max-w-[180px] lg:max-w-[200px] min-w-0 max-h-full">
+                  <Card
+                    card={card}
+                    position={POSITIONS[i]}
+                    raised={isCenter}
+                    flipped={flippedCards[i]}
+                    onFlip={() => handleFlip(i)}
+                    characterId={characterId}
+                  />
+                </div>
+              );
+            })}
           </div>
-        )}
+
+          {!allFlipped && (
+            <div className="font-pixel text-[11px] text-white/40 mt-3 blink flex-shrink-0">
+              НАЖМИ НА ВСЕ КАРТЫ
+            </div>
+          )}
+        </div>
 
         {allFlipped && <ReadingResult interpretation={data.interpretation} />}
       </div>

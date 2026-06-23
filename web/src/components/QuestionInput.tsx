@@ -30,8 +30,8 @@ export default function QuestionInput({ spreadType, onSubmit, loading = false, c
     : 'ПРOШЛOЕ · НАСТOЯЩЕЕ · БУДУЩЕЕ';
 
   return (
-    <div className="px-3 py-3 w-full flex flex-col items-center">
-      <div className="font-pixel text-[11px] text-white/60 mb-2 tracking-wide self-start w-full">
+    <div className="px-3 py-3 w-full h-full flex flex-col items-center">
+      <div className="font-pixel text-[11px] text-white/60 mb-2 tracking-wide self-start w-full flex-shrink-0">
         &gt;&gt; ENTER_QUERY
       </div>
 
@@ -42,17 +42,19 @@ export default function QuestionInput({ spreadType, onSubmit, loading = false, c
         placeholder="Задай вопрос картам..."
         disabled={loading}
         rows={3}
-        className="w-full border-2 border-white bg-black text-white font-mono-crt text-[18px] leading-snug p-2 resize-none placeholder:text-white/30 focus:outline-none focus:border-white disabled:opacity-50"
+        className="w-full border-2 border-white bg-black text-white font-mono-crt text-[18px] leading-snug p-2 resize-none placeholder:text-white/30 focus:outline-none focus:border-white disabled:opacity-50 flex-shrink-0"
       />
 
-      <div className="font-pixel text-[11px] text-white/40 mt-1 tracking-wide text-center">
+      <div className="font-pixel text-[11px] text-white/40 mt-1 tracking-wide text-center flex-shrink-0">
         {hint}
       </div>
 
-      {/* ── per-guide pixel sigil ── */}
-      <GuideSigil guideId={characterId} />
+      {/* ── per-guide pixel sigil — takes remaining space, shrinks to fit ── */}
+      <div className="flex-1 min-h-0 flex items-center justify-center w-full">
+        <GuideSigil guideId={characterId} />
+      </div>
 
-      <div className="flex justify-center">
+      <div className="flex justify-center flex-shrink-0">
         <Button onClick={handleSubmit} variant="primary">
           {loading ? 'ГАДАНИЕ...' : 'ПOЛУЧИТЬ OТВЕТ'}
         </Button>
