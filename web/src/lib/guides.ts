@@ -12,6 +12,7 @@ export interface GuideMeta {
   accentDim: string;         // dimmed variant for backgrounds / subtle accents
   portrait: string;          // pixel-art portrait path (square)
   cardBack: string;          // per-guide card back image path (2:3)
+  cardBackVersion: number;   // bump to bust TG WebView cache when card backs change
 
   // Per-guide corner symbols (4 corners of frames/cards)
   cornerSymbols: {
@@ -50,6 +51,7 @@ export const GUIDES: Record<string, GuideMeta> = {
     accentDim: 'rgba(123, 45, 142, 0.18)',
     portrait: '/guides/shadow_walker.png',
     cardBack: '/cards/backs/back_shadow_walker.png',
+    cardBackVersion: 2,
     cornerSymbols: { tl: '☾', tr: '✦', bl: '†', br: '☽' },
     auraAlphabet: '·•✦✧☾☽◯◌○◇◎°~^ﾟ',
     ambientSymbols: ['☾', '☽', '✦', '✧', '◌', '○', '◇', '∼'],
@@ -71,6 +73,7 @@ export const GUIDES: Record<string, GuideMeta> = {
     accentDim: 'rgba(184, 134, 11, 0.18)',
     portrait: '/guides/ruin_keeper.png',
     cardBack: '/cards/backs/back_ruin_keeper.png',
+    cardBackVersion: 2,
     cornerSymbols: { tl: '⚰', tr: '☥', bl: '†', br: '⚹' },
     auraAlphabet: '·•☦☨☩⚱☥⚰†‡✠✚◯◇◎°~',
     ambientSymbols: ['⚰', '☥', '†', '⚹', '✠', '◇', '◯', '·'],
@@ -93,6 +96,7 @@ export const GUIDES: Record<string, GuideMeta> = {
     accentDim: 'rgba(230, 57, 70, 0.18)',
     portrait: '/guides/spark_of_chaos.png',
     cardBack: '/cards/backs/back_spark_of_chaos.png',
+    cardBackVersion: 2,
     cornerSymbols: { tl: '⌇', tr: '✕', bl: '⋈', br: '※' },
     auraAlphabet: '·•⌇∾◇◎∘○※✕⋈‡†°~^ﾟ',
     ambientSymbols: ['⌇', '∾', '※', '✕', '⋈', '∘', '·', '•'],

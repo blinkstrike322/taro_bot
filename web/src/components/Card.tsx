@@ -187,7 +187,7 @@ export default function Card({
             {/* ── face-down: per-guide card back ── */}
             <div className="flip-face relative overflow-hidden" style={{ background: '#000' }}>
               <img
-                src={guide.cardBack}
+                src={`${guide.cardBack}?v=${guide.cardBackVersion}`}
                 alt=""
                 className="dither-img w-full h-full object-cover"
                 style={{ imageRendering: 'pixelated' }}
