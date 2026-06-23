@@ -1,0 +1,48 @@
+name: Build & Deploy Frontend
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'web/src/**'
+      - 'web/package.json'
+      - 'web/package-lock.json'
+      - 'web/next.config.mjs'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ./web
+        run: npm ci
+
+      - name: Build static export
+        working-directory: ./web
+        run: npm run build
+
+      - name: Commit fresh build to repo
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: 'chore: rebuild static webapp [skip ci]'
+          file_pattern: static/webapp/
+          commit_user_name: 'github-actions[bot]'
+          commit_user_email: 'github-actions[bot]@users.noreply.github.com'
