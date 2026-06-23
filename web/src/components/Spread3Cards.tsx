@@ -21,11 +21,12 @@ interface ReadingData {
 interface Spread3CardsProps {
   apiCall: (question: string | null) => Promise<ReadingData>;
   characterId?: string;
+  onError?: (msg: string) => void;
 }
 
 const POSITIONS = ['ПРOШЛOЕ', 'НАСТOЯЩЕЕ', 'БУДУЩЕЕ'];
 
-export default function Spread3Cards({ apiCall, characterId }: Spread3CardsProps) {
+export default function Spread3Cards({ apiCall, characterId, onError }: Spread3CardsProps) {
   const [phase, setPhase] = useState<Phase>('input');
   const [data, setData] = useState<ReadingData | null>(null);
   const [flippedCards, setFlippedCards] = useState<boolean[]>([false, false, false]);
@@ -37,10 +38,11 @@ export default function Spread3Cards({ apiCall, characterId }: Spread3CardsProps
       setData(result);
       setFlippedCards([false, false, false]);
       setPhase('cards');
-    } catch {
+    } catch (err: any) {
       setPhase('input');
+      onError?.(err?.message || 'ПEЧАЛЬ. ПOПРOБУЙ СНOВА.');
     }
-  }, [apiCall]);
+  }, [apiCall, onError]);
 
   const handleFlip = useCallback((index: number) => {
     setFlippedCards(prev => {
