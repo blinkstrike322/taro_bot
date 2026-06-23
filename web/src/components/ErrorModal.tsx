@@ -41,6 +41,14 @@ export default function ErrorModal({ message, visible, onHide, characterId }: Er
     onHide?.();
   };
 
+  // Darken the accent for error — too bright distracts from message
+  const dimAccent = guide.id === 'shadow_walker' ? '#3A1650' :
+    guide.id === 'ruin_keeper' ? '#5C4308' :
+    guide.id === 'spark_of_chaos' ? '#6E1B22' : '#333';
+  const dimAccentDim = guide.id === 'shadow_walker' ? 'rgba(58, 22, 80, 0.25)' :
+    guide.id === 'ruin_keeper' ? 'rgba(92, 67, 8, 0.25)' :
+    guide.id === 'spark_of_chaos' ? 'rgba(110, 27, 34, 0.25)' : 'rgba(51, 51, 51, 0.25)';
+
   return (
     <div
       className={`error-overlay ${show ? 'visible' : ''}`}
@@ -50,20 +58,20 @@ export default function ErrorModal({ message, visible, onHide, characterId }: Er
     >
       <div
         className="error-box"
-        style={{ '--err-accent': guide.accent, '--err-accent-dim': guide.accentDim } as React.CSSProperties}
+        style={{ '--err-accent': dimAccent, '--err-accent-dim': dimAccentDim } as React.CSSProperties}
         onClick={e => e.stopPropagation()}
       >
         {/* scan overlay */}
         <div className="error-scan" aria-hidden="true" />
 
         {/* occult corner guards */}
-        <span className="error-corner tl" style={{ color: guide.accent }}>╳</span>
-        <span className="error-corner tr" style={{ color: guide.accent }}>╳</span>
-        <span className="error-corner bl" style={{ color: guide.accent }}>╳</span>
-        <span className="error-corner br" style={{ color: guide.accent }}>╳</span>
+        <span className="error-corner tl" style={{ color: dimAccent }}>╳</span>
+        <span className="error-corner tr" style={{ color: dimAccent }}>╳</span>
+        <span className="error-corner bl" style={{ color: dimAccent }}>╳</span>
+        <span className="error-corner br" style={{ color: dimAccent }}>╳</span>
 
         {/* sigil header */}
-        <div className="error-sigil" style={{ color: guide.accent }}>
+        <div className="error-sigil" style={{ color: dimAccent }}>
           {guide.ambientSymbols[Math.floor(Math.random() * guide.ambientSymbols.length)]}
         </div>
 
@@ -76,7 +84,6 @@ export default function ErrorModal({ message, visible, onHide, characterId }: Er
             <div className="error-sub-divider" />
             <button
               className="error-sub-btn font-pixel"
-              style={{ '--err-accent': guide.accent } as React.CSSProperties}
               onClick={handleDismiss}
             >
               ◈ ЗАКРЫТЬ

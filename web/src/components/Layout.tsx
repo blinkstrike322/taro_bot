@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactNode } from 'react';
+import { ReactNode, useEffect } from 'react';
 import CrtOverlay from './CrtOverlay';
 import Button from './Button';
 import Toast from './Toast';
@@ -34,6 +34,25 @@ export default function Layout({
   characterId,
 }: LayoutProps) {
   const guide = getGuide(characterId);
+
+  // Lock viewport height on mount to prevent keyboard from pushing content
+  useEffect(() => {
+    const tg = (window as any).Telegram?.WebApp;
+    if (tg) {
+      tg.expand();
+      const h = tg.viewportStableHeight || window.innerHeight;
+      document.documentElement.style.setProperty('--app-height', `${h}px`);
+    }
+    // Also handle plain mobile — lock to initial real viewport
+    const lock = () => {
+      if (!tg) {
+        document.documentElement.style.setProperty('--app-height', `${window.innerHeight}px`);
+      }
+    };
+    lock();
+    window.addEventListener('resize', lock);
+    return () => window.removeEventListener('resize', lock);
+  }, []);
 
   return (
     <CrtOverlay>
