@@ -71,13 +71,13 @@ export default function Spread3Cards({ apiCall, characterId, onError }: Spread3C
         <div className="flex flex-col items-center py-3 px-3 w-full h-full">
           <div className="flex-1 min-h-0 flex flex-col items-center justify-center w-full">
             {/* 3 cards auto-fit row — flex-1 распределяет ширину равномерно */}
-            <div className="flex items-end justify-center gap-2 sm:gap-3 w-full max-w-lg sm:max-w-xl lg:max-w-2xl px-2">
+            <div className="flex items-end justify-center gap-2 sm:gap-3 w-full max-w-[590px] sm:max-w-[662px] lg:max-w-[772px] px-2">
               {data.cards.map((rawCard, i) => {
                 const card = { ...rawCard, image_url: `/cards/${rawCard.id}.png` };
                 const isCenter = i === 1;
 
                 return (
-                  <div key={rawCard.id} className="flex-1 min-w-0 overflow-x-hidden">
+                  <div key={rawCard.id} className={`flex-1 min-w-0 overflow-hidden ${isCenter ? 'pt-[12px]' : ''}`}>
                     <Card
                       card={card}
                       position={POSITIONS[i]}
@@ -102,13 +102,13 @@ export default function Spread3Cards({ apiCall, characterId, onError }: Spread3C
     return (
       <div className="flex flex-col items-center py-3 px-3 w-full">
         {/* 3 cards auto-fit row после флипа — чуть меньше, чтобы результат помещался */}
-        <div className="flex items-end justify-center gap-2 sm:gap-3 w-full max-w-sm sm:max-w-md lg:max-w-lg px-2 flex-shrink-0 pb-2">
+        <div className="flex items-end justify-center gap-2 sm:gap-3 w-full max-w-[442px] sm:max-w-[516px] lg:max-w-[590px] px-2 flex-shrink-0 pb-2">
           {data.cards.map((rawCard, i) => {
             const card = { ...rawCard, image_url: `/cards/${rawCard.id}.png` };
             const isCenter = i === 1;
 
             return (
-              <div key={rawCard.id} className="flex-1 min-w-0 overflow-x-hidden">
+              <div key={rawCard.id} className="flex-1 min-w-0 overflow-hidden">
                 <Card
                   card={card}
                   position={POSITIONS[i]}

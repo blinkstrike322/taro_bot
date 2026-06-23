@@ -15,10 +15,22 @@ interface QuestionInputProps {
 
 export default function QuestionInput({ spreadType, onSubmit, loading = false, characterId }: QuestionInputProps) {
   const [question, setQuestion] = useState('');
+  const [error, setError] = useState('');
   const guide = useMemo(() => getGuide(characterId), [characterId]);
 
   const handleSubmit = () => {
-    onSubmit(question.trim() || null);
+    const trimmed = question.trim();
+    if (!trimmed) {
+      setError('НАПИШИ ВОПРОС');
+      return;
+    }
+    setError('');
+    onSubmit(trimmed);
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setQuestion(e.target.value);
+    if (error) setError('');
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -40,7 +52,7 @@ export default function QuestionInput({ spreadType, onSubmit, loading = false, c
 
       <textarea
         value={question}
-        onChange={e => setQuestion(e.target.value)}
+        onChange={handleChange}
         onKeyDown={handleKeyDown}
         placeholder="Задай вопрос картам..."
         disabled={loading}
@@ -51,6 +63,12 @@ export default function QuestionInput({ spreadType, onSubmit, loading = false, c
       <div className="font-pixel text-[11px] text-white/40 mt-1 tracking-wide text-center flex-shrink-0">
         {hint}
       </div>
+
+      {error && (
+        <div className="font-pixel text-[11px] mt-1 tracking-wide text-center flex-shrink-0 animate-pulse" style={{ color: guide.accent }}>
+          {'>> '}{error}{' <<'}
+        </div>
+      )}
 
       {/* ── per-guide pixel sigil — takes remaining space, shrinks to fit ── */}
       <div className="flex-1 min-h-0 flex items-center justify-center w-full">
