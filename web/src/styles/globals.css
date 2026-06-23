@@ -54,7 +54,7 @@ body {
    ================================================================ */
 .crt {
   position: relative;
-  overflow: hidden;
+  overflow: visible;
 }
 
 /* fine vertical mask + faint horizontal scan lines */

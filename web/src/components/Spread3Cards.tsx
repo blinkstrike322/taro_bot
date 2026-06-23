@@ -65,14 +65,14 @@ export default function Spread3Cards({ apiCall, characterId }: Spread3CardsProps
     const allFlipped = flippedCards.every(Boolean);
 
     return (
-      <div className="flex flex-col items-center py-4 px-3 w-full">
-        <div className="flex items-end justify-center gap-2 sm:gap-3 w-full max-w-lg px-2">
+      <div className="flex flex-col items-center py-4 px-3 w-full min-h-full">
+        <div className="flex flex-wrap items-end justify-center gap-2 sm:gap-3 w-full max-w-lg px-2">
           {data.cards.map((rawCard, i) => {
             const card = { ...rawCard, image_url: `/cards/${rawCard.id}.png` };
             const isCenter = i === 1;
 
             return (
-              <div key={rawCard.id} className="flex-1 max-w-[140px] sm:max-w-[180px] lg:max-w-[200px] min-w-0 overflow-x-hidden">
+              <div key={rawCard.id} className="flex-[1_1_120px] max-w-[140px] sm:max-w-[180px] lg:max-w-[200px] min-w-0">
                 <Card
                   card={card}
                   position={POSITIONS[i]}

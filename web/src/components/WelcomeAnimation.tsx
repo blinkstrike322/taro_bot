@@ -125,7 +125,7 @@ export default function WelcomeAnimation({ onComplete, spreadType, characterId =
 
   return (
     <div
-      className={`relative flex flex-col items-center justify-center w-full min-h-[60vh] bg-black transition-opacity duration-400 overflow-hidden ${fading ? 'opacity-0' : 'opacity-100'}`}
+      className={`relative flex flex-col items-center justify-start w-full min-h-full bg-black transition-opacity duration-400 overflow-hidden ${fading ? 'opacity-0' : 'opacity-100'}`}
       style={{ '--guide-accent': guide.accent } as React.CSSProperties}
     >
       {/* ── materializing sigil (background, behind boot text) ── */}
