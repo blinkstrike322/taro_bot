@@ -300,36 +300,50 @@ export default function Home() {
         </div>
       )}
 
-      {screen === 'spread' && spreadType === '1' && (
-        <Spread1Card key={spreadKey}
-          characterId={characterId}
-          onError={showError}
-          apiCall={(question) =>
-            API.spread(1, question, characterId).then((res) => ({
-              cards: res.cards.map((c) => ({
-                ...c,
-                image_url: `/cards/${c.id}.png`,
-              })),
-              interpretation: res.interpretation,
-            }))
-          }
-        />
-      )}
+      {screen === 'spread' && (spreadType === '1' || spreadType === '3') && (
+        <div
+          className="relative flex flex-col items-center w-full overflow-hidden min-h-full"
+          style={{ '--guide-accent': guide.accent } as React.CSSProperties}
+        >
+          <div
+            className="guide-ambient"
+            style={{ background: guide.ambientPattern }}
+            aria-hidden="true"
+          />
+          <GuideParticles guide={guide} />
 
-      {screen === 'spread' && spreadType === '3' && (
-        <Spread3Cards key={spreadKey}
-          characterId={characterId}
-          onError={showError}
-          apiCall={(question) =>
-            API.spread(3, question, characterId).then((res) => ({
-              cards: res.cards.map((c) => ({
-                ...c,
-                image_url: `/cards/${c.id}.png`,
-              })),
-              interpretation: res.interpretation,
-            }))
-          }
-        />
+          <div className="flex-1 w-full relative z-10 flex flex-col">
+            {spreadType === '1' ? (
+              <Spread1Card key={spreadKey}
+                characterId={characterId}
+                onError={showError}
+                apiCall={(question) =>
+                  API.spread(1, question, characterId).then((res) => ({
+                    cards: res.cards.map((c) => ({
+                      ...c,
+                      image_url: `/cards/${c.id}.png`,
+                    })),
+                    interpretation: res.interpretation,
+                  }))
+                }
+              />
+            ) : (
+              <Spread3Cards key={spreadKey}
+                characterId={characterId}
+                onError={showError}
+                apiCall={(question) =>
+                  API.spread(3, question, characterId).then((res) => ({
+                    cards: res.cards.map((c) => ({
+                      ...c,
+                      image_url: `/cards/${c.id}.png`,
+                    })),
+                    interpretation: res.interpretation,
+                  }))
+                }
+              />
+            )}
+          </div>
+        </div>
       )}
 
       <CatalogModal
