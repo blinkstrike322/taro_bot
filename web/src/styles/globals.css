@@ -1402,6 +1402,85 @@ body {
 }
 
 /* ================================================================
+   WELCOME ANIMATION — boot logs + CRT scanlines
+   ================================================================ */
+.welcome-sigil-wrap {
+  position: relative;
+}
+
+/* Boot log lines — terminal style */
+.boot-log-line {
+  font-family: 'VT323', 'Pixelify Sans', monospace;
+  font-size: 14px;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  word-break: break-word;
+  animation: boot-line-in 0.25s ease-out;
+}
+
+@keyframes boot-line-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.boot-ts {
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 12px;
+}
+
+.boot-tag {
+  font-weight: bold;
+  font-size: 12px;
+  text-shadow: 0 0 4px currentColor;
+}
+
+.boot-msg {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.boot-log-progress .boot-bar {
+  color: rgba(255, 255, 255, 0.7);
+  letter-spacing: -1px;
+}
+
+.boot-log-progress .boot-pct {
+  color: rgba(255, 255, 255, 0.9);
+  margin-left: 4px;
+}
+
+/* Typing cursor — blink */
+.boot-cursor {
+  display: inline-block;
+  margin-left: 2px;
+  color: rgba(255, 255, 255, 0.9);
+  animation: boot-cursor-blink 0.8s steps(2) infinite;
+}
+
+@keyframes boot-cursor-blink {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0; }
+}
+
+.boot-typing {
+  opacity: 1;
+}
+
+/* CRT flicker overlay (very subtle) */
+@keyframes crt-flicker {
+  0%, 100% { opacity: 0.6; }
+  20%      { opacity: 0.55; }
+  40%      { opacity: 0.65; }
+  60%      { opacity: 0.5; }
+  80%      { opacity: 0.6; }
+}
+
+/* Hide scrollbar on boot log container */
+.boot-log-line::-webkit-scrollbar,
+div[class*="boot-log"]::-webkit-scrollbar {
+  display: none;
+}
+
+/* ================================================================
    MODAL FRAME — subtle CRT vibe for modal windows
    ================================================================ */
 .modal-frame {
