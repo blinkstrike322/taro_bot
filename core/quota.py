@@ -8,13 +8,21 @@ from storage.db import is_subscribed, get_monthly_non_daily_count, get_daily_car
 logger = logging.getLogger(__name__)
 
 _admin_ids: set[int] = set()
+_tester_ids: set[int] = set()
 
 
-def _load_admin_ids() -> set[int]:
-    raw = settings.ADMIN_IDS
+def _load_ids(raw: str) -> set[int]:
     if not raw:
         return set()
     return {int(x.strip()) for x in raw.split(",") if x.strip().isdigit()}
+
+
+def _load_admin_ids() -> set[int]:
+    return _load_ids(settings.ADMIN_IDS)
+
+
+def _load_tester_ids() -> set[int]:
+    return _load_ids(settings.TESTER_IDS)
 
 
 def _is_admin(tg_id: int) -> bool:
@@ -22,6 +30,13 @@ def _is_admin(tg_id: int) -> bool:
     if not _admin_ids:
         _admin_ids = _load_admin_ids()
     return tg_id in _admin_ids
+
+
+def _is_tester(tg_id: int) -> bool:
+    global _tester_ids
+    if not _tester_ids:
+        _tester_ids = _load_tester_ids()
+    return tg_id in _tester_ids
 
 MONTHLY_LIMIT_FREE = 10
 MONTHLY_LIMIT_PAID = 100
@@ -43,6 +58,9 @@ async def check_quota(
     """
     if _is_admin(tg_id):
         return {"ok": True, "remaining": None, "limit": None, "admin": True}
+
+    if _is_tester(tg_id):
+        return {"ok": True, "remaining": None, "limit": None, "tester": True}
 
     if spread_type == "daily":
         daily_count = await get_daily_card_count_today(db, user_id)

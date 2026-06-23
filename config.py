@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     WEBAPP_URL: str = "http://localhost:8080"
     OFFER_URL: str = "http://localhost:8080/offer/"
     ADMIN_IDS: str = ""  # comma-separated tg_ids, e.g. "123456,789012"
+    TESTER_IDS: str = ""  # comma-separated tg_ids — unlimited spreads like admins
 
     class Config:
         env_file = ".env"
