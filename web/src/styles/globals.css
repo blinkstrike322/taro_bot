@@ -339,6 +339,144 @@ body {
 }
 
 /* ================================================================
+   ERROR MODAL — fullscreen centered overlay
+   ================================================================ */
+.error-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(0, 0, 0, 0.88);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 250ms;
+}
+
+.error-overlay.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.error-box {
+  position: relative;
+  background: #000;
+  border: 2px solid var(--err-accent, #fff);
+  max-width: 88vw;
+  width: 340px;
+  padding: 2rem 1.5rem;
+  text-align: center;
+  overflow: hidden;
+}
+
+.error-scan {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(255, 255, 255, 0.015) 2px,
+    rgba(255, 255, 255, 0.015) 4px
+  );
+  animation: error-scan-move 4s linear infinite;
+}
+
+@keyframes error-scan-move {
+  0%   { transform: translateY(0); }
+  100% { transform: translateY(-4px); }
+}
+
+.error-corner {
+  position: absolute;
+  font-family: var(--font-pixel);
+  font-size: 14px;
+  line-height: 1;
+  pointer-events: none;
+  filter: drop-shadow(0 0 3px var(--err-accent-dim, rgba(255,255,255,0.3)));
+}
+
+.error-corner.tl { top: 6px; left: 8px; }
+.error-corner.tr { top: 6px; right: 8px; }
+.error-corner.bl { bottom: 6px; left: 8px; }
+.error-corner.br { bottom: 6px; right: 8px; }
+
+.error-sigil {
+  font-size: 32px;
+  line-height: 1;
+  margin-bottom: 0.75rem;
+  filter: drop-shadow(0 0 6px var(--err-accent-dim, rgba(255,255,255,0.3)));
+  animation: error-sigil-pulse 2.5s ease-in-out infinite;
+}
+
+@keyframes error-sigil-pulse {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50%      { opacity: 1; transform: scale(1.08); }
+}
+
+.error-message {
+  font-family: var(--font-pixel);
+  font-size: 14px;
+  line-height: 1.6;
+  color: #fff;
+  white-space: pre-line;
+  text-shadow: 0 0 4px rgba(255, 255, 255, 0.15);
+}
+
+.error-subscribe {
+  margin-top: 1rem;
+}
+
+.error-sub-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--err-accent, #fff), transparent);
+  margin-bottom: 1rem;
+  opacity: 0.4;
+}
+
+.error-sub-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.2rem;
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  color: #000;
+  background: var(--err-accent, #fff);
+  border: none;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: filter 150ms;
+  filter: drop-shadow(0 0 6px var(--err-accent-dim, rgba(255,255,255,0.3)));
+}
+
+.error-sub-btn:hover {
+  filter: brightness(1.2) drop-shadow(0 0 10px var(--err-accent-dim, rgba(255,255,255,0.5)));
+}
+
+.error-sub-hint {
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.35);
+  letter-spacing: 0.1em;
+  margin-top: 0.6rem;
+}
+
+.error-close-hint {
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.25);
+  letter-spacing: 0.08em;
+  margin-top: 1rem;
+  cursor: pointer;
+  transition: color 150ms;
+}
+
+.error-close-hint:hover {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* ================================================================
    CARD POSITION LABELS (3-card spread)
    ================================================================ */
 .card-label {

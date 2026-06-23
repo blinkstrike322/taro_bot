@@ -10,6 +10,7 @@ import SettingsModal from '@/components/SettingsModal';
 import CalendarModal from '@/components/CalendarModal';
 import Card, { TarotCard } from '@/components/Card';
 import ReadingResult from '@/components/ReadingResult';
+import ErrorModal from '@/components/ErrorModal';
 import * as API from '@/lib/api';
 import { getGuide, GuideMeta } from '@/lib/guides';
 
@@ -97,6 +98,9 @@ export default function Home() {
   const [toastMsg, setToastMsg] = useState('');
   const [toastVisible, setToastVisible] = useState(false);
 
+  const [errorMsg, setErrorMsg] = useState('');
+  const [errorVisible, setErrorVisible] = useState(false);
+
   const [dailyData, setDailyData] = useState<ReadingData | null>(null);
   const [dailyFlipped, setDailyFlipped] = useState(false);
   const [dailyLoading, setDailyLoading] = useState(false);
@@ -118,6 +122,15 @@ export default function Home() {
   const showToast = useCallback((msg: string) => {
     setToastMsg(msg);
     setToastVisible(true);
+  }, []);
+
+  const showError = useCallback((msg: string) => {
+    setErrorMsg(msg);
+    setErrorVisible(true);
+  }, []);
+
+  const hideError = useCallback(() => {
+    setErrorVisible(false);
   }, []);
 
   const handleWelcomeComplete = useCallback(() => {
@@ -177,11 +190,11 @@ export default function Home() {
       setScreen('daily-result');
     } catch (err: any) {
       const msg = err?.response?.error || err?.message || 'OШИБКА. ПOПРOБУЙ СНOВА';
-      showToast(msg);
+      showError(msg);
     } finally {
       setDailyLoading(false);
     }
-  }, [characterId, showToast, dailyLoading]);
+  }, [characterId, showError, dailyLoading]);
 
   const handleDailyFlip = useCallback(() => {
     setDailyFlipped(true);
@@ -300,6 +313,7 @@ export default function Home() {
       {screen === 'spread' && spreadType === '1' && (
         <Spread1Card key={spreadKey}
           characterId={characterId}
+          onError={showError}
           apiCall={(question) =>
             API.spread(1, question, characterId).then((res) => ({
               cards: res.cards.map((c) => ({
@@ -315,6 +329,7 @@ export default function Home() {
       {screen === 'spread' && spreadType === '3' && (
         <Spread3Cards key={spreadKey}
           characterId={characterId}
+          onError={showError}
           apiCall={(question) =>
             API.spread(3, question, characterId).then((res) => ({
               cards: res.cards.map((c) => ({
@@ -342,6 +357,13 @@ export default function Home() {
         isOpen={calendarOpen}
         onClose={() => setCalendarOpen(false)}
         initData={API.getInitData()}
+      />
+
+      <ErrorModal
+        message={errorMsg}
+        visible={errorVisible}
+        onHide={hideError}
+        characterId={characterId}
       />
     </Layout>
   );
