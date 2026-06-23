@@ -10,6 +10,7 @@ import SettingsModal from '@/components/SettingsModal';
 import CalendarModal from '@/components/CalendarModal';
 import Card, { TarotCard } from '@/components/Card';
 import ReadingResult from '@/components/ReadingResult';
+import GuideLoading from '@/components/GuideLoading';
 import ErrorModal from '@/components/ErrorModal';
 import * as API from '@/lib/api';
 import { getGuide, GuideMeta } from '@/lib/guides';
@@ -74,17 +75,6 @@ function GuideParticles({ guide }: { guide: GuideMeta }) {
   );
 }
 
-// ── guide loading indicator (3 pulsing pixels + phrase) ──
-function GuideLoading({ guide }: { guide: GuideMeta }) {
-  return (
-    <div className="guide-loading" style={{ '--guide-accent': guide.accent } as React.CSSProperties}>
-      <span className="guide-loading-dot" style={{ '--dot-delay': '0s' } as React.CSSProperties} />
-      <span className="guide-loading-dot" style={{ '--dot-delay': '0.2s' } as React.CSSProperties} />
-      <span className="guide-loading-dot" style={{ '--dot-delay': '0.4s' } as React.CSSProperties} />
-      <span>{guide.loadingPhrase}</span>
-    </div>
-  );
-}
 
 export default function Home() {
   const [spreadType, setSpreadType] = useState<SpreadType | null>(null);

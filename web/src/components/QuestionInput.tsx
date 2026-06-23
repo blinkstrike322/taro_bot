@@ -1,8 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import Button from './Button';
 import GuideSigil from './GuideSigil';
+import GuideLoading from './GuideLoading';
+import { getGuide } from '@/lib/guides';
 
 interface QuestionInputProps {
   spreadType: 1 | 3;
@@ -13,6 +15,7 @@ interface QuestionInputProps {
 
 export default function QuestionInput({ spreadType, onSubmit, loading = false, characterId }: QuestionInputProps) {
   const [question, setQuestion] = useState('');
+  const guide = useMemo(() => getGuide(characterId), [characterId]);
 
   const handleSubmit = () => {
     onSubmit(question.trim() || null);
@@ -49,16 +52,24 @@ export default function QuestionInput({ spreadType, onSubmit, loading = false, c
         {hint}
       </div>
 
-      {/* ── per-guide pixel sigil — takes remaining space, shrinks to fit ── */}
-      <div className="flex-1 min-h-0 flex items-center justify-center w-full">
-        <GuideSigil guideId={characterId} />
-      </div>
+      {loading ? (
+        <div className="flex-1 min-h-0 flex items-center justify-center w-full">
+          <GuideLoading guide={guide} />
+        </div>
+      ) : (
+        <>
+          {/* ── per-guide pixel sigil — takes remaining space, shrinks to fit ── */}
+          <div className="flex-1 min-h-0 flex items-center justify-center w-full">
+            <GuideSigil guideId={characterId} />
+          </div>
 
-      <div className="flex justify-center flex-shrink-0">
-        <Button onClick={handleSubmit} variant="primary">
-          {loading ? 'ГАДАНИЕ...' : 'ПOЛУЧИТЬ OТВЕТ'}
-        </Button>
-      </div>
+          <div className="flex justify-center flex-shrink-0">
+            <Button onClick={handleSubmit} variant="primary">
+              ПOЛУЧИТЬ OТВЕТ
+            </Button>
+          </div>
+        </>
+      )}
     </div>
   );
 }
