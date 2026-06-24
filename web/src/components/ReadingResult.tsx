@@ -1,5 +1,7 @@
 'use client';
 
+import { getGuide } from '@/lib/guides';
+
 interface Interpretation {
   intro: string;
   short_answer: string;
@@ -9,10 +11,24 @@ interface Interpretation {
 
 interface ReadingResultProps {
   interpretation: Interpretation;
+  characterId?: string;
 }
 
-export default function ReadingResult({ interpretation }: ReadingResultProps) {
+// Convert hex color (#RRGGBB) to rgba string at given opacity
+function hexToRgba(hex: string, alpha: number): string {
+  const h = hex.replace('#', '');
+  const r = parseInt(h.substring(0, 2), 16);
+  const g = parseInt(h.substring(2, 4), 16);
+  const b = parseInt(h.substring(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+export default function ReadingResult({ interpretation, characterId }: ReadingResultProps) {
   const { intro, short_answer, card_meaning, advice } = interpretation;
+  const guide = getGuide(characterId);
+  // ~75% opacity (was 0.65, +10% brighter) + ~15% glow via textShadow
+  const adviceColor = hexToRgba(guide.accent, 0.75);
+  const adviceGlow = `0 0 4px ${hexToRgba(guide.accent, 0.30)}, 0 0 8px ${hexToRgba(guide.accent, 0.15)}`;
 
   return (
     <div className="px-3 py-2">
@@ -70,9 +86,9 @@ export default function ReadingResult({ interpretation }: ReadingResultProps) {
         )}
 
         {advice && (
-          <div className="mt-3 pt-2 border-t border-white/20 relative z-10">
-            <span className="font-pixel text-[11px] text-white/50">&gt; </span>
-            <span className="font-mono-crt text-[16px] text-white/50 leading-snug">
+          <div className="mt-3 pt-2 border-t border-white/20 relative z-10" style={{ borderColor: hexToRgba(guide.accent, 0.25) }}>
+            <span className="font-pixel text-[11px]" style={{ color: adviceColor, textShadow: adviceGlow }}>&gt; </span>
+            <span className="font-mono-crt text-[16px] leading-snug" style={{ color: adviceColor, textShadow: adviceGlow }}>
               {advice}
             </span>
           </div>

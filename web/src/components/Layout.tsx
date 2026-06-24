@@ -20,6 +20,16 @@ interface LayoutProps {
   characterId?: string;
 }
 
+// Format spread type code → human-readable label
+function formatSpreadType(spreadType?: string): string {
+  switch (spreadType) {
+    case 'daily': return 'DAILY';
+    case '1':     return '1 CARD';
+    case '3':     return '3 CARDS';
+    default:      return '—';
+  }
+}
+
 export default function Layout({
   children,
   onOpenCatalog,
@@ -122,8 +132,8 @@ export default function Layout({
 
           {/* spread type indicator (right side) — minimal */}
           <div className="flex flex-col items-end leading-none">
-            <span className="font-pixel text-[9px] text-white/80 tracking-wide">
-              <span className="blink">■</span> {spreadType ?? '—'}
+            <span className="font-pixel text-[12px] text-white/80 tracking-wide">
+              <span className="blink">■</span> {formatSpreadType(spreadType)}
             </span>
           </div>
         </div>

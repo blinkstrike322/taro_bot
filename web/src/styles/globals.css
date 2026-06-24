@@ -481,7 +481,7 @@ body {
    ================================================================ */
 .card-label {
   font-family: var(--font-pixel);
-  font-size: 6px;
+  font-size: 14px;
   color: #fff;
   text-align: center;
   letter-spacing: 0.1em;
