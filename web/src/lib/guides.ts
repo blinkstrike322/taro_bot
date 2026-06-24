@@ -45,7 +45,7 @@ export const GUIDES: Record<string, GuideMeta> = {
   shadow_walker: {
     id: 'shadow_walker',
     name: 'Странница Теней',
-    description: 'Гадалка из тёмного леса. Говорит тенями и шёпотом луны.',
+    description: 'Ведьма из тёмного леса. Говорит тенями и шёпотом луны.',
     greeting: 'Тихо. Карты уже смотрят на тебя.',
     accent: '#7B2D8E',
     accentDim: 'rgba(123, 45, 142, 0.18)',
@@ -90,7 +90,7 @@ export const GUIDES: Record<string, GuideMeta> = {
   spark_of_chaos: {
     id: 'spark_of_chaos',
     name: 'Искра Хаоса',
-    description: 'Дерзкий дух-трюкстер. За искрой — истина, за шуткой — правда.',
+    description: 'Дерзкий дух-трикстер. За искрой — истина, за шуткой — правда.',
     greeting: 'Посмотрим, что шепнет хаос на этот раз.',
     accent: '#E63946',
     accentDim: 'rgba(230, 57, 70, 0.18)',
