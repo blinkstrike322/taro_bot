@@ -85,7 +85,7 @@ export default function Spread3Cards({ apiCall, characterId, onError }: Spread3C
 
     // Seeded irregular offsets (px) — applied to wrapper, not card
     const offsets = [
-      { x: -6, y: 0 },
+      { x: -6, y: 6 },
       { x: 4, y: 5 },
       { x: -3, y: -4 },
     ];
@@ -108,7 +108,7 @@ export default function Spread3Cards({ apiCall, characterId, onError }: Spread3C
             </div>
             <div className="flex items-start justify-center gap-4 sm:gap-5 lg:gap-6 w-full">
               <div
-                className="flex-1 min-w-0 max-w-[165px] sm:max-w-[182px] lg:max-w-[198px]"
+                className="flex-1 min-w-0 max-w-[174px] sm:max-w-[191px] lg:max-w-[208px]"
                 style={{ transform: `translate(${offsets[1].x}px, ${offsets[1].y}px)` }}
               >
                 <Card
@@ -120,7 +120,7 @@ export default function Spread3Cards({ apiCall, characterId, onError }: Spread3C
                 />
               </div>
               <div
-                className="flex-1 min-w-0 max-w-[165px] sm:max-w-[182px] lg:max-w-[198px]"
+                className="flex-1 min-w-0 max-w-[174px] sm:max-w-[191px] lg:max-w-[208px]"
                 style={{ transform: `translate(${offsets[2].x}px, ${offsets[2].y}px)` }}
               >
                 <Card
@@ -162,7 +162,7 @@ export default function Spread3Cards({ apiCall, characterId, onError }: Spread3C
             {/* Bottom row: ПРОШЛОЕ + БУДУЩЕЕ */}
             <div className="flex items-start justify-center gap-4 sm:gap-5 lg:gap-6 w-full">
               <div
-                className="flex-1 min-w-0 max-w-[165px] sm:max-w-[182px] lg:max-w-[198px]"
+                className="flex-1 min-w-0 max-w-[174px] sm:max-w-[191px] lg:max-w-[208px]"
                 style={{ transform: `translate(${offsets[1].x}px, ${offsets[1].y}px)` }}
               >
                 <Card
@@ -175,7 +175,7 @@ export default function Spread3Cards({ apiCall, characterId, onError }: Spread3C
                 />
               </div>
               <div
-                className="flex-1 min-w-0 max-w-[165px] sm:max-w-[182px] lg:max-w-[198px]"
+                className="flex-1 min-w-0 max-w-[174px] sm:max-w-[191px] lg:max-w-[208px]"
                 style={{ transform: `translate(${offsets[2].x}px, ${offsets[2].y}px)` }}
               >
                 <Card
