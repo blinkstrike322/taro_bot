@@ -235,7 +235,7 @@ export default function Home() {
             {'>> ВЫБЕРИ КАРТУ ДНЯ'}
           </div>
 
-          <div className="w-full max-w-[332px] sm:max-w-[448px] lg:max-w-[524px] relative z-10">
+          <div className="w-full max-w-[298px] sm:max-w-[403px] lg:max-w-[472px] relative z-10">
             <Card
               card={{ id: 'daily', name: '', image_url: '', is_reversed: false }}
               position="КАРТА ДНЯ"
@@ -277,7 +277,7 @@ export default function Home() {
           <GuideParticles guide={guide} />
 
           <div className={`flex-1 flex flex-col items-center w-full ${dailyFlipped ? 'justify-start' : 'justify-center'}`}>
-            <div className="w-full max-w-[332px] sm:max-w-[448px] lg:max-w-[524px] relative z-10">
+            <div className="w-full max-w-[298px] sm:max-w-[403px] lg:max-w-[472px] relative z-10">
               <Card
                 card={dailyData.cards[0]}
                 position="КАРТА ДНЯ"
