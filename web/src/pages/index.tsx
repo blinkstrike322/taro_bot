@@ -103,10 +103,19 @@ export default function Home() {
     const type = (params.get('type') as SpreadType) || 'daily';
     setSpreadType(type);
 
+    // Init from localStorage for instant display
     try {
       const stored = localStorage.getItem('taro_character');
       if (stored) setCharacterId(stored);
     } catch {}
+
+    // Then sync with backend (overrides if user changed via Telegram bot)
+    API.getCharacter().then((serverId) => {
+      if (serverId) {
+        setCharacterId(serverId);
+        try { localStorage.setItem('taro_character', serverId); } catch {}
+      }
+    });
   }, []);
 
   const showToast = useCallback((msg: string) => {

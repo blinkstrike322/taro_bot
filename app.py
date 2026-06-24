@@ -18,7 +18,7 @@ from core.reminder import reminder_loop
 from bot.router import register_handlers
 from bot.webapp_handler import router as webapp_router
 
-from storage.db import init_db, get_db, get_user_readings_by_month, save_reading, get_or_create_user
+from storage.db import init_db, get_db, get_user_readings_by_month, save_reading, get_or_create_user, get_user_by_tg_id
 from core.tarot import draw_cards
 from core.llm import interpret_reading
 from core.quota import check_quota
@@ -122,6 +122,21 @@ async def handle_disk_usage(request):
     return web.json_response(usage)
 
 
+async def handle_character(request):
+    """Return the user's active character/guide."""
+    init_data = request.query.get('init_data', '')
+    user_data = verify_telegram_init_data(init_data)
+    if not user_data:
+        return web.json_response({"character_id": "shadow_walker"})
+    tg_id = user_data.get('id', 0)
+    if not tg_id:
+        return web.json_response({"character_id": "shadow_walker"})
+    db = await get_db()
+    user = await get_user_by_tg_id(db, tg_id)
+    char_id = user.character_id if user else "shadow_walker"
+    return web.json_response({"character_id": char_id})
+
+
 async def handle_spread(request):
     try:
         body = await request.json()
@@ -176,6 +191,7 @@ def create_webapp() -> web.Application:
     app = web.Application()
     app.router.add_get('/api/readings', handle_readings)
     app.router.add_get('/api/disk', handle_disk_usage)
+    app.router.add_get('/api/character', handle_character)
     app.router.add_post('/api/spread', handle_spread)
     webapp_dir = Path(__file__).parent / "static" / "webapp"
     if webapp_dir.is_dir():
