@@ -3,6 +3,8 @@ import hashlib
 import hmac
 import json
 import logging
+import os
+import shutil
 from pathlib import Path
 from urllib.parse import parse_qs
 
@@ -78,6 +80,48 @@ async def handle_readings(request):
     return web.json_response({"readings": rows})
 
 
+async def handle_disk_usage(request):
+    db_path = settings.DB_PATH
+    db_dir = os.path.dirname(db_path)
+
+    usage = {}
+    try:
+        du = shutil.disk_usage(db_dir)
+        usage["disk"] = {
+            "total": du.total,
+            "used": du.used,
+            "free": du.free,
+            "total_mb": round(du.total / 1048576, 1),
+            "used_mb": round(du.used / 1048576, 1),
+            "free_mb": round(du.free / 1048576, 1),
+            "pct_used": round(du.used / du.total * 100, 1),
+        }
+    except Exception as e:
+        usage["disk"] = {"error": str(e)}
+
+    for suffix in ("", "-wal", "-shm"):
+        f = db_path + suffix
+        try:
+            sz = os.path.getsize(f)
+            usage[f"db{suffix}"] = {"bytes": sz, "mb": round(sz / 1048576, 2)}
+        except OSError:
+            usage[f"db{suffix}"] = None
+
+    # WAL checkpoint status — read-only, no checkpoint
+    from storage.db import get_db
+    try:
+        db = await get_db()
+        cursor = await db.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+        row = await cursor.fetchone()
+        usage["wal_checkpoint"] = {"result": row[0] if row else "unknown",
+                                    "pages": row[1] if row and len(row) > 1 else 0,
+                                    "checkpointed": row[2] if row and len(row) > 2 else 0}
+    except Exception as e:
+        usage["wal_checkpoint"] = {"error": str(e)}
+
+    return web.json_response(usage)
+
+
 async def handle_spread(request):
     try:
         body = await request.json()
@@ -131,6 +175,7 @@ async def handle_spread(request):
 def create_webapp() -> web.Application:
     app = web.Application()
     app.router.add_get('/api/readings', handle_readings)
+    app.router.add_get('/api/disk', handle_disk_usage)
     app.router.add_post('/api/spread', handle_spread)
     webapp_dir = Path(__file__).parent / "static" / "webapp"
     if webapp_dir.is_dir():
