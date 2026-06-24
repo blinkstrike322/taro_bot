@@ -85,7 +85,7 @@ export default function Spread3Cards({ apiCall, characterId, onError }: Spread3C
 
     // Seeded irregular offsets (px) — applied to wrapper, not card
     const offsets = [
-      { x: -6, y: 16 },
+      { x: -6, y: 0 },
       { x: 4, y: 5 },
       { x: -3, y: -4 },
     ];
@@ -96,6 +96,7 @@ export default function Spread3Cards({ apiCall, characterId, onError }: Spread3C
           <div className="flex flex-col items-center w-full max-w-[396px] sm:max-w-[440px] lg:max-w-[484px] px-2 flex-shrink-0 pb-2">
             <div
               className="w-full max-w-[165px] sm:max-w-[182px] lg:max-w-[198px] mb-2"
+              style={{ transform: `translate(${offsets[0].x}px, ${offsets[0].y}px)` }}
             >
               <Card
                 card={{ ...data.cards[1], image_url: `/cards/${data.cards[1].id}.png` }}
@@ -106,7 +107,10 @@ export default function Spread3Cards({ apiCall, characterId, onError }: Spread3C
               />
             </div>
             <div className="flex items-start justify-center gap-4 sm:gap-5 lg:gap-6 w-full">
-              <div className="flex-1 min-w-0 max-w-[165px] sm:max-w-[182px] lg:max-w-[198px]">
+              <div
+                className="flex-1 min-w-0 max-w-[165px] sm:max-w-[182px] lg:max-w-[198px]"
+                style={{ transform: `translate(${offsets[1].x}px, ${offsets[1].y}px)` }}
+              >
                 <Card
                   card={{ ...data.cards[0], image_url: `/cards/${data.cards[0].id}.png` }}
                   position={POSITIONS[0]}
@@ -115,7 +119,10 @@ export default function Spread3Cards({ apiCall, characterId, onError }: Spread3C
                   characterId={characterId}
                 />
               </div>
-              <div className="flex-1 min-w-0 max-w-[165px] sm:max-w-[182px] lg:max-w-[198px]">
+              <div
+                className="flex-1 min-w-0 max-w-[165px] sm:max-w-[182px] lg:max-w-[198px]"
+                style={{ transform: `translate(${offsets[2].x}px, ${offsets[2].y}px)` }}
+              >
                 <Card
                   card={{ ...data.cards[2], image_url: `/cards/${data.cards[2].id}.png` }}
                   position={POSITIONS[2]}
