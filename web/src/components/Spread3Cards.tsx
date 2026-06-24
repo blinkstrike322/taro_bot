@@ -85,9 +85,9 @@ export default function Spread3Cards({ apiCall, characterId, onError }: Spread3C
 
     // Seeded irregular offsets (px) — applied to wrapper, not card
     const offsets = [
-      { x: -6, y: 8 },    // card 1 (top) — slight left + down
-      { x: 4, y: 0 },     // card 0 (bottom-left) — slight right
-      { x: -3, y: 6 },    // card 2 (bottom-right) — slight left + down
+      { x: -6, y: 16 },
+      { x: 4, y: 5 },
+      { x: -3, y: -4 },
     ];
 
     if (showResult) {
