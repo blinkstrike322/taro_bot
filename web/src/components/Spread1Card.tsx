@@ -64,7 +64,7 @@ export default function Spread1Card({ apiCall, characterId, onError }: Spread1Ca
       return (
         <div className="flex flex-col items-center py-3 px-3 w-full h-full">
           <div className="flex-1 min-h-0 flex flex-col items-center justify-center w-full">
-            <div className="w-full max-w-[276px] sm:max-w-[374px] lg:max-w-[436px]">
+            <div className="w-full max-w-[332px] sm:max-w-[448px] lg:max-w-[524px]">
               <Card
                 card={card}
                 position="ТВOЯ КАРТА"
@@ -83,8 +83,8 @@ export default function Spread1Card({ apiCall, characterId, onError }: Spread1Ca
 
     return (
       <div className="flex flex-col items-center py-3 px-3 w-full">
-        {/* compact card at top */}
-        <div className="w-full max-w-[207px] sm:max-w-[253px] flex-shrink-0 pb-3">
+        {/* compact card at top — same width as before flip */}
+        <div className="w-full max-w-[332px] sm:max-w-[448px] lg:max-w-[524px] flex-shrink-0 pb-3">
           <Card
             card={card}
             flipped={true}
@@ -93,7 +93,7 @@ export default function Spread1Card({ apiCall, characterId, onError }: Spread1Ca
         </div>
         {/* result flows below — parent scrolls */}
         <div className="w-full pb-4">
-          <ReadingResult interpretation={data.interpretation} />
+          <ReadingResult interpretation={data.interpretation} characterId={characterId} />
         </div>
       </div>
     );

@@ -480,7 +480,7 @@ function ReadingDetail({ reading, onBack }: { reading: ReadingEntry; onBack: () 
               <div
                 key={i}
                 className="flex flex-col items-center"
-                style={{ width: cards.length > 1 ? '33%' : '50%', maxWidth: '120px' }}
+                style={{ width: cards.length > 1 ? '33%' : '50%', maxWidth: cards.length > 1 ? '120px' : '156px' }}
               >
                 <div
                   className="border-2 border-white relative overflow-hidden"
@@ -563,9 +563,9 @@ function ReadingDetail({ reading, onBack }: { reading: ReadingEntry; onBack: () 
         )}
 
         {interp.advice && (
-          <div className="mt-3 pt-2 border-t border-white/20 relative z-10">
-            <span className="font-pixel text-[10px] text-white/50">&gt; </span>
-            <span className="font-mono-crt text-[14px] text-white/60 leading-snug">
+          <div className="mt-3 pt-2 border-t border-white/20 relative z-10" style={{ borderColor: `rgba(${parseInt(guide.accent.slice(1,3),16)}, ${parseInt(guide.accent.slice(3,5),16)}, ${parseInt(guide.accent.slice(5,7),16)}, 0.25)` }}>
+            <span className="font-pixel text-[10px]" style={{ color: `rgba(${parseInt(guide.accent.slice(1,3),16)}, ${parseInt(guide.accent.slice(3,5),16)}, ${parseInt(guide.accent.slice(5,7),16)}, 0.75)`, textShadow: `0 0 4px rgba(${parseInt(guide.accent.slice(1,3),16)}, ${parseInt(guide.accent.slice(3,5),16)}, ${parseInt(guide.accent.slice(5,7),16)}, 0.30), 0 0 8px rgba(${parseInt(guide.accent.slice(1,3),16)}, ${parseInt(guide.accent.slice(3,5),16)}, ${parseInt(guide.accent.slice(5,7),16)}, 0.15)` }}>&gt; </span>
+            <span className="font-mono-crt text-[14px] leading-snug" style={{ color: `rgba(${parseInt(guide.accent.slice(1,3),16)}, ${parseInt(guide.accent.slice(3,5),16)}, ${parseInt(guide.accent.slice(5,7),16)}, 0.75)`, textShadow: `0 0 4px rgba(${parseInt(guide.accent.slice(1,3),16)}, ${parseInt(guide.accent.slice(3,5),16)}, ${parseInt(guide.accent.slice(5,7),16)}, 0.30), 0 0 8px rgba(${parseInt(guide.accent.slice(1,3),16)}, ${parseInt(guide.accent.slice(3,5),16)}, ${parseInt(guide.accent.slice(5,7),16)}, 0.15)` }}>
               {interp.advice}
             </span>
           </div>

@@ -66,29 +66,65 @@ export default function Spread3Cards({ apiCall, characterId, onError }: Spread3C
   if (phase === 'cards' && data) {
     const allFlipped = flippedCards.every(Boolean);
 
+    // Triangle layout: card 1 (НАСТОЯЩЕЕ) on top, card 0 (ПРОШЛОЕ) bottom-left, card 2 (БУДУЩЕЕ) bottom-right.
+    // Slightly irregular offsets (seeded) for organic feel — cards themselves stay straight.
+    // Seeded irregular offsets (px) — applied to wrapper, not card
+    const offsets = [
+      { x: -6, y: 8 },    // card 1 (top) — slight left + down
+      { x: 4, y: 0 },     // card 0 (bottom-left) — slight right
+      { x: -3, y: 6 },    // card 2 (bottom-right) — slight left + down
+    ];
+
     if (!allFlipped) {
       return (
         <div className="flex flex-col items-center py-3 px-3 w-full h-full">
           <div className="flex-1 min-h-0 flex flex-col items-center justify-center w-full">
-            {/* 3 cards auto-fit row — flex-1 распределяет ширину равномерно */}
-            <div className="flex items-end justify-center gap-2 sm:gap-3 w-full max-w-[590px] sm:max-w-[662px] lg:max-w-[772px] px-2">
-              {data.cards.map((rawCard, i) => {
-                const card = { ...rawCard, image_url: `/cards/${rawCard.id}.png` };
-                const isCenter = i === 1;
+            {/* Triangle layout — top vertex + 2 bottom cards */}
+            <div className="flex flex-col items-center w-full max-w-[360px] sm:max-w-[400px] lg:max-w-[440px] px-2">
+              {/* Top card (НАСТОЯЩЕЕ) */}
+              <div
+                className="w-full max-w-[150px] sm:max-w-[165px] lg:max-w-[180px] mb-2"
+                style={{ transform: `translate(${offsets[0].x}px, ${offsets[0].y}px)` }}
+              >
+                <Card
+                  card={{ ...data.cards[1], image_url: `/cards/${data.cards[1].id}.png` }}
+                  position={POSITIONS[1]}
+                  raised={true}
+                  flipped={flippedCards[1]}
+                  onFlip={() => handleFlip(1)}
+                  characterId={characterId}
+                />
+              </div>
 
-                return (
-                  <div key={rawCard.id} className={`flex-1 min-w-0 overflow-hidden ${isCenter ? 'pt-[12px]' : ''}`}>
-                    <Card
-                      card={card}
-                      position={POSITIONS[i]}
-                      raised={isCenter}
-                      flipped={flippedCards[i]}
-                      onFlip={() => handleFlip(i)}
-                      characterId={characterId}
-                    />
-                  </div>
-                );
-              })}
+              {/* Bottom row: ПРОШЛОЕ + БУДУЩЕЕ */}
+              <div className="flex items-start justify-center gap-2 sm:gap-3 lg:gap-4 w-full">
+                <div
+                  className="flex-1 min-w-0 max-w-[150px] sm:max-w-[165px] lg:max-w-[180px]"
+                  style={{ transform: `translate(${offsets[1].x}px, ${offsets[1].y}px)` }}
+                >
+                  <Card
+                    card={{ ...data.cards[0], image_url: `/cards/${data.cards[0].id}.png` }}
+                    position={POSITIONS[0]}
+                    raised={false}
+                    flipped={flippedCards[0]}
+                    onFlip={() => handleFlip(0)}
+                    characterId={characterId}
+                  />
+                </div>
+                <div
+                  className="flex-1 min-w-0 max-w-[150px] sm:max-w-[165px] lg:max-w-[180px]"
+                  style={{ transform: `translate(${offsets[2].x}px, ${offsets[2].y}px)` }}
+                >
+                  <Card
+                    card={{ ...data.cards[2], image_url: `/cards/${data.cards[2].id}.png` }}
+                    position={POSITIONS[2]}
+                    raised={false}
+                    flipped={flippedCards[2]}
+                    onFlip={() => handleFlip(2)}
+                    characterId={characterId}
+                  />
+                </div>
+              </div>
             </div>
 
             <div className="font-pixel text-[11px] text-white/40 mt-3 blink flex-shrink-0">
@@ -101,29 +137,54 @@ export default function Spread3Cards({ apiCall, characterId, onError }: Spread3C
 
     return (
       <div className="flex flex-col items-center py-3 px-3 w-full">
-        {/* 3 cards auto-fit row после флипа — чуть меньше, чтобы результат помещался */}
-        <div className="flex items-end justify-center gap-2 sm:gap-3 w-full max-w-[442px] sm:max-w-[516px] lg:max-w-[590px] px-2 flex-shrink-0 pb-2">
-          {data.cards.map((rawCard, i) => {
-            const card = { ...rawCard, image_url: `/cards/${rawCard.id}.png` };
-            const isCenter = i === 1;
+        {/* Triangle layout after flip — same triangle shape */}
+        <div className="flex flex-col items-center w-full max-w-[360px] sm:max-w-[400px] lg:max-w-[440px] px-2 flex-shrink-0 pb-2">
+          {/* Top card (НАСТОЯЩЕЕ) */}
+          <div
+            className="w-full max-w-[150px] sm:max-w-[165px] lg:max-w-[180px] mb-2"
+            style={{ transform: `translate(${offsets[0].x}px, ${offsets[0].y}px)` }}
+          >
+            <Card
+              card={{ ...data.cards[1], image_url: `/cards/${data.cards[1].id}.png` }}
+              position={POSITIONS[1]}
+              raised={true}
+              flipped={true}
+              characterId={characterId}
+            />
+          </div>
 
-            return (
-              <div key={rawCard.id} className="flex-1 min-w-0 overflow-hidden">
-                <Card
-                  card={card}
-                  position={POSITIONS[i]}
-                  raised={isCenter}
-                  flipped={true}
-                  characterId={characterId}
-                />
-              </div>
-            );
-          })}
+          {/* Bottom row: ПРОШЛОЕ + БУДУЩЕЕ */}
+          <div className="flex items-start justify-center gap-2 sm:gap-3 lg:gap-4 w-full">
+            <div
+              className="flex-1 min-w-0 max-w-[150px] sm:max-w-[165px] lg:max-w-[180px]"
+              style={{ transform: `translate(${offsets[1].x}px, ${offsets[1].y}px)` }}
+            >
+              <Card
+                card={{ ...data.cards[0], image_url: `/cards/${data.cards[0].id}.png` }}
+                position={POSITIONS[0]}
+                raised={false}
+                flipped={true}
+                characterId={characterId}
+              />
+            </div>
+            <div
+              className="flex-1 min-w-0 max-w-[150px] sm:max-w-[165px] lg:max-w-[180px]"
+              style={{ transform: `translate(${offsets[2].x}px, ${offsets[2].y}px)` }}
+            >
+              <Card
+                card={{ ...data.cards[2], image_url: `/cards/${data.cards[2].id}.png` }}
+                position={POSITIONS[2]}
+                raised={false}
+                flipped={true}
+                characterId={characterId}
+              />
+            </div>
+          </div>
         </div>
 
         {/* result flows below */}
         <div className="w-full pb-4">
-          <ReadingResult interpretation={data.interpretation} />
+          <ReadingResult interpretation={data.interpretation} characterId={characterId} />
         </div>
       </div>
     );
