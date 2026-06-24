@@ -74,6 +74,18 @@ export async function spread(
   return res.json();
 }
 
+export async function getCharacter(): Promise<string> {
+  const initData = getInitData();
+  try {
+    const res = await fetch(`${API_BASE}/api/character?init_data=${encodeURIComponent(initData)}`);
+    if (!res.ok) return 'shadow_walker';
+    const data = await res.json();
+    return data.character_id || 'shadow_walker';
+  } catch {
+    return 'shadow_walker';
+  }
+}
+
 export async function getReadings(
   year: number,
   month: number,
