@@ -13,6 +13,15 @@ interface QuestionInputProps {
   characterId?: string;
 }
 
+const EXAMPLE_QUESTIONS = [
+  'Вернётся ли он ко мне?',
+  'Менять ли работу?',
+  'Что меня ждёт в этом месяце?',
+  'Как вернуть силы?',
+  'Стоит ли ему доверять?',
+  'Где моя сила сейчас?',
+];
+
 export default function QuestionInput({ spreadType, onSubmit, loading = false, characterId }: QuestionInputProps) {
   const [question, setQuestion] = useState('');
   const [error, setError] = useState('');
@@ -21,7 +30,7 @@ export default function QuestionInput({ spreadType, onSubmit, loading = false, c
   const handleSubmit = () => {
     const trimmed = question.trim();
     if (!trimmed) {
-      setError('НАПИШИ ВОПРОС');
+      setError('напиши вопрос');
       return;
     }
     setError('');
@@ -41,47 +50,78 @@ export default function QuestionInput({ spreadType, onSubmit, loading = false, c
   };
 
   const hint = spreadType === 1
-    ? 'OДНА КАРТА — ПРЯМOЙ OТВЕТ'
-    : 'ПРOШЛOЕ · НАСТOЯЩЕЕ · БУДУЩЕЕ';
+    ? 'одна карта · прямой ответ'
+    : 'прошлое · настоящее · будущее';
 
   return (
-    <div className="px-3 py-3 w-full h-full flex flex-col items-center">
-      <div className="font-pixel text-[11px] text-white/60 mb-2 tracking-wide self-start w-full flex-shrink-0">
-        &gt;&gt; ENTER_QUERY
+    <div
+      className="px-3 py-4 w-full min-h-full flex flex-col items-center"
+      style={{
+        '--guide-accent': guide.accent,
+        '--guide-accent-deep': guide.accentDeep,
+        '--guide-accent-dim': guide.accentDim,
+      } as React.CSSProperties}
+    >
+      {/* заголовок */}
+      <div className="w-full flex-shrink-0 mb-3">
+        <div className="font-serif text-[24px] font-semibold leading-tight text-[color:var(--ink)]">
+          Что хочешь узнать?
+        </div>
+        <div className="font-pixel text-[10px] tracking-[0.18em] uppercase mt-1" style={{ color: guide.accent }}>
+          ✦ {hint}
+        </div>
       </div>
 
+      {/* поле вопроса */}
       <textarea
         value={question}
         onChange={handleChange}
         onKeyDown={handleKeyDown}
-        placeholder="Задай вопрос картам..."
+        placeholder={`${guide.name} слушает — задай вопрос картам...`}
         disabled={loading}
         rows={3}
-        className="w-full border-2 border-white bg-black text-white font-mono-crt text-[18px] leading-snug p-2 resize-none placeholder:text-white/30 focus:outline-none focus:border-white disabled:opacity-50 flex-shrink-0"
+        maxLength={300}
+        className="w-full soft-card text-[15px] leading-relaxed p-3.5 resize-none placeholder:text-[color:var(--ink-faint)] focus:outline-none disabled:opacity-50 flex-shrink-0 font-sans"
+        style={{ borderRadius: 18 }}
       />
 
-      <div className="font-pixel text-[11px] text-white/40 mt-1 tracking-wide text-center flex-shrink-0">
-        {hint}
-      </div>
-
-      {error && (
-        <div className="font-pixel text-[11px] mt-1 tracking-wide text-center flex-shrink-0 animate-pulse" style={{ color: guide.accent }}>
-          {'>> '}{error}{' <<'}
+      {/* подсказки-вопросы */}
+      {!loading && (
+        <div className="flex flex-wrap gap-2 mt-3 w-full flex-shrink-0">
+          {EXAMPLE_QUESTIONS.slice(0, 4).map((q, i) => (
+            <button
+              key={i}
+              type="button"
+              className="chat-chip !text-[12px]"
+              onClick={() => {
+                setQuestion(q);
+                setError('');
+              }}
+            >
+              {q}
+            </button>
+          ))}
         </div>
       )}
 
-      {/* ── per-guide pixel sigil — takes remaining space, shrinks to fit ── */}
-      <div className="flex-1 min-h-0 flex items-center justify-center w-full">
+      {error && (
+        <div className="font-pixel text-[11px] mt-2 tracking-wide text-center flex-shrink-0 animate-pulse" style={{ color: guide.accentDeep }}>
+          » {error} «
+        </div>
+      )}
+
+      {/* ── сигил проводницы — дышит, пока пишешь вопрос ── */}
+      <div className="flex-1 min-h-0 flex items-center justify-center w-full py-2">
         <GuideSigil guideId={characterId} />
       </div>
 
-      {/* ── button (idle) or loading indicator (loading) at bottom ── */}
-      <div className="flex justify-center flex-shrink-0">
+      {/* ── кнопка / загрузка ── */}
+      <div className="flex justify-center flex-shrink-0 w-full">
         {loading ? (
           <GuideLoading guide={guide} />
         ) : (
-          <Button onClick={handleSubmit} variant="primary">
-            ПOЛУЧИТЬ OТВЕТ
+          <Button onClick={handleSubmit} variant="primary" className="!px-8 !py-3 !text-[14px]">
+            Получить ответ ✦
           </Button>
         )}
       </div>

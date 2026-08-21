@@ -5,46 +5,35 @@ import Layout from '@/components/Layout';
 import WelcomeAnimation from '@/components/WelcomeAnimation';
 import Spread1Card from '@/components/Spread1Card';
 import Spread3Cards from '@/components/Spread3Cards';
+import SpreadDaily from '@/components/SpreadDaily';
 import CatalogModal from '@/components/CatalogModal';
 import SettingsModal from '@/components/SettingsModal';
 import CalendarModal from '@/components/CalendarModal';
-import Card, { TarotCard } from '@/components/Card';
-import ReadingResult from '@/components/ReadingResult';
-import GuideLoading from '@/components/GuideLoading';
 import ErrorModal from '@/components/ErrorModal';
 import * as API from '@/lib/api';
 import { getGuide, GuideMeta } from '@/lib/guides';
 
 type SpreadType = 'daily' | '1' | '3';
-type Screen = 'welcome' | 'spread' | 'daily-pick' | 'daily-result';
+type Screen = 'welcome' | 'spread' | 'daily';
 
-interface ReadingData {
-  cards: TarotCard[];
-  interpretation: {
-    intro: string;
-    short_answer: string;
-    card_meaning: string[] | string;
-    advice: string;
-  };
-}
-
-// ── per-guide particle layer (procedural, no images) ──
+// ── Слой пастельных частиц проводницы (процедурные, без картинок) ──
 function GuideParticles({ guide }: { guide: GuideMeta }) {
   const particles = useMemo(() => {
     const PHI = 1.618033988749;
     const seeded = (s: number) => Math.abs((Math.sin(s * 12.9898 + 78.233) * 43758.5453) % 1);
-    return Array.from({ length: 22 }, (_, i) => {
+    // 12 частиц — атмосфера без лишнего рендера
+    return Array.from({ length: 12 }, (_, i) => {
       const s = i * PHI + 7;
       return {
         symbol: guide.ambientSymbols[Math.floor(seeded(s) * guide.ambientSymbols.length)],
         x: seeded(s * 3) * 100,
-        y: 60 + seeded(s * 5) * 40, // biased to bottom half, drifts up
-        size: 7 + Math.floor(seeded(s * 7) * 9),
-        op: 0.12 + seeded(s * 11) * 0.20,
-        delay: seeded(s * 13) * 18,
-        dur: 14 + seeded(s * 17) * 12,
-        xShift: (seeded(s * 19) - 0.5) * 24,
-        rot: (seeded(s * 23) - 0.5) * 14,
+        y: 60 + seeded(s * 5) * 40,
+        size: 8 + Math.floor(seeded(s * 7) * 9),
+        op: 0.14 + seeded(s * 11) * 0.18,
+        delay: seeded(s * 13) * 16,
+        dur: 15 + seeded(s * 17) * 11,
+        xShift: (seeded(s * 19) - 0.5) * 22,
+        rot: (seeded(s * 23) - 0.5) * 12,
       };
     });
   }, [guide.id]);
@@ -60,7 +49,7 @@ function GuideParticles({ guide }: { guide: GuideMeta }) {
             top: `${p.y}%`,
             fontSize: `${p.size}px`,
             color: guide.accent,
-            textShadow: `0 0 4px ${guide.accentDim}`,
+            textShadow: `0 0 6px ${guide.accentDim}`,
             '--gp-op': p.op,
             '--gp-delay': `${p.delay}s`,
             '--gp-dur': `${p.dur}s`,
@@ -74,7 +63,6 @@ function GuideParticles({ guide }: { guide: GuideMeta }) {
     </div>
   );
 }
-
 
 export default function Home() {
   const [spreadType, setSpreadType] = useState<SpreadType | null>(null);
@@ -91,9 +79,7 @@ export default function Home() {
   const [errorMsg, setErrorMsg] = useState('');
   const [errorVisible, setErrorVisible] = useState(false);
 
-  const [dailyData, setDailyData] = useState<ReadingData | null>(null);
-  const [dailyFlipped, setDailyFlipped] = useState(false);
-  const [dailyLoading, setDailyLoading] = useState(false);
+  const [dailyKey, setDailyKey] = useState(0);
   const [spreadKey, setSpreadKey] = useState(0);
 
   const guide = useMemo(() => getGuide(characterId), [characterId]);
@@ -103,13 +89,13 @@ export default function Home() {
     const type = (params.get('type') as SpreadType) || 'daily';
     setSpreadType(type);
 
-    // Init from localStorage for instant display
+    // Мгновенно — из localStorage
     try {
       const stored = localStorage.getItem('taro_character');
       if (stored) setCharacterId(stored);
     } catch {}
 
-    // Then sync with backend (overrides if user changed via Telegram bot)
+    // Затем синхронизация с бэкендом
     API.getCharacter().then((serverId) => {
       if (serverId) {
         setCharacterId(serverId);
@@ -133,11 +119,7 @@ export default function Home() {
   }, []);
 
   const handleWelcomeComplete = useCallback(() => {
-    if (spreadType === 'daily') {
-      setScreen('daily-pick');
-    } else {
-      setScreen('spread');
-    }
+    setScreen(spreadType === 'daily' ? 'daily' : 'spread');
   }, [spreadType]);
 
   const handleCatalogSelect = useCallback((type: SpreadType) => {
@@ -147,12 +129,12 @@ export default function Home() {
     window.history.replaceState({}, '', url.toString());
 
     if (type === 'daily') {
-      setDailyData(null);
-      setDailyFlipped(false);
-      setScreen('daily-pick');
-      showToast('ВЫБЕРИ КАРТУ');
+      setDailyKey((k) => k + 1);
+      setScreen('daily');
+      showToast('три карты ждут тебя');
     } else {
       setScreen('spread');
+      setSpreadKey((k) => k + 1);
     }
   }, [showToast]);
 
@@ -161,45 +143,47 @@ export default function Home() {
     try {
       localStorage.setItem('taro_character', id);
     } catch {}
-    showToast('ПРOВOДНИК СМЕНЕН');
+    showToast('проводница рядом');
   }, [showToast]);
 
   const handleNewSpread = useCallback(() => {
     if (spreadType === 'daily') {
-      setDailyData(null);
-      setDailyFlipped(false);
-      setScreen('daily-pick');
+      setDailyKey((k) => k + 1);
+      setScreen('daily');
     } else {
       setScreen('spread');
-      setSpreadKey(k => k + 1);
+      setSpreadKey((k) => k + 1);
     }
   }, [spreadType]);
 
-  const handleDailyCardTap = useCallback(async () => {
-    if (dailyLoading) return;
-    setDailyLoading(true);
-    try {
-      const result = await API.spread(1, null, characterId);
-      const cards = result.cards.map((c) => ({
-        ...c,
-        image_url: `/cards/${c.id}.png`,
-      }));
-      setDailyData({ cards, interpretation: result.interpretation });
-      setDailyFlipped(false);
-      setScreen('daily-result');
-    } catch (err: any) {
-      const msg = err?.response?.error || err?.message || 'OШИБКА. ПOПРOБУЙ СНOВА';
-      showError(msg);
-    } finally {
-      setDailyLoading(false);
-    }
-  }, [characterId, showError, dailyLoading]);
+  const arcanaCount = spreadType === '1' ? 1 : 3;
 
-  const handleDailyFlip = useCallback(() => {
-    setDailyFlipped(true);
-  }, []);
+  // Общий API-вызов с маппингом карт и reading_id
+  const makeApiCall = useCallback(
+    (type: 1 | 3) => (question: string | null) =>
+      API.spread(type, question, characterId).then((res) => ({
+        readingId: res.reading_id,
+        cards: res.cards.map((c) => ({
+          ...c,
+          image_url: `/cards/${c.id}.png`,
+        })),
+        interpretation: res.interpretation,
+      })),
+    [characterId],
+  );
 
-  const arcanaCount = spreadType === '3' ? 3 : 1;
+  const makeDailyApiCall = useCallback(
+    () =>
+      API.spread('daily', null, characterId).then((res) => ({
+        readingId: res.reading_id,
+        cards: res.cards.map((c) => ({
+          ...c,
+          image_url: `/cards/${c.id}.png`,
+        })),
+        interpretation: res.interpretation,
+      })),
+    [characterId],
+  );
 
   return (
     <Layout
@@ -222,97 +206,42 @@ export default function Home() {
         />
       )}
 
-      {/* ─── DAILY-PICK with per-guide ambient + particles ─── */}
-      {screen === 'daily-pick' && (
+      {/* ─── РАСКЛАД ДНЯ ─── */}
+      {screen === 'daily' && (
         <div
-          className="relative flex flex-col items-center py-4 px-3 w-full overflow-hidden min-h-full justify-start"
-          style={{ '--guide-accent': guide.accent } as React.CSSProperties}
+          className="relative flex flex-col items-center w-full min-h-full"
+          style={{
+            '--guide-accent': guide.accent,
+            '--guide-accent-deep': guide.accentDeep,
+            '--guide-accent-dim': guide.accentDim,
+          } as React.CSSProperties}
         >
-          {/* per-guide ambient background pattern */}
           <div
             className="guide-ambient"
             style={{ background: guide.ambientPattern }}
             aria-hidden="true"
           />
-          {/* per-guide floating particles */}
           <GuideParticles guide={guide} />
-
-          <div
-            className="font-pixel text-[11px] mb-4 text-center tracking-wider relative z-10"
-            style={{ color: guide.accent }}
-          >
-            {'>> ВЫБЕРИ КАРТУ ДНЯ'}
-          </div>
-
-          <div className="w-full max-w-[298px] sm:max-w-[403px] lg:max-w-[472px] relative z-10">
-            <Card
-              card={{ id: 'daily', name: '', image_url: '', is_reversed: false }}
-              position="КАРТА ДНЯ"
-              flipped={false}
-              onFlip={handleDailyCardTap}
+          <div className="relative z-10 w-full">
+            <SpreadDaily
+              key={dailyKey}
               characterId={characterId}
+              onError={showError}
+              apiCall={makeDailyApiCall}
             />
           </div>
-
-          {dailyLoading && (
-            <div className="relative z-10">
-              <GuideLoading guide={guide} />
-            </div>
-          )}
-
-          {/* per-guide greeting whisper at the bottom */}
-          <div className="mt-5 relative z-10 text-center max-w-[280px]">
-            <span
-              className="font-mono-crt text-[14px] italic leading-snug"
-              style={{ color: 'rgba(255,255,255,0.55)' }}
-            >
-              «{guide.greeting}»
-            </span>
-          </div>
         </div>
       )}
 
-      {/* ─── DAILY-RESULT ─── */}
-      {screen === 'daily-result' && dailyData && (
-        <div
-          className="relative flex flex-col items-center py-4 px-3 w-full overflow-hidden min-h-full"
-          style={{ '--guide-accent': guide.accent } as React.CSSProperties}
-        >
-          <div
-            className="guide-ambient"
-            style={{ background: guide.ambientPattern }}
-            aria-hidden="true"
-          />
-          <GuideParticles guide={guide} />
-
-          <div className={`flex-1 flex flex-col items-center w-full ${dailyFlipped ? 'justify-start' : 'justify-center'}`}>
-            <div className="w-full max-w-[298px] sm:max-w-[403px] lg:max-w-[472px] relative z-10">
-              <Card
-                card={dailyData.cards[0]}
-                position="КАРТА ДНЯ"
-                flipped={dailyFlipped}
-                onFlip={handleDailyFlip}
-                characterId={characterId}
-              />
-            </div>
-            {!dailyFlipped && (
-              <div className="font-pixel text-[11px] text-white/40 mt-3 blink relative z-10">
-                НАЖМИ НА КАРТУ
-              </div>
-            )}
-          </div>
-          {dailyFlipped && (
-            <div className="relative z-10 w-full">
-              <ReadingResult interpretation={dailyData.interpretation} characterId={characterId} />
-            </div>
-          )}
-        </div>
-      )}
-
+      {/* ─── РАСКЛАДЫ 1 / 3 С ВОПРОСОМ ─── */}
       {screen === 'spread' && (spreadType === '1' || spreadType === '3') && (
         <div
-          className="relative flex flex-col items-center w-full overflow-hidden min-h-full"
-          style={{ '--guide-accent': guide.accent } as React.CSSProperties}
+          className="relative flex flex-col items-center w-full min-h-full"
+          style={{
+            '--guide-accent': guide.accent,
+            '--guide-accent-deep': guide.accentDeep,
+            '--guide-accent-dim': guide.accentDim,
+          } as React.CSSProperties}
         >
           <div
             className="guide-ambient"
@@ -320,35 +249,20 @@ export default function Home() {
             aria-hidden="true"
           />
           <GuideParticles guide={guide} />
-
           <div className="flex-1 w-full relative z-10 flex flex-col">
             {spreadType === '1' ? (
-              <Spread1Card key={spreadKey}
+              <Spread1Card
+                key={spreadKey}
                 characterId={characterId}
                 onError={showError}
-                apiCall={(question) =>
-                  API.spread(1, question, characterId).then((res) => ({
-                    cards: res.cards.map((c) => ({
-                      ...c,
-                      image_url: `/cards/${c.id}.png`,
-                    })),
-                    interpretation: res.interpretation,
-                  }))
-                }
+                apiCall={makeApiCall(1)}
               />
             ) : (
-              <Spread3Cards key={spreadKey}
+              <Spread3Cards
+                key={spreadKey}
                 characterId={characterId}
                 onError={showError}
-                apiCall={(question) =>
-                  API.spread(3, question, characterId).then((res) => ({
-                    cards: res.cards.map((c) => ({
-                      ...c,
-                      image_url: `/cards/${c.id}.png`,
-                    })),
-                    interpretation: res.interpretation,
-                  }))
-                }
+                apiCall={makeApiCall(3)}
               />
             )}
           </div>
@@ -359,6 +273,7 @@ export default function Home() {
         isOpen={catalogOpen}
         onClose={() => setCatalogOpen(false)}
         onSelect={handleCatalogSelect}
+        characterId={characterId}
       />
       <SettingsModal
         isOpen={settingsOpen}

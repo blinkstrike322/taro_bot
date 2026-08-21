@@ -9,6 +9,7 @@ import ReadingResult from './ReadingResult';
 type Phase = 'input' | 'loading' | 'cards' | 'result';
 
 interface ReadingData {
+  readingId: number | null;
   cards: TarotCard[];
   interpretation: {
     intro: string;
@@ -38,7 +39,7 @@ export default function Spread1Card({ apiCall, characterId, onError }: Spread1Ca
       setPhase('cards');
     } catch (err: any) {
       setPhase('input');
-      onError?.(err?.message || 'ПEЧАЛЬ. ПOПРOБУЙ СНOВА.');
+      onError?.(err?.message || 'Не получилось. Попробуй снова.');
     }
   }, [apiCall, onError]);
 
@@ -62,19 +63,19 @@ export default function Spread1Card({ apiCall, characterId, onError }: Spread1Ca
 
     if (!flipped) {
       return (
-        <div className="flex flex-col items-center py-3 px-3 w-full h-full">
+        <div className="flex flex-col items-center py-4 px-3 w-full h-full">
           <div className="flex-1 min-h-0 flex flex-col items-center justify-center w-full">
-            <div className="w-full max-w-[298px] sm:max-w-[403px] lg:max-w-[472px]">
+            <div className="w-full max-w-[280px] sm:max-w-[340px]">
               <Card
                 card={card}
-                position="ТВOЯ КАРТА"
+                position="ТВОЯ КАРТА"
                 flipped={false}
                 onFlip={handleFlip}
                 characterId={characterId}
               />
             </div>
-            <div className="font-pixel text-[11px] text-white/40 mt-3 blink flex-shrink-0">
-              НАЖМИ НА КАРТУ
+            <div className="font-pixel text-[11px] text-[color:var(--ink-soft)] mt-4 blink flex-shrink-0 tracking-[0.14em]">
+              коснись карты
             </div>
           </div>
         </div>
@@ -82,18 +83,22 @@ export default function Spread1Card({ apiCall, characterId, onError }: Spread1Ca
     }
 
     return (
-      <div className="flex flex-col items-center py-3 px-3 w-full">
-        {/* compact card at top — same width as before flip */}
-        <div className="w-full max-w-[298px] sm:max-w-[403px] lg:max-w-[472px] flex-shrink-0 pb-3">
+      <div className="flex flex-col items-center py-4 px-3 w-full">
+        {/* компактная карта сверху */}
+        <div className="w-full max-w-[240px] sm:max-w-[280px] flex-shrink-0 pb-4">
           <Card
             card={card}
             flipped={true}
             characterId={characterId}
           />
         </div>
-        {/* result flows below — parent scrolls */}
-        <div className="w-full pb-4">
-          <ReadingResult interpretation={data.interpretation} characterId={characterId} />
+        {/* толкование ниже — родитель скроллит */}
+        <div className="w-full">
+          <ReadingResult
+            interpretation={data.interpretation}
+            characterId={characterId}
+            readingId={data.readingId}
+          />
         </div>
       </div>
     );

@@ -1,6 +1,10 @@
 /* ================================================================
-   TAROT WEBAPP · globals.css
-   Pixel-art CRT terminal aesthetic · Tailwind v4
+   AMO TAROT · globals.css
+   «Lumière» — светлая мистическая тема для женской аудитории.
+   Основа: слоновая кость + пастель (лаванда, роза, персик, золото).
+   Дизайн-концепты прошлой версии сохранены: дизеринг, пиксель-дух,
+   скан-текстура, сигилы — но в светлом, мягком, гладком ключе.
+   Tailwind v4
    ================================================================ */
 
 /* ---------- Tailwind v4 ---------- */
@@ -9,8 +13,39 @@
 /* ---------- Tailwind v4 theme tokens ---------- */
 @theme {
   --font-pixel: 'Pixelify Sans', monospace;
-  --font-mono-crt: 'VT323', monospace;
-  --font-system: 'Press Start 2P', monospace;
+  --font-serif: 'Cormorant Garamond', Georgia, serif;
+  --font-sans: 'Manrope', system-ui, sans-serif;
+  --font-system: 'Pixelify Sans', monospace;
+
+  --color-ink: #43304e;
+  --color-ink-soft: #8b7a94;
+  --color-paper: #fffdf9;
+  --color-cream: #fbf5ee;
+}
+
+/* ---------- Design tokens ---------- */
+:root {
+  --ink: #43304e;
+  --ink-soft: #8b7a94;
+  --ink-faint: rgba(67, 48, 78, 0.45);
+  --line: rgba(67, 48, 78, 0.14);
+  --line-strong: rgba(67, 48, 78, 0.28);
+  --paper: #fffdf9;
+  --bg: #fbf5ee;
+
+  --rose: #d14d76;
+  --rose-soft: #fbe7ed;
+  --lavender: #8e6cc8;
+  --lavender-soft: #f0eafb;
+  --gold: #b57e3e;
+  --gold-soft: #f8eee0;
+  --peach: #f2b98a;
+  --mint: #9ed0bb;
+  --sky: #a9c8e6;
+
+  --shadow-soft: 0 6px 24px rgba(139, 122, 148, 0.16);
+  --shadow-card: 0 10px 30px rgba(139, 122, 148, 0.22);
+  --radius-card: 18px;
 }
 
 /* ---------- Base resets ---------- */
@@ -22,82 +57,107 @@ html {
 }
 
 body {
-  background: #000;
+  background: var(--bg);
+  color: var(--ink);
   margin: 0;
   padding: 0;
   height: var(--app-height, 100dvh);
-  /* prevent body from scrolling — Layout handles its own scroll */
+  /* Layout handles its own scroll */
   overflow: hidden;
   max-width: 100vw;
-  image-rendering: pixelated;
-  image-rendering: crisp-edges;
-  -webkit-font-smoothing: none;
-  -moz-osx-font-smoothing: unset;
-  font-smooth: never;
-  text-rendering: geometricPrecision;
-  font-variant-ligatures: none;
-  font-kerning: none;
-  font-feature-settings: "ss01" on, "ss02" on, "zero" on;
+  font-family: var(--font-sans), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 ::selection {
-  background: #fff;
-  color: #000;
+  background: rgba(142, 108, 200, 0.25);
+  color: var(--ink);
+}
+
+/* Thin pastel scrollbars */
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background: rgba(139, 122, 148, 0.25);
+  border-radius: 999px;
 }
 
 /* ================================================================
-   CRT SHELL
+   APP SHELL — aurora bg + dream scanlines (концепт CRT, светлый)
    ================================================================ */
 .crt {
   position: relative;
   overflow: visible;
 }
 
-/* fine vertical mask + faint horizontal scan lines */
+/* тонкая скан-текстура — оммаж пиксель-эстетике */
 .crt::before {
   content: "";
   position: absolute;
   inset: 0;
   z-index: 40;
   background:
-    repeating-linear-gradient(0deg, transparent 0px, transparent 2px, rgba(255,255,255,0.05) 2px, rgba(255,255,255,0.05) 4px);
+    repeating-linear-gradient(0deg, transparent 0px, transparent 3px, rgba(67, 48, 78, 0.018) 3px, rgba(67, 48, 78, 0.018) 4px);
   pointer-events: none;
-  opacity: .55;
 }
 
-/* rolling scanline */
+/* мягкий световой проход */
 .crt::after {
   content: "";
   position: absolute;
   left: 0;
   right: 0;
-  height: 60px;
+  height: 90px;
   z-index: 41;
-  background: linear-gradient(to bottom, transparent, rgba(255,255,255,0.06), transparent);
+  background: linear-gradient(to bottom, transparent, rgba(255, 255, 255, 0.35), transparent);
   pointer-events: none;
-  animation: roll 6s linear infinite;
+  animation: roll 9s linear infinite;
 }
 
 @keyframes roll {
-  0%   { top: -60px; }
+  0%   { top: -90px; }
   100% { top: 100%; }
 }
 
+/* Аврора-фон — пастельные пятна света */
+.app-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 60% 40% at 15% 8%, rgba(142, 108, 200, 0.13) 0%, transparent 60%),
+    radial-gradient(ellipse 55% 45% at 90% 20%, rgba(246, 200, 222, 0.20) 0%, transparent 60%),
+    radial-gradient(ellipse 65% 40% at 50% 100%, rgba(242, 185, 138, 0.16) 0%, transparent 65%),
+    radial-gradient(ellipse 45% 35% at 85% 85%, rgba(158, 208, 187, 0.14) 0%, transparent 60%),
+    var(--bg);
+}
+
 /* ================================================================
-   DITHER / HALFTONE
+   DITHER / HALFTONE — концепт дизеринга, чернила по сливкам
    ================================================================ */
 .dither-fill {
-  background: repeating-conic-gradient(#fff 0% 25%, #000 0% 50%) 0 0 / 2px 2px;
+  background: repeating-conic-gradient(var(--ink) 0% 25%, transparent 0% 50%) 0 0 / 3px 3px;
+  opacity: 0.22;
 }
 
 .dither-bar {
-  height: 8px;
-  background: repeating-conic-gradient(#fff 0% 25%, #000 0% 50%) 0 0 / 2px 2px;
+  height: 6px;
+  background:
+    radial-gradient(circle, var(--ink-faint) 1px, transparent 1.2px) 0 0 / 6px 6px;
+  opacity: 0.35;
 }
 
 /* halftone / dither treatment for generated art */
 .dither-img {
-  filter: grayscale(1) contrast(1.6) brightness(1.05);
+  filter: grayscale(1) contrast(1.25) brightness(1.02);
 }
 
 .scan-soft::after {
@@ -105,22 +165,23 @@ body {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background: repeating-linear-gradient(to bottom, rgba(0,0,0,0) 0px, rgba(0,0,0,0) 2px, rgba(0,0,0,0.28) 3px);
+  background: repeating-linear-gradient(to bottom, rgba(0, 0, 0, 0) 0px, rgba(0, 0, 0, 0) 3px, rgba(67, 48, 78, 0.05) 4px);
   mix-blend-mode: multiply;
+  border-radius: inherit;
 }
 
 /* ================================================================
-   CARD FLIP ANIMATION
+   CARD FLIP ANIMATION — плавный, «шёлковый»
    ================================================================ */
 .flip {
-  perspective: 1000px;
+  perspective: 1200px;
 }
 
 .flip-inner {
   position: relative;
   width: 100%;
   height: 100%;
-  transition: transform .7s cubic-bezier(.2, .85, .25, 1);
+  transition: transform .7s cubic-bezier(.25, 1, .3, 1);
   transform-style: preserve-3d;
 }
 
@@ -134,6 +195,7 @@ body {
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
   overflow: hidden;
+  border-radius: var(--radius-card);
 }
 
 .flip-back {
@@ -141,180 +203,158 @@ body {
 }
 
 .raise {
-  transform: translateY(-12px);
+  transform: translateY(-10px);
 }
 
 /* ================================================================
-   PROCEDURAL OCCULT CARD BACK
+   CARD FRAME — белая карта с мягкой тенью и пастельным свечением
    ================================================================ */
-.cardback {
-  width: 100%;
-  height: 100%;
-  background: #000;
-  position: relative;
-  overflow: hidden;
+.card-frame {
+  background: var(--paper);
+  border: 1.5px solid var(--line-strong);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
 }
 
-.cardback .cb-dither {
-  position: absolute;
-  inset: 3px;
-  z-index: 1;
-  opacity: .55;
-  background: repeating-conic-gradient(#fff 0% 25%, #000 0% 50%) 0 0 / 2px 2px;
-  mix-blend-mode: screen;
-}
-
-.cardback .cb-vines {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-  background:
-    repeating-linear-gradient(45deg, transparent 0 11px, rgba(255,255,255,.16) 11px 12px),
-    repeating-linear-gradient(-45deg, transparent 0 11px, rgba(255,255,255,.13) 11px 12px);
-}
-
-.cardback .cb-frame {
-  position: absolute;
-  inset: 4px;
-  border: 1px solid #fff;
-  z-index: 3;
-}
-
-.cardback .cb-frame2 {
-  position: absolute;
-  inset: 7px;
-  border: 1px solid rgba(255,255,255,.5);
-  z-index: 3;
-}
-
-.cb-center {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 4;
-}
-
-.cb-star {
-  width: 60%;
-  aspect-ratio: 1;
-  background: #fff;
-  clip-path: polygon(50% 0%, 61% 39%, 100% 50%, 61% 61%, 50% 100%, 39% 61%, 0% 50%, 39% 39%);
-}
-
-.cb-star-in {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 62%;
-  height: 62%;
-  background: #000;
-  clip-path: polygon(50% 0%, 61% 39%, 100% 50%, 61% 61%, 50% 100%, 39% 61%, 0% 50%, 39% 39%);
-}
-
-.cb-rose {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%) rotate(45deg);
-  width: 34%;
-  height: 34%;
-  border: 2px solid #fff;
-  background: repeating-linear-gradient(45deg, transparent 0 4px, rgba(255,255,255,.5) 4px 5px);
-}
-
-.cb-dot {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 16%;
-  height: 16%;
-  border: 2px solid #fff;
-  border-radius: 50%;
-  background: #000;
-  z-index: 5;
-}
-
-.cb-hex {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 18px;
-  height: 18px;
-  z-index: 4;
-}
-
-.cb-hex.top  { top: 14%; }
-.cb-hex.bot  { bottom: 14%; }
-
-.cb-hex::before,
-.cb-hex::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: #fff;
-  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
-}
-
-.cb-hex::after {
-  transform: rotate(180deg);
-}
-
-.cb-corner {
-  position: absolute;
-  z-index: 6;
-  color: #fff;
+/* перевернутая карта — шильдик */
+.rev-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-family: var(--font-pixel);
   font-size: 8px;
-  line-height: 1;
+  letter-spacing: 0.1em;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--ink);
+  box-shadow: 0 2px 8px rgba(139, 122, 148, 0.25);
 }
 
-.cb-corner.tl { top: 2px;    left: 3px;  }
-.cb-corner.tr { top: 2px;    right: 3px; }
-.cb-corner.bl { bottom: 2px; left: 3px;  }
-.cb-corner.br { bottom: 2px; right: 3px; }
-
 /* ================================================================
-   GLITCH ANIMATION (title)
+   CARD AURA — рассеянные символы вокруг карт (пастель)
    ================================================================ */
-@keyframes glitch {
-  0%, 92%, 100% { transform: translate(0, 0); opacity: 1; }
-  93%           { transform: translate(-1px, 0); opacity: .8; }
-  95%           { transform: translate(1px, 0); }
-  97%           { transform: translate(0, 1px); }
+.card-aura {
+  position: absolute;
+  inset: -60px -70px;
+  pointer-events: none;
+  z-index: 0;
+  transition: transform 0.8s ease, filter 0.8s ease;
 }
 
-.glitch {
-  animation: glitch 3.6s steps(2) infinite;
+.card-aura--expanded {
+  transform: scale(1.22, 1.12);
+}
+
+.aura-char {
+  position: absolute;
+  line-height: 1;
+  white-space: nowrap;
+  animation: aura-fade var(--a-dur, 6s) ease-in-out infinite;
+  animation-delay: var(--ad, 0s);
+}
+
+@keyframes aura-fade {
+  0%, 100% { opacity: 0; }
+  15% { opacity: var(--max-op, 0.4); }
+  50% { opacity: calc(var(--max-op, 0.4) * 0.7); }
+  85% { opacity: var(--max-op, 0.4); }
 }
 
 /* ================================================================
-   BUTTON
+   FLIP SHIMMER — вспышка-мерцание при перевороте (вместо глитча)
+   ================================================================ */
+@keyframes flip-shimmer {
+  0%   { filter: grayscale(1) contrast(1.25) brightness(1.02); transform: translate(0, 0); }
+  20%  { filter: grayscale(0.3) contrast(1.1) brightness(1.12) saturate(1.4); transform: translate(-1.5px, 1px); }
+  40%  { filter: grayscale(1) contrast(0.85) brightness(1.2); transform: translate(1.5px, -1px); }
+  60%  { filter: grayscale(0.5) contrast(1.05) brightness(1.1) saturate(1.25); transform: translate(-1px, 0); }
+  80%  { filter: grayscale(0.9) contrast(1.2) brightness(1.05); transform: translate(1px, 0.5px); }
+  100% { filter: grayscale(1) contrast(1.25) brightness(1.02); transform: translate(0, 0); }
+}
+
+.flip.is-flipped .flip-glitch {
+  animation: flip-shimmer 0.7s ease-out 1;
+}
+
+/* ================================================================
+   BUTTON — пилюля с градиентом, мягкое нажатие
    ================================================================ */
 .btn {
-  transition: transform .08s steps(2);
+  transition: transform 0.15s ease, box-shadow 0.2s ease, filter 0.2s ease;
   position: relative;
 }
 
 .btn:active {
-  transform: translate(2px, 2px);
+  transform: scale(0.96);
+}
+
+.btn-vibe {
+  position: relative;
+  border: none;
+  border-radius: 999px;
+  overflow: hidden;
+  isolation: isolate;
+  transition: transform 0.15s ease, box-shadow 0.2s ease, filter 0.2s ease;
+  color: #fff;
+  background: linear-gradient(135deg, var(--guide-accent, #8e6cc8) 0%, var(--guide-accent-deep, #6c4ba4) 100%);
+  box-shadow: 0 6px 18px var(--guide-accent-dim, rgba(142, 108, 200, 0.35));
+}
+
+.btn-vibe:hover {
+  filter: brightness(1.06);
+  box-shadow: 0 8px 22px var(--guide-accent-dim, rgba(142, 108, 200, 0.45));
+}
+
+.btn-vibe:active {
+  transform: scale(0.96);
+}
+
+/* лёгкий дизеринг на кнопке — пиксель-душа */
+.btn-vibe::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.14;
+  background:
+    radial-gradient(circle, #fff 0.5px, transparent 0.7px) 0 0 / 4px 4px;
+}
+
+.btn-vibe--secondary {
+  background: var(--paper);
+  color: var(--ink);
+  border: 1.5px solid var(--line-strong);
+  box-shadow: 0 4px 14px rgba(139, 122, 148, 0.14);
+}
+
+.btn-vibe--secondary:hover {
+  background: #fff;
+  border-color: var(--guide-accent, #8e6cc8);
+  color: var(--ink);
+  box-shadow: 0 6px 18px rgba(139, 122, 148, 0.2);
+}
+
+.btn-vibe:disabled,
+.btn-vibe[disabled] {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 /* ================================================================
-   BLINK
+   BLINK — мягкое дыхание
    ================================================================ */
 .blink {
-  animation: blink 1s steps(2) infinite;
+  animation: blink 1.6s ease-in-out infinite;
 }
 
 @keyframes blink {
-  50% { opacity: 0; }
+  50% { opacity: 0.25; }
 }
 
 /* ================================================================
-   TOAST
+   TOAST — пилюля на сливках
    ================================================================ */
 .toast {
   pointer-events: none;
@@ -323,29 +363,35 @@ body {
   left: 50%;
   transform: translateX(-50%);
   z-index: 50;
-  background: #000;
-  border: 2px solid #fff;
-  color: #fff;
+  background: rgba(255, 253, 249, 0.97);
+  border: 1.5px solid var(--line-strong);
+  border-radius: 999px;
+  color: var(--ink);
   font-family: var(--font-pixel);
-  font-size: 7px;
-  padding: 0.5rem 0.75rem;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  padding: 0.55rem 1.1rem;
+  box-shadow: var(--shadow-soft);
   opacity: 0;
-  transition: opacity 200ms;
+  transition: opacity 250ms, transform 250ms;
   white-space: nowrap;
 }
 
 .toast.visible {
   opacity: 1;
+  transform: translateX(-50%) translateY(-4px);
 }
 
 /* ================================================================
-   ERROR MODAL — fullscreen centered overlay
+   ERROR MODAL — мягкая розовая карточка
    ================================================================ */
 .error-overlay {
   position: fixed;
   inset: 0;
   z-index: 100;
-  background: rgba(0, 0, 0, 0.88);
+  background: rgba(251, 245, 238, 0.75);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -361,53 +407,21 @@ body {
 
 .error-box {
   position: relative;
-  background: #000;
-  border: 2px solid var(--err-accent, #fff);
+  background: var(--paper);
+  border: 1.5px solid var(--line-strong);
+  border-radius: 24px;
   max-width: 88vw;
   width: 340px;
   padding: 2rem 1.5rem;
   text-align: center;
   overflow: hidden;
+  box-shadow: 0 20px 50px rgba(139, 122, 148, 0.3);
 }
-
-.error-scan {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: repeating-linear-gradient(
-    0deg,
-    transparent,
-    transparent 2px,
-    rgba(255, 255, 255, 0.015) 2px,
-    rgba(255, 255, 255, 0.015) 4px
-  );
-  animation: error-scan-move 4s linear infinite;
-}
-
-@keyframes error-scan-move {
-  0%   { transform: translateY(0); }
-  100% { transform: translateY(-4px); }
-}
-
-.error-corner {
-  position: absolute;
-  font-family: var(--font-pixel);
-  font-size: 14px;
-  line-height: 1;
-  pointer-events: none;
-  filter: drop-shadow(0 0 3px var(--err-accent-dim, rgba(255,255,255,0.3)));
-}
-
-.error-corner.tl { top: 6px; left: 8px; }
-.error-corner.tr { top: 6px; right: 8px; }
-.error-corner.bl { bottom: 6px; left: 8px; }
-.error-corner.br { bottom: 6px; right: 8px; }
 
 .error-sigil {
-  font-size: 32px;
+  font-size: 34px;
   line-height: 1;
   margin-bottom: 0.75rem;
-  filter: drop-shadow(0 0 6px var(--err-accent-dim, rgba(255,255,255,0.3)));
   animation: error-sigil-pulse 2.5s ease-in-out infinite;
 }
 
@@ -417,12 +431,11 @@ body {
 }
 
 .error-message {
-  font-family: var(--font-pixel);
-  font-size: 14px;
-  line-height: 1.6;
-  color: #fff;
+  font-family: var(--font-serif);
+  font-size: 19px;
+  line-height: 1.45;
+  color: var(--ink);
   white-space: pre-line;
-  text-shadow: 0 0 4px rgba(255, 255, 255, 0.15);
 }
 
 .error-subscribe {
@@ -431,60 +444,65 @@ body {
 
 .error-sub-divider {
   height: 1px;
-  background: linear-gradient(90deg, transparent, var(--err-accent, #fff), transparent);
+  background: linear-gradient(90deg, transparent, var(--line-strong), transparent);
   margin-bottom: 1rem;
-  opacity: 0.4;
 }
 
 .error-sub-btn {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.6rem 1.2rem;
+  padding: 0.65rem 1.4rem;
   font-size: 13px;
-  letter-spacing: 0.08em;
-  color: #000;
-  background: var(--err-accent, #fff);
+  letter-spacing: 0.06em;
+  color: #fff;
   border: none;
+  border-radius: 999px;
   cursor: pointer;
-  text-transform: uppercase;
-  transition: filter 150ms;
-  filter: drop-shadow(0 0 6px var(--err-accent-dim, rgba(255,255,255,0.3)));
+  background: linear-gradient(135deg, var(--rose) 0%, #a93460 100%);
+  box-shadow: 0 6px 18px rgba(209, 77, 118, 0.35);
+  transition: filter 150ms, transform 150ms;
 }
 
 .error-sub-btn:hover {
-  filter: brightness(1.2) drop-shadow(0 0 10px var(--err-accent-dim, rgba(255,255,255,0.5)));
+  filter: brightness(1.07);
+}
+
+.error-sub-btn:active {
+  transform: scale(0.96);
 }
 
 .error-sub-hint {
-  font-size: 9px;
-  color: rgba(255, 255, 255, 0.35);
+  font-size: 10px;
+  color: var(--ink-faint);
   letter-spacing: 0.1em;
   margin-top: 0.6rem;
+  font-family: var(--font-pixel);
 }
 
 .error-close-hint {
-  font-size: 9px;
-  color: rgba(255, 255, 255, 0.25);
+  font-size: 10px;
+  color: var(--ink-faint);
   letter-spacing: 0.08em;
   margin-top: 1rem;
   cursor: pointer;
   transition: color 150ms;
+  font-family: var(--font-pixel);
 }
 
 .error-close-hint:hover {
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--ink);
 }
 
 /* ================================================================
-   CARD POSITION LABELS (3-card spread)
+   CARD POSITION LABELS
    ================================================================ */
 .card-label {
   font-family: var(--font-pixel);
-  font-size: 14px;
-  color: #fff;
+  font-size: 11px;
+  color: var(--ink-soft);
   text-align: center;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   padding-top: 0.25rem;
 }
@@ -494,314 +512,37 @@ body {
 }
 
 /* ================================================================
-   CURSED FOOTER — zalgo fire
+   READING CARD — рамка толкования
    ================================================================ */
-.cursed-area {
+.reading-card {
   position: relative;
-  overflow: visible;
-  height: 96px;
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  justify-content: flex-end;
-  padding: 0;
-  line-height: 1;
-  z-index: 1;
-  background: transparent;
-
-  -webkit-mask-image: linear-gradient(to top, #000 0%, #000 15%, transparent 72%);
-  mask-image: linear-gradient(to top, #000 0%, #000 15%, transparent 72%);
-}
-
-.cursed-fire {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  display: flex;
-  justify-content: center;
-  pointer-events: none;
-}
-
-.cursed-fire-inner {
-  display: flex;
-  justify-content: space-between;
-  width: 100%;
-  padding: 0 2px;
-  box-sizing: border-box;
-}
-
-.cursed-block {
-  font-size: 11px;
-  line-height: 1;
-  letter-spacing: -0.08em;
-  color: #fff;
-  white-space: nowrap;
-  opacity: 0;
-}
-
-.cursed-fire--front .cursed-block {
-  font-size: 12px;
-  animation: glitch-stable var(--dur, 28s) ease-in-out infinite;
-  animation-delay: var(--bd, 0s);
-}
-
-.cursed-fire--deep .cursed-block {
-  font-size: 10px;
-  animation: glitch-unstable var(--dur, 34s) ease-in-out infinite;
-  animation-delay: var(--bd, 0s);
-}
-
-.cursed-fire--top .cursed-block {
-  font-size: 9px;
-  animation: glitch-chaos var(--dur, 38s) ease-in-out infinite;
-  animation-delay: var(--bd, 0s);
-}
-
-.cursed-fire--mid .cursed-block {
-  font-size: 10px;
-  animation: glitch-unstable var(--dur, 24s) ease-in-out infinite;
-  animation-delay: var(--bd, 0s);
-}
-
-@keyframes glitch-stable {
-  0%, 100% { opacity: 0; }
-  12%  { opacity: 1; }
-  88%  { opacity: 1; }
-  97%  { opacity: 0; }
-}
-
-@keyframes glitch-unstable {
-  0%, 100% { opacity: 0; }
-  8%   { opacity: 0.75; }
-  30%  { opacity: 0.4; }
-  55%  { opacity: 0.08; }
-  75%  { opacity: 0.55; }
-  92%  { opacity: 0; }
-}
-
-@keyframes glitch-chaos {
-  0%, 100% { opacity: 0; }
-  6%   { opacity: 0.35; }
-  16%  { opacity: 0.2; }
-  26%  { opacity: 0; }
-  46%  { opacity: 0.3; }
-  54%  { opacity: 0; }
-  72%  { opacity: 0.15; }
-  82%  { opacity: 0; }
-}
-
-/* ================================================================
-   CARD AURA — scattered corrupted mist around cards
-   ================================================================ */
-.card-aura {
-  position: absolute;
-  inset: -75px -88px;
-  pointer-events: none;
-  z-index: 0;
-  transition: transform 0.8s ease, filter 0.8s ease;
-}
-
-.card-aura--expanded {
-  transform: scale(1.3, 1.15);
-}
-
-.aura-char {
-  position: absolute;
-  color: #fff;
-  line-height: 1;
-  white-space: nowrap;
-  text-shadow: 0 0 4px rgba(255,255,255,0.15);
-  animation: aura-fade var(--a-dur, 6s) ease-in-out infinite;
-  animation-delay: var(--ad, 0s);
-}
-
-@keyframes aura-fade {
-  0%, 100% { opacity: 0; }
-  15%  { opacity: var(--max-op, 1); }
-  50%  { opacity: calc(var(--max-op, 1) * 0.7); }
-  85%  { opacity: var(--max-op, 1); }
-}
-
-/* ================================================================
-   DECORATIVE FRAME — double border with broken corners
-   ================================================================ */
-.frame-occult {
-  position: relative;
-  border: 2px solid #fff;
-  background: #000;
-}
-
-.frame-occult::before {
-  content: "";
-  position: absolute;
-  inset: 4px;
-  border: 1px solid rgba(255,255,255,0.35);
-  pointer-events: none;
-}
-
-/* ================================================================
-   DECORATIVE FRAME — ritual / thick frame for reading
-   ================================================================ */
-.frame-ritual {
-  position: relative;
-  border: 3px solid #fff;
-  background: #0a0a0a;
-}
-
-.frame-ritual::before {
-  content: "";
-  position: absolute;
-  inset: 6px;
-  border: 1px solid rgba(110, 68, 255, 0.2);
-  pointer-events: none;
-}
-
-/* scattered corner ornaments for ritual frame */
-.frame-ritual .corner-tl,
-.frame-ritual .corner-tr,
-.frame-ritual .corner-bl,
-.frame-ritual .corner-br {
-  position: absolute;
-  font-family: var(--font-pixel);
-  font-size: 10px;
-  line-height: 1;
-  color: rgba(255,255,255,0.4);
-  pointer-events: none;
-  z-index: 2;
-}
-.frame-ritual .corner-tl { top: -6px;   left: 4px; }
-.frame-ritual .corner-tr { top: -6px;   right: 4px; }
-.frame-ritual .corner-bl { bottom: -6px; left: 4px; }
-.frame-ritual .corner-br { bottom: -6px; right: 4px; }
-
-/* ================================================================
-   ARCANUM HEADER — monochrome terminal banner
-   ================================================================ */
-.arcanum-header {
-  position: relative;
-  width: 100%;
-  border: 6px double rgba(255, 255, 255, 0.5);
-  padding: 6px 16px;
-  box-sizing: border-box;
-  background: transparent;
-  text-align: center;
-}
-
-/* Dot artifacts — scattered pixel noise around the header */
-.header-artifacts {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
+  background: var(--paper);
+  border: 1.5px solid var(--line-strong);
+  border-radius: 22px;
+  box-shadow: var(--shadow-soft);
   overflow: hidden;
 }
 
-.header-artifacts::before {
-  content: '';
-  position: absolute;
-  width: 2px;
-  height: 2px;
-  background: rgba(255, 255, 255, 0.25);
-  top: 4px;
-  right: -8px;
-  box-shadow:
-    0 4px 0 rgba(255, 255, 255, 0.2),
-    0 10px 0 rgba(255, 255, 255, 0.15),
-    0 16px 0 rgba(255, 255, 255, 0.2),
-    0 22px 0 rgba(255, 255, 255, 0.1),
-    0 28px 0 rgba(255, 255, 255, 0.2),
-    6px 2px 0 rgba(255, 255, 255, 0.15),
-    6px 8px 0 rgba(255, 255, 255, 0.1),
-    6px 14px 0 rgba(255, 255, 255, 0.2),
-    6px 20px 0 rgba(255, 255, 255, 0.15),
-    6px 26px 0 rgba(255, 255, 255, 0.1),
-    -8px 2px 0 rgba(255, 255, 255, 0.15),
-    -8px 8px 0 rgba(255, 255, 255, 0.1),
-    -8px 14px 0 rgba(255, 255, 255, 0.2),
-    -8px 20px 0 rgba(255, 255, 255, 0.15),
-    -8px 26px 0 rgba(255, 255, 255, 0.1);
-}
-
-.header-artifacts::after {
-  content: '';
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  background: rgba(255, 255, 255, 0.2);
-  bottom: -4px;
-  left: 10%;
-  box-shadow:
-    3px 0 0 rgba(255, 255, 255, 0.15),
-    6px 0 0 rgba(255, 255, 255, 0.1),
-    12px 0 0 rgba(255, 255, 255, 0.2),
-    18px 0 0 rgba(255, 255, 255, 0.1),
-    25px 0 0 rgba(255, 255, 255, 0.15),
-    32px 0 0 rgba(255, 255, 255, 0.1),
-    40px 0 0 rgba(255, 255, 255, 0.2),
-    48px 0 0 rgba(255, 255, 255, 0.15),
-    56px 0 0 rgba(255, 255, 255, 0.1),
-    65px 0 0 rgba(255, 255, 255, 0.2),
-    75px 0 0 rgba(255, 255, 255, 0.1);
-}
-
-.header-content {
+.section-label {
+  font-family: var(--font-pixel);
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  color: var(--ink-faint);
+  text-transform: uppercase;
   display: flex;
   align-items: center;
-  justify-content: center;
   gap: 8px;
 }
 
-.brand-title {
-  color: #fff;
-  font-size: 14px;
-  line-height: 1.4;
-  letter-spacing: 2px;
-  margin: 0;
-  font-family: 'Press Start 2P', monospace;
-  font-weight: normal;
-  user-select: none;
-}
-
-.sparkle {
-  color: #fff;
-  font-size: 11px;
-  opacity: 0.5;
-  user-select: none;
-}
-
-/* Corner decor symbols */
-.corner-decor {
-  position: absolute;
-  color: #fff;
-  font-size: 10px;
-  opacity: 0.4;
-  user-select: none;
-  pointer-events: none;
-}
-
-.corner-decor.top-left     { top: 4px; left: 6px; }
-.corner-decor.top-right    { top: 4px; right: 6px; }
-.corner-decor.bottom-left  { bottom: 4px; left: 6px; }
-.corner-decor.bottom-right { bottom: 4px; right: 6px; }
-
-/* ================================================================
-   HEADER ORNAMENTS — symmetrical side ornaments
-   ================================================================ */
-.ornament-side {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--font-pixel);
-  font-size: 14px;
-  line-height: 1;
-  color: rgba(255,255,255,0.3);
-  letter-spacing: 0;
-  user-select: none;
+.section-label::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--line), transparent);
 }
 
 /* ================================================================
-   AMBIENT FLOATING SYMBOLS — very subtle background artifacts
+   AMBIENT FLOATING SYMBOLS
    ================================================================ */
 .ambient-layer {
   position: absolute;
@@ -814,11 +555,11 @@ body {
 .ambient-symbol {
   position: absolute;
   font-family: var(--font-pixel), monospace;
-  color: rgba(255,255,255,0.04);
+  color: var(--ink);
   line-height: 1;
   user-select: none;
   pointer-events: none;
-  animation: ambient-float 24s ease-in-out infinite;
+  animation: ambient-float 26s ease-in-out infinite;
   animation-delay: var(--amb-delay, 0s);
 }
 
@@ -827,16 +568,12 @@ body {
     opacity: 0;
     transform: translateY(0) rotate(0deg);
   }
-  10% {
-    opacity: var(--amb-op, 0.06);
-  }
+  10% { opacity: var(--amb-op, 0.07); }
   50% {
-    opacity: var(--amb-op, 0.06);
-    transform: translateY(-20px) rotate(8deg);
+    opacity: var(--amb-op, 0.07);
+    transform: translateY(-24px) rotate(8deg);
   }
-  90% {
-    opacity: var(--amb-op, 0.06);
-  }
+  90% { opacity: var(--amb-op, 0.07); }
   100% {
     opacity: 0;
     transform: translateY(0) rotate(0deg);
@@ -844,47 +581,7 @@ body {
 }
 
 /* ================================================================
-   CIRCUIT TRACE PATTERN — pseudo-circuit decorations
-   ================================================================ */
-.circuit-trace {
-  position: absolute;
-  pointer-events: none;
-  z-index: 1;
-  opacity: 0.08;
-}
-
-.circuit-trace--h {
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: repeating-linear-gradient(
-    90deg,
-    transparent 0px,
-    transparent 6px,
-    rgba(110, 68, 255, 0.3) 6px,
-    rgba(110, 68, 255, 0.3) 7px,
-    transparent 7px,
-    transparent 14px
-  );
-}
-
-.circuit-trace--v {
-  top: 0;
-  bottom: 0;
-  width: 1px;
-  background: repeating-linear-gradient(
-    0deg,
-    transparent 0px,
-    transparent 6px,
-    rgba(110, 68, 255, 0.3) 6px,
-    rgba(110, 68, 255, 0.3) 7px,
-    transparent 7px,
-    transparent 14px
-  );
-}
-
-/* ================================================================
-   NOISE / STATIC TEXTURE
+   NOISE / STATIC TEXTURE — лёгкое зерно
    ================================================================ */
 .noise-bg {
   position: relative;
@@ -896,101 +593,21 @@ body {
   inset: 0;
   pointer-events: none;
   z-index: 1;
-  opacity: 0.035;
+  opacity: 0.028;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
   background-repeat: repeat;
   background-size: 128px 128px;
-  mix-blend-mode: overlay;
-}
-
-/* ================================================================
-   GLOW TOKENS — for accent elements
-   ================================================================ */
-.glow-purple {
-  box-shadow: 0 0 6px rgba(110, 68, 255, 0.15), 0 0 20px rgba(110, 68, 255, 0.05);
-}
-
-.glow-gold {
-  box-shadow: 0 0 6px rgba(159, 122, 53, 0.15), 0 0 20px rgba(159, 122, 53, 0.05);
-}
-
-/* ================================================================
-   CRT DISTORTION — subtle wobble for card images
-   ================================================================ */
-.crt-distort {
-  animation: crt-wobble 8s ease-in-out infinite;
-}
-
-@keyframes crt-wobble {
-  0%, 100% { transform: scale(1.001, 1) translate(0, 0); }
-  25%      { transform: scale(1.001, 1.001) translate(0.5px, -0.3px); }
-  50%      { transform: scale(0.999, 1.001) translate(-0.3px, 0.5px); }
-  75%      { transform: scale(1.001, 0.999) translate(0.3px, -0.2px); }
-}
-
-/* ================================================================
-   GLYPH FRAGMENTS — tiny scattered symbols near containers
-   ================================================================ */
-.glyph-fragment {
-  position: absolute;
-  font-family: var(--font-pixel), monospace;
-  font-size: 6px;
-  line-height: 1;
-  color: rgba(255,255,255,0.12);
-  pointer-events: none;
-  z-index: 1;
-  user-select: none;
-}
-
-/* ================================================================
-   CARD CORNER SYMBOLS — arcane corner markers
-   ================================================================ */
-.card-corner {
-  position: absolute;
-  font-size: 10px;
-  line-height: 1;
-  color: rgba(255,255,255,0.25);
-  pointer-events: none;
-  z-index: 5;
-  user-select: none;
-}
-
-/* ================================================================
-   DIVINATION STREAM LABEL
-   ================================================================ */
-.stream-label {
-  font-family: var(--font-pixel);
-  font-size: 9px;
-  letter-spacing: 0.18em;
-  color: rgba(255,255,255,0.4);
-  text-transform: uppercase;
-}
-
-/* ================================================================
-   ENHANCED SCANLINE — stronger for card frames
-   ================================================================ */
-.scan-heavy::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 3;
-  background: repeating-linear-gradient(
-    to bottom,
-    transparent 0px,
-    transparent 1px,
-    rgba(0,0,0,0.15) 1px,
-    rgba(0,0,0,0.15) 2px
-  );
   mix-blend-mode: multiply;
 }
 
 /* ================================================================
-   GUIDE PORTRAIT — pixel-art sprite with CRT scan overlay
+   GUIDE PORTRAIT — тёмное пиксель-окно в светлой рамке
    ================================================================ */
 .guide-portrait-frame {
   position: relative;
-  background: #000;
+  background: #241b2e;
+  border-radius: 12px;
+  overflow: hidden;
 }
 
 .guide-portrait-frame::before {
@@ -1002,59 +619,25 @@ body {
   background: repeating-linear-gradient(
     to bottom,
     transparent 0px,
-    transparent 1px,
-    rgba(0,0,0,0.45) 1px,
-    rgba(0,0,0,0.45) 2px
+    transparent 2px,
+    rgba(0, 0, 0, 0.25) 2px,
+    rgba(0, 0, 0, 0.25) 3px
   );
 }
 
-.guide-portrait-frame::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 3;
-  pointer-events: none;
-  border: 1px solid rgba(255,255,255,0.15);
-}
-
 .guide-portrait-scan {
-  filter: grayscale(1) contrast(1.5) brightness(0.85);
-  animation: portrait-flicker 5s steps(5) infinite;
-}
-
-@keyframes portrait-flicker {
-  0%, 100% { opacity: 0.95; filter: grayscale(1) contrast(1.5) brightness(0.85); }
-  23% { opacity: 0.85; filter: grayscale(1) contrast(1.7) brightness(0.78); }
-  47% { opacity: 0.95; filter: grayscale(1) contrast(1.5) brightness(0.85); }
-  73% { opacity: 0.75; filter: grayscale(1) contrast(1.4) brightness(0.7); }
+  filter: grayscale(0.4) contrast(1.2) saturate(1.1);
 }
 
 /* ================================================================
-   FLIP GLITCH — split-second RGB-shift when card flips
-   ================================================================ */
-@keyframes flip-glitch {
-  0%   { filter: grayscale(1) contrast(1.6) brightness(1.05); transform: translate(0, 0); }
-  20%  { filter: grayscale(1) contrast(2.0) brightness(1.15) hue-rotate(0deg); transform: translate(-2px, 1px); }
-  35%  { filter: grayscale(1) contrast(0.6) brightness(1.4) invert(0.15); transform: translate(2px, -1px); }
-  50%  { filter: grayscale(1) contrast(2.2) brightness(0.9); transform: translate(-1px, 0); }
-  65%  { filter: grayscale(1) contrast(1.0) brightness(1.2) invert(0.08); transform: translate(1px, 1px); }
-  80%  { filter: grayscale(1) contrast(1.8) brightness(1.05); transform: translate(0, -1px); }
-  100% { filter: grayscale(1) contrast(1.6) brightness(1.05); transform: translate(0, 0); }
-}
-
-.flip.is-flipped .flip-glitch {
-  animation: flip-glitch 0.7s steps(7) 1;
-}
-
-/* ================================================================
-   GUIDE AMBIENT — daily-pick background pattern + per-guide particles
+   GUIDE AMBIENT + PARTICLES
    ================================================================ */
 .guide-ambient {
   position: absolute;
   inset: 0;
   pointer-events: none;
   z-index: 0;
-  opacity: 0.85;
+  opacity: 0.9;
 }
 
 .guide-particles {
@@ -1084,413 +667,57 @@ body {
   12% { opacity: var(--gp-op, 0.35); }
   50% {
     opacity: var(--gp-op, 0.35);
-    transform: translateY(-30px) translateX(var(--gp-x, 8px)) rotate(var(--gp-rot, 6deg));
+    transform: translateY(-34px) translateX(var(--gp-x, 8px)) rotate(var(--gp-rot, 6deg));
   }
   88% { opacity: var(--gp-op, 0.35); }
   100% {
     opacity: 0;
-    transform: translateY(-60px) translateX(0) rotate(0deg);
+    transform: translateY(-70px) translateX(0) rotate(0deg);
   }
 }
 
 /* ================================================================
-   GUIDE LOADING — pixel idle indicator (replaces "ГАДАНИЕ...")
+   GUIDE LOADING — танцующие точки
    ================================================================ */
 .guide-loading {
   display: flex;
   align-items: center;
   gap: 6px;
   font-family: var(--font-pixel);
-  font-size: 10px;
-  letter-spacing: 0.18em;
-  color: rgba(255,255,255,0.5);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  color: var(--ink-soft);
   margin-top: 12px;
   text-align: center;
 }
 
 .guide-loading-dot {
-  width: 6px;
-  height: 6px;
-  background: var(--guide-accent, #fff);
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--guide-accent, #8e6cc8);
   display: inline-block;
-  animation: guide-loading-pulse 1.2s steps(3) infinite;
+  animation: guide-loading-pulse 1.2s ease-in-out infinite;
   animation-delay: var(--dot-delay, 0s);
 }
 
 @keyframes guide-loading-pulse {
-  0%, 100% { opacity: 0.25; transform: scale(1); }
-  40% { opacity: 1; transform: scale(1.4); }
+  0%, 100% { opacity: 0.3; transform: scale(0.8); }
+  40% { opacity: 1; transform: scale(1.25); }
 }
 
 /* ================================================================
-   BUTTON VIBE — double frame, scanlines, corner ticks, glitch hover
+   CARD CORNERS + BURST (флип-эффект)
    ================================================================ */
-.btn-vibe {
-  position: relative;
-  border: 2px solid #fff;
-  background: #000;
-  color: #fff;
-  overflow: hidden;
-  transition: transform 0.08s steps(2), background 0.12s steps(2), color 0.12s steps(2);
-  isolation: isolate;
-}
-
-/* inner hairline border */
-.btn-vibe::before {
-  content: "";
+.card-corner {
   position: absolute;
-  inset: 2px;
-  border: 1px solid rgba(255,255,255,0.25);
+  font-size: 11px;
+  line-height: 1;
   pointer-events: none;
-  z-index: 1;
-  transition: border-color 0.12s steps(2);
+  z-index: 5;
+  user-select: none;
 }
 
-/* CRT scanlines on the button face */
-.btn-vibe-scan {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 1;
-  background: repeating-linear-gradient(
-    to bottom,
-    transparent 0px,
-    transparent 1px,
-    rgba(255,255,255,0.04) 1px,
-    rgba(255,255,255,0.04) 2px
-  );
-  mix-blend-mode: screen;
-}
-
-/* tiny corner ticks — pixel-art corner markers */
-.btn-vibe-corners {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 2;
-}
-
-.bvc {
-  position: absolute;
-  width: 3px;
-  height: 3px;
-  background: #fff;
-  transition: background 0.12s steps(2);
-}
-
-.bvc-tl { top: -1px;    left: -1px; }
-.bvc-tr { top: -1px;    right: -1px; }
-.bvc-bl { bottom: -1px; left: -1px; }
-.bvc-br { bottom: -1px; right: -1px; }
-
-/* primary variant — solid black, white border */
-.btn-vibe--primary {
-  background: #000;
-  color: #fff;
-}
-
-/* secondary variant — even more minimal */
-.btn-vibe--secondary {
-  background: #000;
-  color: #fff;
-  border-color: rgba(255,255,255,0.6);
-}
-
-.btn-vibe--secondary::before {
-  border-color: rgba(255,255,255,0.15);
-}
-
-/* hover — invert + subtle glitch shift */
-.btn-vibe:hover {
-  background: #fff;
-  color: #000;
-}
-
-.btn-vibe:hover::before {
-  border-color: rgba(0,0,0,0.3);
-}
-
-.btn-vibe:hover .bvc {
-  background: #000;
-}
-
-/* active — pressed look */
-.btn-vibe:active {
-  transform: translate(1px, 1px);
-}
-
-/* keep secondary distinct on hover */
-.btn-vibe--secondary:hover {
-  background: rgba(255,255,255,0.08);
-  color: #fff;
-}
-
-.btn-vibe--secondary:hover::before {
-  border-color: rgba(255,255,255,0.4);
-}
-
-.btn-vibe--secondary:hover .bvc {
-  background: #fff;
-}
-
-.btn-vibe--secondary:active {
-  background: rgba(255,255,255,0.15);
-}
-
-/* disabled */
-.btn-vibe:disabled,
-.btn-vibe[disabled] {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-
-/* ================================================================
-   CARD EDGES — pixel-artifact notches on card frame
-   Larger artifact pattern: chunky pixel notches, scattered dots,
-   sparkle clusters, and small ASCII-like glyph fragments along
-   the border. Purely decorative.
-   ================================================================ */
-.card-edges {
-  position: relative;
-}
-
-/* Pixel notches on the outer border — chunkier, more numerous */
-.card-edges::before {
-  content: "";
-  position: absolute;
-  top: -1px;
-  left: 12%;
-  width: 5px;
-  height: 5px;
-  background: #000;
-  z-index: 4;
-  box-shadow:
-    /* top edge — chunky black notches */
-    14% 0 0 #000,
-    15% 0 0 #000,
-    32% 0 0 #000,
-    56% 0 0 #000,
-    57% 0 0 #000,
-    58% 0 0 #000,
-    81% 0 0 #000,
-    /* bottom edge — chunky black notches */
-    8% calc(100% + 1px) 0 #000,
-    27% calc(100% + 1px) 0 #000,
-    28% calc(100% + 1px) 0 #000,
-    51% calc(100% + 1px) 0 #000,
-    74% calc(100% + 1px) 0 #000,
-    75% calc(100% + 1px) 0 #000,
-    92% calc(100% + 1px) 0 #000,
-    /* left edge — chunky black notches */
-    -1px 14% 0 #000,
-    -1px 38% 0 #000,
-    -1px 39% 0 #000,
-    -1px 67% 0 #000,
-    -1px 85% 0 #000,
-    /* right edge — chunky black notches */
-    calc(100% + 1px) 18% 0 #000,
-    calc(100% + 1px) 19% 0 #000,
-    calc(100% + 1px) 47% 0 #000,
-    calc(100% + 1px) 72% 0 #000,
-    calc(100% + 1px) 73% 0 #000;
-  pointer-events: none;
-}
-
-/* Pixel sparkles + dot clusters on the outer border — denser, more varied */
-.card-edges::after {
-  content: "";
-  position: absolute;
-  top: -3px;
-  left: 22%;
-  width: 2px;
-  height: 2px;
-  background: rgba(255,255,255,0.7);
-  z-index: 4;
-  box-shadow:
-    /* top edge — white sparkle dots */
-    8% 0 0 rgba(255,255,255,0.5),
-    9% 0 0 rgba(255,255,255,0.4),
-    24% 0 0 rgba(255,255,255,0.6),
-    44% 0 0 rgba(255,255,255,0.4),
-    45% 0 0 rgba(255,255,255,0.5),
-    46% 0 0 rgba(255,255,255,0.35),
-    68% 0 0 rgba(255,255,255,0.5),
-    88% 0 0 rgba(255,255,255,0.4),
-    89% 0 0 rgba(255,255,255,0.5),
-    /* left edge — white sparkle dots */
-    -3px 22% 0 rgba(255,255,255,0.5),
-    -3px 50% 0 rgba(255,255,255,0.4),
-    -3px 51% 0 rgba(255,255,255,0.5),
-    -3px 78% 0 rgba(255,255,255,0.4),
-    -3px 92% 0 rgba(255,255,255,0.5),
-    /* right edge — white sparkle dots */
-    calc(100% + 3px) 12% 0 rgba(255,255,255,0.4),
-    calc(100% + 3px) 13% 0 rgba(255,255,255,0.5),
-    calc(100% + 3px) 38% 0 rgba(255,255,255,0.5),
-    calc(100% + 3px) 62% 0 rgba(255,255,255,0.4),
-    calc(100% + 3px) 88% 0 rgba(255,255,255,0.5),
-    /* bottom edge — white sparkle dots */
-    16% calc(100% + 3px) 0 rgba(255,255,255,0.5),
-    36% calc(100% + 3px) 0 rgba(255,255,255,0.4),
-    37% calc(100% + 3px) 0 rgba(255,255,255,0.5),
-    60% calc(100% + 3px) 0 rgba(255,255,255,0.5),
-    82% calc(100% + 3px) 0 rgba(255,255,255,0.4),
-    83% calc(100% + 3px) 0 rgba(255,255,255,0.5);
-  pointer-events: none;
-}
-
-/* ================================================================
-   GUIDE SIGIL — mystical pixel-art emblem on question-input screen
-   ================================================================ */
-.sigil-rotate {
-  transform-origin: 100px 100px;
-  animation: sigil-rotate 60s linear infinite;
-}
-
-@keyframes sigil-rotate {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
-}
-
-.sigil-dot {
-  animation: sigil-dot-blink var(--dot-dur, 2s) steps(2) infinite;
-  animation-delay: var(--dot-delay, 0s);
-  opacity: var(--dot-op, 0.5);
-}
-
-@keyframes sigil-dot-blink {
-  0%, 100% { opacity: var(--dot-op, 0.5); }
-  50%      { opacity: 0; }
-}
-
-/* ── Guide Sigil — occult magic circle animations ── */
-.guide-sigil-container {
-  overflow: hidden;
-}
-
-/* Slow rotation — outer ring (clockwise) */
-.sigil-rotate-slow {
-  transform-origin: 200px 200px;
-  animation: sigil-rotate-cw 90s linear infinite;
-}
-
-/* Slow rotation — inner hexagram (counter-clockwise) */
-.sigil-rotate-slow-rev {
-  transform-origin: 200px 200px;
-  animation: sigil-rotate-ccw 70s linear infinite;
-}
-
-/* Pulsing — pentagram layer (breathing) */
-.sigil-pulse {
-  transform-origin: 200px 200px;
-  animation: sigil-pulse 4s ease-in-out infinite;
-}
-
-@keyframes sigil-rotate-cw {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
-}
-
-@keyframes sigil-rotate-ccw {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(-360deg); }
-}
-
-@keyframes sigil-pulse {
-  0%, 100% { opacity: 0.85; transform: scale(1); }
-  50%      { opacity: 1;    transform: scale(1.02); }
-}
-
-/* ================================================================
-   WELCOME ANIMATION — boot logs + CRT scanlines
-   ================================================================ */
-.welcome-sigil-wrap {
-  position: relative;
-}
-
-/* Boot log lines — terminal style */
-.boot-log-line {
-  font-family: 'VT323', 'Pixelify Sans', monospace;
-  font-size: 14px;
-  line-height: 1.4;
-  white-space: pre-wrap;
-  word-break: break-word;
-  animation: boot-line-in 0.25s ease-out;
-}
-
-@keyframes boot-line-in {
-  from { opacity: 0; transform: translateY(4px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-.boot-ts {
-  color: rgba(255, 255, 255, 0.4);
-  font-size: 12px;
-}
-
-.boot-tag {
-  font-weight: bold;
-  font-size: 12px;
-  text-shadow: 0 0 4px currentColor;
-}
-
-.boot-msg {
-  color: rgba(255, 255, 255, 0.85);
-}
-
-.boot-log-progress .boot-bar {
-  color: rgba(255, 255, 255, 0.7);
-  letter-spacing: -1px;
-}
-
-.boot-log-progress .boot-pct {
-  color: rgba(255, 255, 255, 0.9);
-  margin-left: 4px;
-}
-
-/* Typing cursor — blink */
-.boot-cursor {
-  display: inline-block;
-  margin-left: 2px;
-  color: rgba(255, 255, 255, 0.9);
-  animation: boot-cursor-blink 0.8s steps(2) infinite;
-}
-
-@keyframes boot-cursor-blink {
-  0%, 100% { opacity: 1; }
-  50%      { opacity: 0; }
-}
-
-.boot-typing {
-  opacity: 1;
-}
-
-/* CRT flicker overlay (very subtle) */
-@keyframes crt-flicker {
-  0%, 100% { opacity: 0.6; }
-  20%      { opacity: 0.55; }
-  40%      { opacity: 0.65; }
-  60%      { opacity: 0.5; }
-  80%      { opacity: 0.6; }
-}
-
-/* Hide scrollbar on boot log container */
-.boot-log-line::-webkit-scrollbar,
-div[class*="boot-log"]::-webkit-scrollbar {
-  display: none;
-}
-
-/* ================================================================
-   MODAL FRAME — subtle CRT vibe for modal windows
-   ================================================================ */
-.modal-frame {
-  box-shadow: 0 0 0 1px #000, 0 0 24px rgba(255,255,255,0.05);
-}
-
-/* ================================================================
-   CARD FLIP BURST — one-shot symbol explosion when card is flipped
-   Per-guide accent color + guide auraAlphabet symbols
-   ================================================================ */
 .burst-layer {
   position: absolute;
   inset: 0;
@@ -1521,7 +748,6 @@ div[class*="boot-log"]::-webkit-scrollbar {
   --bx: 0px;
   --by: 0px;
   --brot: 0deg;
-  --bsize: 12px;
   animation: burst-particle-fly var(--bdur, 0.9s) cubic-bezier(0.15, 0.85, 0.4, 1) 1;
   animation-delay: var(--bdelay, 0s);
   opacity: 0;
@@ -1542,15 +768,14 @@ div[class*="boot-log"]::-webkit-scrollbar {
   }
 }
 
-/* Flash overlay on flip — accent color glow */
 .burst-flash {
   position: absolute;
   inset: 0;
   pointer-events: none;
   z-index: 7;
   opacity: 0;
-  background: radial-gradient(circle at 50% 50%, var(--guide-accent, #fff) 0%, transparent 60%);
-  mix-blend-mode: screen;
+  border-radius: inherit;
+  background: radial-gradient(circle at 50% 50%, var(--guide-accent, #8e6cc8) 0%, transparent 62%);
 }
 
 .flip.is-flipped ~ .burst-flash,
@@ -1560,23 +785,277 @@ div[class*="boot-log"]::-webkit-scrollbar {
 
 @keyframes burst-flash {
   0%   { opacity: 0; }
-  10%  { opacity: 0.65; }
+  10%  { opacity: 0.3; }
   100% { opacity: 0; }
 }
 
 /* ================================================================
-   WELCOME SIGIL — materializing pixel orbits during boot
+   GUIDE SIGIL — вращающиеся пиксель-орбиты
    ================================================================ */
-.welcome-sigil {
+.sigil-dot {
+  animation: sigil-dot-blink var(--dot-dur, 2s) ease-in-out infinite;
+  animation-delay: var(--dot-delay, 0s);
+  opacity: var(--dot-op, 0.5);
+}
+
+@keyframes sigil-dot-blink {
+  0%, 100% { opacity: var(--dot-op, 0.5); }
+  50%      { opacity: 0.12; }
+}
+
+.guide-sigil-container {
+  overflow: hidden;
+}
+
+.sigil-rotate-slow {
+  transform-origin: 200px 200px;
+  animation: sigil-rotate-cw 90s linear infinite;
+}
+
+.sigil-rotate-slow-rev {
+  transform-origin: 200px 200px;
+  animation: sigil-rotate-ccw 70s linear infinite;
+}
+
+.sigil-pulse {
+  transform-origin: 200px 200px;
+  animation: sigil-pulse 4s ease-in-out infinite;
+}
+
+@keyframes sigil-rotate-cw {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@keyframes sigil-rotate-ccw {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(-360deg); }
+}
+
+@keyframes sigil-pulse {
+  0%, 100% { opacity: 0.85; transform: scale(1); }
+  50%      { opacity: 1;    transform: scale(1.02); }
+}
+
+/* ================================================================
+   WELCOME — ритуальный вход
+   ================================================================ */
+.welcome-sigil-wrap {
   position: relative;
-  filter: drop-shadow(0 0 8px rgba(255,255,255,0.05));
 }
 
-.welcome-orbit-dot {
-  animation: welcome-dot-blink 2.4s ease-in-out infinite;
+.boot-log-line {
+  font-family: var(--font-pixel);
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+  animation: boot-line-in 0.25s ease-out;
+  color: var(--ink-soft);
 }
 
-@keyframes welcome-dot-blink {
-  0%, 100% { opacity: var(--init-op, 0.5); }
+@keyframes boot-line-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.boot-ts {
+  color: var(--ink-faint);
+  font-size: 11px;
+}
+
+.boot-tag {
+  font-weight: 600;
+  font-size: 11px;
+}
+
+.boot-msg {
+  color: var(--ink);
+}
+
+.boot-log-progress .boot-bar {
+  color: var(--ink-soft);
+  letter-spacing: -1px;
+}
+
+.boot-log-progress .boot-pct {
+  color: var(--ink);
+  margin-left: 4px;
+}
+
+.boot-cursor {
+  display: inline-block;
+  margin-left: 2px;
+  color: var(--ink);
+  animation: boot-cursor-blink 0.8s steps(2) infinite;
+}
+
+@keyframes boot-cursor-blink {
+  0%, 100% { opacity: 1; }
   50%      { opacity: 0; }
+}
+
+.boot-typing {
+  opacity: 1;
+}
+
+.welcome-title {
+  font-family: var(--font-serif);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  animation: welcome-title-glow 3s ease-in-out infinite;
+}
+
+@keyframes welcome-title-glow {
+  0%, 100% { text-shadow: 0 0 12px rgba(142, 108, 200, 0.12); }
+  50%      { text-shadow: 0 0 22px rgba(209, 77, 118, 0.18); }
+}
+
+/* ================================================================
+   MODAL FRAME
+   ================================================================ */
+.modal-frame {
+  box-shadow: 0 24px 60px rgba(139, 122, 148, 0.35);
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(67, 48, 78, 0.32);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* ================================================================
+   CHAT — переписка с проводницей после расклада
+   ================================================================ */
+.chat-bubble-guide {
+  background: var(--paper);
+  border: 1.5px solid var(--line);
+  border-radius: 18px 18px 18px 6px;
+  box-shadow: 0 4px 14px rgba(139, 122, 148, 0.12);
+}
+
+.chat-bubble-user {
+  background: linear-gradient(135deg, var(--guide-accent, #8e6cc8) 0%, var(--guide-accent-deep, #6c4ba4) 100%);
+  color: #fff;
+  border-radius: 18px 18px 6px 18px;
+  box-shadow: 0 6px 16px var(--guide-accent-dim, rgba(142, 108, 200, 0.3));
+}
+
+.chat-chip {
+  font-family: var(--font-sans);
+  font-size: 12.5px;
+  line-height: 1.3;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1.5px solid var(--line-strong);
+  border-radius: 999px;
+  padding: 8px 14px;
+  box-shadow: 0 3px 10px rgba(139, 122, 148, 0.12);
+  transition: transform 0.15s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  cursor: pointer;
+}
+
+.chat-chip:hover {
+  transform: translateY(-1px);
+  border-color: var(--guide-accent, #8e6cc8);
+  box-shadow: 0 5px 14px var(--guide-accent-dim, rgba(142, 108, 200, 0.25));
+}
+
+.chat-chip:active {
+  transform: scale(0.97);
+}
+
+.chat-input {
+  background: var(--paper);
+  border: 1.5px solid var(--line-strong);
+  border-radius: 999px;
+  color: var(--ink);
+  font-family: var(--font-sans);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.chat-input:focus {
+  outline: none;
+  border-color: var(--guide-accent, #8e6cc8);
+  box-shadow: 0 0 0 4px var(--guide-accent-dim, rgba(142, 108, 200, 0.15));
+}
+
+.chat-input::placeholder {
+  color: var(--ink-faint);
+}
+
+/* появление сообщений */
+.chat-msg-in {
+  animation: chat-msg-in 0.3s ease-out;
+}
+
+@keyframes chat-msg-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ================================================================
+   PROGRESS — градиентный бар приветствия
+   ================================================================ */
+.progress-track {
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(67, 48, 78, 0.08);
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #f2b98a, #d14d76, #8e6cc8);
+  transition: width 0.2s ease;
+}
+
+/* ================================================================
+   MISC — пилюли, разделители
+   ================================================================ */
+.soft-card {
+  background: var(--paper);
+  border: 1.5px solid var(--line-strong);
+  border-radius: 20px;
+  box-shadow: var(--shadow-soft);
+}
+
+.divider-sparkle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--ink-faint);
+}
+
+.divider-sparkle::before,
+.divider-sparkle::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--line), transparent);
+}
+
+/* ================================================================
+   REDUCED MOTION
+   ================================================================ */
+@media (prefers-reduced-motion: reduce) {
+  .crt::after,
+  .guide-particle,
+  .ambient-symbol,
+  .aura-char,
+  .sigil-rotate-slow,
+  .sigil-rotate-slow-rev,
+  .sigil-pulse {
+    animation: none !important;
+  }
+  .flip-inner {
+    transition-duration: 0.01s;
+  }
 }

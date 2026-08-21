@@ -13,13 +13,14 @@ from config import settings
 logger = logging.getLogger(__name__)
 
 # ── Provider configs ──────────────────────────────────────────────
-# Each entry: (model_id, base_url, api_key, label_for_logs)
 
 OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 ZEN_URL = "https://opencode.ai/zen/v1/chat/completions"
 
+
 def _zen_key() -> str | None:
     return settings.OPENCODE_ZEN_KEY or None
+
 
 # Primary — DeepSeek Flash via OpenCode Zen
 PRIMARY_MODEL = "deepseek-v4-flash-free"
@@ -47,18 +48,13 @@ def _build_provider_list() -> list[tuple[str, str, str | None, str]]:
     """Build ordered list of (model, base_url, api_key, label)."""
     providers: list[tuple[str, str, str | None, str]] = []
 
-    # 1. Zen primary
     key = _zen_key()
     if key:
         providers.append((PRIMARY_MODEL, ZEN_URL, key, "zen"))
-
-    # 2. Zen fallbacks
-    if key:
         for m in ZEN_FALLBACKS:
             if m != PRIMARY_MODEL:
                 providers.append((m, ZEN_URL, key, "zen"))
 
-    # 3. OpenRouter fallbacks
     or_key = settings.OPENROUTER_API_KEY
     if or_key:
         for m in OPENROUTER_FALLBACKS:
@@ -67,14 +63,30 @@ def _build_provider_list() -> list[tuple[str, str, str | None, str]]:
     return providers
 
 
-def _get_primary_provider() -> tuple[str, str, str | None, str] | None:
-    key = _zen_key()
-    if key:
-        return (PRIMARY_MODEL, ZEN_URL, key, "zen")
-    or_key = settings.OPENROUTER_API_KEY
-    if or_key:
-        return (OPENROUTER_FALLBACKS[0], OPENROUTER_URL, or_key, "or")
-    return None
+# ── Shared HTTP client (connection reuse — one pool for all calls) ──
+
+_client: httpx.AsyncClient | None = None
+
+
+def _get_client() -> httpx.AsyncClient:
+    global _client
+    if _client is None or _client.is_closed:
+        _client = httpx.AsyncClient(
+            timeout=httpx.Timeout(180.0, connect=15.0),
+            limits=httpx.Limits(
+                max_keepalive_connections=20,
+                max_connections=40,
+                keepalive_expiry=60.0,
+            ),
+        )
+    return _client
+
+
+async def close_client() -> None:
+    global _client
+    if _client is not None and not _client.is_closed:
+        await _client.aclose()
+    _client = None
 
 
 EMOJI_PATTERN = re.compile(
@@ -116,44 +128,44 @@ async def call_llm(
     Handles reasoning models that return content in ``reasoning_content``
     when the visible ``content`` field is empty.
     """
-    async with httpx.AsyncClient(timeout=180.0) as client:
-        response = await client.post(
-            base_url,
-            headers={
-                "Authorization": f"Bearer {api_key}",
-                "Content-Type": "application/json",
-            },
-            json={
-                "model": model,
-                "messages": messages,
-                "max_tokens": max_tokens,
-                "temperature": 0.8,
-            },
+    client = _get_client()
+    response = await client.post(
+        base_url,
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+        },
+        json={
+            "model": model,
+            "messages": messages,
+            "max_tokens": max_tokens,
+            "temperature": 0.8,
+        },
+    )
+    response.raise_for_status()
+    data = response.json()
+    choice = data["choices"][0]
+    msg = choice["message"]
+
+    # DeepSeek-style reasoning: content may be in reasoning_content
+    content = msg.get("content")
+    if content and content.strip():
+        return content
+
+    # Some reasoning models return content in reasoning fields
+    reasoning = (
+        msg.get("reasoning_content")
+        or msg.get("reasoning")
+        or ""
+    )
+    if reasoning:
+        logger.warning(
+            "Model %s returned empty content — using reasoning as fallback",
+            model,
         )
-        response.raise_for_status()
-        data = response.json()
-        choice = data["choices"][0]
-        msg = choice["message"]
+        return reasoning
 
-        # DeepSeek-style reasoning: content may be in reasoning_content
-        content = msg.get("content")
-        if content and content.strip():
-            return content
-
-        # Some reasoning models return content in reasoning fields
-        reasoning = (
-            msg.get("reasoning_content")
-            or msg.get("reasoning")
-            or ""
-        )
-        if reasoning:
-            logger.warning(
-                "Model %s returned empty content — using reasoning as fallback",
-                model,
-            )
-            return reasoning
-
-        raise ValueError(f"Model {model} returned no content or reasoning")
+    raise ValueError(f"Model {model} returned no content or reasoning")
 
 
 async def call_llm_with_fallback(
@@ -207,11 +219,12 @@ async def interpret_reading(
     question: Optional[str],
     cards: list[dict],
     character_id: str = "shadow_walker",
-    spread_type: int = 1,
+    spread_type: int | str = 1,
+    avoid_texts: list[str] | None = None,
 ) -> dict:
     from core.prompts import get_system_prompt, build_reading_prompt
 
-    system_prompt = get_system_prompt(character_id)
+    system_prompt = get_system_prompt(character_id, avoid_texts=avoid_texts)
     user_prompt = build_reading_prompt(cards, question, character_id, spread_type)
 
     messages = [
@@ -238,12 +251,62 @@ async def interpret_reading(
     return fallback_from_cards_db(cards, question, character_id)
 
 
+async def interpret_followup(
+    character_id: str,
+    reading: dict,
+    history: list[dict],
+    question: str,
+    avoid_texts: list[str] | None = None,
+) -> str:
+    """Answer a follow-up question about an existing reading, in character."""
+    from core.prompts import build_followup_messages
+
+    messages = build_followup_messages(
+        character_id, reading, history, question, avoid_texts=avoid_texts
+    )
+
+    is_reasoning = _zen_key() is not None
+    token_base = 4500 if is_reasoning else 3000
+
+    try:
+        raw = await call_llm_with_fallback(messages, max_tokens=token_base)
+        cleaned = strip_emojis(raw)
+        parsed = parse_llm_response(cleaned)
+        if parsed:
+            for key in ("answer", "short_answer", "intro"):
+                v = parsed.get(key)
+                if isinstance(v, str) and v.strip():
+                    return v.strip()
+            # parsed but no expected keys — stringify
+            text = json.dumps(parsed, ensure_ascii=False)
+            return text
+        if cleaned.strip():
+            return cleaned.strip()
+    except RuntimeError:
+        logger.error("All LLM models failed for followup, using fallback")
+
+    return _fallback_followup(reading, question, character_id)
+
+
+def _fallback_followup(reading: dict, question: str, character_id: str) -> str:
+    from core.prompts import get_character
+
+    ch = get_character(character_id)
+    name = ch.get("name", "Проводница")
+    cards = reading.get("cards") or []
+    card_names = ", ".join(c.get("name", "?") for c in cards[:3])
+    return (
+        f"{name} на секунду задумалась... Карты этого расклада ({card_names}) "
+        "уже сказали главное. Перечитай толкование ещё раз — а я отвечу подробнее чуть позже."
+    )
+
+
 def _parse_text_format(text: str) -> Optional[dict]:
     """Try to parse text-format LLM response in any field order."""
     result = {}
 
     field_pat = re.compile(
-        r"^\s*(intro|short_answer|card_meaning|advice)\s*:\s*",
+        r"^\s*(intro|short_answer|card_meaning|advice|answer)\s*:\s*",
         re.MULTILINE | re.IGNORECASE,
     )
 
@@ -265,7 +328,7 @@ def _parse_text_format(text: str) -> Optional[dict]:
         else:
             result[field] = value
 
-    if "short_answer" in result:
+    if "short_answer" in result or "answer" in result:
         return result
     return None
 
@@ -320,19 +383,20 @@ def fallback_from_cards_db(
     character_id: str = "shadow_walker",
 ) -> dict:
     from core.tarot import load_cards
+    from core.prompts import DAILY_POSITIONS, THREE_POSITIONS
 
     all_cards = load_cards()
     cards_by_name = {c["name"]: c for c in all_cards}
 
     character_intros = {
-        "shadow_walker": "Тени сгущаются над древними символами...",
-        "ruin_keeper": "Пыль веков оседает на камнях судьбы...",
-        "spark_of_chaos": "Искры истины пробиваются сквозь пустоту!",
+        "shadow_walker": "Луна выходит из-за туч...",
+        "ruin_keeper": "Очаг потрескивает...",
+        "spark_of_chaos": "Искра пробивается сквозь тишину!",
     }
     character_voices = {
-        "shadow_walker": "Странница Теней",
-        "ruin_keeper": "Хранитель Руин",
-        "spark_of_chaos": "Искра Хаоса",
+        "shadow_walker": "Селена",
+        "ruin_keeper": "Веста",
+        "spark_of_chaos": "Лилит",
     }
 
     meanings = []
@@ -344,36 +408,32 @@ def fallback_from_cards_db(
 
         prefix = ""
         if len(cards) == 3:
-            positions = ["Прошлое", "Настоящее", "Будущее"]
-            prefix = f"[{positions[i]}] "
-        elif len(cards) == 1:
-            prefix = ""
+            positions = DAILY_POSITIONS if len(cards) == 3 else THREE_POSITIONS
+            prefix = f"[{positions[i] if i < len(positions) else i + 1}] "
 
         meanings.append(f"{prefix}{name}: {meaning}")
 
     intro = character_intros.get(character_id, "Карты раскрывают свои тайны...")
-    voice = character_voices.get(character_id, "Проводник")
+    voice = character_voices.get(character_id, "Проводница")
 
     if question:
         short_answer = (
-            f"{voice} отмечает: в контексте твоего вопроса — "
-            f"{question[:100]}... Карты указывают на скрытые связи."
+            f"{voice} смотрит на твой вопрос — «{question[:100]}» — и видит в картах "
+            "узор, который говорит больше слов."
         )
     else:
-        short_answer = f"{voice} видит в раскладе важный узор судьбы."
+        short_answer = f"{voice} видит в этом раскладе важный узор твоего дня."
 
     advice_templates = {
         "shadow_walker": (
-            "Прислушайся к шёпоту теней — они указывают путь, "
-            "даже если ты его не видишь."
+            "Позволь этому дню говорить с тобой: одна маленькая пауза тишины — "
+            "и всё станет на свои места."
         ),
         "ruin_keeper": (
-            "Не торопись. Древние знаки требуют осмысления. "
-            "Вернись к раскладу на рассвете."
+            "Сделай сегодня одно конкретное дело. Маленькое, но настоящее."
         ),
         "spark_of_chaos": (
-            "Действуй! Карты лишь подтверждают то, "
-            "что ты уже знаешь внутри себя."
+            "Хватит примерять чужие жизни. Сделай первый маленький шаг — сегодня."
         ),
     }
     advice = advice_templates.get(

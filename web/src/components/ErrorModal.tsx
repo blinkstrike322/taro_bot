@@ -27,7 +27,7 @@ export default function ErrorModal({ message, visible, onHide, characterId }: Er
       timerRef.current = setTimeout(() => {
         setShow(false);
         onHide?.();
-      }, 5000);
+      }, 6000);
     } else {
       setShow(false);
     }
@@ -41,13 +41,11 @@ export default function ErrorModal({ message, visible, onHide, characterId }: Er
     onHide?.();
   };
 
-  // Darken the accent for error — too bright distracts from message
-  const dimAccent = guide.id === 'shadow_walker' ? '#3A1650' :
-    guide.id === 'ruin_keeper' ? '#5C4308' :
-    guide.id === 'spark_of_chaos' ? '#6E1B22' : '#333';
-  const dimAccentDim = guide.id === 'shadow_walker' ? 'rgba(58, 22, 80, 0.25)' :
-    guide.id === 'ruin_keeper' ? 'rgba(92, 67, 8, 0.25)' :
-    guide.id === 'spark_of_chaos' ? 'rgba(110, 27, 34, 0.25)' : 'rgba(51, 51, 51, 0.25)';
+  // Символ проводницы — детерминированный от сообщения
+  const sigil = useMemo(
+    () => guide.ambientSymbols[(message?.length || 0) % guide.ambientSymbols.length],
+    [guide, message],
+  );
 
   return (
     <div
@@ -55,49 +53,44 @@ export default function ErrorModal({ message, visible, onHide, characterId }: Er
       onClick={handleDismiss}
       role="alertdialog"
       aria-modal="true"
+      style={{
+        '--guide-accent': guide.accent,
+        '--guide-accent-deep': guide.accentDeep,
+      } as React.CSSProperties}
     >
       <div
         className="error-box"
-        style={{ '--err-accent': dimAccent, '--err-accent-dim': dimAccentDim } as React.CSSProperties}
-        onClick={e => e.stopPropagation()}
+        style={{ border: `1.5px solid ${guide.accentDim}` }}
+        onClick={(e) => e.stopPropagation()}
       >
-        {/* scan overlay */}
-        <div className="error-scan" aria-hidden="true" />
-
-        {/* occult corner guards */}
-        <span className="error-corner tl" style={{ color: dimAccent }}>╳</span>
-        <span className="error-corner tr" style={{ color: dimAccent }}>╳</span>
-        <span className="error-corner bl" style={{ color: dimAccent }}>╳</span>
-        <span className="error-corner br" style={{ color: dimAccent }}>╳</span>
-
-        {/* sigil header */}
-        <div className="error-sigil" style={{ color: dimAccent }}>
-          {guide.ambientSymbols[Math.floor(Math.random() * guide.ambientSymbols.length)]}
+        {/* символ проводницы */}
+        <div
+          className="error-sigil mx-auto"
+          style={{ color: guide.accent, filter: `drop-shadow(0 0 10px ${guide.accentDim})` }}
+        >
+          {sigil}
         </div>
 
-        {/* main message */}
+        {/* сообщение */}
         <div className="error-message">{message}</div>
 
-        {/* subscription CTA */}
+        {/* подписка */}
         {needsSubscription && (
           <div className="error-subscribe">
             <div className="error-sub-divider" />
-            <button
-              className="error-sub-btn font-pixel"
-              onClick={handleDismiss}
-            >
-              ◈ ЗАКРЫТЬ
+            <button className="error-sub-btn font-sans font-bold" onClick={handleDismiss}>
+              Понятно
             </button>
             <div className="error-sub-hint font-pixel">
-              НАПИШИ /subscribe В ЧАТЕ С БOТOМ
+              НАПИШИ /SUBSCRIBE В ЧАТЕ С БОТОМ
             </div>
           </div>
         )}
 
-        {/* close hint */}
+        {/* закрыть */}
         {!needsSubscription && (
-          <div className="error-close-hint font-pixel" onClick={handleDismiss}>
-            [ НАЖМИ ЧТOБЫ ЗАКРЫТЬ ]
+          <div className="error-close-hint" onClick={handleDismiss}>
+            [ коснись, чтобы закрыть ]
           </div>
         )}
       </div>

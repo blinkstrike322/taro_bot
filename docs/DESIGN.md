@@ -1,146 +1,121 @@
-# Dithered Divinations
+# Дизайн WebApp — «Lumière» (v2, 2026-08)
 
-> Category: Mystical · Monochrome
-> Tarot-reading Telegram WebApp. Cinema-black canvas, monochrome austerity, monumental display type. Inspired by Bugatti.com's visual discipline — pure `#000000`, pure `#FFFFFF`, and nothing else.
+> Светлая мистическая тема для женской аудитории.
+> Пастель + дизеринг: ключевые концепты пиксель-эстетики сохранены,
+> но подача — мягкая, гладкая, тёплая.
 
-## 1. Visual Theme & Atmosphere
+---
 
-The app behaves like a digital oracle — a ceremonial terminal. The canvas is pure `#000000`, the only color that ever appears is white, and the entire interface is carried by typographic moments laid over card imagery. There are no decorative backgrounds, no glowing auras, no gradients, no shadows. It is one continuous cinema-black channel, interrupted only by the cards themselves and a few ALL CAPS monochrome labels.
+## 1. Философия
 
-The single most distinctive move is **contrast at scale**. Typography runs from monumental headings to fine-print captions, all in pure white on black. The cards are high-contrast B&W dithered illustrations. Everything else is silent so the reading can speak.
+Светлая «мягкая мистика»: слоновая кость как холст, пастельные отсветы
+(лаванда, роза, персик, золото) как настроение, тёмные дизеринг-арты как
+маленькие окна в тайну. Интерфейс говорит как заботливая подруга:
+скруглённые формы, тактильные нажатия, никаких резких глитчей.
 
-**Key Characteristics:**
-- Cinema-black `#000000` canvas — no gradients, no tints, no accents
-- Monochrome-only palette: `#000000` (canvas), `#FFFFFF` (text, borders), `#666666` (tertiary/disabled only)
-- Pure white B&W card illustrations with dithering texture
-- ALL CAPS monospace for UI labels and headers
-- Serif for card names (the only typographic ornament)
-- Rectangular everything — no border-radius anywhere
+**Сохранено из прошлой версии:** дизеринг-паттерны, скан-текстура,
+пиксель-шрифт для микро-подписей, сигилы, ритуальный лог входа,
+ASCII-ауры вокруг карт.
 
-## 2. Color Palette
+---
 
-Strict. No exceptions.
+## 2. Палитра
 
-| Token | Hex | Role |
-|---|---|---|
-| Canvas | `#000000` | Background, fills |
-| White | `#FFFFFF` | Text, borders, button labels |
-| Gray | `#666666` | Disabled text, tertiary labels only |
-| (none) | — | No mid-tones beyond `#666666`. No accent colors. |
+### База
+| Токен | Значение | Назначение |
+|-------|----------|------------|
+| `--bg` | `#FBF5EE` | слоновая кость, фон приложения |
+| `--paper` | `#FFFDF9` | поверхность карточек |
+| `--ink` | `#43304E` | основной текст (слива) |
+| `--ink-soft` | `#8B7A94` | вторичный текст |
+| `--ink-faint` | `rgba(67,48,78,.45)` | подписи, хинты |
+| `--line` | `rgba(67,48,78,.14)` | тонкие рамки |
 
-**Rules:**
-- Every pixel is either `#000000`, `#FFFFFF`, or `#666666` (disabled only).
-- No `rgba()`, no opacity tricks for creating colors.
-- No gradients anywhere. No glow effects. No box-shadows.
+### Акценты (пастель)
+| Цвет | HEX |
+|------|-----|
+| Лаванда | `#8E6CC8` |
+| Роза | `#D14D76` |
+| Золото | `#B57E3E` |
+| Персик | `#F2B98A` |
+| Мята | `#9ED0BB` |
+| Небо | `#A9C8E6` |
 
-## 3. Typography
+Фон приложения — фиксированная «аврора»: четыре мягких пастельных
+радиальных пятна поверх слоновой кости (`.app-bg`).
 
-| Role | Font | Weight | Size | Case |
-|---|---|---|---|---|
-| Display / headings | `'Pixelify Sans', 'Courier New', monospace` | 700 | 24px / 20px | UPPERCASE |
-| Card names | `'Times New Roman', serif` | 400 | 20px | UPPERCASE |
-| Body / labels | `'Courier New', 'Courier', monospace` | 400 | 12-14px | UPPERCASE |
-| Interpretation | `'Courier New', 'Courier', monospace` | 400 | 14px | mixed case |
+---
 
-- **Letter-spacing:** `0.1em` for uppercase headings, `0.05em` for labels
-- **Line-height:** 1.6 for body, 1.2 for headings
-- **Font smoothing:** `-webkit-font-smoothing: none` for pixel fonts, `auto` for serif card names
-- Google Fonts: `Pixelify Sans` (loaded, keep existing link)
+## 3. Проводницы (пер-гайд акценты)
 
-## 4. Layout
+| ID | Имя | Акцент | Soft-фон | Тема |
+|----|-----|--------|----------|------|
+| `shadow_walker` | Селена, Дочь Луны | `#8E6CC8` | `#F0EAFB` | луна · вода · сны |
+| `ruin_keeper` | Веста, Хранительница Очага | `#B57E3E` | `#F8EEE0` | очаг · янтарь · хлеб |
+| `spark_of_chaos` | Лилит, Искра | `#D14D76` | `#FBE7ED` | искра · вишня · смех |
 
-- **Single column**, centered. Max-width: 400px.
-- **Vertical stacking** with 24-32px gaps.
-- **Content is top-biased** — card result sits at 25% from top, not center.
-- Padding: 16px sides, 24px top/bottom.
-- No sidebars, no multi-column.
+У каждой: тёмный пиксель-портрет (в светлой скруглённой рамке — окно в тайну),
+своя рубашка карт, свои угловые символы, алфавит ауры, амбиент-паттерн,
+фразы загрузки и чипы доп-вопросов.
 
-### Screen flow
-1. **Card pick** — 3 face-down cards in a row (12px gap). Title "ВЫБЕРИ КАРТУ" above.
-2. **Card reveal** — clicked card flips (3D rotateY). Others fade out.
-3. **Result** — revealed card (top third), card name below (serif, uppercase), interpretation block with dashed border below, then minimal navigation.
+---
 
-## 5. Components
+## 4. Типографика
 
-### Cards (face-down)
-- 120×180px, `perspective: 800px`
-- Background: B&W mandala pattern from `/cards/back.png`, `image-rendering: pixelated`
-- Border: 2px solid `#FFFFFF`
-- No border-radius, no shadow
-- Hover: `scale(1.05)`, no shadow, no glow
+| Шрифт | Роль |
+|-------|------|
+| **Cormorant Garamond** | заголовки, названия карт, интро голоса (курсив), советы |
+| **Manrope** | основной UI-текст, толкования, чат |
+| **Pixelify Sans** | микро-подписи, теги, ритуальный лог (пиксель-душа) |
 
-### Cards (face-up / revealed)
-- Fills container proportionally
-- Background: B&W card art from `/cards/{name}.png`, `background-size: cover`
-- Border: 2px solid `#FFFFFF`
-- `image-rendering: pixelated`
+---
 
-### Buttons
-- **Style:** Rectangular, 2px solid `#FFFFFF` border, transparent background, white text
-- **Hover:** White fill, black text
-- **Active:** White fill, black text, 2px inset border
-- **Size:** 44px height, padding 12px 24px, font 12px ALL CAPS monospace, `0.1em` letter-spacing
-- No border-radius, no shadows
+## 5. Формы и тени
 
-### Interpretation block
-- Dashed border (2px white, 4px dash gap)
-- Padding 16px
-- White text, Courier New, 14px, line-height 1.6
-- `white-space: pre-wrap`
+- Радиусы: карточки 18–26px, кнопки/чипы — пилюли (999px)
+- Тени: мягкие, фиолетово-серые `rgba(139,122,148,…)`
+- Кнопки: градиент акцента → глубокого акцента + лёгкий дизеринг-точки сверху
+- Шапка и футер: полупрозрачный `paper` + backdrop-blur
 
-### Calendar (B&W version)
-- Same black canvas, white text
-- Calendar grid: 7 columns, 2px gap
-- Days: white text, `opacity: 0.4` for non-active, `opacity: 1` for today/has-reading
-- Has-reading indicator: 4×4px white dot below date
-- Nav buttons: same as .btn style
-- Reading overlay: full-screen black overlay, white border, serif card name, mono interpretation
+---
 
-## 6. Depth & Elevation
+## 6. Экраны
 
-None. Zero. No shadows, no z-index layering beyond basic stacking.
+1. **Welcome** — ритуальный лог: печатается приветствие проводницы, строки
+   ритуала («зажигаю свечи»), градиентный прогресс; в центре проявляется
+   сигил; сверху — Amo Tarot с мягким свечением. ~2.5 c.
+2. **Расклад дня** — три рубашки в ряд: Энергия дня · Вызов дня · Совет дня.
+   Каждая открывается касанием (шиммер-вспышка, разлёт символов). После
+   третьей — толкование-карта дня + чат с проводницей. Итог уходит в чат TG.
+3. **Одна карта** — вопрос (с чипами-подсказками) → карта → прямой ответ.
+4. **Три карты** — вопрос → треугольник карт (прошлое-настоящее-будущее) → история.
+5. **После каждого расклада** — «Спроси ещё»: чат с проводницей по картам
+   этого расклада (до 15 вопросов, лимит мягкий).
+6. **Модалки** — Каталог раскладов, Проводницы (с настроениями), История-календарь.
 
-- The only visual hierarchy comes from:
-  - Stroke weight (2px borders vs 1px rules)
-  - Type scale (24px heading vs 12px label)
-  - Active vs inactive opacity (1.0 vs 0.4)
-- Cards on hover: `scale(1.05)` only. No shadow, no glow.
+---
 
-## 7. Animation
+## 7. Анимации
 
-- **Card flip:** 3D rotateY, 0.6s ease-in-out
-- **Card fade (unselected):** 0.5s fade + scale(0.8)
-- **Screen transitions:** instant (no animation, just class toggle)
-- **Button hover:** instant swap of fill/text color
-- No loading spinners, no particle effects, no twinkling
+- Переворот карты: шёлковый `cubic-bezier(.25,1,.3,1)` + шиммер-мерцание
+  (вместо глитча) + вспышка акцента + разлёт символов алфавита ауры
+- Частицы: пастельные символы проводницы, 12 шт., только transform/opacity
+- Скан-линия: одна мягкая световая волна за 9 c.
+- `prefers-reduced-motion` отключает ambient-анимации
 
-## 8. Responsive
+---
 
-- **Mobile default:** 100% width, 16px padding sides
-- **3 cards row:** flex, center, 12px gap
-- **Card size:** 100×150px minimum, scales up to 120×180px on larger screens
-- **Layout is the same at every width** — centered column, max 400px
+## 8. Ключевые концепты (сохранены)
 
-## 9. Design Rules (Do/Don't)
+- **Дизеринг**: карты — ч/б дизеринг-арт; дизер-точки на кнопках; halftone-разделители
+- **Скан-текстура**: тонкие горизонтальные линии на всём приложении + на лицах карт
+- **Пиксель-шрифт** в микро-ролях; сигилы с пиксель-орбитами
+- **ASCII-ауры** вокруг карт (пастельный акцент проводницы)
 
-- ✅ Pure B&W only. `#000000` and `#FFFFFF`.
-- ✅ ALL CAPS for all labels and headings. Monospace for UI, serif for card names.
-- ✅ Square corners everywhere. No border-radius.
-- ✅ `image-rendering: pixelated` on card images.
-- ✅ Let contrast and scale do the work. Big typography, simple layouts.
-- ❌ No colors. Not a single pixel.
-- ❌ No shadows, no gradients, no glowing auras.
-- ❌ No rounded corners.
-- ❌ No decorative backgrounds, particle effects, twinkling stars.
-- ❌ No emojis in UI copy.
-- ❌ No loading spinners — either the content is there or it isn't.
+---
 
-## 10. Implementation Notes
+## 9. Доступность и производительность
 
-- Card images: `/cards/{card-id}.png` (B&W dithered, 1086×1810, mode=1)
-- Card back: `/cards/back.png` (B&W geometric mandala, 262×390, mode=1)
-- Fonts: Pixelify Sans (Google Fonts) for headings, Times New Roman for card names, Courier New for body
-- Card flip: `.card-back.flipped .card-inner { transform: rotateY(180deg) }`
-- Card hover: `.card-back:hover { transform: scale(1.05) }`
-- All `.star`, `.stars-container`, `@keyframes twinkle` removed from CSS
-- All color CSS variables replaced with `#000000` and `#FFFFFF`
+- Контраст текста: ink на ivory ≥ 7:1; акценты — для крупных/декоративных элементов
+- Анимации только transform/opacity; ambient-слои — 14–30 узлов
+- Статика (карты, чанки Next) отдаётся с Cache-Control (см. app.py middleware)

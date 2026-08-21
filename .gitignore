@@ -20,3 +20,4 @@ build/
 static/default/
 art_references/
 temp/
+.omo/

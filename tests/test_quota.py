@@ -25,6 +25,7 @@ async def db():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER NOT NULL,
             type TEXT NOT NULL,
+            question TEXT,
             created_at TEXT DEFAULT (datetime('now')),
             FOREIGN KEY (user_id) REFERENCES users(id)
         )
@@ -37,10 +38,18 @@ async def db():
 
 @pytest.mark.asyncio
 async def test_daily_card_always_free(db):
-    """Daily card не проверяет квоту."""
+    """Daily card: 1 в день, без месячных лимитов."""
     result = await check_quota(db, user_id=1, tg_id=1, spread_type="daily")
     assert result["ok"] is True
-    assert result["remaining"] is None
+    assert result["remaining"] == 1
+
+    await db.execute(
+        "INSERT INTO readings (user_id, type, question) VALUES (1, 'daily', NULL)"
+    )
+    await db.commit()
+    result = await check_quota(db, user_id=1, tg_id=1, spread_type="daily")
+    assert result["ok"] is False
+    assert result["needs_subscription"] is False
 
 
 @pytest.mark.asyncio

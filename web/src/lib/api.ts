@@ -26,8 +26,16 @@ export interface Interpretation {
 }
 
 export interface SpreadResponse {
+  reading_id: number;
   cards: TarotCardData[];
   interpretation: Interpretation;
+  remaining?: number | null;
+  limit?: number | null;
+}
+
+export interface FollowupResponse {
+  answer: string;
+  remaining: number;
 }
 
 export interface ReadingEntry {
@@ -44,8 +52,27 @@ export interface ReadingsResponse {
   readings: ReadingEntry[];
 }
 
+async function postJSON<T>(url: string, body: unknown): Promise<T> {
+  const res = await fetch(`${API_BASE}${url}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    let msg = 'Ошибка. Попробуй снова.';
+    try {
+      const data = await res.json();
+      if (data?.error) msg = data.error;
+    } catch {}
+    const err = new Error(msg) as Error & { status?: number };
+    err.status = res.status;
+    throw err;
+  }
+  return res.json();
+}
+
 export async function spread(
-  spreadType: 1 | 3,
+  spreadType: 1 | 3 | 'daily',
   question: string | null,
   characterId: string = 'shadow_walker',
 ): Promise<SpreadResponse> {
@@ -53,25 +80,27 @@ export async function spread(
   try {
     initData = (window as any).Telegram?.WebApp?.initData || '';
   } catch {}
-  const res = await fetch(`${API_BASE}/api/spread`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      init_data: initData,
-      spread_type: spreadType,
-      question,
-      character_id: characterId,
-    }),
+  return postJSON('/api/spread', {
+    init_data: initData,
+    spread_type: spreadType,
+    question,
+    character_id: characterId,
   });
-  if (!res.ok) {
-    let msg = 'Spread failed';
-    try {
-      const body = await res.json();
-      if (body?.error) msg = body.error;
-    } catch {}
-    throw new Error(msg);
-  }
-  return res.json();
+}
+
+export async function followup(
+  readingId: number,
+  question: string,
+): Promise<FollowupResponse> {
+  let initData = '';
+  try {
+    initData = (window as any).Telegram?.WebApp?.initData || '';
+  } catch {}
+  return postJSON('/api/followup', {
+    init_data: initData,
+    reading_id: readingId,
+    question,
+  });
 }
 
 export async function getCharacter(): Promise<string> {
