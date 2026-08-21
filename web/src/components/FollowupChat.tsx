@@ -72,7 +72,7 @@ export default function FollowupChat({ readingId, characterId }: FollowupChatPro
         <span>Спроси ещё</span>
       </div>
 
-      <div className="soft-card p-3" style={{ borderRadius: 22 }}>
+      <div className="soft-card p-3.5" style={{ borderRadius: 4 }}>
         {/* шапка чата */}
         <div className="flex items-center gap-2.5 pb-2.5 mb-2" style={{ borderBottom: '1px dashed var(--line)' }}>
           <span className="w-8 h-8 guide-portrait-frame flex-shrink-0" style={{ borderRadius: 10, border: `1.5px solid ${guide.accentDim}` }}>
@@ -128,7 +128,6 @@ export default function FollowupChat({ readingId, characterId }: FollowupChatPro
                 </span>
                 <div
                   className="chat-bubble-guide px-3.5 py-2.5"
-                  style={{ borderLeft: `3px solid ${guide.accent}` }}
                 >
                   <p className="font-sans text-[13.5px] leading-relaxed text-[color:var(--ink)]">
                     {m.text}
@@ -158,7 +157,6 @@ export default function FollowupChat({ readingId, characterId }: FollowupChatPro
               </span>
               <div
                 className="chat-bubble-guide px-4 py-3 flex items-center gap-1.5"
-                style={{ borderLeft: `3px solid ${guide.accent}` }}
                 aria-label={`${guide.name} думает`}
               >
                 {[0, 1, 2].map((d) => (

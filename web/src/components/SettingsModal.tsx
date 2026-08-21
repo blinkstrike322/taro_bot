@@ -60,20 +60,18 @@ export default function SettingsModal({
       <div
         className="w-full max-w-[440px] m-3 relative modal-frame"
         style={{
-          background: 'var(--paper)',
-          borderRadius: 26,
-          border: '1.5px solid var(--line-strong)',
+          background: 'var(--paper-bright)',
+          borderRadius: 5,
+          border: '1px solid var(--line-strong)',
           maxHeight: '86dvh',
           overflowY: 'auto',
         }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* шапка */}
-        <div className="sticky top-0 z-10 px-5 pt-4 pb-3" style={{ background: 'var(--paper)', borderBottom: '1px solid var(--line)' }}>
-          <div className="font-serif text-[26px] font-semibold text-[color:var(--ink)] leading-none">
-            Проводницы
-          </div>
-          <div className="font-serif italic text-[15px] mt-1.5 text-[color:var(--ink-soft)]">
+        <div className="sticky top-0 z-10 px-5 pt-4 pb-3" style={{ background: 'var(--paper-bright)', borderBottom: '1px solid var(--line-strong)' }}>
+          <div className="display-xl !text-[30px]">проводницы</div>
+          <div className="font-serif italic text-[15px] mt-1 text-[color:var(--ink-soft)]">
             каждая читает карты по-своему. кто скажет тебе правду?
           </div>
         </div>
@@ -118,22 +116,21 @@ function GuideCard({
       type="button"
       className="btn flex w-full text-left relative overflow-hidden"
       style={{
-        borderRadius: 22,
-        border: `2px solid ${isActive ? guide.accent : 'var(--line)'}`,
+        borderRadius: 3,
+        border: `1px solid ${isActive ? guide.accent : 'var(--line)'}`,
         background: isActive
-          ? `linear-gradient(135deg, ${guide.accentSoft} 0%, #FFFDF9 70%)`
-          : 'var(--paper)',
-        boxShadow: isActive ? `0 8px 24px ${guide.accentDim}` : 'none',
+          ? `linear-gradient(135deg, ${guide.accentSoft} 0%, transparent 65%)`
+          : 'transparent',
         padding: '14px',
-        transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
+        transition: 'border-color 0.2s ease, background 0.2s ease',
       }}
       onClick={() => onSelect(guide.id)}
     >
       {/* ── портрет ── */}
       <div className="flex-shrink-0 w-[72px] h-[72px] relative">
         <div
-          className="w-full h-full guide-portrait-frame"
-          style={{ borderRadius: 16, border: `2px solid ${isActive ? guide.accent : 'var(--line-strong)'}` }}
+          className="w-full h-full guide-portrait-frame pixel-brackets"
+          style={{ border: `1px solid ${isActive ? guide.accent : 'var(--line-strong)'}` }}
         >
           <img
             src={guide.portrait}
@@ -144,8 +141,8 @@ function GuideCard({
         </div>
         {isActive && (
           <span
-            className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full flex items-center justify-center text-[10px] text-white font-bold"
-            style={{ backgroundColor: guide.accent, boxShadow: '0 0 0 2.5px #FFFDF9' }}
+            className="absolute -top-1.5 -right-1.5 w-5 h-5 flex items-center justify-center text-[10px] font-bold"
+            style={{ backgroundColor: guide.accent, color: 'var(--paper-bright)', borderRadius: 2 }}
             aria-hidden="true"
           >
             ✓
@@ -156,10 +153,10 @@ function GuideCard({
       {/* ── текст ── */}
       <div className="flex-1 min-w-0 pl-3.5 flex flex-col justify-center">
         <span className="flex items-baseline gap-2 flex-wrap">
-          <span className="font-serif text-[21px] font-semibold text-[color:var(--ink)] leading-none">
+          <span className="font-serif text-[22px] font-semibold text-[color:var(--ink)] leading-none">
             {guide.name}
           </span>
-          <span className="font-serif italic text-[13px]" style={{ color: guide.accent }}>
+          <span className="font-serif italic text-[13.5px]" style={{ color: guide.accentDeep }}>
             {guide.title}
           </span>
         </span>
@@ -169,19 +166,11 @@ function GuideCard({
         <span className="font-serif italic text-[13.5px] mt-1.5 leading-snug" style={{ color: guide.accentDeep }}>
           «{guide.greeting}»
         </span>
-        {/* настроения — настроения проводницы меняются от расклада к раскладу */}
-        <span className="flex flex-wrap gap-1 mt-2">
+        {/* настроения проводницы */}
+        <span className="flex flex-wrap gap-x-2 gap-y-1 mt-2">
           {guide.moodNames.map((m) => (
-            <span
-              key={m}
-              className="font-pixel text-[8px] tracking-wide px-2 py-0.5 rounded-full"
-              style={{
-                background: guide.accentSoft,
-                color: guide.accentDeep,
-                border: `1px solid ${guide.accentDim}`,
-              }}
-            >
-              {m}
+            <span key={m} className="tech-label" style={{ color: guide.accentDeep, opacity: 0.85 }}>
+              · {m}
             </span>
           ))}
         </span>

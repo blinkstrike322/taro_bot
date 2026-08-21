@@ -196,23 +196,19 @@ export default function CalendarModal({ isOpen, onClose, initData }: CalendarMod
       <div
         className="w-full max-w-[440px] m-3 relative modal-frame"
         style={{
-          background: 'var(--paper)',
-          borderRadius: 26,
-          border: '1.5px solid var(--line-strong)',
+          background: 'var(--paper-bright)',
+          borderRadius: 5,
+          border: '1px solid var(--line-strong)',
           maxHeight: '86dvh',
           overflowY: 'auto',
         }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* шапка */}
-        <div className="sticky top-0 z-20 px-5 pt-4 pb-3" style={{ background: 'var(--paper)', borderBottom: '1px solid var(--line)' }}>
+        <div className="sticky top-0 z-20 px-5 pt-4 pb-3" style={{ background: 'var(--paper-bright)', borderBottom: '1px solid var(--line-strong)' }}>
           <div className="flex items-center justify-between">
-            <div className="font-serif text-[26px] font-semibold text-[color:var(--ink)] leading-none">
-              История
-            </div>
-            <span className="font-pixel text-[8px] tracking-[0.18em] uppercase text-[color:var(--ink-faint)]">
-              ✦ твой путь в картах
-            </span>
+            <div className="display-xl !text-[30px]">история</div>
+            <span className="tech-label">твой путь в картах</span>
           </div>
           <div className="font-serif italic text-[14px] mt-1 text-[color:var(--ink-soft)]">
             каждый день оставил след. выбери дату, чтобы вернуться.
@@ -225,25 +221,23 @@ export default function CalendarModal({ isOpen, onClose, initData }: CalendarMod
             <div className="flex items-center justify-between mb-3">
               <button
                 type="button"
-                className="btn font-sans text-[14px] text-[color:var(--ink)] w-9 h-9 rounded-full flex items-center justify-center"
-                style={{ background: 'var(--paper)', border: '1.5px solid var(--line-strong)' }}
+                className="btn nav-word !text-[13px]"
                 onClick={handlePrevMonth}
                 aria-label="Предыдущий месяц"
               >
-                ‹
+                ‹ назад
               </button>
-              <div className="font-serif text-[19px] font-semibold text-[color:var(--ink)] text-center leading-tight">
-                {MONTH_NAMES[month]}<br />
-                <span className="font-pixel text-[9px] tracking-[0.2em] text-[color:var(--ink-faint)]">{year}</span>
+              <div className="font-serif text-[20px] font-semibold text-[color:var(--ink)] text-center leading-tight">
+                {MONTH_NAMES[month].toLowerCase()}<br />
+                <span className="tech-label">{year}</span>
               </div>
               <button
                 type="button"
-                className="btn font-sans text-[14px] text-[color:var(--ink)] w-9 h-9 rounded-full flex items-center justify-center"
-                style={{ background: 'var(--paper)', border: '1.5px solid var(--line-strong)' }}
+                className="btn nav-word !text-[13px]"
                 onClick={handleNextMonth}
                 aria-label="Следующий месяц"
               >
-                ›
+                вперёд ›
               </button>
             </div>
 
@@ -270,20 +264,15 @@ export default function CalendarModal({ isOpen, onClose, initData }: CalendarMod
                   <button
                     key={day}
                     type="button"
-                    className={`btn flex flex-col items-center justify-center aspect-square rounded-2xl font-sans text-[13px] font-semibold relative ${
-                      isToday
-                        ? 'text-[color:var(--ink)]'
-                        : hasReadings
-                        ? 'text-[color:var(--ink)]'
-                        : 'text-[color:var(--ink-faint)]'
-                    }`}
+                    className={`btn flex flex-col items-center justify-center aspect-square font-sans text-[13px] font-semibold relative ${isToday ? 'text-[color:var(--ink)]' : hasReadings ? 'text-[color:var(--ink)]' : 'text-[color:var(--ink-faint)]'}`}
                     style={{
+                      borderRadius: 2,
                       background: isToday
-                        ? 'linear-gradient(135deg, #F0EAFB 0%, #FBE7ED 100%)'
+                        ? 'rgba(207, 201, 221, 0.45)'
                         : hasReadings
-                        ? 'rgba(240, 234, 251, 0.6)'
+                        ? 'rgba(217, 223, 234, 0.3)'
                         : 'transparent',
-                      border: `1.5px solid ${isToday ? '#8E6CC8' : hasReadings ? 'rgba(142,108,200,0.3)' : 'var(--line)'}`,
+                      border: `1px solid ${isToday ? '#8D89C0' : hasReadings ? 'rgba(141,137,192,0.35)' : 'var(--line)'}`,
                     }}
                     onClick={() => setSelectedDay(day)}
                   >

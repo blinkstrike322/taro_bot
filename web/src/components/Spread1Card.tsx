@@ -65,16 +65,17 @@ export default function Spread1Card({ apiCall, characterId, onError }: Spread1Ca
       return (
         <div className="flex flex-col items-center py-4 px-3 w-full h-full">
           <div className="flex-1 min-h-0 flex flex-col items-center justify-center w-full">
-            <div className="w-full max-w-[280px] sm:max-w-[340px]">
+            <div className="w-full max-w-[290px] sm:max-w-[336px]" style={{ transform: 'rotate(-2deg)' }}>
               <Card
                 card={card}
                 position="ТВОЯ КАРТА"
                 flipped={false}
                 onFlip={handleFlip}
+                tilt={-2}
                 characterId={characterId}
               />
             </div>
-            <div className="font-pixel text-[11px] text-[color:var(--ink-soft)] mt-4 blink flex-shrink-0 tracking-[0.14em]">
+            <div className="tech-label mt-4 blink">
               коснись карты
             </div>
           </div>
@@ -85,10 +86,11 @@ export default function Spread1Card({ apiCall, characterId, onError }: Spread1Ca
     return (
       <div className="flex flex-col items-center py-4 px-3 w-full">
         {/* компактная карта сверху */}
-        <div className="w-full max-w-[240px] sm:max-w-[280px] flex-shrink-0 pb-4">
+        <div className="w-full max-w-[290px] sm:max-w-[336px] flex-shrink-0 pb-4" style={{ transform: 'rotate(-1.2deg)' }}>
           <Card
             card={card}
             flipped={true}
+            tilt={-1.2}
             characterId={characterId}
           />
         </div>

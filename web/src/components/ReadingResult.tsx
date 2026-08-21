@@ -2,6 +2,7 @@
 
 import { getGuide } from '@/lib/guides';
 import FollowupChat from './FollowupChat';
+import PixelFlower from './PixelFlower';
 
 interface Interpretation {
   intro: string;
@@ -21,34 +22,36 @@ export default function ReadingResult({ interpretation, characterId, readingId =
   const guide = getGuide(characterId);
 
   return (
-    <div className="px-3 pb-4">
-      <div className="section-label mb-2">
-        <span>Толкование</span>
+    <div className="px-5 pb-5 relative">
+      {/* едва заметный цветок на полях толкования */}
+      <div
+        className="absolute pointer-events-none"
+        style={{ top: '6%', right: '-26%', width: '200px', height: '200px' }}
+        aria-hidden="true"
+      >
+        <PixelFlower seed={17} size={260} color={guide.accent} opacity={0.13} />
+      </div>
+
+      <div className="section-label mb-3 relative z-10">
+        <span>толкование</span>
       </div>
 
       <div
-        className="relative reading-card noise-bg p-4"
+        className="relative reading-card noise-bg px-1 py-4"
         style={{
           '--guide-accent': guide.accent,
           '--guide-accent-deep': guide.accentDeep,
           '--guide-accent-dim': guide.accentDim,
         } as React.CSSProperties}
       >
-        {/* мягкий пастельный отсвет сверху */}
-        <div
-          className="absolute inset-x-0 top-0 h-20 pointer-events-none"
-          style={{
-            background: `linear-gradient(180deg, ${guide.accentSoft} 0%, transparent 100%)`,
-            opacity: 0.7,
-          }}
-          aria-hidden="true"
-        />
-
-        {/* вступление — голос проводницы */}
+        {/* интро — голос проводницы крупным курсивом с засечкой-кавычкой */}
         {intro && (
-          <p className="font-serif italic text-[19px] leading-snug relative z-10 mb-3" style={{ color: guide.accentDeep }}>
-            {intro}
-          </p>
+          <div className="relative z-10 mb-3 flex gap-2">
+            <span className="quote-mark" style={{ color: guide.accentDeep }} aria-hidden="true">«</span>
+            <p className="font-serif italic text-[21px] leading-snug pt-2" style={{ color: guide.accentDeep }}>
+              {intro}
+            </p>
+          </div>
         )}
 
         {/* главное толкование */}
@@ -69,20 +72,13 @@ export default function ReadingResult({ interpretation, characterId, readingId =
           </div>
         )}
 
-        {/* совет — отдельная пастельная карточка */}
+        {/* совет — маргиналия на линии */}
         {advice && (
-          <div
-            className="mt-4 relative z-10 p-3.5"
-            style={{
-              background: guide.accentSoft,
-              borderRadius: 16,
-              border: `1px dashed ${guide.accentDim}`,
-            }}
-          >
-            <div className="font-pixel text-[9px] tracking-[0.2em] uppercase mb-1.5" style={{ color: guide.accentDeep }}>
-              ✦ {guide.id === 'ruin_keeper' ? 'Слово Весты' : guide.id === 'spark_of_chaos' ? 'От Лилит' : 'Шёпот Селены'}
+          <div className="marginalia mt-4 pt-0.5 relative z-10">
+            <div className="tech-label mb-1" style={{ color: guide.accentDeep }}>
+              {guide.id === 'ruin_keeper' ? 'слово весты' : guide.id === 'spark_of_chaos' ? 'от лилит' : 'шёпот селены'}
             </div>
-            <p className="font-serif text-[17px] font-semibold leading-snug" style={{ color: 'var(--ink)' }}>
+            <p className="font-serif text-[18px] font-semibold leading-snug" style={{ color: 'var(--ink)' }}>
               {advice}
             </p>
           </div>

@@ -63,10 +63,10 @@ export const GUIDES: Record<string, GuideMeta> = {
       'Тс-с. Я уже слышу твой вопрос.',
       'Проходи. Вода в чаше ещё не остыла.',
     ],
-    accent: '#8E6CC8',
-    accentDim: 'rgba(142, 108, 200, 0.16)',
-    accentSoft: '#F0EAFB',
-    accentDeep: '#6C4BA4',
+    accent: '#8D89C0',
+    accentDim: 'rgba(141, 137, 192, 0.20)',
+    accentSoft: '#E7E5F0',
+    accentDeep: '#66629B',
     portrait: '/guides/shadow_walker.png',
     cardBack: '/cards/backs/back_shadow_walker.png',
     cardBackVersion: 2,
@@ -74,9 +74,9 @@ export const GUIDES: Record<string, GuideMeta> = {
     auraAlphabet: '·•✦✧☾☽◯◌○◇◎°~ﾟ❋',
     ambientSymbols: ['☾', '☽', '✦', '✧', '◌', '○', '◇', '❋'],
     ambientPattern:
-      'radial-gradient(ellipse at 20% 20%, rgba(142,108,200,0.12) 0%, transparent 55%),' +
-      'radial-gradient(ellipse at 85% 75%, rgba(246,200,222,0.14) 0%, transparent 55%),' +
-      'radial-gradient(ellipse at 60% 10%, rgba(191,217,238,0.12) 0%, transparent 50%)',
+      'radial-gradient(ellipse at 20% 20%, rgba(141,137,192,0.14) 0%, transparent 55%),' +
+      'radial-gradient(ellipse at 85% 75%, rgba(207,201,221,0.18) 0%, transparent 55%),' +
+      'radial-gradient(ellipse at 60% 10%, rgba(217,223,234,0.16) 0%, transparent 50%)',
     subtitle: 'луна · вода · сны',
     loadingPhrase: 'луна слушает...',
     moodNames: ['светлая луна', 'туманная ночь', 'гроза', 'прилив'],
@@ -99,10 +99,10 @@ export const GUIDES: Record<string, GuideMeta> = {
       'Хлеб на столе, соль в плошке. Говори.',
       'Я ждала тебя. Огонь не зря трещал с утра.',
     ],
-    accent: '#B57E3E',
-    accentDim: 'rgba(181, 126, 62, 0.16)',
-    accentSoft: '#F8EEE0',
-    accentDeep: '#8F5E28',
+    accent: '#A8926F',
+    accentDim: 'rgba(168, 146, 111, 0.20)',
+    accentSoft: '#EEE9DF',
+    accentDeep: '#83705C',
     portrait: '/guides/ruin_keeper.png',
     cardBack: '/cards/backs/back_ruin_keeper.png',
     cardBackVersion: 2,
@@ -110,9 +110,9 @@ export const GUIDES: Record<string, GuideMeta> = {
     auraAlphabet: '·•☦☥◈☱☲☳βα∅✚◯◇◎°~∴',
     ambientSymbols: ['☰', '☥', '◈', '⚹', '∴', '◇', '◯', '·'],
     ambientPattern:
-      'radial-gradient(ellipse at 50% 15%, rgba(181,126,62,0.12) 0%, transparent 55%),' +
-      'radial-gradient(ellipse at 15% 80%, rgba(248,200,160,0.16) 0%, transparent 55%),' +
-      'radial-gradient(ellipse at 85% 60%, rgba(191,227,208,0.12) 0%, transparent 50%)',
+      'radial-gradient(ellipse at 50% 15%, rgba(168,146,111,0.14) 0%, transparent 55%),' +
+      'radial-gradient(ellipse at 15% 80%, rgba(238,233,223,0.5) 0%, transparent 55%),' +
+      'radial-gradient(ellipse at 85% 60%, rgba(217,223,234,0.18) 0%, transparent 50%)',
     subtitle: 'очаг · янтарь · хлеб',
     loadingPhrase: 'очаг разгорается...',
     moodNames: ['тёплый очаг', 'янтарный полдень', 'камень', 'вечерний дым'],
@@ -135,10 +135,10 @@ export const GUIDES: Record<string, GuideMeta> = {
       'Ставлю свою искру: вопрос у тебя интересный.',
       'Ты вовремя. Мне как раз было скучно.',
     ],
-    accent: '#D14D76',
-    accentDim: 'rgba(209, 77, 118, 0.16)',
-    accentSoft: '#FBE7ED',
-    accentDeep: '#A93460',
+    accent: '#BC8399',
+    accentDim: 'rgba(188, 131, 153, 0.20)',
+    accentSoft: '#F0E6EA',
+    accentDeep: '#97657A',
     portrait: '/guides/spark_of_chaos.png',
     cardBack: '/cards/backs/back_spark_of_chaos.png',
     cardBackVersion: 2,
@@ -146,9 +146,9 @@ export const GUIDES: Record<string, GuideMeta> = {
     auraAlphabet: '·•⌇∾◇◎∘○※✕❦‡°~ﾟ',
     ambientSymbols: ['⌇', '∾', '※', '✕', '❦', '∘', '·', '•'],
     ambientPattern:
-      'radial-gradient(ellipse at 75% 25%, rgba(209,77,118,0.12) 0%, transparent 52%),' +
-      'radial-gradient(ellipse at 20% 70%, rgba(248,200,160,0.14) 0%, transparent 52%),' +
-      'radial-gradient(ellipse at 45% 90%, rgba(191,217,238,0.10) 0%, transparent 50%)',
+      'radial-gradient(ellipse at 75% 25%, rgba(188,131,153,0.14) 0%, transparent 52%),' +
+      'radial-gradient(ellipse at 20% 70%, rgba(207,201,221,0.18) 0%, transparent 52%),' +
+      'radial-gradient(ellipse at 45% 90%, rgba(217,223,234,0.14) 0%, transparent 50%)',
     subtitle: 'искра · вишня · смех',
     loadingPhrase: 'искра зажигается...',
     moodNames: ['искры', 'тихий огонь', 'шторм', 'полуночный смех'],

@@ -3,9 +3,9 @@ import Script from 'next/script';
 
 export default function Document() {
   return (
-    <Html lang="ru" style={{ background: '#FBF5EE' }}>
+    <Html lang="ru" style={{ background: '#F2F0F4' }}>
       <Head>
-        <meta name="theme-color" content="#FBF5EE" />
+        <meta name="theme-color" content="#F2F0F4" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
@@ -13,7 +13,7 @@ export default function Document() {
           rel="stylesheet"
         />
       </Head>
-      <body style={{ background: '#FBF5EE', color: '#43304E' }}>
+      <body style={{ background: '#F2F0F4', color: '#373A4D' }}>
         <Main />
         <NextScript />
         <Script

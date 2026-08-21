@@ -1,13 +1,12 @@
 /* ================================================================
-   AMO TAROT · globals.css
-   «Lumière» — светлая мистическая тема для женской аудитории.
-   Основа: слоновая кость + пастель (лаванда, роза, персик, золото).
-   Дизайн-концепты прошлой версии сохранены: дизеринг, пиксель-дух,
-   скан-текстура, сигилы — но в светлом, мягком, гладком ключе.
+   arcanum.ocv · globals.css
+   Дизайн-направление: botanical pixel surrealism / editorial occult.
+   Палитра: пыльно-голубой, выцветшая лаванда, бледный лиловый,
+   off-white, тёплый серый. Слои: атмосфера → зерно → пиксель-сетка.
+   UI не должен выглядеть как UI: никаких пилюль и одинаковых карточек.
    Tailwind v4
    ================================================================ */
 
-/* ---------- Tailwind v4 ---------- */
 @import "tailwindcss";
 
 /* ---------- Tailwind v4 theme tokens ---------- */
@@ -16,39 +15,37 @@
   --font-serif: 'Cormorant Garamond', Georgia, serif;
   --font-sans: 'Manrope', system-ui, sans-serif;
   --font-system: 'Pixelify Sans', monospace;
-
-  --color-ink: #43304e;
-  --color-ink-soft: #8b7a94;
-  --color-paper: #fffdf9;
-  --color-cream: #fbf5ee;
 }
 
 /* ---------- Design tokens ---------- */
 :root {
-  --ink: #43304e;
-  --ink-soft: #8b7a94;
-  --ink-faint: rgba(67, 48, 78, 0.45);
-  --line: rgba(67, 48, 78, 0.14);
-  --line-strong: rgba(67, 48, 78, 0.28);
-  --paper: #fffdf9;
-  --bg: #fbf5ee;
+  /* бумага и чернила */
+  --paper: #f2f0f4;          /* off-white с лиловой пылью */
+  --paper-bright: #f8f6f9;
+  --ink: #373a4d;            /* глубокий сине-фиолетовый графит */
+  --ink-soft: #7b7e8f;
+  --ink-faint: rgba(55, 58, 77, 0.42);
+  --line: rgba(55, 58, 77, 0.18);
+  --line-strong: rgba(55, 58, 77, 0.38);
 
-  --rose: #d14d76;
-  --rose-soft: #fbe7ed;
-  --lavender: #8e6cc8;
-  --lavender-soft: #f0eafb;
-  --gold: #b57e3e;
-  --gold-soft: #f8eee0;
-  --peach: #f2b98a;
-  --mint: #9ed0bb;
-  --sky: #a9c8e6;
+  /* атмосферная пыль */
+  --mist: #d9dfea;           /* misty blue */
+  --dust: #cfc9dd;           /* dusty lavender */
+  --lilac: #c2b6d6;          /* pale lilac */
+  --silver: #aea9ba;         /* muted silver */
+  --deep: #4a4e6d;           /* deep blue-violet */
+  --accent: #6f6ca4;         /* приглушённый фиолетово-синий акцент */
 
-  --shadow-soft: 0 6px 24px rgba(139, 122, 148, 0.16);
-  --shadow-card: 0 10px 30px rgba(139, 122, 148, 0.22);
-  --radius-card: 18px;
+  --shadow-diffuse: 0 18px 50px rgba(74, 78, 109, 0.16);
+  --shadow-soft: 0 8px 26px rgba(74, 78, 109, 0.14);
 }
 
-/* ---------- Base resets ---------- */
+::selection {
+  background: rgba(111, 108, 164, 0.28);
+  color: var(--ink);
+}
+
+/* ---------- Base ---------- */
 html {
   -webkit-tap-highlight-color: transparent;
   overflow-x: hidden;
@@ -57,12 +54,11 @@ html {
 }
 
 body {
-  background: var(--bg);
+  background: var(--paper);
   color: var(--ink);
   margin: 0;
   padding: 0;
   height: var(--app-height, 100dvh);
-  /* Layout handles its own scroll */
   overflow: hidden;
   max-width: 100vw;
   font-family: var(--font-sans), system-ui, sans-serif;
@@ -71,93 +67,140 @@ body {
   text-rendering: optimizeLegibility;
 }
 
-::selection {
-  background: rgba(142, 108, 200, 0.25);
-  color: var(--ink);
-}
-
-/* Thin pastel scrollbars */
 *::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 *::-webkit-scrollbar-track {
   background: transparent;
 }
 *::-webkit-scrollbar-thumb {
-  background: rgba(139, 122, 148, 0.25);
+  background: rgba(123, 126, 143, 0.3);
   border-radius: 999px;
 }
 
 /* ================================================================
-   APP SHELL — aurora bg + dream scanlines (концепт CRT, светлый)
+   APP SHELL — многослойный фон: атмосфера + зерно + пиксель-сетка
    ================================================================ */
 .crt {
   position: relative;
   overflow: visible;
 }
 
-/* тонкая скан-текстура — оммаж пиксель-эстетике */
+/* тонкая скан-текстура страницы */
 .crt::before {
   content: "";
   position: absolute;
   inset: 0;
   z-index: 40;
   background:
-    repeating-linear-gradient(0deg, transparent 0px, transparent 3px, rgba(67, 48, 78, 0.018) 3px, rgba(67, 48, 78, 0.018) 4px);
+    repeating-linear-gradient(0deg, transparent 0px, transparent 3px, rgba(55, 58, 77, 0.014) 3px, rgba(55, 58, 77, 0.014) 4px);
   pointer-events: none;
 }
 
-/* мягкий световой проход */
+/* медленный световой проход, как облако над страницей */
 .crt::after {
   content: "";
   position: absolute;
   left: 0;
   right: 0;
-  height: 90px;
+  height: 110px;
   z-index: 41;
-  background: linear-gradient(to bottom, transparent, rgba(255, 255, 255, 0.35), transparent);
+  background: linear-gradient(to bottom, transparent, rgba(248, 246, 249, 0.5), transparent);
   pointer-events: none;
-  animation: roll 9s linear infinite;
+  animation: roll 11s linear infinite;
 }
 
 @keyframes roll {
-  0%   { top: -90px; }
+  0%   { top: -110px; }
   100% { top: 100%; }
 }
 
-/* Аврора-фон — пастельные пятна света */
+/* Слои фона:
+   1. атмосферные переходы mist→dust→lilac→paper
+   2. пиксель-сетка 8px (техническая, едва заметная)
+   3. зерно печати */
 .app-bg {
   position: fixed;
   inset: 0;
   z-index: -1;
   pointer-events: none;
   background:
-    radial-gradient(ellipse 60% 40% at 15% 8%, rgba(142, 108, 200, 0.13) 0%, transparent 60%),
-    radial-gradient(ellipse 55% 45% at 90% 20%, rgba(246, 200, 222, 0.20) 0%, transparent 60%),
-    radial-gradient(ellipse 65% 40% at 50% 100%, rgba(242, 185, 138, 0.16) 0%, transparent 65%),
-    radial-gradient(ellipse 45% 35% at 85% 85%, rgba(158, 208, 187, 0.14) 0%, transparent 60%),
-    var(--bg);
+    /* 2. pixel grid */
+    repeating-linear-gradient(0deg, rgba(55, 58, 77, 0.016) 0 1px, transparent 1px 8px),
+    repeating-linear-gradient(90deg, rgba(55, 58, 77, 0.016) 0 1px, transparent 1px 8px),
+    /* 1. атмосфера */
+    radial-gradient(ellipse 70% 45% at 12% 4%, rgba(217, 223, 234, 0.75) 0%, transparent 62%),
+    radial-gradient(ellipse 60% 50% at 95% 18%, rgba(207, 201, 221, 0.6) 0%, transparent 60%),
+    radial-gradient(ellipse 75% 45% at 45% 108%, rgba(194, 182, 214, 0.5) 0%, transparent 65%),
+    radial-gradient(ellipse 45% 35% at 92% 88%, rgba(217, 223, 234, 0.45) 0%, transparent 60%),
+    var(--paper);
+}
+
+.app-bg::after {
+  /* 3. зерно */
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 140px 140px;
+  mix-blend-mode: multiply;
 }
 
 /* ================================================================
-   DITHER / HALFTONE — концепт дизеринга, чернила по сливкам
+   EDITORIAL TYPOGRAPHY
+   ================================================================ */
+.display-hero {
+  font-family: var(--font-serif);
+  font-weight: 500;
+  font-size: clamp(44px, 13vw, 68px);
+  line-height: 0.95;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  text-transform: lowercase;
+}
+
+.display-xl {
+  font-family: var(--font-serif);
+  font-weight: 500;
+  font-size: clamp(34px, 9vw, 46px);
+  line-height: 1.02;
+  color: var(--ink);
+}
+
+.tech-label {
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+/* ================================================================
+   DITHER / HALFTONE — растровые текстуры
    ================================================================ */
 .dither-fill {
   background: repeating-conic-gradient(var(--ink) 0% 25%, transparent 0% 50%) 0 0 / 3px 3px;
-  opacity: 0.22;
+  opacity: 0.2;
 }
 
+/* линейный дизер-разделитель: точки сгущаются к центру */
 .dither-bar {
-  height: 6px;
+  height: 5px;
   background:
-    radial-gradient(circle, var(--ink-faint) 1px, transparent 1.2px) 0 0 / 6px 6px;
-  opacity: 0.35;
+    radial-gradient(circle, var(--ink-faint) 0.8px, transparent 1.1px) 0 1px / 5px 3px repeat-x,
+    radial-gradient(circle, var(--ink-faint) 0.8px, transparent 1.1px) 100% 1px / 5px 3px repeat-x;
+  opacity: 0.3;
 }
 
-/* halftone / dither treatment for generated art */
+.rule-h {
+  height: 1px;
+  background: var(--line-strong);
+}
+
 .dither-img {
-  filter: grayscale(1) contrast(1.25) brightness(1.02);
+  filter: grayscale(1) contrast(1.22) brightness(1.02);
 }
 
 .scan-soft::after {
@@ -165,13 +208,12 @@ body {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background: repeating-linear-gradient(to bottom, rgba(0, 0, 0, 0) 0px, rgba(0, 0, 0, 0) 3px, rgba(67, 48, 78, 0.05) 4px);
+  background: repeating-linear-gradient(to bottom, rgba(0, 0, 0, 0) 0px, rgba(0, 0, 0, 0) 3px, rgba(55, 58, 77, 0.045) 4px);
   mix-blend-mode: multiply;
-  border-radius: inherit;
 }
 
 /* ================================================================
-   CARD FLIP ANIMATION — плавный, «шёлковый»
+   CARD FLIP — шёлковый, с «дыханием» при наведении
    ================================================================ */
 .flip {
   perspective: 1200px;
@@ -181,12 +223,20 @@ body {
   position: relative;
   width: 100%;
   height: 100%;
-  transition: transform .7s cubic-bezier(.25, 1, .3, 1);
+  transition: transform 0.7s cubic-bezier(0.25, 1, 0.3, 1), box-shadow 0.4s ease;
   transform-style: preserve-3d;
+  transform: rotate(var(--tilt, 0deg));
 }
 
 .flip.is-flipped .flip-inner {
-  transform: rotateY(180deg);
+  transform: rotateY(180deg) rotate(calc(var(--tilt, 0deg) * 0.3));
+}
+
+/* карта живая: лёгкий подъём + выпрямление при касании */
+.flip:not(.is-flipped):hover .flip-inner,
+.flip:not(.is-flipped):active .flip-inner {
+  transform: rotate(calc(var(--tilt, 0deg) * 0.35)) translateY(-8px);
+  box-shadow: 0 26px 60px rgba(74, 78, 109, 0.24);
 }
 
 .flip-face {
@@ -195,7 +245,6 @@ body {
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
   overflow: hidden;
-  border-radius: var(--radius-card);
 }
 
 .flip-back {
@@ -207,32 +256,61 @@ body {
 }
 
 /* ================================================================
-   CARD FRAME — белая карта с мягкой тенью и пастельным свечением
+   CARD FRAME — печатная карта с пиксель-уголками
    ================================================================ */
 .card-frame {
-  background: var(--paper);
-  border: 1.5px solid var(--line-strong);
-  border-radius: var(--radius-card);
-  box-shadow: var(--shadow-card);
+  background: var(--paper-bright);
+  border: 1px solid var(--line-strong);
+  border-radius: 4px;
+  box-shadow: var(--shadow-diffuse);
 }
 
-/* перевернутая карта — шильдик */
+/* пиксельные угловые скобки — техническая рамка */
+.pixel-brackets {
+  position: relative;
+}
+
+.pixel-brackets::before,
+.pixel-brackets::after {
+  content: "";
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  pointer-events: none;
+  z-index: 6;
+  opacity: 0.85;
+}
+
+.pixel-brackets::before {
+  top: -3px;
+  left: -3px;
+  border-top: 2px solid var(--guide-accent, var(--accent));
+  border-left: 2px solid var(--guide-accent, var(--accent));
+}
+
+.pixel-brackets::after {
+  bottom: -3px;
+  right: -3px;
+  border-bottom: 2px solid var(--guide-accent, var(--accent));
+  border-right: 2px solid var(--guide-accent, var(--accent));
+}
+
 .rev-chip {
   display: inline-flex;
   align-items: center;
   gap: 3px;
   font-family: var(--font-pixel);
   font-size: 8px;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.12em;
   padding: 2px 6px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.92);
+  border-radius: 2px;
+  background: rgba(248, 246, 249, 0.94);
   color: var(--ink);
-  box-shadow: 0 2px 8px rgba(139, 122, 148, 0.25);
+  border: 1px solid var(--line);
 }
 
 /* ================================================================
-   CARD AURA — рассеянные символы вокруг карт (пастель)
+   CARD AURA — растаявшие символы
    ================================================================ */
 .card-aura {
   position: absolute;
@@ -257,20 +335,20 @@ body {
 @keyframes aura-fade {
   0%, 100% { opacity: 0; }
   15% { opacity: var(--max-op, 0.4); }
-  50% { opacity: calc(var(--max-op, 0.4) * 0.7); }
+  50% { opacity: calc(var(--max-op, 0.4) * 0.65); }
   85% { opacity: var(--max-op, 0.4); }
 }
 
 /* ================================================================
-   FLIP SHIMMER — вспышка-мерцание при перевороте (вместо глитча)
+   FLIP SHIMMER — проявление, как при печати
    ================================================================ */
 @keyframes flip-shimmer {
-  0%   { filter: grayscale(1) contrast(1.25) brightness(1.02); transform: translate(0, 0); }
-  20%  { filter: grayscale(0.3) contrast(1.1) brightness(1.12) saturate(1.4); transform: translate(-1.5px, 1px); }
-  40%  { filter: grayscale(1) contrast(0.85) brightness(1.2); transform: translate(1.5px, -1px); }
-  60%  { filter: grayscale(0.5) contrast(1.05) brightness(1.1) saturate(1.25); transform: translate(-1px, 0); }
-  80%  { filter: grayscale(0.9) contrast(1.2) brightness(1.05); transform: translate(1px, 0.5px); }
-  100% { filter: grayscale(1) contrast(1.25) brightness(1.02); transform: translate(0, 0); }
+  0%   { filter: grayscale(1) contrast(1.22) brightness(1.02); transform: translate(0, 0); }
+  20%  { filter: grayscale(0.25) contrast(1.05) brightness(1.1) saturate(1.3); transform: translate(-1.5px, 1px); }
+  40%  { filter: grayscale(1) contrast(0.85) brightness(1.22); transform: translate(1.5px, -1px); }
+  60%  { filter: grayscale(0.5) contrast(1.05) brightness(1.12) saturate(1.2); transform: translate(-1px, 0); }
+  80%  { filter: grayscale(0.9) contrast(1.18) brightness(1.05); transform: translate(1px, 0.5px); }
+  100% { filter: grayscale(1) contrast(1.22) brightness(1.02); transform: translate(0, 0); }
 }
 
 .flip.is-flipped .flip-glitch {
@@ -278,83 +356,143 @@ body {
 }
 
 /* ================================================================
-   BUTTON — пилюля с градиентом, мягкое нажатие
+   BUTTON — типографический объект, встроенный в мир
    ================================================================ */
 .btn {
-  transition: transform 0.15s ease, box-shadow 0.2s ease, filter 0.2s ease;
+  transition: transform 0.15s ease, box-shadow 0.25s ease, background 0.25s ease, color 0.25s ease, border-color 0.25s ease;
   position: relative;
 }
 
 .btn:active {
-  transform: scale(0.96);
+  transform: translateY(1px);
 }
 
 .btn-vibe {
   position: relative;
-  border: none;
-  border-radius: 999px;
-  overflow: hidden;
+  border-radius: 2px;
+  overflow: visible;
   isolation: isolate;
-  transition: transform 0.15s ease, box-shadow 0.2s ease, filter 0.2s ease;
-  color: #fff;
-  background: linear-gradient(135deg, var(--guide-accent, #8e6cc8) 0%, var(--guide-accent-deep, #6c4ba4) 100%);
-  box-shadow: 0 6px 18px var(--guide-accent-dim, rgba(142, 108, 200, 0.35));
+  font-family: var(--font-pixel);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-size: 10px;
+  padding: 10px 16px;
+  /* чернильная плашка с дизером */
+  background: var(--ink);
+  color: var(--paper-bright);
+  border: 1px solid var(--ink);
+  transition: transform 0.15s ease, box-shadow 0.25s ease, background 0.25s ease, color 0.25s ease, border-color 0.25s ease;
 }
 
-.btn-vibe:hover {
-  filter: brightness(1.06);
-  box-shadow: 0 8px 22px var(--guide-accent-dim, rgba(142, 108, 200, 0.45));
-}
-
-.btn-vibe:active {
-  transform: scale(0.96);
-}
-
-/* лёгкий дизеринг на кнопке — пиксель-душа */
+/* растровая точка по краю кнопки — печать */
 .btn-vibe::after {
   content: "";
   position: absolute;
-  inset: 0;
+  inset: 2px;
   pointer-events: none;
   z-index: 1;
-  opacity: 0.14;
-  background:
-    radial-gradient(circle, #fff 0.5px, transparent 0.7px) 0 0 / 4px 4px;
+  opacity: 0.12;
+  background: radial-gradient(circle, var(--paper-bright) 0.5px, transparent 0.8px) 0 0 / 4px 4px;
+}
+
+/* хвост-скобки */
+.btn-vibe::before {
+  content: "";
+  position: absolute;
+  right: -6px;
+  bottom: -6px;
+  width: 7px;
+  height: 7px;
+  border-right: 2px solid var(--guide-accent, var(--accent));
+  border-bottom: 2px solid var(--guide-accent, var(--accent));
+  opacity: 0.7;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.btn-vibe:hover::before {
+  transform: translate(2px, 2px);
+  opacity: 1;
+}
+
+.btn-vibe:hover {
+  background: var(--deep);
+}
+
+.btn-vibe:active {
+  transform: translateY(1px);
 }
 
 .btn-vibe--secondary {
-  background: var(--paper);
+  background: transparent;
   color: var(--ink);
-  border: 1.5px solid var(--line-strong);
-  box-shadow: 0 4px 14px rgba(139, 122, 148, 0.14);
+  border-color: var(--line-strong);
+}
+
+.btn-vibe--secondary::after {
+  opacity: 0.1;
+  background: radial-gradient(circle, var(--ink) 0.5px, transparent 0.8px) 0 0 / 4px 4px;
 }
 
 .btn-vibe--secondary:hover {
-  background: #fff;
-  border-color: var(--guide-accent, #8e6cc8);
-  color: var(--ink);
-  box-shadow: 0 6px 18px rgba(139, 122, 148, 0.2);
+  background: rgba(217, 223, 234, 0.5);
+  border-color: var(--ink);
 }
 
 .btn-vibe:disabled,
 .btn-vibe[disabled] {
-  opacity: 0.45;
+  opacity: 0.4;
   cursor: not-allowed;
 }
 
+/* текстовая навигация — ссылки-слова, не кнопки-плашки */
+.nav-word {
+  font-family: var(--font-pixel);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  padding: 6px 2px;
+  background: transparent;
+  border: none;
+  position: relative;
+  transition: color 0.2s ease;
+}
+
+.nav-word::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 2px;
+  height: 3px;
+  background: radial-gradient(circle, var(--guide-accent, var(--accent)) 0.8px, transparent 1.1px) 0 0 / 4px 3px repeat-x;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.nav-word:hover,
+.nav-word:active {
+  color: var(--ink);
+}
+
+.nav-word:hover::after,
+.nav-word:active::after {
+  opacity: 0.8;
+}
+
 /* ================================================================
-   BLINK — мягкое дыхание
+   BLINK
    ================================================================ */
 .blink {
-  animation: blink 1.6s ease-in-out infinite;
+  animation: blink 1.8s ease-in-out infinite;
 }
 
 @keyframes blink {
-  50% { opacity: 0.25; }
+  50% { opacity: 0.3; }
 }
 
 /* ================================================================
-   TOAST — пилюля на сливках
+   TOAST
    ================================================================ */
 .toast {
   pointer-events: none;
@@ -363,15 +501,14 @@ body {
   left: 50%;
   transform: translateX(-50%);
   z-index: 50;
-  background: rgba(255, 253, 249, 0.97);
-  border: 1.5px solid var(--line-strong);
-  border-radius: 999px;
-  color: var(--ink);
+  background: var(--ink);
+  color: var(--paper-bright);
   font-family: var(--font-pixel);
   font-size: 10px;
-  letter-spacing: 0.08em;
-  padding: 0.55rem 1.1rem;
-  box-shadow: var(--shadow-soft);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 0.6rem 1.2rem;
+  border-radius: 2px;
   opacity: 0;
   transition: opacity 250ms, transform 250ms;
   white-space: nowrap;
@@ -383,15 +520,15 @@ body {
 }
 
 /* ================================================================
-   ERROR MODAL — мягкая розовая карточка
+   ERROR MODAL
    ================================================================ */
 .error-overlay {
   position: fixed;
   inset: 0;
   z-index: 100;
-  background: rgba(251, 245, 238, 0.75);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  background: rgba(55, 58, 77, 0.22);
+  backdrop-filter: blur(7px);
+  -webkit-backdrop-filter: blur(7px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -407,15 +544,15 @@ body {
 
 .error-box {
   position: relative;
-  background: var(--paper);
-  border: 1.5px solid var(--line-strong);
-  border-radius: 24px;
+  background: var(--paper-bright);
+  border: 1px solid var(--line-strong);
+  border-radius: 4px;
   max-width: 88vw;
   width: 340px;
-  padding: 2rem 1.5rem;
+  padding: 2rem 1.6rem;
   text-align: center;
   overflow: hidden;
-  box-shadow: 0 20px 50px rgba(139, 122, 148, 0.3);
+  box-shadow: var(--shadow-diffuse);
 }
 
 .error-sigil {
@@ -427,7 +564,7 @@ body {
 
 @keyframes error-sigil-pulse {
   0%, 100% { opacity: 0.6; transform: scale(1); }
-  50%      { opacity: 1; transform: scale(1.08); }
+  50%      { opacity: 1; transform: scale(1.06); }
 }
 
 .error-message {
@@ -452,42 +589,45 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.65rem 1.4rem;
-  font-size: 13px;
-  letter-spacing: 0.06em;
-  color: #fff;
-  border: none;
-  border-radius: 999px;
+  padding: 0.65rem 1.5rem;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-family: var(--font-pixel);
+  color: var(--paper-bright);
+  background: var(--ink);
+  border: 1px solid var(--ink);
+  border-radius: 2px;
   cursor: pointer;
-  background: linear-gradient(135deg, var(--rose) 0%, #a93460 100%);
-  box-shadow: 0 6px 18px rgba(209, 77, 118, 0.35);
-  transition: filter 150ms, transform 150ms;
+  transition: background 150ms, transform 150ms;
 }
 
 .error-sub-btn:hover {
-  filter: brightness(1.07);
+  background: var(--deep);
 }
 
 .error-sub-btn:active {
-  transform: scale(0.96);
+  transform: translateY(1px);
 }
 
 .error-sub-hint {
-  font-size: 10px;
+  font-size: 9px;
   color: var(--ink-faint);
-  letter-spacing: 0.1em;
+  letter-spacing: 0.12em;
   margin-top: 0.6rem;
   font-family: var(--font-pixel);
+  text-transform: uppercase;
 }
 
 .error-close-hint {
   font-size: 10px;
   color: var(--ink-faint);
-  letter-spacing: 0.08em;
+  letter-spacing: 0.14em;
   margin-top: 1rem;
   cursor: pointer;
   transition: color 150ms;
   font-family: var(--font-pixel);
+  text-transform: uppercase;
 }
 
 .error-close-hint:hover {
@@ -495,14 +635,14 @@ body {
 }
 
 /* ================================================================
-   CARD POSITION LABELS
+   CARD POSITION LABELS — технические подписи
    ================================================================ */
 .card-label {
   font-family: var(--font-pixel);
-  font-size: 11px;
+  font-size: 9px;
   color: var(--ink-soft);
   text-align: center;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
   padding-top: 0.25rem;
 }
@@ -512,26 +652,41 @@ body {
 }
 
 /* ================================================================
-   READING CARD — рамка толкования
+   READING — editorial-подача толкования: линии, не коробки
    ================================================================ */
 .reading-card {
   position: relative;
-  background: var(--paper);
-  border: 1.5px solid var(--line-strong);
-  border-radius: 22px;
-  box-shadow: var(--shadow-soft);
-  overflow: hidden;
+  background: rgba(248, 246, 249, 0.88);
+  border-top: 1px solid var(--line-strong);
+  border-bottom: 1px solid var(--line-strong);
+  padding-top: 4px;
+}
+
+/* крупная кавычка-засечка у интро */
+.quote-mark {
+  font-family: var(--font-serif);
+  font-size: 54px;
+  line-height: 0.6;
+  opacity: 0.25;
+  user-select: none;
 }
 
 .section-label {
   font-family: var(--font-pixel);
-  font-size: 10px;
-  letter-spacing: 0.22em;
+  font-size: 9px;
+  letter-spacing: 0.26em;
   color: var(--ink-faint);
   text-transform: uppercase;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+}
+
+.section-label::before {
+  content: "";
+  width: 14px;
+  height: 3px;
+  background: radial-gradient(circle, var(--guide-accent, var(--accent)) 0.8px, transparent 1.1px) 0 0 / 4px 3px repeat-x;
 }
 
 .section-label::after {
@@ -539,6 +694,23 @@ body {
   flex: 1;
   height: 1px;
   background: linear-gradient(90deg, var(--line), transparent);
+}
+
+/* маргиналия — совет на полях */
+.marginalia {
+  position: relative;
+  padding-left: 14px;
+  border-left: 1px solid var(--line-strong);
+}
+
+.marginalia::before {
+  content: "";
+  position: absolute;
+  left: -2.5px;
+  top: 0;
+  width: 4px;
+  height: 4px;
+  background: var(--guide-accent, var(--accent));
 }
 
 /* ================================================================
@@ -581,7 +753,7 @@ body {
 }
 
 /* ================================================================
-   NOISE / STATIC TEXTURE — лёгкое зерно
+   NOISE — точечное зерно на панелях
    ================================================================ */
 .noise-bg {
   position: relative;
@@ -593,7 +765,7 @@ body {
   inset: 0;
   pointer-events: none;
   z-index: 1;
-  opacity: 0.028;
+  opacity: 0.032;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
   background-repeat: repeat;
   background-size: 128px 128px;
@@ -601,12 +773,12 @@ body {
 }
 
 /* ================================================================
-   GUIDE PORTRAIT — тёмное пиксель-окно в светлой рамке
+   GUIDE PORTRAIT — тёмное пиксель-окно
    ================================================================ */
 .guide-portrait-frame {
   position: relative;
-  background: #241b2e;
-  border-radius: 12px;
+  background: #262433;
+  border-radius: 3px;
   overflow: hidden;
 }
 
@@ -620,13 +792,13 @@ body {
     to bottom,
     transparent 0px,
     transparent 2px,
-    rgba(0, 0, 0, 0.25) 2px,
-    rgba(0, 0, 0, 0.25) 3px
+    rgba(0, 0, 0, 0.22) 2px,
+    rgba(0, 0, 0, 0.22) 3px
   );
 }
 
 .guide-portrait-scan {
-  filter: grayscale(0.4) contrast(1.2) saturate(1.1);
+  filter: grayscale(0.5) contrast(1.18) saturate(0.85);
 }
 
 /* ================================================================
@@ -677,37 +849,38 @@ body {
 }
 
 /* ================================================================
-   GUIDE LOADING — танцующие точки
+   GUIDE LOADING — растровая пульсация
    ================================================================ */
 .guide-loading {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 7px;
   font-family: var(--font-pixel);
-  font-size: 11px;
-  letter-spacing: 0.16em;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
   color: var(--ink-soft);
   margin-top: 12px;
   text-align: center;
 }
 
 .guide-loading-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 999px;
-  background: var(--guide-accent, #8e6cc8);
+  width: 6px;
+  height: 6px;
+  border-radius: 1px;
+  background: var(--guide-accent, var(--accent));
   display: inline-block;
   animation: guide-loading-pulse 1.2s ease-in-out infinite;
   animation-delay: var(--dot-delay, 0s);
 }
 
 @keyframes guide-loading-pulse {
-  0%, 100% { opacity: 0.3; transform: scale(0.8); }
+  0%, 100% { opacity: 0.25; transform: scale(0.75); }
   40% { opacity: 1; transform: scale(1.25); }
 }
 
 /* ================================================================
-   CARD CORNERS + BURST (флип-эффект)
+   CARD CORNERS + BURST
    ================================================================ */
 .card-corner {
   position: absolute;
@@ -774,8 +947,7 @@ body {
   pointer-events: none;
   z-index: 7;
   opacity: 0;
-  border-radius: inherit;
-  background: radial-gradient(circle at 50% 50%, var(--guide-accent, #8e6cc8) 0%, transparent 62%);
+  background: radial-gradient(circle at 50% 50%, var(--guide-accent, var(--accent)) 0%, transparent 62%);
 }
 
 .flip.is-flipped ~ .burst-flash,
@@ -785,12 +957,12 @@ body {
 
 @keyframes burst-flash {
   0%   { opacity: 0; }
-  10%  { opacity: 0.3; }
+  10%  { opacity: 0.26; }
   100% { opacity: 0; }
 }
 
 /* ================================================================
-   GUIDE SIGIL — вращающиеся пиксель-орбиты
+   GUIDE SIGIL
    ================================================================ */
 .sigil-dot {
   animation: sigil-dot-blink var(--dot-dur, 2s) ease-in-out infinite;
@@ -838,16 +1010,25 @@ body {
 }
 
 /* ================================================================
-   WELCOME — ритуальный вход
+   PIXEL FLOWER — ботаника → пиксели → абстракция
    ================================================================ */
-.welcome-sigil-wrap {
-  position: relative;
+.pixel-flower {
+  pointer-events: none;
+  animation: flower-breathe var(--ff-dur, 14s) ease-in-out infinite;
 }
 
+@keyframes flower-breathe {
+  0%, 100% { transform: rotate(0deg) scale(1); opacity: var(--ff-op, 0.5); }
+  50%      { transform: rotate(2.5deg) scale(1.03); opacity: calc(var(--ff-op, 0.5) * 1.15); }
+}
+
+/* ================================================================
+   WELCOME — ритуальный вход
+   ================================================================ */
 .boot-log-line {
   font-family: var(--font-pixel);
-  font-size: 12px;
-  line-height: 1.5;
+  font-size: 11px;
+  line-height: 1.55;
   white-space: pre-wrap;
   word-break: break-word;
   animation: boot-line-in 0.25s ease-out;
@@ -861,26 +1042,23 @@ body {
 
 .boot-ts {
   color: var(--ink-faint);
-  font-size: 11px;
+  font-size: 10px;
 }
 
 .boot-tag {
   font-weight: 600;
-  font-size: 11px;
+  font-size: 10px;
 }
 
 .boot-msg {
   color: var(--ink);
 }
 
-.boot-log-progress .boot-bar {
-  color: var(--ink-soft);
-  letter-spacing: -1px;
-}
-
-.boot-log-progress .boot-pct {
+.boot-pct {
   color: var(--ink);
   margin-left: 4px;
+  font-family: var(--font-pixel);
+  font-size: 10px;
 }
 
 .boot-cursor {
@@ -901,21 +1079,19 @@ body {
 
 .welcome-title {
   font-family: var(--font-serif);
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  animation: welcome-title-glow 3s ease-in-out infinite;
+  animation: welcome-title-glow 4s ease-in-out infinite;
 }
 
 @keyframes welcome-title-glow {
-  0%, 100% { text-shadow: 0 0 12px rgba(142, 108, 200, 0.12); }
-  50%      { text-shadow: 0 0 22px rgba(209, 77, 118, 0.18); }
+  0%, 100% { text-shadow: 0 0 18px rgba(111, 108, 164, 0.10); }
+  50%      { text-shadow: 0 0 30px rgba(141, 137, 192, 0.16); }
 }
 
 /* ================================================================
-   MODAL FRAME
+   MODAL
    ================================================================ */
 .modal-frame {
-  box-shadow: 0 24px 60px rgba(139, 122, 148, 0.35);
+  box-shadow: 0 30px 80px rgba(55, 58, 77, 0.35);
 }
 
 .modal-overlay {
@@ -925,72 +1101,73 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(67, 48, 78, 0.32);
+  background: rgba(55, 58, 77, 0.3);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
 }
 
 /* ================================================================
-   CHAT — переписка с проводницей после расклада
+   CHAT — переписка на полях дневника
    ================================================================ */
 .chat-bubble-guide {
-  background: var(--paper);
-  border: 1.5px solid var(--line);
-  border-radius: 18px 18px 18px 6px;
-  box-shadow: 0 4px 14px rgba(139, 122, 148, 0.12);
+  background: rgba(248, 246, 249, 0.95);
+  border: 1px solid var(--line);
+  border-left: 2px solid var(--guide-accent, var(--accent));
+  border-radius: 2px;
 }
 
 .chat-bubble-user {
-  background: linear-gradient(135deg, var(--guide-accent, #8e6cc8) 0%, var(--guide-accent-deep, #6c4ba4) 100%);
-  color: #fff;
-  border-radius: 18px 18px 6px 18px;
-  box-shadow: 0 6px 16px var(--guide-accent-dim, rgba(142, 108, 200, 0.3));
+  background: var(--deep);
+  color: var(--paper-bright);
+  border-radius: 2px;
 }
 
 .chat-chip {
-  font-family: var(--font-sans);
-  font-size: 12.5px;
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 15px;
   line-height: 1.3;
   color: var(--ink);
-  background: var(--paper);
-  border: 1.5px solid var(--line-strong);
-  border-radius: 999px;
-  padding: 8px 14px;
-  box-shadow: 0 3px 10px rgba(139, 122, 148, 0.12);
-  transition: transform 0.15s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  background: transparent;
+  border: none;
+  border-bottom: 1px dashed var(--line-strong);
+  padding: 6px 2px;
+  transition: color 0.2s ease, border-color 0.2s ease;
   cursor: pointer;
+  text-align: left;
 }
 
 .chat-chip:hover {
-  transform: translateY(-1px);
-  border-color: var(--guide-accent, #8e6cc8);
-  box-shadow: 0 5px 14px var(--guide-accent-dim, rgba(142, 108, 200, 0.25));
+  color: var(--guide-accent-deep, var(--accent));
+  border-bottom-color: var(--guide-accent, var(--accent));
 }
 
 .chat-chip:active {
-  transform: scale(0.97);
+  opacity: 0.7;
 }
 
 .chat-input {
-  background: var(--paper);
-  border: 1.5px solid var(--line-strong);
-  border-radius: 999px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--line-strong);
+  border-radius: 0;
   color: var(--ink);
-  font-family: var(--font-sans);
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  font-family: var(--font-serif);
+  font-size: 16px;
+  padding: 8px 2px;
+  transition: border-color 0.2s ease;
 }
 
 .chat-input:focus {
   outline: none;
-  border-color: var(--guide-accent, #8e6cc8);
-  box-shadow: 0 0 0 4px var(--guide-accent-dim, rgba(142, 108, 200, 0.15));
+  border-bottom-color: var(--guide-accent, var(--accent));
 }
 
 .chat-input::placeholder {
   color: var(--ink-faint);
+  font-style: italic;
 }
 
-/* появление сообщений */
 .chat-msg-in {
   animation: chat-msg-in 0.3s ease-out;
 }
@@ -1001,45 +1178,30 @@ body {
 }
 
 /* ================================================================
-   PROGRESS — градиентный бар приветствия
+   PROGRESS
    ================================================================ */
 .progress-track {
-  height: 8px;
-  border-radius: 999px;
-  background: rgba(67, 48, 78, 0.08);
+  height: 5px;
+  background: rgba(55, 58, 77, 0.08);
   overflow: hidden;
+  border-radius: 0;
 }
 
 .progress-fill {
   height: 100%;
-  border-radius: 999px;
-  background: linear-gradient(90deg, #f2b98a, #d14d76, #8e6cc8);
+  background:
+    radial-gradient(circle, var(--ink) 0.7px, transparent 1px) 0 0 / 4px 4px repeat-x,
+    linear-gradient(90deg, var(--mist), var(--dust), var(--lilac));
   transition: width 0.2s ease;
 }
 
 /* ================================================================
-   MISC — пилюли, разделители
+   MISC
    ================================================================ */
 .soft-card {
-  background: var(--paper);
-  border: 1.5px solid var(--line-strong);
-  border-radius: 20px;
-  box-shadow: var(--shadow-soft);
-}
-
-.divider-sparkle {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: var(--ink-faint);
-}
-
-.divider-sparkle::before,
-.divider-sparkle::after {
-  content: "";
-  flex: 1;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, var(--line), transparent);
+  background: rgba(248, 246, 249, 0.92);
+  border: 1px solid var(--line);
+  border-radius: 4px;
 }
 
 /* ================================================================
@@ -1052,7 +1214,8 @@ body {
   .aura-char,
   .sigil-rotate-slow,
   .sigil-rotate-slow-rev,
-  .sigil-pulse {
+  .sigil-pulse,
+  .pixel-flower {
     animation: none !important;
   }
   .flip-inner {

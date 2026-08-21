@@ -55,44 +55,44 @@ export default function QuestionInput({ spreadType, onSubmit, loading = false, c
 
   return (
     <div
-      className="px-3 py-4 w-full min-h-full flex flex-col items-center"
+      className="px-6 py-5 w-full min-h-full flex flex-col items-start"
       style={{
         '--guide-accent': guide.accent,
         '--guide-accent-deep': guide.accentDeep,
         '--guide-accent-dim': guide.accentDim,
       } as React.CSSProperties}
     >
-      {/* заголовок */}
-      <div className="w-full flex-shrink-0 mb-3">
-        <div className="font-serif text-[24px] font-semibold leading-tight text-[color:var(--ink)]">
-          Что хочешь узнать?
-        </div>
-        <div className="font-pixel text-[10px] tracking-[0.18em] uppercase mt-1" style={{ color: guide.accent }}>
+      {/* editorial-заголовок */}
+      <div className="w-full flex-shrink-0">
+        <div className="tech-label" style={{ color: guide.accentDeep }}>
           ✦ {hint}
         </div>
+        <h2 className="display-xl mt-1.5">что хочешь<br />узнать?</h2>
       </div>
 
-      {/* поле вопроса */}
-      <textarea
-        value={question}
-        onChange={handleChange}
-        onKeyDown={handleKeyDown}
-        placeholder={`${guide.name} слушает — задай вопрос картам...`}
-        disabled={loading}
-        rows={3}
-        maxLength={300}
-        className="w-full soft-card text-[15px] leading-relaxed p-3.5 resize-none placeholder:text-[color:var(--ink-faint)] focus:outline-none disabled:opacity-50 flex-shrink-0 font-sans"
-        style={{ borderRadius: 18 }}
-      />
+      {/* поле вопроса — строка с пиксель-скобками */}
+      <div className="w-full flex-shrink-0 mt-5 pixel-brackets" style={{ padding: 2 }}>
+        <textarea
+          value={question}
+          onChange={handleChange}
+          onKeyDown={handleKeyDown}
+          placeholder={`${guide.name} слушает — задай вопрос картам...`}
+          disabled={loading}
+          rows={3}
+          maxLength={300}
+          className="w-full resize-none font-serif text-[19px] leading-relaxed p-3.5 placeholder:italic placeholder:text-[color:var(--ink-faint)] focus:outline-none disabled:opacity-50"
+          style={{ background: 'rgba(248,246,249,0.85)', border: '1px solid var(--line)' }}
+        />
+      </div>
 
-      {/* подсказки-вопросы */}
+      {/* подсказки — курсивные фразы с пунктиром */}
       {!loading && (
-        <div className="flex flex-wrap gap-2 mt-3 w-full flex-shrink-0">
+        <div className="flex flex-wrap gap-x-5 gap-y-0 mt-3 w-full flex-shrink-0">
           {EXAMPLE_QUESTIONS.slice(0, 4).map((q, i) => (
             <button
               key={i}
               type="button"
-              className="chat-chip !text-[12px]"
+              className="chat-chip"
               onClick={() => {
                 setQuestion(q);
                 setError('');
@@ -105,23 +105,23 @@ export default function QuestionInput({ spreadType, onSubmit, loading = false, c
       )}
 
       {error && (
-        <div className="font-pixel text-[11px] mt-2 tracking-wide text-center flex-shrink-0 animate-pulse" style={{ color: guide.accentDeep }}>
+        <div className="tech-label mt-3 animate-pulse" style={{ color: guide.accentDeep }}>
           » {error} «
         </div>
       )}
 
-      {/* ── сигил проводницы — дышит, пока пишешь вопрос ── */}
+      {/* ── сигил проводницы дышит на фоне вопроса ── */}
       <div className="flex-1 min-h-0 flex items-center justify-center w-full py-2">
         <GuideSigil guideId={characterId} />
       </div>
 
       {/* ── кнопка / загрузка ── */}
-      <div className="flex justify-center flex-shrink-0 w-full">
+      <div className="flex justify-center flex-shrink-0 w-full pb-2">
         {loading ? (
           <GuideLoading guide={guide} />
         ) : (
-          <Button onClick={handleSubmit} variant="primary" className="!px-8 !py-3 !text-[14px]">
-            Получить ответ ✦
+          <Button onClick={handleSubmit} variant="primary" className="!px-9 !py-3">
+            получить ответ
           </Button>
         )}
       </div>
