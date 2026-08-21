@@ -5,6 +5,7 @@ import { TarotCard } from './Card';
 import Card from './Card';
 import ReadingResult from './ReadingResult';
 import GuideLoading from './GuideLoading';
+import PixelFlower from './PixelFlower';
 import { getGuide } from '@/lib/guides';
 import * as API from '@/lib/api';
 
@@ -25,8 +26,15 @@ interface SpreadDailyProps {
   apiCall: () => Promise<ReadingData>;
 }
 
-const POSITIONS = ['ЭНЕРГИЯ ДНЯ', 'ВЫЗОВ ДНЯ', 'СОВЕТ ДНЯ'];
+const POSITIONS = ['энергия дня', 'вызов дня', 'совет дня'];
 const FLIP_ANIM_MS = 700;
+
+// Органичная композиция: карты будто положены рукой — наклоны, перекрытия, разные уровни
+const FAN = [
+  { w: 44, tilt: -7, dx: 0, dy: 44, z: 10, overlapR: -9 },
+  { w: 50, tilt: 2, dx: 0, dy: 0, z: 30, overlapL: -10, overlapR: -10 },
+  { w: 44, tilt: 6, dx: 0, dy: 50, z: 20, overlapL: -9 },
+];
 
 export default function SpreadDaily({ characterId, onError, apiCall }: SpreadDailyProps) {
   const [data, setData] = useState<ReadingData | null>(null);
@@ -37,7 +45,6 @@ export default function SpreadDaily({ characterId, onError, apiCall }: SpreadDai
   const sentToChat = useRef(false);
   const guide = getGuide(characterId);
 
-  // Тянем карты дня сразу — пока грузятся, рубашки мерцают
   useEffect(() => {
     let cancelled = false;
     apiCall()
@@ -60,12 +67,10 @@ export default function SpreadDaily({ characterId, onError, apiCall }: SpreadDai
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Все три карты открыты → показываем толкование
   useEffect(() => {
     if (flipped.every(Boolean)) {
       resultTimer.current = setTimeout(() => setShowResult(true), FLIP_ANIM_MS + 100);
 
-      // Отправляем итог в чат с ботом (однократно)
       if (!sentToChat.current && data) {
         sentToChat.current = true;
         try {
@@ -96,7 +101,7 @@ export default function SpreadDaily({ characterId, onError, apiCall }: SpreadDai
   }, [flipped, data]);
 
   const handleFlip = useCallback((index: number) => {
-    if (!data) return; // карты ещё тянутся
+    if (!data) return;
     setFlipped((prev) => {
       const next = [...prev];
       next[index] = true;
@@ -107,28 +112,38 @@ export default function SpreadDaily({ characterId, onError, apiCall }: SpreadDai
   const allFlipped = flipped.every(Boolean);
   const revealCount = flipped.filter(Boolean).length;
 
-  // ── Экран результата: карты остаются рядом, толкование ниже ──
+  // ── Результат: карты остаются веером, толкование editorial-лентой ниже ──
   if (showResult && data) {
     return (
-      <div className="flex flex-col items-center py-4 px-3 w-full">
-        <div className="font-serif italic text-[17px] mb-3 text-center" style={{ color: guide.accentDeep }}>
-          ✦ твой день раскладывается так ✦
+      <div className="relative flex flex-col items-center py-2 px-5 w-full">
+        <div className="tech-label self-start mb-2" style={{ color: guide.accentDeep }}>
+          ✦ твой день раскладывается так
         </div>
-        <div className="flex items-start justify-center gap-3 w-full max-w-[420px] mb-4">
+        <div className="flex items-end justify-center w-full max-w-[440px] -mt-2">
           {data.cards.map((c, i) => (
-            <div key={i} className="flex-1 min-w-0">
+            <div
+              key={i}
+              className={i === 1 ? 'z-30' : 'z-10'}
+              style={{
+                width: `${FAN[i].w}%`,
+                marginLeft: FAN[i].overlapL ? `${FAN[i].overlapL}%` : undefined,
+                marginRight: FAN[i].overlapR ? `${FAN[i].overlapR}%` : undefined,
+                transform: `translateY(${FAN[i].dy * 0.55}px)`,
+              }}
+            >
               <Card
                 card={{ ...c, image_url: `/cards/${c.id}.png` }}
                 flipped={true}
+                tilt={FAN[i].tilt * 0.6}
                 characterId={characterId}
               />
-              <div className="font-pixel text-[8px] tracking-[0.14em] uppercase text-center mt-1 text-[color:var(--ink-soft)]">
+              <div className="tech-label text-center mt-1.5" style={{ letterSpacing: '0.14em' }}>
                 {POSITIONS[i]}
               </div>
             </div>
           ))}
         </div>
-        <div className="w-full">
+        <div className="w-full mt-4">
           <ReadingResult
             interpretation={data.interpretation}
             characterId={characterId}
@@ -139,32 +154,54 @@ export default function SpreadDaily({ characterId, onError, apiCall }: SpreadDai
     );
   }
 
-  // ── Экран раскрытия: три рубашки в ряд ──
+  // ── Сцена выбора: curiosity → anticipation → reveal ──
   return (
-    <div className="flex flex-col items-center py-4 px-3 w-full min-h-full">
-      {/* приветствие проводницы */}
-      <div className="text-center mb-4 max-w-[320px] relative z-10">
-        <div className="font-serif text-[22px] font-semibold leading-tight text-[color:var(--ink)]">
-          Расклад дня
-        </div>
-        <div className="font-serif italic text-[15px] leading-snug mt-1" style={{ color: guide.accentDeep }}>
+    <div className="relative flex flex-col items-center py-3 px-5 w-full min-h-full">
+      {/* editorial-заголовок: асимметрия */}
+      <div className="w-full max-w-[460px] relative z-10">
+        <h2 className="display-xl">расклад дня</h2>
+        <div
+          className="font-serif italic text-[17px] leading-snug mt-1.5"
+          style={{ color: 'var(--ink-soft)', maxWidth: 300, transform: 'rotate(-0.8deg)' }}
+        >
           «{guide.greeting}»
         </div>
       </div>
 
+      {/* веер карт */}
       <div className="flex-1 min-h-0 flex flex-col items-center justify-center w-full">
-        <div className="flex items-start justify-center gap-3 w-full max-w-[420px]">
+        <div className="relative flex items-end justify-center w-full max-w-[460px] py-6">
+          {/* цветок прорастает из-под карт */}
+          <div
+            className="absolute pointer-events-none z-0"
+            style={{ bottom: '-30%', left: '-18%', width: '56vmin', height: '56vmin' }}
+            aria-hidden="true"
+          >
+            <PixelFlower seed={11} size={560} color={guide.accent} opacity={0.18} dense />
+          </div>
+
           {[0, 1, 2].map((i) => (
-            <div key={i} className="flex-1 min-w-0">
+            <div
+              key={i}
+              className="relative"
+              style={{
+                width: `${FAN[i].w}%`,
+                zIndex: FAN[i].z,
+                marginLeft: FAN[i].overlapL ? `${FAN[i].overlapL}%` : undefined,
+                marginRight: FAN[i].overlapR ? `${FAN[i].overlapR}%` : undefined,
+                transform: `translateY(${FAN[i].dy}px)`,
+              }}
+            >
               <Card
                 card={
                   data
                     ? { ...data.cards[i], image_url: `/cards/${data.cards[i].id}.png` }
                     : { id: `wait-${i}`, name: '', image_url: '', is_reversed: false }
                 }
-                position={POSITIONS[i]}
+                position={flipped[i] ? undefined : POSITIONS[i]}
                 flipped={flipped[i]}
                 onFlip={() => handleFlip(i)}
+                tilt={FAN[i].tilt}
                 characterId={characterId}
               />
             </div>
@@ -172,11 +209,11 @@ export default function SpreadDaily({ characterId, onError, apiCall }: SpreadDai
         </div>
 
         {/* статус-строка */}
-        <div className="mt-5 relative z-10 flex flex-col items-center gap-1.5">
+        <div className="relative z-10 flex flex-col items-center gap-1.5 pb-4">
           {fetching ? (
             <GuideLoading guide={guide} />
           ) : !allFlipped ? (
-            <div className="font-pixel text-[11px] text-[color:var(--ink-soft)] blink tracking-[0.14em]">
+            <div className="tech-label blink">
               открой все три — {3 - revealCount} осталось
             </div>
           ) : (

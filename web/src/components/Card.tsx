@@ -18,6 +18,8 @@ interface CardProps {
   flipped?: boolean;
   /** character/guide id — drives per-guide card back + accent */
   characterId?: string;
+  /** intentional rotation, degrees — organic composition */
+  tilt?: number;
 }
 
 function pseudoRand(seed: number): number {
@@ -86,6 +88,7 @@ export default function Card({
   onFlip,
   flipped = false,
   characterId,
+  tilt = 0,
 }: CardProps) {
   const guide = getGuide(characterId);
 
@@ -155,6 +158,7 @@ export default function Card({
           type="button"
           className={`flip block w-full aspect-[2/3] ${flipped ? 'is-flipped' : ''} ${raised ? 'raise card-slot-center' : ''}`}
           onClick={handleClick}
+          style={{ '--tilt': `${tilt}deg` } as React.CSSProperties}
           aria-label={position ? `${position} — перевернуть карту` : 'Перевернуть карту'}
         >
           {/* угловые символы проводницы */}
@@ -171,7 +175,7 @@ export default function Card({
             {guide.cornerSymbols.br}
           </span>
 
-          <div className="flip-inner card-frame scan-heavy">
+          <div className="flip-inner card-frame pixel-brackets scan-heavy">
             {/* ── рубашка: тёмный арт проводницы в светлой рамке ── */}
             <div className="flip-face relative overflow-hidden" style={{ background: '#241B2E' }}>
               <img
@@ -188,7 +192,7 @@ export default function Card({
             </div>
 
             {/* ── лицо: дизеринг-арт карты + шиммер при перевороте ── */}
-            <div className="flip-face flip-back bg-[#F4EFE8] scan-soft relative overflow-hidden">
+            <div className="flip-face flip-back scan-soft relative overflow-hidden" style={{ background: 'var(--paper-bright)' }}>
               <img
                 src={card.image_url}
                 alt={card.name}

@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { getGuide } from '@/lib/guides';
 import GuideSigil from './GuideSigil';
+import PixelFlower from './PixelFlower';
 
 interface WelcomeAnimationProps {
   onComplete: () => void;
@@ -13,43 +14,43 @@ interface WelcomeAnimationProps {
 // Строка ритуального входа
 interface BootLine {
   timestamp: string;
-  tag: 'ЛУНА' | 'ОЧАГ' | 'ИСКРА' | 'ТАЙНА' | 'ГОТОВО';
+  tag: string;
   text: string;
   id: number;
 }
 
-// Последовательности проводниц — тёплые, «живые»
+// Последовательности проводниц
 const BOOT_SEQUENCES: Record<string, {
-  tag: BootLine['tag'];
-  lines: { tag: BootLine['tag']; text: string }[];
+  tag: string;
+  lines: { tag: string; text: string }[];
   ready: string;
 }> = {
   shadow_walker: {
-    tag: 'ЛУНА',
+    tag: 'луна',
     lines: [
-      { tag: 'ЛУНА', text: 'зажигаю свечи' },
-      { tag: 'ТАЙНА', text: 'чаши наполняются водой' },
-      { tag: 'ЛУНА', text: 'карты слышат тебя' },
+      { tag: 'луна', text: 'зажигаю свечи' },
+      { tag: 'тайна', text: 'чаши наполняются водой' },
+      { tag: 'луна', text: 'карты слышат тебя' },
     ],
-    ready: 'луна готова ✦',
+    ready: 'луна готова',
   },
   ruin_keeper: {
-    tag: 'ОЧАГ',
+    tag: 'очаг',
     lines: [
-      { tag: 'ОЧАГ', text: 'раздуваю огонь' },
-      { tag: 'ТАЙНА', text: 'хлеб и соль на столе' },
-      { tag: 'ОЧАГ', text: 'карты разложены' },
+      { tag: 'очаг', text: 'раздуваю огонь' },
+      { tag: 'тайна', text: 'хлеб и соль на столе' },
+      { tag: 'очаг', text: 'карты разложены' },
     ],
-    ready: 'очаг горит ✦',
+    ready: 'очаг горит',
   },
   spark_of_chaos: {
-    tag: 'ИСКРА',
+    tag: 'искра',
     lines: [
-      { tag: 'ИСКРА', text: 'чиркаю спичкой' },
-      { tag: 'ТАЙНА', text: 'вишня в бокале, карты веером' },
-      { tag: 'ИСКРА', text: 'ну-с, посмотрим' },
+      { tag: 'искра', text: 'чиркаю спичкой' },
+      { tag: 'тайна', text: 'вишня в бокале, карты веером' },
+      { tag: 'искра', text: 'ну-с, посмотрим' },
     ],
-    ready: 'искра жива ✦',
+    ready: 'искра жива',
   },
 };
 
@@ -58,7 +59,7 @@ function now(): string {
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 }
 
-const TYPE_SPEED = 18; // мс на символ — быстро и ритмично
+const TYPE_SPEED = 16; // мс на символ
 
 export default function WelcomeAnimation({ onComplete, spreadType, characterId = 'shadow_walker' }: WelcomeAnimationProps) {
   const [lines, setLines] = useState<BootLine[]>([]);
@@ -68,7 +69,6 @@ export default function WelcomeAnimation({ onComplete, spreadType, characterId =
   const [typedLine, setTypedLine] = useState<{ lineId: number; text: string } | null>(null);
   const completedRef = useRef(false);
   const lineIdRef = useRef(0);
-  const logContainerRef = useRef<HTMLDivElement>(null);
 
   const guide = useMemo(() => getGuide(characterId), [characterId]);
   const boot = useMemo(() => BOOT_SEQUENCES[characterId] || BOOT_SEQUENCES.shadow_walker, [characterId]);
@@ -77,14 +77,8 @@ export default function WelcomeAnimation({ onComplete, spreadType, characterId =
     if (completedRef.current) return;
     completedRef.current = true;
     setFading(true);
-    setTimeout(onComplete, 350);
+    setTimeout(onComplete, 320);
   }, [onComplete]);
-
-  useEffect(() => {
-    if (logContainerRef.current) {
-      logContainerRef.current.scrollTop = logContainerRef.current.scrollHeight;
-    }
-  }, [lines, typedLine]);
 
   useEffect(() => {
     const timeouts: ReturnType<typeof setTimeout>[] = [];
@@ -92,7 +86,7 @@ export default function WelcomeAnimation({ onComplete, spreadType, characterId =
       timeouts.push(setTimeout(fn, delay));
     };
 
-    const typeLine = (line: BootLine, onDone: () => void, baseDelay: number) => {
+    const typeLine = (line: BootLine, baseDelay: number) => {
       schedule(() => {
         setTypedLine({ lineId: line.id, text: '' });
       }, baseDelay);
@@ -104,24 +98,23 @@ export default function WelcomeAnimation({ onComplete, spreadType, characterId =
       schedule(() => {
         setLines((prev) => [...prev, line]);
         setTypedLine(null);
-        onDone();
       }, baseDelay + line.text.length * TYPE_SPEED + 40);
     };
+
+    let cursor = 260;
 
     // ── Первая строка: приглашение проводницы ──
     const firstLine: BootLine = {
       timestamp: now(),
       tag: boot.tag,
-      text: `${guide.name} приветствует тебя`,
+      text: `${guide.name.toLowerCase()} приветствует тебя`,
       id: lineIdRef.current++,
     };
-
-    let cursor = 80;
-    typeLine(firstLine, () => {}, cursor);
-    cursor += firstLine.text.length * TYPE_SPEED + 160;
+    typeLine(firstLine, cursor);
+    cursor += firstLine.text.length * TYPE_SPEED + 140;
 
     // ── Сигил проявляется рано ──
-    schedule(() => setShowSigil(true), 500);
+    schedule(() => setShowSigil(true), 420);
 
     // ── Строки ритуала ──
     boot.lines.forEach((l) => {
@@ -131,35 +124,35 @@ export default function WelcomeAnimation({ onComplete, spreadType, characterId =
         text: l.text,
         id: lineIdRef.current++,
       };
-      typeLine(line, () => {}, cursor);
-      cursor += line.text.length * TYPE_SPEED + 120;
+      typeLine(line, cursor);
+      cursor += line.text.length * TYPE_SPEED + 110;
     });
 
     // ── Прогресс ──
     const progressLine: BootLine = {
       timestamp: now(),
-      tag: 'ТАЙНА',
+      tag: 'тайна',
       text: 'прогресс',
       id: lineIdRef.current++,
     };
     schedule(() => {
       setLines((prev) => [...prev, progressLine]);
     }, cursor);
-    cursor += 150;
+    cursor += 140;
     for (let p = 5; p <= 100; p += 5) {
-      schedule(() => setProgress(p), cursor + p * 12);
+      schedule(() => setProgress(p), cursor + p * 11);
     }
-    cursor += 100 * 12 + 150;
+    cursor += 100 * 11 + 140;
 
     // ── Готовность ──
     const readyLine: BootLine = {
       timestamp: now(),
-      tag: 'ГОТОВО',
+      tag: 'готово',
       text: boot.ready,
       id: lineIdRef.current++,
     };
-    typeLine(readyLine, () => {}, cursor);
-    cursor += readyLine.text.length * TYPE_SPEED + 420;
+    typeLine(readyLine, cursor);
+    cursor += readyLine.text.length * TYPE_SPEED + 380;
 
     schedule(() => complete(), cursor);
 
@@ -167,17 +160,14 @@ export default function WelcomeAnimation({ onComplete, spreadType, characterId =
   }, [boot, guide.name, complete]);
 
   const renderLine = (line: BootLine) => {
-    const tagColor = guide.accent;
-
-    if (line.text === 'прогресс' && line.tag === 'ТАЙНА') {
+    if (line.text === 'прогресс') {
       return (
-        <div key={line.id} className="boot-log-line boot-log-progress flex items-center gap-2">
-          <span className="boot-ts">[{line.timestamp}]</span>
-          <span className="boot-tag" style={{ color: tagColor }}>[натрой]</span>
-          <span className="progress-track flex-1 min-w-[90px] max-w-[160px]">
+        <div key={line.id} className="boot-log-line boot-log-progress flex items-center gap-2.5">
+          <span className="boot-tag" style={{ color: guide.accent }}>[натрой]</span>
+          <span className="progress-track flex-1 min-w-[100px] max-w-[180px]">
             <span className="progress-fill block" style={{ width: `${progress}%` }} />
           </span>
-          <span className="boot-pct font-pixel text-[10px]">{progress}%</span>
+          <span className="boot-pct">{progress}%</span>
         </div>
       );
     }
@@ -185,7 +175,7 @@ export default function WelcomeAnimation({ onComplete, spreadType, characterId =
     return (
       <div key={line.id} className="boot-log-line">
         <span className="boot-ts">[{line.timestamp}]</span>{' '}
-        <span className="boot-tag" style={{ color: tagColor }}>[{line.tag}]</span>{' '}
+        <span className="boot-tag" style={{ color: guide.accent }}>[{line.tag}]</span>{' '}
         <span className="boot-msg">{line.text}</span>
       </div>
     );
@@ -193,25 +183,18 @@ export default function WelcomeAnimation({ onComplete, spreadType, characterId =
 
   const renderTypedLine = () => {
     if (!typedLine) return null;
-    let tag: BootLine['tag'] = boot.tag;
-    let text = typedLine.text;
-    let ts = now();
-
-    if (typedLine.lineId === 0) {
-      tag = boot.tag;
-    } else {
+    let tag = boot.tag;
+    if (typedLine.lineId > 0) {
       const idx = typedLine.lineId - 1;
-      if (idx < boot.lines.length) {
-        tag = boot.lines[idx].tag;
-      }
+      if (idx < boot.lines.length) tag = boot.lines[idx].tag;
     }
 
     return (
       <div className="boot-log-line boot-typing">
-        <span className="boot-ts">[{ts}]</span>{' '}
+        <span className="boot-ts">[{now()}]</span>{' '}
         <span className="boot-tag" style={{ color: guide.accent }}>[{tag}]</span>{' '}
         <span className="boot-msg">
-          {text}
+          {typedLine.text}
           <span className="boot-cursor">▌</span>
         </span>
       </div>
@@ -220,45 +203,55 @@ export default function WelcomeAnimation({ onComplete, spreadType, characterId =
 
   return (
     <div
-      className={`relative flex flex-col items-center justify-start w-full min-h-full transition-opacity duration-300 overflow-hidden ${fading ? 'opacity-0' : 'opacity-100'}`}
+      className={`relative flex flex-col w-full min-h-full overflow-hidden transition-opacity duration-300 ${fading ? 'opacity-0' : 'opacity-100'}`}
       style={{
         '--guide-accent': guide.accent,
         '--guide-accent-deep': guide.accentDeep,
       } as React.CSSProperties}
     >
-      {/* ── Сигил проводницы — проявляется в центре ── */}
+      {/* ── пиксель-цветок: прорастает слева-снизу, наполовину за экраном ── */}
       <div
-        className="absolute pointer-events-none"
+        className="absolute pointer-events-none z-0"
+        style={{ bottom: '-26%', left: '-30%', width: '80vmin', height: '80vmin' }}
+        aria-hidden="true"
+      >
+        <PixelFlower seed={5} size={760} color={guide.accent} opacity={0.2} dense />
+      </div>
+
+      {/* ── сигил — едва заметная схема за героем ── */}
+      <div
+        className="absolute pointer-events-none z-0"
         style={{
-          top: '50%',
-          left: '50%',
-          transform: `translate(-50%, -50%) scale(${showSigil ? 1 : 0.72})`,
-          opacity: showSigil ? 0.55 : 0,
-          transition: 'opacity 1s ease-out, transform 1.3s ease-out',
-          width: 'min(88vw, 88vh, 440px)',
-          height: 'min(88vw, 88vh, 440px)',
+          top: '12%',
+          right: '-22%',
+          width: 'min(70vw, 420px)',
+          height: 'min(70vw, 420px)',
+          opacity: showSigil ? 0.34 : 0,
+          transform: showSigil ? 'scale(1)' : 'scale(0.8)',
+          transition: 'opacity 1.2s ease-out, transform 1.4s ease-out',
         }}
         aria-hidden="true"
       >
         <GuideSigil guideId={characterId} />
       </div>
 
-      {/* ── Заголовок бренда ── */}
-      <div className="relative z-30 pt-5 pb-3 text-center px-4">
-        <div className="welcome-title font-serif text-[34px] font-semibold text-[color:var(--ink)] leading-none">
-          Amo Tarot
-        </div>
-        <div className="font-pixel text-[9px] tracking-[0.3em] uppercase mt-2" style={{ color: guide.accent }}>
-          ✦ {guide.subtitle} ✦
+      {/* ── ГЕРОЙ: огромная строчная типографика, асимметрия ── */}
+      <div className="relative z-30 px-6 pt-8">
+        <h1 className="display-hero welcome-title">
+          arcanum
+          <span style={{ color: guide.accentDeep }}>.ocv</span>
+        </h1>
+        <div
+          className="tech-label mt-3 inline-block"
+          style={{ transform: 'rotate(-1.6deg)', color: guide.accentDeep }}
+        >
+          ✦ {guide.subtitle} · digital tarot ✦
         </div>
       </div>
 
-      {/* ── Ритуальный лог ── */}
-      <div
-        ref={logContainerRef}
-        className="relative z-30 w-full flex-1 min-h-0 overflow-y-auto px-4 pb-3"
-        style={{ scrollbarWidth: 'none' }}
-      >
+      {/* ── ритуальный лог — внизу, как техническая колонка ── */}
+      <div className="relative z-30 mt-auto px-6 pb-6">
+        <div className="rule-h mb-3" style={{ opacity: 0.5 }} />
         {lines.map(renderLine)}
         {renderTypedLine()}
       </div>

@@ -2,7 +2,6 @@
 
 import { useEffect, useCallback } from 'react';
 import Button from './Button';
-import { getGuide } from '@/lib/guides';
 
 interface CatalogModalProps {
   isOpen: boolean;
@@ -19,8 +18,7 @@ const SPREADS = [
     subtitle: '3 карты · каждый день новый',
     description: 'Энергия дня, его вызов и совет — утром узнай, как прожить день красиво.',
     hint: 'без вопроса',
-    gradient: 'linear-gradient(135deg, #F8EEE0 0%, #FBE7ED 100%)',
-    accent: '#B57E3E',
+    accent: '#83705C',
   },
   {
     type: '1' as const,
@@ -29,8 +27,7 @@ const SPREADS = [
     subtitle: 'вопрос — и прямой ответ',
     description: 'Когда нужна конкретика. Задай вопрос — карта ответит по существу.',
     hint: 'с вопросом',
-    gradient: 'linear-gradient(135deg, #F0EAFB 0%, #E3EDF9 100%)',
-    accent: '#8E6CC8',
+    accent: '#66629B',
   },
   {
     type: '3' as const,
@@ -39,14 +36,11 @@ const SPREADS = [
     subtitle: 'прошлое · настоящее · будущее',
     description: 'Связная история твоей ситуации: как ты пришла сюда и куда держишь путь.',
     hint: 'с вопросом',
-    gradient: 'linear-gradient(135deg, #FBE7ED 0%, #F0EAFB 100%)',
-    accent: '#D14D76',
+    accent: '#97657A',
   },
 ];
 
-export default function CatalogModal({ isOpen, onClose, onSelect, characterId }: CatalogModalProps) {
-  const guide = getGuide(characterId);
-
+export default function CatalogModal({ isOpen, onClose, onSelect }: CatalogModalProps) {
   const handleEsc = useCallback(
     (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -68,20 +62,18 @@ export default function CatalogModal({ isOpen, onClose, onSelect, characterId }:
       <div
         className="w-full max-w-[440px] m-3 relative modal-frame overflow-hidden"
         style={{
-          background: 'var(--paper)',
-          borderRadius: 26,
-          border: '1.5px solid var(--line-strong)',
+          background: 'var(--paper-bright)',
+          borderRadius: 5,
+          border: '1px solid var(--line-strong)',
           maxHeight: '86dvh',
           overflowY: 'auto',
         }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* шапка */}
-        <div className="sticky top-0 z-10 px-5 pt-4 pb-3" style={{ background: 'var(--paper)', borderBottom: '1px solid var(--line)' }}>
-          <div className="font-serif text-[26px] font-semibold text-[color:var(--ink)] leading-none">
-            Расклады
-          </div>
-          <div className="font-serif italic text-[15px] mt-1.5" style={{ color: guide.accentDeep }}>
+        <div className="sticky top-0 z-10 px-5 pt-4 pb-3" style={{ background: 'var(--paper-bright)', borderBottom: '1px solid var(--line-strong)' }}>
+          <div className="display-xl !text-[30px]">расклады</div>
+          <div className="font-serif italic text-[15px] mt-1 text-[color:var(--ink-soft)]">
             каждый расклад — отдельный ритуал. выбери тот, что зовёт.
           </div>
         </div>
@@ -93,10 +85,10 @@ export default function CatalogModal({ isOpen, onClose, onSelect, characterId }:
               type="button"
               className="btn flex flex-col items-start w-full text-left p-4 relative"
               style={{
-                borderRadius: 20,
-                border: '1.5px solid var(--line)',
-                background: spread.gradient,
-                transition: 'transform 0.15s ease, box-shadow 0.2s ease',
+                borderRadius: 3,
+                border: '1px solid var(--line)',
+                background: 'transparent',
+                transition: 'background 0.2s ease, border-color 0.2s ease',
               }}
               onClick={() => {
                 onSelect(spread.type);
@@ -106,20 +98,25 @@ export default function CatalogModal({ isOpen, onClose, onSelect, characterId }:
               {/* глиф + заголовок */}
               <span className="flex items-center gap-3 w-full">
                 <span
-                  className="flex items-center justify-center w-10 h-10 rounded-full flex-shrink-0 font-serif text-[19px]"
-                  style={{ background: 'rgba(255,253,249,0.9)', color: spread.accent, boxShadow: '0 3px 10px rgba(139,122,148,0.18)' }}
+                  className="flex items-center justify-center w-9 h-9 flex-shrink-0 font-serif text-[18px]"
+                  style={{
+                    background: 'transparent',
+                    border: `1px solid ${spread.accent}`,
+                    color: spread.accent,
+                    borderRadius: 2,
+                  }}
                 >
                   {spread.glyph}
                 </span>
                 <span className="flex flex-col flex-1 min-w-0">
-                  <span className="font-serif text-[20px] font-semibold text-[color:var(--ink)] leading-tight">
+                  <span className="font-serif text-[21px] font-semibold text-[color:var(--ink)] leading-tight">
                     {spread.title}
                   </span>
-                  <span className="font-pixel text-[9px] tracking-[0.12em] uppercase mt-0.5" style={{ color: spread.accent }}>
+                  <span className="tech-label mt-0.5" style={{ color: spread.accent }}>
                     {spread.subtitle}
                   </span>
                 </span>
-                <span className="font-pixel text-[8px] text-[color:var(--ink-faint)] tracking-[0.14em] uppercase flex-shrink-0">
+                <span className="tech-label flex-shrink-0" style={{ opacity: 0.7 }}>
                   {spread.hint}
                 </span>
               </span>
