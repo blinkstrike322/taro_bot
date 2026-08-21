@@ -2,41 +2,51 @@
 
 import { useEffect, useCallback } from 'react';
 import Button from './Button';
+import { getGuide } from '@/lib/guides';
 
 interface CatalogModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSelect: (type: 'daily' | '1' | '3') => void;
+  characterId?: string;
 }
 
 const SPREADS = [
   {
     type: 'daily' as const,
-    glyph: '◈',
-    title: 'КАРТА ДНЯ',
-    subtitle: 'Одна карта на весь день',
-    description: 'Что принесёт сегодняшний рассвет. Без вопроса — просто послание.',
-    hint: '· 1 КАРТА · БЕЗ ВОПРОСА',
+    glyph: '☀',
+    title: 'Расклад дня',
+    subtitle: '3 карты · каждый день новый',
+    description: 'Энергия дня, его вызов и совет — утром узнай, как прожить день красиво.',
+    hint: 'без вопроса',
+    gradient: 'linear-gradient(135deg, #F8EEE0 0%, #FBE7ED 100%)',
+    accent: '#B57E3E',
   },
   {
     type: '1' as const,
-    glyph: '◊',
-    title: 'ОДНА КАРТА',
-    subtitle: 'Прямой ответ на прямой вопрос',
-    description: 'Когда нужна конкретика. Один символ — одно послание судьбы.',
-    hint: '· 1 КАРТА · С ВОПРОСОМ',
+    glyph: '✦',
+    title: 'Одна карта',
+    subtitle: 'вопрос — и прямой ответ',
+    description: 'Когда нужна конкретика. Задай вопрос — карта ответит по существу.',
+    hint: 'с вопросом',
+    gradient: 'linear-gradient(135deg, #F0EAFB 0%, #E3EDF9 100%)',
+    accent: '#8E6CC8',
   },
   {
     type: '3' as const,
-    glyph: '✦',
-    title: 'ТРИ КАРТЫ',
-    subtitle: 'Прошлое · Настоящее · Будущее',
-    description: 'Связный рассказ о том, как ты пришёл сюда и куда держишь путь.',
-    hint: '· 3 КАРТЫ · С ВОПРОСОМ',
+    glyph: '☾',
+    title: 'Три карты',
+    subtitle: 'прошлое · настоящее · будущее',
+    description: 'Связная история твоей ситуации: как ты пришла сюда и куда держишь путь.',
+    hint: 'с вопросом',
+    gradient: 'linear-gradient(135deg, #FBE7ED 0%, #F0EAFB 100%)',
+    accent: '#D14D76',
   },
 ];
 
-export default function CatalogModal({ isOpen, onClose, onSelect }: CatalogModalProps) {
+export default function CatalogModal({ isOpen, onClose, onSelect, characterId }: CatalogModalProps) {
+  const guide = getGuide(characterId);
+
   const handleEsc = useCallback(
     (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -54,82 +64,77 @@ export default function CatalogModal({ isOpen, onClose, onSelect }: CatalogModal
   if (!isOpen) return null;
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 transition-opacity duration-200"
-      onClick={onClose}
-    >
+    <div className="modal-overlay transition-opacity duration-200" onClick={onClose}>
       <div
-        className="w-full max-w-[440px] m-2 border-4 border-white bg-black relative modal-frame"
+        className="w-full max-w-[440px] m-3 relative modal-frame overflow-hidden"
+        style={{
+          background: 'var(--paper)',
+          borderRadius: 26,
+          border: '1.5px solid var(--line-strong)',
+          maxHeight: '86dvh',
+          overflowY: 'auto',
+        }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* header bar */}
-        <div className="relative flex items-center justify-between bg-black text-white font-pixel text-[11px] leading-none px-3 py-2 border-b-2 border-white tracking-tight">
-          <span className="flex items-center gap-2">
-            <span className="text-white/50" aria-hidden="true">{'>'}</span>
-            <span>{'CATALOGUE.LOG'}</span>
-          </span>
-          <span className="blink text-white/60">█</span>
-        </div>
-
-        <div className="dither-bar" />
-
-        {/* intro caption */}
-        <div className="px-4 pt-3 pb-2">
-          <div className="font-pixel text-[10px] text-white/45 tracking-[0.18em] uppercase">
-            выбери расклад
+        {/* шапка */}
+        <div className="sticky top-0 z-10 px-5 pt-4 pb-3" style={{ background: 'var(--paper)', borderBottom: '1px solid var(--line)' }}>
+          <div className="font-serif text-[26px] font-semibold text-[color:var(--ink)] leading-none">
+            Расклады
           </div>
-          <div className="font-mono-crt text-[14px] text-white/55 italic leading-snug mt-1">
+          <div className="font-serif italic text-[15px] mt-1.5" style={{ color: guide.accentDeep }}>
             каждый расклад — отдельный ритуал. выбери тот, что зовёт.
           </div>
         </div>
 
-        <div className="flex flex-col gap-2 px-3 pb-2">
+        <div className="flex flex-col gap-3 px-4 py-4">
           {SPREADS.map((spread) => (
             <button
               key={spread.type}
               type="button"
-              className="btn-vibe-catalog btn flex flex-col items-start text-white px-4 py-3 w-full text-left transition-colors relative"
+              className="btn flex flex-col items-start w-full text-left p-4 relative"
               style={{
-                border: '2px solid rgba(255,255,255,0.3)',
-                background: 'transparent',
+                borderRadius: 20,
+                border: '1.5px solid var(--line)',
+                background: spread.gradient,
+                transition: 'transform 0.15s ease, box-shadow 0.2s ease',
               }}
               onClick={() => {
                 onSelect(spread.type);
                 onClose();
               }}
             >
-              {/* glyph + title row */}
-              <span className="flex items-center gap-2 w-full">
-                <span className="font-pixel text-[14px] text-white/80 w-5 text-center">
+              {/* глиф + заголовок */}
+              <span className="flex items-center gap-3 w-full">
+                <span
+                  className="flex items-center justify-center w-10 h-10 rounded-full flex-shrink-0 font-serif text-[19px]"
+                  style={{ background: 'rgba(255,253,249,0.9)', color: spread.accent, boxShadow: '0 3px 10px rgba(139,122,148,0.18)' }}
+                >
                   {spread.glyph}
                 </span>
-                <span className="font-pixel text-[12px] tracking-wide flex-1">
-                  {spread.title}
+                <span className="flex flex-col flex-1 min-w-0">
+                  <span className="font-serif text-[20px] font-semibold text-[color:var(--ink)] leading-tight">
+                    {spread.title}
+                  </span>
+                  <span className="font-pixel text-[9px] tracking-[0.12em] uppercase mt-0.5" style={{ color: spread.accent }}>
+                    {spread.subtitle}
+                  </span>
                 </span>
-                <span className="font-pixel text-[9px] text-white/30 tracking-[0.15em] uppercase">
+                <span className="font-pixel text-[8px] text-[color:var(--ink-faint)] tracking-[0.14em] uppercase flex-shrink-0">
                   {spread.hint}
                 </span>
               </span>
 
-              {/* description */}
-              <span className="font-mono-crt text-[14px] text-white/65 mt-2 leading-snug pl-7">
+              {/* описание */}
+              <span className="font-sans text-[13px] leading-relaxed text-[color:var(--ink)] opacity-80 mt-2.5">
                 {spread.description}
               </span>
-
-              {/* hover/active accent — bottom hairline */}
-              <span
-                className="absolute left-3 right-3 bottom-1 h-px bg-white/15"
-                aria-hidden="true"
-              />
             </button>
           ))}
         </div>
 
-        <div className="dither-bar" />
-
-        <div className="flex justify-center p-3">
+        <div className="flex justify-center p-4 pt-0">
           <Button variant="secondary" onClick={onClose}>
-            ЗАКРЫТЬ
+            Закрыть
           </Button>
         </div>
       </div>

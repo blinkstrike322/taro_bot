@@ -4,22 +4,26 @@
 export interface GuideMeta {
   id: string;
   name: string;
+  title: string;
   description: string;
   greeting: string;
+  greetings: string[];
 
-  // Visual identity
-  accent: string;            // primary accent color (single allowed deviation from B&W)
-  accentDim: string;         // dimmed variant for backgrounds / subtle accents
+  // Visual identity — feminine pastel accents over ivory base
+  accent: string;            // primary accent (text-safe on ivory)
+  accentDim: string;         // dimmed variant for glows / washes
+  accentSoft: string;        // soft tint for backgrounds / chips
+  accentDeep: string;        // deep variant for gradients
   portrait: string;          // pixel-art portrait path (square)
   cardBack: string;          // per-guide card back image path (2:3)
   cardBackVersion: number;   // bump to bust TG WebView cache when card backs change
 
   // Per-guide corner symbols (4 corners of frames/cards)
   cornerSymbols: {
-    tl: string;              // top-left
-    tr: string;              // top-right
-    bl: string;              // bottom-left
-    br: string;              // bottom-right
+    tl: string;
+    tr: string;
+    bl: string;
+    br: string;
   };
 
   // Per-guide ASCII aura alphabet (used around cards / on daily-pick)
@@ -28,86 +32,132 @@ export interface GuideMeta {
   // Per-guide ambient floating symbols (drift across background)
   ambientSymbols: string[];
 
-  // Per-guide CSS background pattern (procedural, applied to daily-pick screen)
+  // Per-guide CSS background pattern (procedural, light pastel)
   ambientPattern: string;
 
   // Per-guide header subtitle (visible in header strip)
   subtitle: string;
 
-  // Per-guide loading phrase (replaces generic "ГАДАНИЕ...")
+  // Per-guide loading phrase
   loadingPhrase: string;
 
-  // Per-guide "type" indicator (CRT-style tag)
+  // Per-guide mood names (shown in settings, mirrors backend moods)
+  moodNames: string[];
+
+  // Suggested follow-up questions in the guide's voice
+  chatChips: string[];
+
+  // Per-guide "type" indicator (retro tag)
   tag: string;
 }
 
 export const GUIDES: Record<string, GuideMeta> = {
   shadow_walker: {
     id: 'shadow_walker',
-    name: 'Странница Теней',
-    description: 'Ведьма из тёмного леса. Говорит тенями и шёпотом луны.',
-    greeting: 'Тихо. Карты уже смотрят на тебя.',
-    accent: '#7B2D8E',
-    accentDim: 'rgba(123, 45, 142, 0.18)',
+    name: 'Селена',
+    title: 'Дочь Луны',
+    description: 'Лунная сестра. Слышит твои сны раньше, чем ты их увидишь.',
+    greeting: 'Я тут. И луна тут. Спрашивай.',
+    greetings: [
+      'Я тут. И луна тут. Спрашивай.',
+      'Тс-с. Я уже слышу твой вопрос.',
+      'Проходи. Вода в чаше ещё не остыла.',
+    ],
+    accent: '#8E6CC8',
+    accentDim: 'rgba(142, 108, 200, 0.16)',
+    accentSoft: '#F0EAFB',
+    accentDeep: '#6C4BA4',
     portrait: '/guides/shadow_walker.png',
     cardBack: '/cards/backs/back_shadow_walker.png',
     cardBackVersion: 2,
-    cornerSymbols: { tl: '☾', tr: '✦', bl: '†', br: '☽' },
-    auraAlphabet: '·•✦✧☾☽◯◌○◇◎°~^ﾟ',
-    ambientSymbols: ['☾', '☽', '✦', '✧', '◌', '○', '◇', '∼'],
+    cornerSymbols: { tl: '☽', tr: '✦', bl: '❋', br: '☾' },
+    auraAlphabet: '·•✦✧☾☽◯◌○◇◎°~ﾟ❋',
+    ambientSymbols: ['☾', '☽', '✦', '✧', '◌', '○', '◇', '❋'],
     ambientPattern:
-      'radial-gradient(ellipse at 20% 30%, rgba(123,45,142,0.10) 0%, transparent 50%),' +
-      'radial-gradient(ellipse at 80% 70%, rgba(123,45,142,0.08) 0%, transparent 55%),' +
-      'repeating-linear-gradient(45deg, transparent 0px, transparent 22px, rgba(255,255,255,0.02) 22px, rgba(255,255,255,0.02) 23px)',
-    subtitle: 'ТЕНЬ · ЛУНА · ШЁПОТ',
-    loadingPhrase: 'ТЕНИ СГУЩАЮТСЯ...',
-    tag: 'SHADOW.WLK',
+      'radial-gradient(ellipse at 20% 20%, rgba(142,108,200,0.12) 0%, transparent 55%),' +
+      'radial-gradient(ellipse at 85% 75%, rgba(246,200,222,0.14) 0%, transparent 55%),' +
+      'radial-gradient(ellipse at 60% 10%, rgba(191,217,238,0.12) 0%, transparent 50%)',
+    subtitle: 'луна · вода · сны',
+    loadingPhrase: 'луна слушает...',
+    moodNames: ['светлая луна', 'туманная ночь', 'гроза', 'прилив'],
+    chatChips: [
+      'Что мне стоит почувствовать в этом раскладе?',
+      'Какая карта здесь главная?',
+      'О чём карты молчат?',
+    ],
+    tag: 'MOON.SIS',
   },
 
   ruin_keeper: {
     id: 'ruin_keeper',
-    name: 'Хранитель Руин',
-    description: 'Древний страж разрушенного. Помнит то, что все забыли.',
-    greeting: 'Камень помнит. Карты молчат. Спрашивай.',
-    accent: '#B8860B',
-    accentDim: 'rgba(184, 134, 11, 0.18)',
+    name: 'Веста',
+    title: 'Хранительница Очага',
+    description: 'Хранительница древнего очага. Скажет правду так, что её захочется услышать.',
+    greeting: 'Очаг горит. Садись ближе. Спрашивай.',
+    greetings: [
+      'Очаг горит. Садись ближе. Спрашивай.',
+      'Хлеб на столе, соль в плошке. Говори.',
+      'Я ждала тебя. Огонь не зря трещал с утра.',
+    ],
+    accent: '#B57E3E',
+    accentDim: 'rgba(181, 126, 62, 0.16)',
+    accentSoft: '#F8EEE0',
+    accentDeep: '#8F5E28',
     portrait: '/guides/ruin_keeper.png',
     cardBack: '/cards/backs/back_ruin_keeper.png',
     cardBackVersion: 2,
-    cornerSymbols: { tl: '⚰', tr: '☥', bl: '†', br: '⚹' },
-    auraAlphabet: '·•☦☨☩⚱☥⚰†‡✠✚◯◇◎°~',
-    ambientSymbols: ['⚰', '☥', '†', '⚹', '✠', '◇', '◯', '·'],
+    cornerSymbols: { tl: '☰', tr: '☥', bl: '◈', br: '⚹' },
+    auraAlphabet: '·•☦☥◈☱☲☳βα∅✚◯◇◎°~∴',
+    ambientSymbols: ['☰', '☥', '◈', '⚹', '∴', '◇', '◯', '·'],
     ambientPattern:
-      'radial-gradient(ellipse at 50% 20%, rgba(184,134,11,0.10) 0%, transparent 55%),' +
-      'radial-gradient(ellipse at 30% 80%, rgba(184,134,11,0.07) 0%, transparent 50%),' +
-      'repeating-linear-gradient(90deg, transparent 0px, transparent 32px, rgba(255,255,255,0.015) 32px, rgba(255,255,255,0.015) 33px),' +
-      'repeating-linear-gradient(0deg, transparent 0px, transparent 32px, rgba(255,255,255,0.015) 32px, rgba(255,255,255,0.015) 33px)',
-    subtitle: 'КАМЕНЬ · ПЕПЕЛ · ВЕК',
-    loadingPhrase: 'ПЫЛЬ ОСЕДАЕТ...',
-    tag: 'RUIN.KPR',
+      'radial-gradient(ellipse at 50% 15%, rgba(181,126,62,0.12) 0%, transparent 55%),' +
+      'radial-gradient(ellipse at 15% 80%, rgba(248,200,160,0.16) 0%, transparent 55%),' +
+      'radial-gradient(ellipse at 85% 60%, rgba(191,227,208,0.12) 0%, transparent 50%)',
+    subtitle: 'очаг · янтарь · хлеб',
+    loadingPhrase: 'очаг разгорается...',
+    moodNames: ['тёплый очаг', 'янтарный полдень', 'камень', 'вечерний дым'],
+    chatChips: [
+      'Что мне делать по шагам?',
+      'Где моя сила в этой ситуации?',
+      'На что опереться на этой неделе?',
+    ],
+    tag: 'AMBER.KPR',
   },
 
   spark_of_chaos: {
     id: 'spark_of_chaos',
-    name: 'Искра Хаоса',
-    description: 'Дерзкий дух-трикстер. За искрой — истина, за шуткой — правда.',
-    greeting: 'Посмотрим, что шепнет хаос на этот раз.',
-    accent: '#E63946',
-    accentDim: 'rgba(230, 57, 70, 0.18)',
+    name: 'Лилит',
+    title: 'Искра',
+    description: 'Искра с характером. Откроет глаза — и заставит смеяться.',
+    greeting: 'О, наконец-то. Я так и знала, что ты придёшь.',
+    greetings: [
+      'О, наконец-то. Я так и знала, что ты придёшь.',
+      'Ставлю свою искру: вопрос у тебя интересный.',
+      'Ты вовремя. Мне как раз было скучно.',
+    ],
+    accent: '#D14D76',
+    accentDim: 'rgba(209, 77, 118, 0.16)',
+    accentSoft: '#FBE7ED',
+    accentDeep: '#A93460',
     portrait: '/guides/spark_of_chaos.png',
     cardBack: '/cards/backs/back_spark_of_chaos.png',
     cardBackVersion: 2,
-    cornerSymbols: { tl: '⌇', tr: '✕', bl: '⋈', br: '※' },
-    auraAlphabet: '·•⌇∾◇◎∘○※✕⋈‡†°~^ﾟ',
-    ambientSymbols: ['⌇', '∾', '※', '✕', '⋈', '∘', '·', '•'],
+    cornerSymbols: { tl: '⌇', tr: '✕', bl: '❦', br: '※' },
+    auraAlphabet: '·•⌇∾◇◎∘○※✕❦‡°~ﾟ',
+    ambientSymbols: ['⌇', '∾', '※', '✕', '❦', '∘', '·', '•'],
     ambientPattern:
-      'radial-gradient(ellipse at 70% 30%, rgba(230,57,70,0.10) 0%, transparent 50%),' +
-      'radial-gradient(ellipse at 25% 65%, rgba(230,57,70,0.08) 0%, transparent 55%),' +
-      'repeating-linear-gradient(-30deg, transparent 0px, transparent 18px, rgba(255,255,255,0.02) 18px, rgba(255,255,255,0.02) 19px),' +
-      'repeating-linear-gradient(60deg, transparent 0px, transparent 28px, rgba(255,255,255,0.015) 28px, rgba(255,255,255,0.015) 29px)',
-    subtitle: 'ИСКРА · ДЫМ · ШЁПОТ',
-    loadingPhrase: 'ИСКРЫ ПОЛЕТЕЛИ...',
-    tag: 'SPARK.CHS',
+      'radial-gradient(ellipse at 75% 25%, rgba(209,77,118,0.12) 0%, transparent 52%),' +
+      'radial-gradient(ellipse at 20% 70%, rgba(248,200,160,0.14) 0%, transparent 52%),' +
+      'radial-gradient(ellipse at 45% 90%, rgba(191,217,238,0.10) 0%, transparent 50%)',
+    subtitle: 'искра · вишня · смех',
+    loadingPhrase: 'искра зажигается...',
+    moodNames: ['искры', 'тихий огонь', 'шторм', 'полуночный смех'],
+    chatChips: [
+      'Скажи прямо — что здесь не так?',
+      'Где я себе вру?',
+      'Что сделать уже сегодня?',
+    ],
+    tag: 'SPARK.FOX',
   },
 };
 

@@ -32,6 +32,9 @@ export default function SettingsModal({
       setSelected(id);
       localStorage.setItem('taro_character', id);
       onCharacterChange(id);
+      try {
+        (window as any).Telegram?.WebApp?.HapticFeedback?.impactOccurred('light');
+      } catch {}
     },
     [onCharacterChange],
   );
@@ -53,36 +56,29 @@ export default function SettingsModal({
   if (!isOpen) return null;
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 transition-opacity duration-200"
-      onClick={onClose}
-    >
+    <div className="modal-overlay transition-opacity duration-200" onClick={onClose}>
       <div
-        className="w-full max-w-[440px] m-2 border-4 border-white bg-black relative modal-frame"
+        className="w-full max-w-[440px] m-3 relative modal-frame"
+        style={{
+          background: 'var(--paper)',
+          borderRadius: 26,
+          border: '1.5px solid var(--line-strong)',
+          maxHeight: '86dvh',
+          overflowY: 'auto',
+        }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* header bar */}
-        <div className="relative flex items-center justify-between bg-black text-white font-pixel text-[11px] leading-none px-3 py-2 border-b-2 border-white tracking-tight">
-          <span className="flex items-center gap-2">
-            <span className="text-white/50" aria-hidden="true">{'>'}</span>
-            <span>{'GUIDE.SELECT'}</span>
-          </span>
-          <span className="blink text-white/60">█</span>
-        </div>
-
-        <div className="dither-bar" />
-
-        {/* intro caption */}
-        <div className="px-4 pt-3 pb-2">
-          <div className="font-pixel text-[10px] text-white/45 tracking-[0.18em] uppercase">
-            выбери проводника
+        {/* шапка */}
+        <div className="sticky top-0 z-10 px-5 pt-4 pb-3" style={{ background: 'var(--paper)', borderBottom: '1px solid var(--line)' }}>
+          <div className="font-serif text-[26px] font-semibold text-[color:var(--ink)] leading-none">
+            Проводницы
           </div>
-          <div className="font-mono-crt text-[14px] text-white/55 italic leading-snug mt-1">
-            каждый по-своему читает карты. кто скажет тебе правду?
+          <div className="font-serif italic text-[15px] mt-1.5 text-[color:var(--ink-soft)]">
+            каждая читает карты по-своему. кто скажет тебе правду?
           </div>
         </div>
 
-        <div className="flex flex-col gap-3 px-3 pb-2">
+        <div className="flex flex-col gap-3 px-4 py-4">
           {GUIDE_IDS.map((id) => {
             const guide = getGuide(id);
             const isActive = selected === guide.id;
@@ -97,11 +93,9 @@ export default function SettingsModal({
           })}
         </div>
 
-        <div className="dither-bar" />
-
-        <div className="flex justify-center p-3">
+        <div className="flex justify-center p-4 pt-0">
           <Button variant="secondary" onClick={onClose}>
-            ЗАКРЫТЬ
+            Закрыть
           </Button>
         </div>
       </div>
@@ -109,7 +103,7 @@ export default function SettingsModal({
   );
 }
 
-// ── Sub-component: one guide card with portrait + meta ──
+// ── Карточка проводницы: портрет, голос, настроения ──
 function GuideCard({
   guide,
   isActive,
@@ -122,19 +116,25 @@ function GuideCard({
   return (
     <button
       type="button"
-      className="btn flex w-full text-left transition-colors relative overflow-hidden"
+      className="btn flex w-full text-left relative overflow-hidden"
       style={{
-        border: `2px solid ${isActive ? '#fff' : 'rgba(255,255,255,0.3)'}`,
+        borderRadius: 22,
+        border: `2px solid ${isActive ? guide.accent : 'var(--line)'}`,
         background: isActive
-          ? `linear-gradient(135deg, ${guide.accentDim} 0%, transparent 60%)`
-          : 'transparent',
-        boxShadow: isActive ? `0 0 0 1px ${guide.accentDim}` : 'none',
+          ? `linear-gradient(135deg, ${guide.accentSoft} 0%, #FFFDF9 70%)`
+          : 'var(--paper)',
+        boxShadow: isActive ? `0 8px 24px ${guide.accentDim}` : 'none',
+        padding: '14px',
+        transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
       }}
       onClick={() => onSelect(guide.id)}
     >
-      {/* ── portrait (large, with CRT scan overlay) ── */}
-      <div className="flex-shrink-0 w-16 h-16 m-2 relative">
-        <div className="w-full h-full border border-white/60 relative overflow-hidden guide-portrait-frame">
+      {/* ── портрет ── */}
+      <div className="flex-shrink-0 w-[72px] h-[72px] relative">
+        <div
+          className="w-full h-full guide-portrait-frame"
+          style={{ borderRadius: 16, border: `2px solid ${isActive ? guide.accent : 'var(--line-strong)'}` }}
+        >
           <img
             src={guide.portrait}
             alt={guide.name}
@@ -142,40 +142,48 @@ function GuideCard({
             style={{ imageRendering: 'pixelated' }}
           />
         </div>
-        {/* accent corner dot */}
-        <span
-          className="absolute -top-1 -right-1 w-2 h-2"
-          style={{ backgroundColor: guide.accent }}
-          aria-hidden="true"
-        />
-        {/* active checkmark */}
         {isActive && (
           <span
-            className="absolute -bottom-1 -left-1 w-3 h-3 border border-white"
-            style={{ backgroundColor: guide.accent }}
+            className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full flex items-center justify-center text-[10px] text-white font-bold"
+            style={{ backgroundColor: guide.accent, boxShadow: '0 0 0 2.5px #FFFDF9' }}
             aria-hidden="true"
-          />
+          >
+            ✓
+          </span>
         )}
       </div>
 
-      {/* ── text content ── */}
-      <div className="flex-1 min-w-0 py-2 pr-3 flex flex-col justify-center">
-        <span className="flex items-center gap-2">
-          <span className="font-pixel text-[12px] text-white tracking-wide truncate">
+      {/* ── текст ── */}
+      <div className="flex-1 min-w-0 pl-3.5 flex flex-col justify-center">
+        <span className="flex items-baseline gap-2 flex-wrap">
+          <span className="font-serif text-[21px] font-semibold text-[color:var(--ink)] leading-none">
             {guide.name}
           </span>
-          <span
-            className="font-pixel text-[7px] tracking-[0.18em] uppercase"
-            style={{ color: guide.accent }}
-          >
-            {guide.tag}
+          <span className="font-serif italic text-[13px]" style={{ color: guide.accent }}>
+            {guide.title}
           </span>
         </span>
-        <span className="font-mono-crt text-[13px] text-white/55 mt-1 leading-snug">
+        <span className="font-sans text-[12.5px] text-[color:var(--ink-soft)] mt-1.5 leading-snug">
           {guide.description}
         </span>
-        <span className="font-mono-crt text-[13px] text-white/45 italic mt-1 leading-snug">
+        <span className="font-serif italic text-[13.5px] mt-1.5 leading-snug" style={{ color: guide.accentDeep }}>
           «{guide.greeting}»
+        </span>
+        {/* настроения — настроения проводницы меняются от расклада к раскладу */}
+        <span className="flex flex-wrap gap-1 mt-2">
+          {guide.moodNames.map((m) => (
+            <span
+              key={m}
+              className="font-pixel text-[8px] tracking-wide px-2 py-0.5 rounded-full"
+              style={{
+                background: guide.accentSoft,
+                color: guide.accentDeep,
+                border: `1px solid ${guide.accentDim}`,
+              }}
+            >
+              {m}
+            </span>
+          ))}
         </span>
       </div>
     </button>

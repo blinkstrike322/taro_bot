@@ -32,6 +32,19 @@ CREATE TABLE IF NOT EXISTS readings (
 )
 """
 
+_CREATE_FOLLOWUPS_TABLE = """
+CREATE TABLE IF NOT EXISTS followups (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    reading_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL,
+    question TEXT NOT NULL,
+    answer TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (reading_id) REFERENCES readings(id),
+    FOREIGN KEY (user_id) REFERENCES users(id)
+)
+"""
+
 
 _db_connection: Optional[aiosqlite.Connection] = None
 
@@ -60,6 +73,7 @@ async def init_db(db_path: str = "taro_bot.db") -> aiosqlite.Connection:
     await conn.execute("PRAGMA foreign_keys=ON")
     await conn.execute(_CREATE_USERS_TABLE)
     await conn.execute(_CREATE_READINGS_TABLE)
+    await conn.execute(_CREATE_FOLLOWUPS_TABLE)
     await _migrate_schema(conn)
     await conn.commit()
     _db_connection = conn
@@ -210,6 +224,92 @@ async def get_user_readings_by_month(
             "created_at": row[6] or "",
         })
     return result
+
+
+async def get_reading_by_id(db: aiosqlite.Connection, reading_id: int) -> Optional[Reading]:
+    """Load one reading by id (with owner's user_id for access checks)."""
+    cursor = await db.execute(
+        "SELECT id, user_id, type, question, cards_data, interpretation, character_id, created_at FROM readings WHERE id = ?",
+        (reading_id,),
+    )
+    row = await cursor.fetchone()
+    if row is None:
+        return None
+    return Reading(
+        id=row[0],
+        user_id=row[1],
+        type=row[2],
+        question=row[3],
+        cards_data=json.loads(row[4]),
+        interpretation=json.loads(row[5]),
+        character_id=row[6],
+        created_at=row[7],
+    )
+
+
+async def save_followup(
+    db: aiosqlite.Connection,
+    reading_id: int,
+    user_id: int,
+    question: str,
+    answer: str,
+) -> None:
+    """Save a follow-up Q&A tied to a reading."""
+    await db.execute(
+        "INSERT INTO followups (reading_id, user_id, question, answer) VALUES (?, ?, ?, ?)",
+        (reading_id, user_id, question, answer),
+    )
+    await db.commit()
+
+
+async def get_followups(
+    db: aiosqlite.Connection,
+    reading_id: int,
+    limit: int = 20,
+) -> list[dict]:
+    """Return follow-up Q&A list for a reading, oldest first."""
+    cursor = await db.execute(
+        "SELECT question, answer FROM followups WHERE reading_id = ? ORDER BY id LIMIT ?",
+        (reading_id, limit),
+    )
+    rows = await cursor.fetchall()
+    return [{"question": r[0], "answer": r[1]} for r in rows]
+
+
+async def count_followups(db: aiosqlite.Connection, reading_id: int) -> int:
+    cursor = await db.execute(
+        "SELECT COUNT(*) FROM followups WHERE reading_id = ?",
+        (reading_id,),
+    )
+    row = await cursor.fetchone()
+    return row[0]
+
+
+async def get_recent_guide_texts(
+    db: aiosqlite.Connection,
+    user_id: int,
+    character_id: str,
+    limit: int = 3,
+) -> list[str]:
+    """Recent intro/advice fragments by this character for anti-repetition prompts."""
+    cursor = await db.execute(
+        """SELECT interpretation FROM readings
+           WHERE user_id = ? AND character_id = ?
+           ORDER BY id DESC LIMIT ?""",
+        (user_id, character_id, limit),
+    )
+    rows = await cursor.fetchall()
+    fragments: list[str] = []
+    for (raw,) in rows:
+        try:
+            interp = json.loads(raw) if raw else {}
+        except (json.JSONDecodeError, TypeError):
+            continue
+        for key in ("intro", "advice"):
+            v = interp.get(key)
+            if isinstance(v, str) and v.strip():
+                fragments.append(v.strip())
+    return fragments
 
 
 async def update_character(db: aiosqlite.Connection, tg_id: int, character_id: str) -> None:

@@ -85,9 +85,10 @@ export default function GuideSigil({ guideId, size }: GuideSigilProps) {
 
   const accent = guide.accent;
   const accentDim = guide.accentDim;
-  const white = '#fff';
-  const whiteFaint = 'rgba(255,255,255,0.35)';
-  const whiteMid = 'rgba(255,255,255,0.55)';
+  // Светлая тема: линии цвета чернил вместо белых
+  const white = '#5B4A66';
+  const whiteFaint = 'rgba(91, 74, 102, 0.35)';
+  const whiteMid = 'rgba(91, 74, 102, 0.55)';
 
   // ── Static structural elements (memoized) ──
 

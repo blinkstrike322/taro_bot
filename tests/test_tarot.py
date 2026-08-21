@@ -14,12 +14,12 @@ from core.prompts import build_reading_prompt
 def test_build_reading_prompt_single_card():
     cards = [{"name": "Шут", "orientation": "upright"}]
     prompt = build_reading_prompt(cards, "Что ждет меня?", "shadow_walker", spread_type=1)
-    assert "Странница Теней" in prompt
     assert "Шут" in prompt
     assert "Что ждет меня?" in prompt
     assert "JSON" in prompt
     assert "Расклад 3 карты" not in prompt
     assert "позиция" not in prompt
+    assert "Фокус вопроса" in prompt
 
 
 def test_build_reading_prompt_three_cards():
@@ -33,16 +33,34 @@ def test_build_reading_prompt_three_cards():
     assert "Прошлое" in prompt
     assert "Настоящее" in prompt
     assert "Будущее" in prompt
-    assert "позиция Прошлое" in prompt
-    assert "позиция Настоящее" in prompt
-    assert "позиция Будущее" in prompt
+    assert "позиция «Прошлое»" in prompt
+    assert "позиция «Настоящее»" in prompt
+    assert "позиция «Будущее»" in prompt
+
+
+def test_build_reading_prompt_daily_spread():
+    cards = [
+        {"name": "Звезда", "orientation": "upright"},
+        {"name": "Луна", "orientation": "reversed"},
+        {"name": "Солнце", "orientation": "upright"},
+    ]
+    prompt = build_reading_prompt(cards, None, "shadow_walker", spread_type="daily")
+    assert "Энергия дня" in prompt
+    assert "Вызов дня" in prompt
+    assert "Совет дня" in prompt
+    assert "JSON" in prompt
 
 
 def test_build_reading_prompt_no_question():
     cards = [{"name": "Шут", "orientation": "upright"}]
     prompt = build_reading_prompt(cards, None, "ruin_keeper", spread_type=1)
-    assert "Хранитель Руин" in prompt
-    assert "?" not in prompt
+    assert "спонтанный расклад" in prompt
+
+
+def test_build_reading_prompt_category_focus():
+    cards = [{"name": "Шут", "orientation": "upright"}]
+    prompt = build_reading_prompt(cards, "Вернётся ли он ко мне?", "shadow_walker", spread_type=1)
+    assert "чувства" in prompt or "отношения" in prompt  # love category focus injected
 
 
 def test_build_reading_prompt_json_intro_field():

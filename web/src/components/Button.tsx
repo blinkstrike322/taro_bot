@@ -16,7 +16,7 @@ export default function Button({
   variant = 'primary',
 }: ButtonProps) {
   const base =
-    'btn-vibe relative flex items-center justify-center gap-1.5 font-pixel text-[12px] px-3 py-2 tracking-wide font-bold select-none';
+    'btn-vibe relative flex items-center justify-center gap-1.5 font-sans text-[13px] font-bold px-4 py-2.5 tracking-wide select-none';
 
   const variants = {
     primary: 'btn-vibe--primary',
@@ -29,13 +29,6 @@ export default function Button({
       className={`${base} ${variants[variant]} ${className}`}
       onClick={onClick}
     >
-      <span className="btn-vibe-corners" aria-hidden="true">
-        <span className="bvc bvc-tl" />
-        <span className="bvc bvc-tr" />
-        <span className="bvc bvc-bl" />
-        <span className="bvc bvc-br" />
-      </span>
-      <span className="btn-vibe-scan" aria-hidden="true" />
       <span className="relative z-10 flex items-center gap-1.5">{children}</span>
     </button>
   );

@@ -10,7 +10,10 @@ export default function GuideLoading({ guide }: GuideLoadingProps) {
   return (
     <div
       className="guide-loading"
-      style={{ '--guide-accent': guide.accent } as React.CSSProperties}
+      style={{
+        '--guide-accent': guide.accent,
+        '--guide-accent-deep': guide.accentDeep,
+      } as React.CSSProperties}
     >
       <span
         className="guide-loading-dot"

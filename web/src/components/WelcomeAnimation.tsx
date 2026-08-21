@@ -10,80 +10,61 @@ interface WelcomeAnimationProps {
   characterId?: string;
 }
 
-// Boot log line — structured for colored rendering
+// Строка ритуального входа
 interface BootLine {
   timestamp: string;
-  tag: 'BOOT' | 'INFO' | 'OK' | 'WARN' | 'SYS';
+  tag: 'ЛУНА' | 'ОЧАГ' | 'ИСКРА' | 'ТАЙНА' | 'ГОТОВО';
   text: string;
   id: number;
 }
 
-// Per-guide boot sequences
+// Последовательности проводниц — тёплые, «живые»
 const BOOT_SEQUENCES: Record<string, {
-  header: string;
-  lines: { tag: 'INFO' | 'OK' | 'WARN'; text: string }[];
+  tag: BootLine['tag'];
+  lines: { tag: BootLine['tag']; text: string }[];
   ready: string;
-  modeLabel: string;
-  summoned: string;
 }> = {
   shadow_walker: {
-    header: 'OCGV_V1.0 / shadow@taro',
+    tag: 'ЛУНА',
     lines: [
-      { tag: 'INFO', text: 'пробуждение теней' },
-      { tag: 'INFO', text: 'калибровка лунного света' },
-      { tag: 'OK',   text: 'шёпот леса услышан' },
-      { tag: 'INFO', text: 'manifest arcana modules' },
-      { tag: 'WARN', text: 'туман плотный, видимость 30%' },
-      { tag: 'OK',   text: 'shdw.wlkr* призван' },
+      { tag: 'ЛУНА', text: 'зажигаю свечи' },
+      { tag: 'ТАЙНА', text: 'чаши наполняются водой' },
+      { tag: 'ЛУНА', text: 'карты слышат тебя' },
     ],
-    ready: '✦ ТЕНИ ГОТОВЫ ✦',
-    modeLabel: 'SHADOW MODE',
-    summoned: 'shdw.wlkr*',
+    ready: 'луна готова ✦',
   },
   ruin_keeper: {
-    header: 'OCGV_V1.0 / ruin@taro',
+    tag: 'ОЧАГ',
     lines: [
-      { tag: 'INFO', text: 'очистка пыли веков' },
-      { tag: 'INFO', text: 'пробуждение камня' },
-      { tag: 'OK',   text: 'руны дешифрованы' },
-      { tag: 'INFO', text: 'manifest arcana modules' },
-      { tag: 'WARN', text: 'две колонны разрушены сверх меры' },
-      { tag: 'OK',   text: 'ruin.kpr* призван' },
+      { tag: 'ОЧАГ', text: 'раздуваю огонь' },
+      { tag: 'ТАЙНА', text: 'хлеб и соль на столе' },
+      { tag: 'ОЧАГ', text: 'карты разложены' },
     ],
-    ready: '✦ КАМЕНЬ ПОМНИТ ✦',
-    modeLabel: 'RUIN MODE',
-    summoned: 'ruin.kpr*',
+    ready: 'очаг горит ✦',
   },
   spark_of_chaos: {
-    header: 'OCGV_V1.0 / chaos@taro',
+    tag: 'ИСКРА',
     lines: [
-      { tag: 'INFO', text: 'искра зажжена' },
-      { tag: 'INFO', text: 'chaos engine warming' },
-      { tag: 'OK',   text: 'реальность расфокусирована' },
-      { tag: 'WARN', text: 'entropy spike detected' },
-      { tag: 'INFO', text: 'manifest arcana modules' },
-      { tag: 'OK',   text: 'sprk.chs* призван' },
+      { tag: 'ИСКРА', text: 'чиркаю спичкой' },
+      { tag: 'ТАЙНА', text: 'вишня в бокале, карты веером' },
+      { tag: 'ИСКРА', text: 'ну-с, посмотрим' },
     ],
-    ready: '✦ ИСКРА ЖИВА ✦',
-    modeLabel: 'CHAOS MODE',
-    summoned: 'sprk.chs*',
+    ready: 'искра жива ✦',
   },
 };
 
-// Format current time as HH:MM:SS
 function now(): string {
   const d = new Date();
-  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:${String(d.getSeconds()).padStart(2, '0')}`;
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 }
 
-// All tags use guide.accent color (per-guide identity)
+const TYPE_SPEED = 18; // мс на символ — быстро и ритмично
 
 export default function WelcomeAnimation({ onComplete, spreadType, characterId = 'shadow_walker' }: WelcomeAnimationProps) {
   const [lines, setLines] = useState<BootLine[]>([]);
   const [progress, setProgress] = useState(0);
   const [fading, setFading] = useState(false);
   const [showSigil, setShowSigil] = useState(false);
-  const [showScanlines, setShowScanlines] = useState(false);
   const [typedLine, setTypedLine] = useState<{ lineId: number; text: string } | null>(null);
   const completedRef = useRef(false);
   const lineIdRef = useRef(0);
@@ -91,16 +72,14 @@ export default function WelcomeAnimation({ onComplete, spreadType, characterId =
 
   const guide = useMemo(() => getGuide(characterId), [characterId]);
   const boot = useMemo(() => BOOT_SEQUENCES[characterId] || BOOT_SEQUENCES.shadow_walker, [characterId]);
-  const isChaos = characterId === 'spark_of_chaos';
 
   const complete = useCallback(() => {
     if (completedRef.current) return;
     completedRef.current = true;
     setFading(true);
-    setTimeout(onComplete, 400);
+    setTimeout(onComplete, 350);
   }, [onComplete]);
 
-  // Auto-scroll log container to bottom when new lines appear
   useEffect(() => {
     if (logContainerRef.current) {
       logContainerRef.current.scrollTop = logContainerRef.current.scrollHeight;
@@ -113,46 +92,39 @@ export default function WelcomeAnimation({ onComplete, spreadType, characterId =
       timeouts.push(setTimeout(fn, delay));
     };
 
-    // Typewriter for a single line — prints text char by char
-    const typeLine = (line: BootLine, onDone: () => void, baseDelay: number, speed: number = 28) => {
-      // Commit an empty placeholder so the line shows up with cursor
+    const typeLine = (line: BootLine, onDone: () => void, baseDelay: number) => {
       schedule(() => {
         setTypedLine({ lineId: line.id, text: '' });
       }, baseDelay);
-
-      // Print chars one by one
       for (let i = 1; i <= line.text.length; i++) {
         schedule(() => {
           setTypedLine({ lineId: line.id, text: line.text.slice(0, i) });
-        }, baseDelay + i * speed);
+        }, baseDelay + i * TYPE_SPEED);
       }
-
-      // Finalize: commit to lines[], clear typedLine
       schedule(() => {
-        setLines(prev => [...prev, line]);
+        setLines((prev) => [...prev, line]);
         setTypedLine(null);
         onDone();
-      }, baseDelay + line.text.length * speed + 60);
+      }, baseDelay + line.text.length * TYPE_SPEED + 40);
     };
 
-    // ── Header line ──
-    const headerLine: BootLine = {
+    // ── Первая строка: приглашение проводницы ──
+    const firstLine: BootLine = {
       timestamp: now(),
-      tag: 'BOOT',
-      text: boot.header,
+      tag: boot.tag,
+      text: `${guide.name} приветствует тебя`,
       id: lineIdRef.current++,
     };
 
-    let cursor = 100;
+    let cursor = 80;
+    typeLine(firstLine, () => {}, cursor);
+    cursor += firstLine.text.length * TYPE_SPEED + 160;
 
-    typeLine(headerLine, () => {}, cursor);
-    cursor += headerLine.text.length * 28 + 200;
+    // ── Сигил проявляется рано ──
+    schedule(() => setShowSigil(true), 500);
 
-    // ── Sigil materializes early — right after header, parallel to body lines ──
-    schedule(() => setShowSigil(true), 800);
-
-    // ── Body lines ──
-    boot.lines.forEach((l, i) => {
+    // ── Строки ритуала ──
+    boot.lines.forEach((l) => {
       const line: BootLine = {
         timestamp: now(),
         tag: l.tag,
@@ -160,72 +132,52 @@ export default function WelcomeAnimation({ onComplete, spreadType, characterId =
         id: lineIdRef.current++,
       };
       typeLine(line, () => {}, cursor);
-      cursor += line.text.length * 28 + 180;
+      cursor += line.text.length * TYPE_SPEED + 120;
     });
 
-    // ── Progress bar (SYS line, smoothly animated) ──
+    // ── Прогресс ──
     const progressLine: BootLine = {
       timestamp: now(),
-      tag: 'SYS',
-      text: 'manifest',
+      tag: 'ТАЙНА',
+      text: 'прогресс',
       id: lineIdRef.current++,
     };
-    // Show the progress line container first (no text typed — it's the progress bar itself)
     schedule(() => {
-      setLines(prev => [...prev, progressLine]);
+      setLines((prev) => [...prev, progressLine]);
     }, cursor);
-    cursor += 200;
-
-    // Animate progress smoothly from 0 to 100 over ~1.5s (60fps-ish via steps of 4)
-    for (let p = 4; p <= 100; p += 4) {
-      schedule(() => setProgress(p), cursor + (p * 15));
+    cursor += 150;
+    for (let p = 5; p <= 100; p += 5) {
+      schedule(() => setProgress(p), cursor + p * 12);
     }
-    cursor += 100 * 15 + 200;
+    cursor += 100 * 12 + 150;
 
-    // ── Scanlines overlay (after sigil is already visible) ──
-    schedule(() => setShowScanlines(true), 2000);
-
-    // ── Ready line ──
+    // ── Готовность ──
     const readyLine: BootLine = {
       timestamp: now(),
-      tag: 'OK',
+      tag: 'ГОТОВО',
       text: boot.ready,
       id: lineIdRef.current++,
     };
     typeLine(readyLine, () => {}, cursor);
-    cursor += readyLine.text.length * 28 + 200;
+    cursor += readyLine.text.length * TYPE_SPEED + 420;
 
-    // ── Mode label ──
-    const modeLine: BootLine = {
-      timestamp: now(),
-      tag: 'BOOT',
-      text: `${boot.modeLabel}: ${spreadType}`,
-      id: lineIdRef.current++,
-    };
-    typeLine(modeLine, () => {}, cursor);
-    cursor += modeLine.text.length * 28 + 600;
-
-    // ── Complete ──
     schedule(() => complete(), cursor);
 
     return () => timeouts.forEach(clearTimeout);
-  }, [boot, spreadType, complete]);
+  }, [boot, guide.name, complete]);
 
-  // Render a single finalized line
   const renderLine = (line: BootLine) => {
     const tagColor = guide.accent;
 
-    // Progress bar line — special rendering
-    if (line.text === 'manifest' && line.tag === 'SYS') {
-      const filled = Math.floor(progress / 5);   // 0..20 blocks
-      const empty = 20 - filled;
-      const bar = '█'.repeat(filled) + '░'.repeat(empty);
+    if (line.text === 'прогресс' && line.tag === 'ТАЙНА') {
       return (
-        <div key={line.id} className="boot-log-line boot-log-progress">
-          <span className="boot-ts">[{line.timestamp}]</span>{' '}
-          <span className="boot-tag" style={{ color: guide.accent }}>[SYS]</span>{' '}
-          <span className="boot-bar">[{bar}]</span>{' '}
-          <span className="boot-pct">{progress}%</span>
+        <div key={line.id} className="boot-log-line boot-log-progress flex items-center gap-2">
+          <span className="boot-ts">[{line.timestamp}]</span>
+          <span className="boot-tag" style={{ color: tagColor }}>[натрой]</span>
+          <span className="progress-track flex-1 min-w-[90px] max-w-[160px]">
+            <span className="progress-fill block" style={{ width: `${progress}%` }} />
+          </span>
+          <span className="boot-pct font-pixel text-[10px]">{progress}%</span>
         </div>
       );
     }
@@ -239,17 +191,14 @@ export default function WelcomeAnimation({ onComplete, spreadType, characterId =
     );
   };
 
-  // Render the currently typing line (with cursor)
   const renderTypedLine = () => {
     if (!typedLine) return null;
-    // Find the tag for this line id from boot data
-    // header is id 0, then boot.lines[i] = id i+1
-    let tag: BootLine['tag'] = 'INFO';
+    let tag: BootLine['tag'] = boot.tag;
     let text = typedLine.text;
     let ts = now();
 
     if (typedLine.lineId === 0) {
-      tag = 'BOOT';
+      tag = boot.tag;
     } else {
       const idx = typedLine.lineId - 1;
       if (idx < boot.lines.length) {
@@ -257,22 +206,12 @@ export default function WelcomeAnimation({ onComplete, spreadType, characterId =
       }
     }
 
-    const tagColor = guide.accent;
-
-    // Glitch effect for spark_of_chaos: random char replaced with accent color
-    const renderedText = isChaos ? text.split('').map((ch, i) => {
-      if (i > 0 && Math.random() < 0.04 && ch !== ' ') {
-        return <span key={i} style={{ color: guide.accent }}>{ch}</span>;
-      }
-      return <span key={i}>{ch}</span>;
-    }) : text;
-
     return (
       <div className="boot-log-line boot-typing">
         <span className="boot-ts">[{ts}]</span>{' '}
-        <span className="boot-tag" style={{ color: tagColor }}>[{tag}]</span>{' '}
+        <span className="boot-tag" style={{ color: guide.accent }}>[{tag}]</span>{' '}
         <span className="boot-msg">
-          {renderedText}
+          {text}
           <span className="boot-cursor">▌</span>
         </span>
       </div>
@@ -281,49 +220,46 @@ export default function WelcomeAnimation({ onComplete, spreadType, characterId =
 
   return (
     <div
-      className={`relative flex flex-col items-center justify-start w-full h-full bg-black transition-opacity duration-400 overflow-hidden ${fading ? 'opacity-0' : 'opacity-100'}`}
-      style={{ '--guide-accent': guide.accent } as React.CSSProperties}
+      className={`relative flex flex-col items-center justify-start w-full min-h-full transition-opacity duration-300 overflow-hidden ${fading ? 'opacity-0' : 'opacity-100'}`}
+      style={{
+        '--guide-accent': guide.accent,
+        '--guide-accent-deep': guide.accentDeep,
+      } as React.CSSProperties}
     >
-      {/* ── Materializing GuideSigil (background, dimmed, centered) ── */}
+      {/* ── Сигил проводницы — проявляется в центре ── */}
       <div
         className="absolute pointer-events-none"
         style={{
           top: '50%',
           left: '50%',
-          transform: `translate(-50%, -50%) scale(${showSigil ? 1 : 0.7})`,
-          opacity: showSigil ? 0.7 : 0,
-          filter: 'brightness(0.7)',
-          transition: 'opacity 1.2s ease-out, transform 1.5s ease-out',
-          width: 'min(90vw, 90vh, 480px)',
-          height: 'min(90vw, 90vh, 480px)',
+          transform: `translate(-50%, -50%) scale(${showSigil ? 1 : 0.72})`,
+          opacity: showSigil ? 0.55 : 0,
+          transition: 'opacity 1s ease-out, transform 1.3s ease-out',
+          width: 'min(88vw, 88vh, 440px)',
+          height: 'min(88vw, 88vh, 440px)',
         }}
         aria-hidden="true"
       >
         <GuideSigil guideId={characterId} />
       </div>
 
-      {/* ── CRT scanlines overlay (very subtle) ── */}
-      {showScanlines && (
-        <div
-          className="absolute inset-0 pointer-events-none z-20"
-          style={{
-            background: 'repeating-linear-gradient(0deg, transparent 0px, transparent 2px, rgba(255,255,255,0.04) 2px, rgba(255,255,255,0.04) 3px)',
-            opacity: 0.6,
-            animation: 'crt-flicker 5s steps(5) infinite',
-          }}
-          aria-hidden="true"
-        />
-      )}
+      {/* ── Заголовок бренда ── */}
+      <div className="relative z-30 pt-5 pb-3 text-center px-4">
+        <div className="welcome-title font-serif text-[34px] font-semibold text-[color:var(--ink)] leading-none">
+          Amo Tarot
+        </div>
+        <div className="font-pixel text-[9px] tracking-[0.3em] uppercase mt-2" style={{ color: guide.accent }}>
+          ✦ {guide.subtitle} ✦
+        </div>
+      </div>
 
-      {/* ── Boot logs overlay (scrolling terminal) ── */}
+      {/* ── Ритуальный лог ── */}
       <div
         ref={logContainerRef}
-        className="relative z-30 w-full h-full overflow-y-auto px-3 py-3 font-pixel text-[10px] sm:text-[11px] leading-relaxed"
+        className="relative z-30 w-full flex-1 min-h-0 overflow-y-auto px-4 pb-3"
         style={{ scrollbarWidth: 'none' }}
       >
-        {/* finalized lines */}
         {lines.map(renderLine)}
-        {/* currently typing line */}
         {renderTypedLine()}
       </div>
     </div>

@@ -9,6 +9,7 @@ import ReadingResult from './ReadingResult';
 type Phase = 'input' | 'loading' | 'cards' | 'result';
 
 interface ReadingData {
+  readingId: number | null;
   cards: TarotCard[];
   interpretation: {
     intro: string;
@@ -24,7 +25,7 @@ interface Spread3CardsProps {
   onError?: (msg: string) => void;
 }
 
-const POSITIONS = ['ПРOШЛOЕ', 'НАСТOЯЩЕЕ', 'БУДУЩЕЕ'];
+const POSITIONS = ['ПРОШЛОЕ', 'НАСТОЯЩЕЕ', 'БУДУЩЕЕ'];
 
 const FLIP_ANIM_MS = 700;
 
@@ -57,12 +58,12 @@ export default function Spread3Cards({ apiCall, characterId, onError }: Spread3C
       setPhase('cards');
     } catch (err: any) {
       setPhase('input');
-      onError?.(err?.message || 'ПEЧАЛЬ. ПOПРOБУЙ СНOВА.');
+      onError?.(err?.message || 'Не получилось. Попробуй снова.');
     }
   }, [apiCall, onError]);
 
   const handleFlip = useCallback((index: number) => {
-    setFlippedCards(prev => {
+    setFlippedCards((prev) => {
       const next = [...prev];
       next[index] = true;
       return next;
@@ -83,20 +84,21 @@ export default function Spread3Cards({ apiCall, characterId, onError }: Spread3C
   if (phase === 'cards' && data) {
     const allFlipped = flippedCards.every(Boolean);
 
-    // Seeded irregular offsets (px) — applied to wrapper, not card
+    // Лёгкий асимметричный сдвиг — карты будто положены рукой
     const offsets = [
-      { x: -6, y: 6 },
-      { x: 4, y: 5 },
-      { x: -3, y: -4 },
+      { x: -5, y: 5, r: -1.5 },
+      { x: 4, y: 4, r: 1 },
+      { x: -3, y: -4, r: -0.5 },
     ];
 
     if (showResult) {
       return (
         <div className="flex flex-col items-center py-3 px-3 w-full">
-          <div className="flex flex-col items-center w-full max-w-[396px] sm:max-w-[440px] lg:max-w-[484px] px-2 flex-shrink-0 pb-2">
+          <div className="flex flex-col items-center w-full max-w-[396px] sm:max-w-[440px] px-2 flex-shrink-0 pb-3">
+            {/* Верхняя карта (НАСТОЯЩЕЕ) */}
             <div
-              className="w-full max-w-[165px] sm:max-w-[182px] lg:max-w-[198px] mb-2"
-              style={{ transform: `translate(${offsets[0].x}px, ${offsets[0].y}px)` }}
+              className="w-full max-w-[160px] sm:max-w-[176px] mb-2"
+              style={{ transform: `translate(${offsets[0].x}px, ${offsets[0].y}px) rotate(${offsets[0].r}deg)` }}
             >
               <Card
                 card={{ ...data.cards[1], image_url: `/cards/${data.cards[1].id}.png` }}
@@ -106,10 +108,11 @@ export default function Spread3Cards({ apiCall, characterId, onError }: Spread3C
                 characterId={characterId}
               />
             </div>
-            <div className="flex items-start justify-center gap-4 sm:gap-5 lg:gap-6 w-full">
+            {/* Нижний ряд: ПРОШЛОЕ + БУДУЩЕЕ */}
+            <div className="flex items-start justify-center gap-4 sm:gap-5 w-full">
               <div
-                className="flex-1 min-w-0 max-w-[174px] sm:max-w-[191px] lg:max-w-[208px]"
-                style={{ transform: `translate(${offsets[1].x}px, ${offsets[1].y}px)` }}
+                className="flex-1 min-w-0 max-w-[170px] sm:max-w-[186px]"
+                style={{ transform: `translate(${offsets[1].x}px, ${offsets[1].y}px) rotate(${offsets[1].r}deg)` }}
               >
                 <Card
                   card={{ ...data.cards[0], image_url: `/cards/${data.cards[0].id}.png` }}
@@ -120,8 +123,8 @@ export default function Spread3Cards({ apiCall, characterId, onError }: Spread3C
                 />
               </div>
               <div
-                className="flex-1 min-w-0 max-w-[174px] sm:max-w-[191px] lg:max-w-[208px]"
-                style={{ transform: `translate(${offsets[2].x}px, ${offsets[2].y}px)` }}
+                className="flex-1 min-w-0 max-w-[170px] sm:max-w-[186px]"
+                style={{ transform: `translate(${offsets[2].x}px, ${offsets[2].y}px) rotate(${offsets[2].r}deg)` }}
               >
                 <Card
                   card={{ ...data.cards[2], image_url: `/cards/${data.cards[2].id}.png` }}
@@ -133,8 +136,12 @@ export default function Spread3Cards({ apiCall, characterId, onError }: Spread3C
               </div>
             </div>
           </div>
-          <div className="w-full pb-4">
-            <ReadingResult interpretation={data.interpretation} characterId={characterId} />
+          <div className="w-full">
+            <ReadingResult
+              interpretation={data.interpretation}
+              characterId={characterId}
+              readingId={data.readingId}
+            />
           </div>
         </div>
       );
@@ -143,11 +150,11 @@ export default function Spread3Cards({ apiCall, characterId, onError }: Spread3C
     return (
       <div className="flex flex-col items-center py-3 px-3 w-full h-full">
         <div className="flex-1 min-h-0 flex flex-col items-center justify-center w-full">
-          <div className="flex flex-col items-center w-full max-w-[396px] sm:max-w-[440px] lg:max-w-[484px] px-2">
-            {/* Top card (НАСТОЯЩЕЕ) */}
+          <div className="flex flex-col items-center w-full max-w-[396px] sm:max-w-[440px] px-2">
+            {/* Верхняя карта (НАСТОЯЩЕЕ) */}
             <div
-              className="w-full max-w-[165px] sm:max-w-[182px] lg:max-w-[198px] mb-2"
-              style={{ transform: `translate(${offsets[0].x}px, ${offsets[0].y}px)` }}
+              className="w-full max-w-[160px] sm:max-w-[176px] mb-2"
+              style={{ transform: `translate(${offsets[0].x}px, ${offsets[0].y}px) rotate(${offsets[0].r}deg)` }}
             >
               <Card
                 card={{ ...data.cards[1], image_url: `/cards/${data.cards[1].id}.png` }}
@@ -159,11 +166,11 @@ export default function Spread3Cards({ apiCall, characterId, onError }: Spread3C
               />
             </div>
 
-            {/* Bottom row: ПРОШЛОЕ + БУДУЩЕЕ */}
-            <div className="flex items-start justify-center gap-4 sm:gap-5 lg:gap-6 w-full">
+            {/* Нижний ряд: ПРОШЛОЕ + БУДУЩЕЕ */}
+            <div className="flex items-start justify-center gap-4 sm:gap-5 w-full">
               <div
-                className="flex-1 min-w-0 max-w-[174px] sm:max-w-[191px] lg:max-w-[208px]"
-                style={{ transform: `translate(${offsets[1].x}px, ${offsets[1].y}px)` }}
+                className="flex-1 min-w-0 max-w-[170px] sm:max-w-[186px]"
+                style={{ transform: `translate(${offsets[1].x}px, ${offsets[1].y}px) rotate(${offsets[1].r}deg)` }}
               >
                 <Card
                   card={{ ...data.cards[0], image_url: `/cards/${data.cards[0].id}.png` }}
@@ -175,8 +182,8 @@ export default function Spread3Cards({ apiCall, characterId, onError }: Spread3C
                 />
               </div>
               <div
-                className="flex-1 min-w-0 max-w-[174px] sm:max-w-[191px] lg:max-w-[208px]"
-                style={{ transform: `translate(${offsets[2].x}px, ${offsets[2].y}px)` }}
+                className="flex-1 min-w-0 max-w-[170px] sm:max-w-[186px]"
+                style={{ transform: `translate(${offsets[2].x}px, ${offsets[2].y}px) rotate(${offsets[2].r}deg)` }}
               >
                 <Card
                   card={{ ...data.cards[2], image_url: `/cards/${data.cards[2].id}.png` }}
@@ -191,8 +198,8 @@ export default function Spread3Cards({ apiCall, characterId, onError }: Spread3C
           </div>
 
           {!allFlipped && (
-            <div className="font-pixel text-[11px] text-white/40 mt-3 blink flex-shrink-0">
-              НАЖМИ НА ВСЕ КАРТЫ
+            <div className="font-pixel text-[11px] text-[color:var(--ink-soft)] mt-4 blink flex-shrink-0 tracking-[0.14em]">
+              открой все три карты
             </div>
           )}
         </div>

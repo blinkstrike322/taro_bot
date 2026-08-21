@@ -55,7 +55,7 @@ _CHARACTERS = _load_characters()
 def _character_selection_keyboard() -> InlineKeyboardMarkup:
     buttons = [
         [InlineKeyboardButton(
-            text=_CHARACTERS[cid]["name"],
+            text=f"{_CHARACTERS[cid]['name']} — {_CHARACTERS[cid].get('title', '')}",
             callback_data=f"char:{cid}",
         )]
         for cid in _CHARACTER_IDS
@@ -67,19 +67,19 @@ def _main_menu_keyboard() -> InlineKeyboardMarkup:
     url = settings.WEBAPP_URL
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(
-            text="РАСКЛАД 1 КАРТА",
-            web_app=WebAppInfo(url=f"{url}?type=1"),
-        )],
-        [InlineKeyboardButton(
-            text="РАСКЛАД 3 КАРТЫ",
-            web_app=WebAppInfo(url=f"{url}?type=3"),
-        )],
-        [InlineKeyboardButton(
-            text="КАРТА ДНЯ",
+            text="РАСКЛАД ДНЯ",
             web_app=WebAppInfo(url=f"{url}?type=daily"),
         )],
         [InlineKeyboardButton(
-            text="СМЕНИТЬ ПРОВОДНИКА",
+            text="ОДНА КАРТА — ВОПРОС И ОТВЕТ",
+            web_app=WebAppInfo(url=f"{url}?type=1"),
+        )],
+        [InlineKeyboardButton(
+            text="ТРИ КАРТЫ — ПРОШЛОЕ · БУДУЩЕЕ",
+            web_app=WebAppInfo(url=f"{url}?type=3"),
+        )],
+        [InlineKeyboardButton(
+            text="СМЕНИТЬ ПРОВОДНИЦУ",
             callback_data="char:select",
         )],
     ])
@@ -103,13 +103,12 @@ async def cmd_start(message: types.Message) -> None:
         )
         if first_start:
             await message.answer(
-                "Выбери своего проводника:",
+                "Выбери свою проводницу:",
                 reply_markup=_character_selection_keyboard(),
             )
         else:
-            greeting = _CHARACTERS.get(user.character_id, {}).get(
-                "greeting", "Добро пожаловать.",
-            )
+            from core.prompts import pick_greeting
+            greeting = pick_greeting(user.character_id)
             await message.answer(
                 greeting,
                 reply_markup=_main_menu_keyboard(),
@@ -121,7 +120,7 @@ async def cmd_start(message: types.Message) -> None:
 @character_router.callback_query(F.data == "char:select")
 async def select_character(callback: types.CallbackQuery) -> None:
     await callback.message.edit_text(
-        "Выбери своего проводника:",
+        "Выбери свою проводницу:",
         reply_markup=_character_selection_keyboard(),
     )
     await callback.answer()
@@ -132,7 +131,7 @@ async def set_character(callback: types.CallbackQuery) -> None:
     character_id = callback.data.split(":", 1)[1]
 
     if character_id not in _CHARACTERS:
-        await callback.answer("Неизвестный проводник.", show_alert=True)
+        await callback.answer("Неизвестная проводница.", show_alert=True)
         return
 
     db = await aiosqlite.connect(settings.DB_PATH)
@@ -141,9 +140,9 @@ async def set_character(callback: types.CallbackQuery) -> None:
     finally:
         await db.close()
 
-    char = _CHARACTERS[character_id]
+    from core.prompts import pick_greeting
     await callback.message.edit_text(
-        char["greeting"],
+        pick_greeting(character_id),
         reply_markup=_main_menu_keyboard(),
     )
     await callback.answer()
