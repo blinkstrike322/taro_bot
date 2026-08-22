@@ -29,11 +29,12 @@ interface SpreadDailyProps {
 const POSITIONS = ['энергия дня', 'вызов дня', 'совет дня'];
 const FLIP_ANIM_MS = 700;
 
-// Органичная композиция: карты будто положены рукой — наклоны, перекрытия, разные уровни
+// Органичная композиция-пирамида: центральная карта приподнята,
+// боковые лежат ниже — подписи сверху не перекрываются соседними картами
 const FAN = [
-  { w: 44, tilt: -7, dx: 0, dy: 44, z: 10, overlapR: -9 },
-  { w: 50, tilt: 2, dx: 0, dy: 0, z: 30, overlapL: -10, overlapR: -10 },
-  { w: 44, tilt: 6, dx: 0, dy: 50, z: 20, overlapL: -9 },
+  { w: 42, tilt: -7, dy: 30, z: 10, overlapR: -5 },
+  { w: 48, tilt: 2, dy: -12, z: 30, overlapL: -6, overlapR: -6 },
+  { w: 42, tilt: 6, dy: 34, z: 20, overlapL: -5 },
 ];
 
 export default function SpreadDaily({ characterId, onError, apiCall }: SpreadDailyProps) {
@@ -205,15 +206,12 @@ export default function SpreadDaily({ characterId, onError, apiCall }: SpreadDai
                     ? { ...data.cards[i], image_url: `/cards/${data.cards[i].id}.png` }
                     : { id: `wait-${i}`, name: '', image_url: '', is_reversed: false }
                 }
+                position={flipped[i] ? undefined : POSITIONS[i]}
                 flipped={flipped[i]}
                 onFlip={() => handleFlip(i)}
                 tilt={FAN[i].tilt}
                 characterId={characterId}
               />
-              {/* подпись позиции — под картой, не перекрывается веером */}
-              <div className="card-label mt-1" style={{ minHeight: '1.2em' }}>
-                {POSITIONS[i]}
-              </div>
             </div>
           ))}
         </div>

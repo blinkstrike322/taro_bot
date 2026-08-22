@@ -3,7 +3,6 @@
 import { ReactNode, useEffect } from 'react';
 import CrtOverlay from './CrtOverlay';
 import Toast from './Toast';
-import PixelFlower from './PixelFlower';
 import PixelEdge from './PixelEdge';
 import Glyph from './Glyph';
 import { getGuide } from '@/lib/guides';
@@ -75,28 +74,10 @@ export default function Layout({
           boxSizing: 'border-box',
         } as React.CSSProperties}
       >
-        {/* ─── HEADER — сигнатурная полоса: белый ирис слева, как на схеме ─── */}
+        {/* ─── HEADER — сигнатурная полоса с миллиметровкой ─── */}
         <header className="relative z-20 flex-shrink-0" style={{ background: guide.accent }}>
           <div className="relative band-grid overflow-hidden">
-            {/* ирис у левого края: соцветие целиком в полосе, стебель тает
-                (маска), квадратики не срезаются нижней кромкой */}
-            <div
-              className="absolute pointer-events-none select-none"
-              style={{
-                top: -2,
-                left: 6,
-                WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black 58%, transparent 88%)',
-                maskImage: 'linear-gradient(to bottom, black 0%, black 58%, transparent 88%)',
-              }}
-              aria-hidden="true"
-            >
-              <PixelFlower seed={9} size={76} variant="iris" color="#F8F6F9" bgColor={guide.accent} opacity={1} />
-            </div>
-
-            <div
-              className="relative flex items-baseline gap-3 pt-4 pb-3.5"
-              style={{ paddingLeft: 92, paddingRight: 20 }}
-            >
+            <div className="relative flex items-baseline gap-3 px-5 pt-4 pb-3.5">
               {/* бренд — белый, с точкой-пикселем */}
               <button
                 type="button"
@@ -114,7 +95,7 @@ export default function Layout({
 
               <span
                 className="tech-label hidden xs:inline band-text-dim"
-                style={{ transform: 'translateY(-1px)', marginLeft: '3px' }}
+                style={{ transform: 'translateY(-1px)' }}
               >
                 / {formatSpreadType(spreadType)} · {arcanaCount ?? 1}
               </span>

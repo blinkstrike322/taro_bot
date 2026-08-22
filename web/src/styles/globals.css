@@ -429,6 +429,19 @@ body {
   transition: color 0.2s ease;
 }
 
+/* крупное слово римским капсом — контраст к курсиву (как на постере) */
+.btn-word .btn-word__big {
+  font-family: var(--font-serif);
+  font-style: normal;
+  font-weight: 700;
+  font-size: 30px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--guide-accent, var(--accent-blue));
+  line-height: 1;
+  transition: color 0.2s ease;
+}
+
 /* дизер-подчёркивание проявляется при наведении */
 .btn-word::after {
   content: "";
