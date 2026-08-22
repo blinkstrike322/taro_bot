@@ -285,6 +285,7 @@ body {
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
   overflow: hidden;
+  border-radius: inherit;
 }
 
 .flip-back {
@@ -301,7 +302,7 @@ body {
 .card-frame {
   background: var(--paper-bright);
   border: 1px solid var(--line-strong);
-  border-radius: 4px;
+  border-radius: 10px;
   box-shadow: var(--shadow-diffuse);
 }
 

@@ -29,12 +29,13 @@ interface SpreadDailyProps {
 const POSITIONS = ['энергия дня', 'вызов дня', 'совет дня'];
 const FLIP_ANIM_MS = 700;
 
-// Органичная композиция-пирамида: центральная карта приподнята,
-// боковые лежат ниже — подписи сверху не перекрываются соседними картами
+// Органичная композиция-пирамида: центрральная карта приподнята,
+// боковые лежат ниже — подписи сверху не перекрываются соседними картами.
+// Ширины +10% к прошлой итерации, перекрытия чуть глубже.
 const FAN = [
-  { w: 42, tilt: -7, dy: 30, z: 10, overlapR: -5 },
-  { w: 48, tilt: 2, dy: -12, z: 30, overlapL: -6, overlapR: -6 },
-  { w: 42, tilt: 6, dy: 34, z: 20, overlapL: -5 },
+  { w: 46, tilt: -7, dy: 30, z: 10, overlapR: -7 },
+  { w: 52, tilt: 2, dy: -12, z: 30, overlapL: -8, overlapR: -8 },
+  { w: 46, tilt: 6, dy: 34, z: 20, overlapL: -7 },
 ];
 
 export default function SpreadDaily({ characterId, onError, apiCall }: SpreadDailyProps) {
@@ -171,7 +172,7 @@ export default function SpreadDaily({ characterId, onError, apiCall }: SpreadDai
 
       {/* веер карт */}
       <div className="flex-1 min-h-0 flex flex-col items-center justify-center w-full">
-        <div className="relative flex items-end justify-center w-full max-w-[460px] py-6">
+        <div className="relative flex items-end justify-center w-full max-w-[500px] py-6">
           {/* ирис-схема прорастает из-под карт: ниже и правее */}
           <div
             className="absolute pointer-events-none z-0"

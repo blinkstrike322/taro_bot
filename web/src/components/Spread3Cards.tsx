@@ -94,10 +94,10 @@ export default function Spread3Cards({ apiCall, characterId, onError }: Spread3C
     if (showResult) {
       return (
         <div className="flex flex-col items-center py-3 px-3 w-full">
-          <div className="flex flex-col items-center w-full max-w-[430px] sm:max-w-[470px] px-2 flex-shrink-0 pb-3">
+          <div className="flex flex-col items-center w-full max-w-[460px] sm:max-w-[500px] px-2 flex-shrink-0 pb-3">
             {/* Верхняя карта (НАСТОЯЩЕЕ) */}
             <div
-              className="w-full max-w-[192px] sm:max-w-[210px] mb-2"
+              className="w-full max-w-[211px] sm:max-w-[231px] mb-2"
               style={{ transform: `translate(${offsets[0].x}px, ${offsets[0].y}px) rotate(${offsets[0].r}deg)` }}
             >
               <Card
@@ -111,7 +111,7 @@ export default function Spread3Cards({ apiCall, characterId, onError }: Spread3C
             {/* Нижний ряд: ПРОШЛОЕ + БУДУЩЕЕ */}
             <div className="flex items-start justify-center gap-3.5 sm:gap-4 w-full">
               <div
-                className="flex-1 min-w-0 max-w-[204px] sm:max-w-[224px]"
+                className="flex-1 min-w-0 max-w-[224px] sm:max-w-[246px]"
                 style={{ transform: `translate(${offsets[1].x}px, ${offsets[1].y}px) rotate(${offsets[1].r}deg)` }}
               >
                 <Card
@@ -123,7 +123,7 @@ export default function Spread3Cards({ apiCall, characterId, onError }: Spread3C
                 />
               </div>
               <div
-                className="flex-1 min-w-0 max-w-[204px] sm:max-w-[224px]"
+                className="flex-1 min-w-0 max-w-[224px] sm:max-w-[246px]"
                 style={{ transform: `translate(${offsets[2].x}px, ${offsets[2].y}px) rotate(${offsets[2].r}deg)` }}
               >
                 <Card
@@ -150,10 +150,10 @@ export default function Spread3Cards({ apiCall, characterId, onError }: Spread3C
     return (
       <div className="flex flex-col items-center py-3 px-3 w-full h-full">
         <div className="flex-1 min-h-0 flex flex-col items-center justify-center w-full">
-          <div className="flex flex-col items-center w-full max-w-[430px] sm:max-w-[470px] px-2">
+          <div className="flex flex-col items-center w-full max-w-[460px] sm:max-w-[500px] px-2">
             {/* Верхняя карта (НАСТОЯЩЕЕ) */}
             <div
-              className="w-full max-w-[192px] sm:max-w-[210px] mb-2"
+              className="w-full max-w-[211px] sm:max-w-[231px] mb-2"
               style={{ transform: `translate(${offsets[0].x}px, ${offsets[0].y}px) rotate(${offsets[0].r}deg)` }}
             >
               <Card
@@ -169,7 +169,7 @@ export default function Spread3Cards({ apiCall, characterId, onError }: Spread3C
             {/* Нижний ряд: ПРОШЛОЕ + БУДУЩЕЕ */}
             <div className="flex items-start justify-center gap-3.5 sm:gap-4 w-full">
               <div
-                className="flex-1 min-w-0 max-w-[204px] sm:max-w-[224px]"
+                className="flex-1 min-w-0 max-w-[224px] sm:max-w-[246px]"
                 style={{ transform: `translate(${offsets[1].x}px, ${offsets[1].y}px) rotate(${offsets[1].r}deg)` }}
               >
                 <Card
@@ -182,7 +182,7 @@ export default function Spread3Cards({ apiCall, characterId, onError }: Spread3C
                 />
               </div>
               <div
-                className="flex-1 min-w-0 max-w-[204px] sm:max-w-[224px]"
+                className="flex-1 min-w-0 max-w-[224px] sm:max-w-[246px]"
                 style={{ transform: `translate(${offsets[2].x}px, ${offsets[2].y}px) rotate(${offsets[2].r}deg)` }}
               >
                 <Card
