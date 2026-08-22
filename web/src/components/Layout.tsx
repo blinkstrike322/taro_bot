@@ -77,7 +77,7 @@ export default function Layout({
         {/* ─── HEADER — сигнатурная полоса с миллиметровкой ─── */}
         <header className="relative z-20 flex-shrink-0" style={{ background: guide.accent }}>
           <div className="relative band-grid overflow-hidden">
-            <div className="relative flex items-baseline gap-3 px-5 pt-4 pb-3.5">
+            <div className="relative flex items-center gap-3 px-5 pt-4 pb-3.5">
               {/* бренд — белый, с точкой-пикселем */}
               <button
                 type="button"
