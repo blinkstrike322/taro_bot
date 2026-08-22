@@ -19,7 +19,7 @@ from storage.db import (
 _CHARACTERS_PATH = Path(__file__).resolve().parent.parent / "data" / "characters.json"
 
 _DEFAULT_CHARACTER_ID = "shadow_walker"
-_CHARACTER_IDS = ("shadow_walker", "ruin_keeper", "spark_of_chaos")
+_CHARACTER_IDS = ("shadow_walker", "spark_of_chaos", "ruin_keeper")
 
 # ── zalgo / cursed helpers ──────────────────────────────────────
 _ABOVE = '\u0300\u0301\u0302\u0303\u0304\u0305\u0306\u0307\u0308\u030A\u030B\u030C\u030D\u030E\u030F\u0310\u0311\u0312\u0313\u0314\u033D\u033E\u033F\u0340\u0341\u0342\u0343\u0344\u0346\u034A\u034B\u034C\u0350\u0351\u0352\u0353\u0354\u0355\u0356\u0357\u035B\u035C\u035D\u035E\u035F\u0360\u0361\u0362\u0363\u0364\u0365\u0366\u0367\u0368\u0369\u036A\u036B\u036C\u036D\u036E\u036F'
