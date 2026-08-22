@@ -40,16 +40,78 @@ function makeAmbientSymbols(): Array<{
   });
 }
 
-// Пастельная палитра для символов
-const SYMBOL_COLORS = ['#8e6cc8', '#d14d76', '#b57e3e', '#5f8fb4'];
+// Палитра пылинок: белый + сигнатурные тона
+const MOTE_COLORS = [
+  'rgba(248,246,249,0.95)',
+  'rgba(39,73,210,0.55)',
+  'rgba(101,80,168,0.5)',
+  'rgba(174,169,186,0.6)',
+];
+
+interface Mote {
+  x: number;
+  y: number;
+  size: number;
+  color: string;
+  op: number;
+  dx: number;
+  dy: number;
+  dur: number;
+  delay: number;
+}
+
+function makeMotes(): Mote[] {
+  return Array.from({ length: 18 }, (_, i) => {
+    const s = i * 2.718 + 11;
+    return {
+      x: seededRand(s) * 100,
+      y: 25 + seededRand(s * 3) * 75, // пыль висит ниже шапки
+      size: seededRand(s * 5) > 0.7 ? 3 : 2,
+      color: MOTE_COLORS[Math.floor(seededRand(s * 7) * MOTE_COLORS.length)],
+      op: 0.3 + seededRand(s * 11) * 0.45,
+      dx: (seededRand(s * 13) - 0.5) * 14,
+      dy: -(30 + seededRand(s * 17) * 45),
+      dur: 9 + seededRand(s * 19) * 12,
+      delay: seededRand(s * 23) * 18,
+    };
+  });
+}
 
 export default function CrtOverlay({ children }: CrtOverlayProps) {
   const ambientSymbols = useMemo(() => makeAmbientSymbols(), []);
+  const motes = useMemo(() => makeMotes(), []);
 
   return (
     <div className="crt flex flex-col items-center w-full relative">
       {/* аврора-фон */}
       <div className="app-bg" aria-hidden="true" />
+
+      {/* дышащий свет вместо роллинг-полосы */}
+      <div className="glow-layer" aria-hidden="true" />
+
+      {/* пиксельная пыль в луче света */}
+      <div className="light-motes" aria-hidden="true">
+        {motes.map((m, i) => (
+          <span
+            key={i}
+            className="mote"
+            style={
+              {
+                left: `${m.x}%`,
+                top: `${m.y}%`,
+                width: m.size,
+                height: m.size,
+                background: m.color,
+                '--m-op': m.op,
+                '--m-dx': `${m.dx}px`,
+                '--m-dy': `${m.dy}px`,
+                '--m-dur': `${m.dur}s`,
+                '--m-del': `${m.delay}s`,
+              } as React.CSSProperties
+            }
+          />
+        ))}
+      </div>
 
       {/* мягкие парящие символы */}
       <div className="ambient-layer" aria-hidden="true">
@@ -61,7 +123,7 @@ export default function CrtOverlay({ children }: CrtOverlayProps) {
               left: `${sym.x}%`,
               top: `${sym.y}%`,
               fontSize: `${sym.size}px`,
-              color: SYMBOL_COLORS[i % SYMBOL_COLORS.length],
+              color: '#5B4A66',
               '--amb-op': sym.opacity,
               '--amb-delay': `${sym.delay}s`,
             } as React.CSSProperties}

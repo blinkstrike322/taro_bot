@@ -112,13 +112,14 @@ export default function QuestionInput({ spreadType, onSubmit, loading = false, c
       {/* ── ирис-схема живёт фоном всего экрана (в index.tsx) —
           здесь оставляем воздух: вопрос дышит над большим цветком */}
 
-      {/* ── кнопка / загрузка ── */}
-      <div className="flex justify-center flex-shrink-0 w-full pb-2">
+      {/* ── кнопка: типографика-микс serif + pixel ── */}
+      <div className="flex justify-center flex-shrink-0 w-full pb-3">
         {loading ? (
           <GuideLoading guide={guide} />
         ) : (
-          <Button onClick={handleSubmit} variant="primary" className="!px-9 !py-3">
-            получить ответ
+          <Button onClick={handleSubmit} variant="primary">
+            <span>получить</span>
+            <span className="btn-word__pix">ответ ✦</span>
           </Button>
         )}
       </div>

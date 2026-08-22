@@ -103,55 +103,57 @@ body {
   pointer-events: none;
 }
 
-/* Медленный отблеск, проходящий по странице — как свет по шёлку:
-   диффузная полоса + яркое ядро + синие/лиловые тона по краям */
-.crt::after {
-  content: "";
+/* Свет дышит: два больших свечения медленно меняют накал и положение —
+   как свет от окна в комнате с пылью. Роллинг-полоса удалена. */
+.glow-layer {
   position: absolute;
-  left: 0;
-  right: 0;
-  height: 170px;
+  inset: 0;
   z-index: 41;
-  background:
-    /* яркое ядро отблеска */
-    linear-gradient(to bottom,
-      transparent 0%,
-      rgba(248, 246, 249, 0) 38%,
-      rgba(255, 255, 255, 0.30) 48%,
-      rgba(255, 255, 255, 0.34) 52%,
-      rgba(248, 246, 249, 0) 62%,
-      transparent 100%),
-    /* диффузная широкая полоса */
-    linear-gradient(to bottom,
-      transparent 0%,
-      rgba(248, 246, 249, 0.10) 30%,
-      rgba(248, 246, 249, 0.16) 50%,
-      rgba(248, 246, 249, 0.10) 70%,
-      transparent 100%),
-    /* цветные тона — синий сверху ядра, лиловый снизу */
-    linear-gradient(to bottom,
-      transparent 0%,
-      rgba(39, 73, 210, 0.05) 42%,
-      transparent 55%,
-      rgba(101, 80, 168, 0.05) 68%,
-      transparent 100%);
-  filter: blur(1px);
   pointer-events: none;
-  animation:
-    roll 14s linear infinite,
-    sheen-breathe 7s ease-in-out infinite;
+  background:
+    radial-gradient(ellipse 55% 35% at 18% 0%, rgba(248, 246, 249, 0.30) 0%, transparent 70%),
+    radial-gradient(ellipse 45% 30% at 85% 100%, rgba(217, 223, 234, 0.30) 0%, transparent 70%);
+  animation: glow-breathe 16s ease-in-out infinite;
 }
 
-@keyframes roll {
-  0%   { top: -180px; }
-  100% { top: 100%; }
+@keyframes glow-breathe {
+  0%, 100% { opacity: 0.45; transform: translate(0, 0) scale(1); }
+  30%      { opacity: 0.8; }
+  50%      { opacity: 0.6; transform: translate(1.5%, 1%) scale(1.04); }
+  80%      { opacity: 0.85; }
 }
 
-/* отблеск то усиливается, то тает — живой свет, не механический цикл */
-@keyframes sheen-breathe {
-  0%, 100% { opacity: 0.55; }
-  35%      { opacity: 1; }
-  70%      { opacity: 0.75; }
+/* Пиксельная пыль в луче света: крошечные квадраты разных тонов
+   мерцают и медленно плывут вверх — каждый со своей фазой */
+.light-motes {
+  position: absolute;
+  inset: 0;
+  z-index: 41;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.mote {
+  position: absolute;
+  animation: mote-twinkle var(--m-dur, 12s) ease-in-out infinite;
+  animation-delay: var(--m-del, 0s);
+}
+
+@keyframes mote-twinkle {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0);
+  }
+  12% { opacity: var(--m-op, 0.5); }
+  50% {
+    opacity: calc(var(--m-op, 0.5) * 0.45);
+    transform: translate(var(--m-dx, 3px), calc(var(--m-dy, -26px) * 0.5));
+  }
+  88% { opacity: var(--m-op, 0.5); }
+  100% {
+    opacity: 0;
+    transform: translate(calc(var(--m-dx, 3px) * 0.4), var(--m-dy, -52px));
+  }
 }
 
 /* Слои фона:
@@ -394,8 +396,80 @@ body {
 }
 
 /* ================================================================
-   BUTTON — типографический объект, встроенный в мир
+   TEXT BUTTON — типографика как на постере (смешение шрифтов)
+   serif-курсив + пиксель-капс, без плашки и обводки
    ================================================================ */
+.btn-word {
+  position: relative;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 10px;
+  background: none;
+  border: none;
+  padding: 10px 8px;
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 600;
+  font-size: 27px;
+  line-height: 1;
+  color: var(--ink);
+  cursor: pointer;
+  transition: color 0.2s ease, transform 0.15s ease;
+}
+
+.btn-word .btn-word__pix {
+  font-family: var(--font-pixel);
+  font-style: normal;
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--guide-accent, var(--accent-blue));
+  transform: translateY(-2px);
+  transition: color 0.2s ease;
+}
+
+/* дизер-подчёркивание проявляется при наведении */
+.btn-word::after {
+  content: "";
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 4px;
+  height: 3px;
+  background: radial-gradient(circle, var(--guide-accent, var(--accent-blue)) 0.9px, transparent 1.2px) 0 0 / 4px 3px repeat-x;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.btn-word:hover {
+  color: var(--guide-accent-deep, var(--deep));
+}
+
+.btn-word:hover::after {
+  opacity: 0.9;
+}
+
+.btn-word:active {
+  transform: translateY(1px);
+}
+
+/* приглушённый вариант (закрыть/второстепенное) */
+.btn-word--dim {
+  font-size: 19px;
+  color: var(--ink-soft);
+  padding: 8px 8px;
+}
+
+.btn-word--dim:hover {
+  color: var(--ink);
+}
+
+.btn-word:disabled,
+.btn-word[disabled] {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
 .btn {
   transition: transform 0.15s ease, box-shadow 0.25s ease, background 0.25s ease, color 0.25s ease, border-color 0.25s ease;
   position: relative;
@@ -1318,6 +1392,8 @@ body {
    ================================================================ */
 @media (prefers-reduced-motion: reduce) {
   .crt::after,
+  .glow-layer,
+  .mote,
   .guide-particle,
   .ambient-symbol,
   .aura-char,

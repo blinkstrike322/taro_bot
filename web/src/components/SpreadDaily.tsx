@@ -174,12 +174,12 @@ export default function SpreadDaily({ characterId, onError, apiCall }: SpreadDai
           {/* ирис-схема прорастает из-под карт: соцветие выглядит между рубашками */}
           <div
             className="absolute pointer-events-none z-0"
-            style={{ bottom: '-30%', left: '-14%', width: '48vmin' }}
+            style={{ bottom: '-28%', left: '2%', width: '58vmin' }}
             aria-hidden="true"
           >
             <PixelFlower
               seed={11}
-              size={430}
+              size={520}
               variant="iris"
               color={guide.accent}
               bgColor="var(--paper)"
@@ -216,7 +216,7 @@ export default function SpreadDaily({ characterId, onError, apiCall }: SpreadDai
         </div>
 
         {/* статус-строка */}
-        <div className="relative z-10 flex flex-col items-center gap-1.5 pb-4">
+        <div className="relative z-10 flex flex-col items-center gap-1.5 mt-9 pb-4">
           {fetching ? (
             <GuideLoading guide={guide} />
           ) : !allFlipped ? (
