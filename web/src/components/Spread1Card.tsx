@@ -59,7 +59,7 @@ export default function Spread1Card({ apiCall, characterId, onError }: Spread1Ca
   }
 
   if (phase === 'cards' && data) {
-    const card = { ...data.cards[0], image_url: `/cards/${data.cards[0].id}.png` };
+    const card = { ...data.cards[0], image_url: `/cards/${data.cards[0].id}.webp` };
 
     if (!flipped) {
       return (

@@ -37,18 +37,18 @@ export default function ReadingResult({ interpretation, characterId, readingId =
       </div>
 
       <div
-        className="relative reading-card noise-bg px-1 py-4"
+        className="relative reading-card noise-bg px-4 py-5"
         style={{
           '--guide-accent': guide.accent,
           '--guide-accent-deep': guide.accentDeep,
           '--guide-accent-dim': guide.accentDim,
         } as React.CSSProperties}
       >
-        {/* интро — голос проводницы крупным курсивом с засечкой-кавычкой */}
+        {/* интро — голос проводницы крупным курсивом */}
         {intro && (
-          <div className="relative z-10 mb-3 flex gap-2">
+          <div className="relative z-10 mb-4 flex gap-3">
             <span className="quote-mark" style={{ color: guide.accentDeep }} aria-hidden="true">«</span>
-            <p className="font-serif italic text-[21px] leading-snug pt-2" style={{ color: guide.accentDeep }}>
+            <p className="font-serif italic text-[23px] leading-[1.3] pt-2" style={{ color: guide.accentDeep }}>
               {intro}
             </p>
           </div>
@@ -56,29 +56,44 @@ export default function ReadingResult({ interpretation, characterId, readingId =
 
         {/* главное толкование */}
         {short_answer && (
-          <p className="font-sans text-[14.5px] leading-relaxed text-[color:var(--ink)] relative z-10">
-            {short_answer}
-          </p>
+          <div className="relative z-10 mb-4">
+            <p className="font-sans text-[15.5px] leading-[1.75] text-[color:var(--ink)]">
+              {short_answer}
+            </p>
+          </div>
         )}
 
         {/* разбор по картам */}
         {card_meaning && (Array.isArray(card_meaning) ? card_meaning.length > 0 : card_meaning) && (
-          <div className="mt-3 space-y-2.5 relative z-10">
-            {(Array.isArray(card_meaning) ? card_meaning : [card_meaning]).map((meaning, i) => (
-              <p key={i} className="font-sans text-[13.5px] leading-relaxed text-[color:var(--ink)] opacity-90">
-                {meaning}
-              </p>
-            ))}
+          <div className="relative z-10 mb-4">
+            <div className="reading-section-label mb-2" style={{ color: guide.accentDeep }}>
+              карты говорят
+            </div>
+            <div className="space-y-3">
+              {(Array.isArray(card_meaning) ? card_meaning : [card_meaning]).map((meaning, i) => (
+                <p
+                  key={i}
+                  className="relative pl-3.5 font-sans text-[14px] leading-[1.7] text-[color:var(--ink)] opacity-92"
+                >
+                  <span
+                    className="absolute left-0 top-[0.55em] w-1 h-1 rounded-full"
+                    style={{ backgroundColor: guide.accent }}
+                    aria-hidden="true"
+                  />
+                  {meaning}
+                </p>
+              ))}
+            </div>
           </div>
         )}
 
         {/* совет — маргиналия на линии */}
         {advice && (
-          <div className="marginalia mt-4 pt-0.5 relative z-10">
-            <div className="tech-label mb-1" style={{ color: guide.accentDeep }}>
+          <div className="marginalia mt-5 pt-1 relative z-10">
+            <div className="tech-label mb-1.5" style={{ color: guide.accentDeep }}>
               {guide.id === 'ruin_keeper' ? 'слово весты' : guide.id === 'spark_of_chaos' ? 'от лилит' : 'шёпот селены'}
             </div>
-            <p className="font-serif text-[18px] font-semibold leading-snug" style={{ color: 'var(--ink)' }}>
+            <p className="font-serif text-[19px] font-semibold leading-[1.4]" style={{ color: 'var(--ink)' }}>
               {advice}
             </p>
           </div>

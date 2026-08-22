@@ -509,7 +509,7 @@ function ReadingDetail({ reading, onBack }: { reading: ReadingEntry; onBack: () 
           {cards.map((c, i) => {
             const isReversed = c.is_reversed || c.orientation === 'reversed';
             const cardId = c.id || '';
-            const imgSrc = cardId ? `/cards/${cardId}.png` : '';
+            const imgSrc = cardId ? `/cards/${cardId}.webp` : '';
             return (
               <div
                 key={i}
@@ -526,7 +526,7 @@ function ReadingDetail({ reading, onBack }: { reading: ReadingEntry; onBack: () 
                       alt={c.name || ''}
                       loading="lazy"
                       className={`dither-img w-full h-full object-contain ${isReversed ? 'rotate-180' : ''}`}
-                      style={{ imageRendering: 'pixelated' }}
+                      style={{ imageRendering: 'auto' }}
                     />
                   )}
                   {isReversed && (

@@ -45,8 +45,8 @@ function makeAuraDots(count: number, offset: number, alphabet: string): AuraDot[
       ch: alphabet[Math.floor(pseudoRand(s * 2) * alphabet.length)],
       x: 50 + Math.cos(angle) * dist * 60,
       y: 50 + Math.sin(angle) * dist * 60,
-      op: 0.10 + pseudoRand(s * 13) * 0.22,
-      size: 6 + Math.floor(pseudoRand(s * 17) * 6),
+      op: 0.05 + pseudoRand(s * 13) * 0.09,
+      size: 5 + Math.floor(pseudoRand(s * 17) * 5),
       delay: pseudoRand(s * 19) * 8,
       dur: 4 + pseudoRand(s * 23) * 6,
     };
@@ -102,7 +102,7 @@ export default function Card({
   }, [flipped, onFlip]);
 
   const auraDots = useMemo(
-    () => makeAuraDots(30, 0, guide.auraAlphabet),
+    () => makeAuraDots(18, 0, guide.auraAlphabet),
     [guide.auraAlphabet],
   );
 
@@ -191,13 +191,19 @@ export default function Card({
               />
             </div>
 
-            {/* ── лицо: дизеринг-арт карты + шиммер при перевороте ── */}
+            {/* ── лицо: HQ гравюра + динамический акцент проводницы ── */}
             <div className="flip-face flip-back scan-soft relative overflow-hidden" style={{ background: 'var(--paper-bright)' }}>
               <img
                 src={card.image_url}
                 alt={card.name}
                 loading="eager"
                 className={`dither-img w-full h-full object-cover flip-glitch ${card.is_reversed ? 'rotate-180' : ''}`}
+              />
+              {/* динамический акцент проводницы — едва заметная тонировка */}
+              <div
+                className="card-tint"
+                style={{ backgroundColor: guide.accent }}
+                aria-hidden="true"
               />
               {/* перевернутая карта — шильдик */}
               {card.is_reversed && (

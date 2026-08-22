@@ -240,7 +240,24 @@ body {
 }
 
 .dither-img {
-  filter: grayscale(1) contrast(1.22) brightness(1.02);
+  /* карты уже ч/б; только лёгкая коррекция */
+  filter: contrast(1.06) brightness(1.03);
+}
+
+/* динамический акцент проводницы на лице карты */
+.card-tint {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  opacity: 0;
+  mix-blend-mode: soft-light;
+  transition: opacity 0.7s ease;
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+.flip.is-flipped .card-tint {
+  opacity: 0.16;
 }
 
 .scan-soft::after {
@@ -270,6 +287,10 @@ body {
 
 .flip.is-flipped .flip-inner {
   transform: rotateY(180deg) rotate(calc(var(--tilt, 0deg) * 0.3));
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.5),
+    0 0 30px 6px var(--guide-accent-dim, rgba(111, 108, 164, 0.22)),
+    0 16px 46px rgba(74, 78, 109, 0.18);
 }
 
 /* карта живая: лёгкий подъём + выпрямление при касании */
@@ -355,14 +376,14 @@ body {
    ================================================================ */
 .card-aura {
   position: absolute;
-  inset: -60px -70px;
+  inset: -34px -38px;
   pointer-events: none;
   z-index: 0;
   transition: transform 0.8s ease, filter 0.8s ease;
 }
 
 .card-aura--expanded {
-  transform: scale(1.22, 1.12);
+  transform: scale(1.08, 1.04);
 }
 
 .aura-char {
@@ -848,16 +869,25 @@ body {
   background: rgba(248, 246, 249, 0.88);
   border-top: 1px solid var(--line-strong);
   border-bottom: 1px solid var(--line-strong);
-  padding-top: 4px;
+  border-radius: 2px;
 }
 
 /* крупная кавычка-засечка у интро */
 .quote-mark {
   font-family: var(--font-serif);
-  font-size: 54px;
-  line-height: 0.6;
-  opacity: 0.25;
+  font-size: 58px;
+  line-height: 0.55;
+  opacity: 0.22;
   user-select: none;
+  transform: translateY(2px);
+}
+
+.reading-section-label {
+  font-family: var(--font-pixel);
+  font-size: 8.5px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  opacity: 0.75;
 }
 
 .section-label {
