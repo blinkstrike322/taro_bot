@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { SendHorizontal } from 'lucide-react';
 import { getGuide } from '@/lib/guides';
 import * as API from '@/lib/api';
 
@@ -189,12 +190,13 @@ export default function FollowupChat({ readingId, characterId }: FollowupChatPro
           />
           <button
             type="button"
-            className="btn-vibe flex-shrink-0 w-10 h-10 flex items-center justify-center font-sans text-[15px]"
+            className="btn-vibe flex-shrink-0 w-10 h-10 flex items-center justify-center"
+            style={{ background: 'var(--accent-blue)', borderColor: 'var(--accent-blue)' }}
             onClick={() => submit(input)}
             disabled={disabled || !input.trim()}
             aria-label="Отправить вопрос"
           >
-            <span className="relative z-10">✦</span>
+            <SendHorizontal size={16} strokeWidth={1.75} className="relative z-10" />
           </button>
         </div>
       </div>

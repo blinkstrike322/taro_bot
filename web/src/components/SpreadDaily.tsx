@@ -171,13 +171,20 @@ export default function SpreadDaily({ characterId, onError, apiCall }: SpreadDai
       {/* веер карт */}
       <div className="flex-1 min-h-0 flex flex-col items-center justify-center w-full">
         <div className="relative flex items-end justify-center w-full max-w-[460px] py-6">
-          {/* цветок прорастает из-под карт */}
+          {/* стебель прорастает из-под карт: соцветие выглядывает между рубашками */}
           <div
             className="absolute pointer-events-none z-0"
-            style={{ bottom: '-30%', left: '-18%', width: '56vmin', height: '56vmin' }}
+            style={{ bottom: '-34%', left: '-16%', width: '52vmin', height: '83vmin' }}
             aria-hidden="true"
           >
-            <PixelFlower seed={11} size={560} color={guide.accent} opacity={0.18} dense />
+            <PixelFlower
+              seed={11}
+              size={480}
+              variant="stem"
+              color={guide.accent}
+              accentColor="var(--accent-blue)"
+              opacity={0.22}
+            />
           </div>
 
           {[0, 1, 2].map((i) => (
