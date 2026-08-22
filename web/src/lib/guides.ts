@@ -72,9 +72,9 @@ export const GUIDES: Record<string, GuideMeta> = {
     portrait: '/guides/shadow_walker.png?v=2',
     cardBack: '/cards/backs/back_shadow_walker.png',
     cardBackVersion: 5,
-    cornerSymbols: { tl: '☽', tr: '✦', bl: '❋', br: '☾' },
-    auraAlphabet: '·•✦✧☾☽◯◌○◇◎°~ﾟ❋',
-    ambientSymbols: ['☾', '☽', '✦', '✧', '◌', '○', '◇', '❋'],
+    cornerSymbols: { tl: '◦', tr: '✦', bl: '◇', br: '○' },
+    auraAlphabet: '·•✦✧○◌◇◎°~ﾟ',
+    ambientSymbols: ['✦', '✧', '◌', '○', '◇', '·'],
     ambientPattern:
       'radial-gradient(ellipse at 20% 20%, rgba(141,137,192,0.14) 0%, transparent 55%),' +
       'radial-gradient(ellipse at 85% 75%, rgba(207,201,221,0.18) 0%, transparent 55%),' +
@@ -109,9 +109,9 @@ export const GUIDES: Record<string, GuideMeta> = {
     portraitColor: '#C96F1E',
     cardBack: '/cards/backs/back_ruin_keeper.png',
     cardBackVersion: 5,
-    cornerSymbols: { tl: '☰', tr: '☥', bl: '◈', br: '⚹' },
-    auraAlphabet: '·•☦☥◈☱☲☳βα∅✚◯◇◎°~∴',
-    ambientSymbols: ['☰', '☥', '◈', '⚹', '∴', '◇', '◯', '·'],
+    cornerSymbols: { tl: '◆', tr: '✦', bl: '◇', br: '○' },
+    auraAlphabet: '·•✦✧◆◇◎°~ﾟ',
+    ambientSymbols: ['✦', '✧', '◆', '◇', '○', '·'],
     ambientPattern:
       'radial-gradient(ellipse at 50% 15%, rgba(168,146,111,0.14) 0%, transparent 55%),' +
       'radial-gradient(ellipse at 15% 80%, rgba(238,233,223,0.5) 0%, transparent 55%),' +
@@ -146,9 +146,9 @@ export const GUIDES: Record<string, GuideMeta> = {
     portraitColor: '#C9356F',
     cardBack: '/cards/backs/back_spark_of_chaos.png',
     cardBackVersion: 5,
-    cornerSymbols: { tl: '⌇', tr: '✕', bl: '❦', br: '※' },
-    auraAlphabet: '·•⌇∾◇◎∘○※✕❦‡°~ﾟ',
-    ambientSymbols: ['⌇', '∾', '※', '✕', '❦', '∘', '·', '•'],
+    cornerSymbols: { tl: '✧', tr: '◇', bl: '✦', br: '○' },
+    auraAlphabet: '·•✦✧◇◎∘○°~ﾟ',
+    ambientSymbols: ['✦', '✧', '◇', '○', '·', '•'],
     ambientPattern:
       'radial-gradient(ellipse at 75% 25%, rgba(188,131,153,0.14) 0%, transparent 52%),' +
       'radial-gradient(ellipse at 20% 70%, rgba(207,201,221,0.18) 0%, transparent 52%),' +

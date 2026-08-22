@@ -138,7 +138,7 @@ export default function Layout({
             </button>
             <Glyph name="constellation" size={11} style={{ color: 'var(--ink-faint)', opacity: 0.7 }} />
             <button type="button" className="nav-word" style={{ color: guide.accentDeep }} onClick={onOpenSettings}>
-              <Glyph name="crescent" size={11} />проводница
+              <Glyph name="constellation" size={11} />проводница
             </button>
             <Glyph name="bud" size={9} style={{ color: 'var(--ink-faint)', opacity: 0.7 }} />
             <button type="button" className="nav-word" style={{ color: guide.accentDeep }} onClick={onOpenCalendar}>

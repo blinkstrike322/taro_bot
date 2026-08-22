@@ -166,7 +166,7 @@ export default function Home() {
         readingId: res.reading_id,
         cards: res.cards.map((c) => ({
           ...c,
-          image_url: `/cards/${c.id}.png`,
+          image_url: `/cards/${c.id}.webp`,
         })),
         interpretation: res.interpretation,
       })),
@@ -179,7 +179,7 @@ export default function Home() {
         readingId: res.reading_id,
         cards: res.cards.map((c) => ({
           ...c,
-          image_url: `/cards/${c.id}.png`,
+          image_url: `/cards/${c.id}.webp`,
         })),
         interpretation: res.interpretation,
       })),

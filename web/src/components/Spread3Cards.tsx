@@ -101,7 +101,7 @@ export default function Spread3Cards({ apiCall, characterId, onError }: Spread3C
               style={{ transform: `translate(${offsets[0].x}px, ${offsets[0].y}px) rotate(${offsets[0].r}deg)` }}
             >
               <Card
-                card={{ ...data.cards[1], image_url: `/cards/${data.cards[1].id}.png` }}
+                card={{ ...data.cards[1], image_url: `/cards/${data.cards[1].id}.webp` }}
                 position={POSITIONS[1]}
                 raised={true}
                 flipped={true}
@@ -115,7 +115,7 @@ export default function Spread3Cards({ apiCall, characterId, onError }: Spread3C
                 style={{ transform: `translate(${offsets[1].x}px, ${offsets[1].y}px) rotate(${offsets[1].r}deg)` }}
               >
                 <Card
-                  card={{ ...data.cards[0], image_url: `/cards/${data.cards[0].id}.png` }}
+                  card={{ ...data.cards[0], image_url: `/cards/${data.cards[0].id}.webp` }}
                   position={POSITIONS[0]}
                   raised={false}
                   flipped={true}
@@ -127,7 +127,7 @@ export default function Spread3Cards({ apiCall, characterId, onError }: Spread3C
                 style={{ transform: `translate(${offsets[2].x}px, ${offsets[2].y}px) rotate(${offsets[2].r}deg)` }}
               >
                 <Card
-                  card={{ ...data.cards[2], image_url: `/cards/${data.cards[2].id}.png` }}
+                  card={{ ...data.cards[2], image_url: `/cards/${data.cards[2].id}.webp` }}
                   position={POSITIONS[2]}
                   raised={false}
                   flipped={true}
@@ -157,7 +157,7 @@ export default function Spread3Cards({ apiCall, characterId, onError }: Spread3C
               style={{ transform: `translate(${offsets[0].x}px, ${offsets[0].y}px) rotate(${offsets[0].r}deg)` }}
             >
               <Card
-                card={{ ...data.cards[1], image_url: `/cards/${data.cards[1].id}.png` }}
+                card={{ ...data.cards[1], image_url: `/cards/${data.cards[1].id}.webp` }}
                 position={POSITIONS[1]}
                 raised={true}
                 flipped={flippedCards[1]}
@@ -173,7 +173,7 @@ export default function Spread3Cards({ apiCall, characterId, onError }: Spread3C
                 style={{ transform: `translate(${offsets[1].x}px, ${offsets[1].y}px) rotate(${offsets[1].r}deg)` }}
               >
                 <Card
-                  card={{ ...data.cards[0], image_url: `/cards/${data.cards[0].id}.png` }}
+                  card={{ ...data.cards[0], image_url: `/cards/${data.cards[0].id}.webp` }}
                   position={POSITIONS[0]}
                   raised={false}
                   flipped={flippedCards[0]}
@@ -186,7 +186,7 @@ export default function Spread3Cards({ apiCall, characterId, onError }: Spread3C
                 style={{ transform: `translate(${offsets[2].x}px, ${offsets[2].y}px) rotate(${offsets[2].r}deg)` }}
               >
                 <Card
-                  card={{ ...data.cards[2], image_url: `/cards/${data.cards[2].id}.png` }}
+                  card={{ ...data.cards[2], image_url: `/cards/${data.cards[2].id}.webp` }}
                   position={POSITIONS[2]}
                   raised={false}
                   flipped={flippedCards[2]}

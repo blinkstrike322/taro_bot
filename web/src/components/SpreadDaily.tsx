@@ -134,7 +134,7 @@ export default function SpreadDaily({ characterId, onError, apiCall }: SpreadDai
               }}
             >
               <Card
-                card={{ ...c, image_url: `/cards/${c.id}.png` }}
+                card={{ ...c, image_url: `/cards/${c.id}.webp` }}
                 flipped={true}
                 tilt={FAN[i].tilt * 0.6}
                 characterId={characterId}
@@ -204,7 +204,7 @@ export default function SpreadDaily({ characterId, onError, apiCall }: SpreadDai
               <Card
                 card={
                   data
-                    ? { ...data.cards[i], image_url: `/cards/${data.cards[i].id}.png` }
+                    ? { ...data.cards[i], image_url: `/cards/${data.cards[i].id}.webp` }
                     : { id: `wait-${i}`, name: '', image_url: '', is_reversed: false }
                 }
                 position={flipped[i] ? undefined : POSITIONS[i]}
