@@ -100,31 +100,20 @@ export default function Layout({
                 / {formatSpreadType(spreadType)} · {arcanaCount ?? 1}
               </span>
 
-              {/* проводница */}
+              {/* проводница — имя крупно, без аватара */}
               <button
                 type="button"
-                className="ml-auto flex items-center gap-2"
+                className="ml-auto flex items-center"
                 onClick={onOpenSettings}
                 aria-label={`Проводница: ${guide.name}. Сменить`}
               >
                 <span className="flex flex-col items-end leading-none">
-                  <span className="font-serif italic text-[15px] band-text">
+                  <span className="font-serif italic text-[21px] font-semibold band-text">
                     {guide.name}
                   </span>
-                  <span className="tech-label band-text-dim">
+                  <span className="tech-label band-text-dim" style={{ fontSize: 10 }}>
                     {guide.tag}
                   </span>
-                </span>
-                <span
-                  className="w-8 h-8 guide-portrait-frame flex-shrink-0"
-                  style={{ border: '1.5px solid rgba(248,246,249,0.55)' }}
-                >
-                  <img
-                    src={guide.portrait}
-                    alt={guide.name}
-                    className="w-full h-full object-cover"
-                    style={{ imageRendering: 'pixelated', filter: 'grayscale(0.15) contrast(1.1)' }}
-                  />
                 </span>
               </button>
             </div>
