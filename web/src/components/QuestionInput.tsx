@@ -4,6 +4,8 @@ import { useState, useMemo } from 'react';
 import Button from './Button';
 import GuideLoading from './GuideLoading';
 import PixelFlower from './PixelFlower';
+import PixelEdge from './PixelEdge';
+import Glyph from './Glyph';
 import { getGuide } from '@/lib/guides';
 
 interface QuestionInputProps {
@@ -110,22 +112,36 @@ export default function QuestionInput({ spreadType, onSubmit, loading = false, c
         </div>
       )}
 
-      {/* ── ботанический арт-объект — эмоциональный центр сцены ──
-          стебель уходит вниз и «за» кнопку: ощущение слоёв */}
+      {/* ── ирис-схема на сигнатурной плашке — эмоциональный центр сцены ──
+          белый цветок на цветной миллиметровке, край растворяется в пиксели */}
       <div className="relative flex-1 min-h-0 flex items-end justify-center w-full">
         <div
-          className="relative"
-          style={{ height: 'min(46vh, 380px)', width: 'min(64vw, 280px)' }}
+          className="relative band-grid"
+          style={{
+            background: guide.accent,
+            width: 'min(66vw, 280px)',
+            transform: 'rotate(-1.2deg)',
+            marginTop: 12,
+          }}
           aria-hidden="true"
         >
-          <PixelFlower
-            seed={31}
-            size={280}
-            variant="stem"
-            color={guide.accent}
-            accentColor="var(--accent-blue)"
-            opacity={0.85}
-          />
+          <div className="flex justify-center pt-4 px-4" style={{ paddingBottom: 10 }}>
+            <PixelFlower
+              seed={31}
+              size={210}
+              variant="iris"
+              color="#F8F6F9"
+              bgColor={guide.accent}
+              opacity={1}
+            />
+          </div>
+          {/* подпись-схема внутри плашки */}
+          <div className="flex items-center gap-2.5 px-4 pb-2 select-none">
+            <Glyph name="star4" size={8} style={{ color: 'rgba(248,246,249,0.6)' }} />
+            <span className="tech-label band-text-dim">iris · chart · {guide.subtitle}</span>
+            <Glyph name="crescent" size={9} style={{ color: 'rgba(248,246,249,0.5)' }} />
+          </div>
+          <PixelEdge color={guide.accent} height={14} seed={8} />
         </div>
       </div>
 
