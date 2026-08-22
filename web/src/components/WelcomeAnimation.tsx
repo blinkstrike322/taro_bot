@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { getGuide } from '@/lib/guides';
-import GuideSigil from './GuideSigil';
 import PixelFlower from './PixelFlower';
 
 interface WelcomeAnimationProps {
@@ -212,27 +211,33 @@ export default function WelcomeAnimation({ onComplete, spreadType, characterId =
       {/* ── пиксель-цветок: прорастает слева-снизу, наполовину за экраном ── */}
       <div
         className="absolute pointer-events-none z-0"
-        style={{ bottom: '-26%', left: '-30%', width: '80vmin', height: '80vmin' }}
+        style={{ bottom: '-22%', left: '-30%', width: '80vmin', height: '128vmin' }}
         aria-hidden="true"
       >
-        <PixelFlower seed={5} size={760} color={guide.accent} opacity={0.2} dense />
+        <PixelFlower
+          seed={5}
+          size={760}
+          variant="stem"
+          color={guide.accent}
+          accentColor="var(--accent-blue)"
+          opacity={0.22}
+        />
       </div>
 
-      {/* ── сигил — едва заметная схема за героем ── */}
+      {/* ─– второй, справа-сверху, растворяется в фоне ── */}
       <div
         className="absolute pointer-events-none z-0"
-        style={{
-          top: '12%',
-          right: '-22%',
-          width: 'min(70vw, 420px)',
-          height: 'min(70vw, 420px)',
-          opacity: showSigil ? 0.34 : 0,
-          transform: showSigil ? 'scale(1)' : 'scale(0.8)',
-          transition: 'opacity 1.2s ease-out, transform 1.4s ease-out',
-        }}
+        style={{ top: '-14%', right: '-30%', width: '62vmin', height: '62vmin' }}
         aria-hidden="true"
       >
-        <GuideSigil guideId={characterId} />
+        <PixelFlower
+          seed={42}
+          size={620}
+          color={guide.accent}
+          accentColor="var(--accent-violet)"
+          opacity={0.13}
+          dense
+        />
       </div>
 
       {/* ── ГЕРОЙ: огромная строчная типографика, асимметрия ── */}

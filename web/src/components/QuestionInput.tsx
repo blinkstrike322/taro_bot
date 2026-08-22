@@ -2,8 +2,8 @@
 
 import { useState, useMemo } from 'react';
 import Button from './Button';
-import GuideSigil from './GuideSigil';
 import GuideLoading from './GuideLoading';
+import PixelFlower from './PixelFlower';
 import { getGuide } from '@/lib/guides';
 
 interface QuestionInputProps {
@@ -110,9 +110,23 @@ export default function QuestionInput({ spreadType, onSubmit, loading = false, c
         </div>
       )}
 
-      {/* ── сигил проводницы дышит на фоне вопроса ── */}
-      <div className="flex-1 min-h-0 flex items-center justify-center w-full py-2">
-        <GuideSigil guideId={characterId} />
+      {/* ── ботанический арт-объект — эмоциональный центр сцены ──
+          стебель уходит вниз и «за» кнопку: ощущение слоёв */}
+      <div className="relative flex-1 min-h-0 flex items-end justify-center w-full">
+        <div
+          className="relative"
+          style={{ height: 'min(46vh, 380px)', width: 'min(64vw, 280px)' }}
+          aria-hidden="true"
+        >
+          <PixelFlower
+            seed={31}
+            size={280}
+            variant="stem"
+            color={guide.accent}
+            accentColor="var(--accent-blue)"
+            opacity={0.85}
+          />
+        </div>
       </div>
 
       {/* ── кнопка / загрузка ── */}

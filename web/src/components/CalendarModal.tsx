@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { ArrowLeft, ArrowRight, X } from 'lucide-react';
 import Button from './Button';
 import { getGuide } from '@/lib/guides';
 
@@ -208,7 +209,15 @@ export default function CalendarModal({ isOpen, onClose, initData }: CalendarMod
         <div className="sticky top-0 z-20 px-5 pt-4 pb-3" style={{ background: 'var(--paper-bright)', borderBottom: '1px solid var(--line-strong)' }}>
           <div className="flex items-center justify-between">
             <div className="display-xl !text-[30px]">история</div>
-            <span className="tech-label">твой путь в картах</span>
+            <button
+              type="button"
+              className="btn p-1.5"
+              onClick={onClose}
+              aria-label="Закрыть"
+              style={{ color: 'var(--ink-soft)' }}
+            >
+              <X size={17} strokeWidth={1.75} />
+            </button>
           </div>
           <div className="font-serif italic text-[14px] mt-1 text-[color:var(--ink-soft)]">
             каждый день оставил след. выбери дату, чтобы вернуться.
@@ -225,7 +234,7 @@ export default function CalendarModal({ isOpen, onClose, initData }: CalendarMod
                 onClick={handlePrevMonth}
                 aria-label="Предыдущий месяц"
               >
-                ‹ назад
+                <ArrowLeft size={13} strokeWidth={1.75} />назад
               </button>
               <div className="font-serif text-[20px] font-semibold text-[color:var(--ink)] text-center leading-tight">
                 {MONTH_NAMES[month].toLowerCase()}<br />
@@ -237,7 +246,7 @@ export default function CalendarModal({ isOpen, onClose, initData }: CalendarMod
                 onClick={handleNextMonth}
                 aria-label="Следующий месяц"
               >
-                вперёд ›
+                вперёд<ArrowRight size={13} strokeWidth={1.75} />
               </button>
             </div>
 
@@ -317,11 +326,10 @@ export default function CalendarModal({ isOpen, onClose, initData }: CalendarMod
             <div className="flex items-center justify-between mb-3">
               <button
                 type="button"
-                className="btn font-sans text-[12px] font-semibold text-[color:var(--ink)] px-3.5 py-2 rounded-full"
-                style={{ background: 'var(--paper)', border: '1.5px solid var(--line-strong)' }}
+                className="btn nav-word !text-[12px]"
                 onClick={() => setSelectedDay(null)}
               >
-                ‹ назад
+                <ArrowLeft size={13} strokeWidth={1.75} />назад
               </button>
               <div className="font-serif text-[17px] font-semibold text-[color:var(--ink)] text-right leading-tight">
                 {selectedDay} {MONTH_NAMES[month].toLowerCase()}<br />
@@ -441,11 +449,10 @@ function ReadingDetail({ reading, onBack }: { reading: ReadingEntry; onBack: () 
       <div className="flex items-center justify-between mb-3">
         <button
           type="button"
-          className="btn font-sans text-[12px] font-semibold text-[color:var(--ink)] px-3.5 py-2 rounded-full"
-          style={{ background: 'var(--paper)', border: '1.5px solid var(--line-strong)' }}
+          className="btn nav-word !text-[12px]"
           onClick={onBack}
         >
-          ‹ назад
+          <ArrowLeft size={13} strokeWidth={1.75} />назад
         </button>
         <div className="font-pixel text-[9px] text-[color:var(--ink-soft)] tracking-wide text-right leading-tight">
           {typeGlyph} {typeLabel}<br />

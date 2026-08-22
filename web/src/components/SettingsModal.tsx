@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { X } from 'lucide-react';
 import Button from './Button';
 import { getGuide, GUIDE_IDS, GuideMeta } from '@/lib/guides';
 
@@ -70,7 +71,18 @@ export default function SettingsModal({
       >
         {/* шапка */}
         <div className="sticky top-0 z-10 px-5 pt-4 pb-3" style={{ background: 'var(--paper-bright)', borderBottom: '1px solid var(--line-strong)' }}>
-          <div className="display-xl !text-[30px]">проводницы</div>
+          <div className="flex items-start justify-between">
+            <div className="display-xl !text-[30px]">проводницы</div>
+            <button
+              type="button"
+              className="btn p-1.5 mt-1"
+              onClick={onClose}
+              aria-label="Закрыть"
+              style={{ color: 'var(--ink-soft)' }}
+            >
+              <X size={17} strokeWidth={1.75} />
+            </button>
+          </div>
           <div className="font-serif italic text-[15px] mt-1 text-[color:var(--ink-soft)]">
             каждая читает карты по-своему. кто скажет тебе правду?
           </div>
