@@ -57,6 +57,29 @@ HEDGE_DELAY_S = 12.0
 MAX_CONCURRENT_ATTEMPTS = 3
 ATTEMPT_TIMEOUT_S = 45.0
 
+# Кулдаун только что упавших моделей: 429/5xx/«unavailable»/таймаут —
+# и модель на 5 минут выпадает из хедж-очереди, не тратит слот.
+COOLDOWN_SECONDS = 300.0
+_cooldown_until: dict[str, float] = {}
+
+
+def _set_cooldown(model: str, why: str) -> None:
+    loop = asyncio.get_running_loop()
+    _cooldown_until[model] = loop.time() + COOLDOWN_SECONDS
+    logger.info("Cooldown %s for %.0fs (%s)", model, COOLDOWN_SECONDS, why)
+
+
+def _clear_cooldown(model: str) -> None:
+    _cooldown_until.pop(model, None)
+
+
+def _filter_cooldown(providers: list[tuple[str, str, str | None, str]]) -> list[tuple[str, str, str | None, str]]:
+    """Убрать модели в кулдауне; если остыли все — вернуть полный список."""
+    loop = asyncio.get_running_loop()
+    now = loop.time()
+    fresh = [p for p in providers if _cooldown_until.get(p[0], 0) < now]
+    return fresh or providers
+
 
 def _build_provider_list() -> list[tuple[str, str, str | None, str]]:
     """Build ordered list of (model, base_url, api_key, label)."""
@@ -195,7 +218,7 @@ async def call_llm_with_fallback(
     429/5xx/таймаут просто скидывают попытку — вместо старых
     «3 ретрая × 180 секунд» на каждую модель.
     """
-    provider_list = _build_provider_list()
+    provider_list = _filter_cooldown(_build_provider_list())
 
     if not provider_list:
         raise RuntimeError("No LLM providers configured — set OPENCODE_ZEN_KEY or OPENROUTER_API_KEY")
@@ -208,9 +231,19 @@ async def call_llm_with_fallback(
 
     async def _attempt(model: str, base_url: str, api_key: str, label: str) -> str:
         t0 = asyncio.get_running_loop().time()
-        result = await call_llm(messages, model, base_url, api_key, max_tokens=max_tokens)
+        try:
+            result = await call_llm(messages, model, base_url, api_key, max_tokens=max_tokens)
+        except httpx.HTTPStatusError as e:
+            # рейт-лимит / недоступна / серверная ошибка — модель остывает
+            if e.response.status_code in (429, 500, 502, 503, 504) or "unavailable" in e.response.text[:300].lower():
+                _set_cooldown(model, f"HTTP {e.response.status_code}")
+            raise
+        except (httpx.TimeoutException, httpx.TransportError) as e:
+            _set_cooldown(model, type(e).__name__)
+            raise
         dt = asyncio.get_running_loop().time() - t0
         logger.info("OK: %s — %s (%d chars, %.1fs)", label, model, len(result), dt)
+        _clear_cooldown(model)
         return result
 
     try:
@@ -269,17 +302,20 @@ async def interpret_reading(
     is_reasoning = _zen_key() is not None
     token_base = 6000 if is_reasoning else 4000
 
-    try:
-        raw = await call_llm_with_fallback(messages, max_tokens=token_base)
-        cleaned = strip_emojis(raw)
-        if len(cleaned) != len(raw):
-            logger.warning("Emojis detected and removed from LLM response")
-        raw = cleaned
-        parsed = parse_llm_response(raw)
-        if parsed:
-            return parsed
-    except RuntimeError:
-        logger.error("All LLM models failed, using fallback")
+    # До двух раундов: модель могла ответить быстро, но невалидно
+    # (сломанный JSON / пустые поля) — тогда ещё один хедж-заход.
+    for attempt in range(2):
+        try:
+            raw = await call_llm_with_fallback(messages, max_tokens=token_base)
+            cleaned = strip_emojis(raw)
+            if len(cleaned) != len(raw):
+                logger.warning("Emojis detected and removed from LLM response")
+            parsed = parse_llm_response(cleaned)
+            if parsed and isinstance(parsed.get("short_answer"), str) and parsed["short_answer"].strip():
+                return parsed
+            logger.warning("Unparseable/empty LLM output (attempt %d/2), re-trying", attempt + 1)
+        except RuntimeError:
+            logger.error("All LLM models failed (attempt %d/2)", attempt + 1)
 
     return fallback_from_cards_db(cards, question, character_id)
 
@@ -301,22 +337,24 @@ async def interpret_followup(
     is_reasoning = _zen_key() is not None
     token_base = 4500 if is_reasoning else 3000
 
-    try:
-        raw = await call_llm_with_fallback(messages, max_tokens=token_base)
-        cleaned = strip_emojis(raw)
-        parsed = parse_llm_response(cleaned)
-        if parsed:
-            for key in ("answer", "short_answer", "intro"):
-                v = parsed.get(key)
-                if isinstance(v, str) and v.strip():
-                    return v.strip()
-            # parsed but no expected keys — stringify
-            text = json.dumps(parsed, ensure_ascii=False)
-            return text
-        if cleaned.strip():
-            return cleaned.strip()
-    except RuntimeError:
-        logger.error("All LLM models failed for followup, using fallback")
+    # До двух раундов — как в interpret_reading
+    for attempt in range(2):
+        try:
+            raw = await call_llm_with_fallback(messages, max_tokens=token_base)
+            cleaned = strip_emojis(raw)
+            parsed = parse_llm_response(cleaned)
+            if parsed:
+                for key in ("answer", "short_answer", "intro"):
+                    v = parsed.get(key)
+                    if isinstance(v, str) and v.strip():
+                        return v.strip()
+                text = json.dumps(parsed, ensure_ascii=False)
+                return text
+            if cleaned.strip():
+                return cleaned.strip()
+            logger.warning("Empty followup output (attempt %d/2), re-trying", attempt + 1)
+        except RuntimeError:
+            logger.error("All LLM models failed for followup (attempt %d/2)", attempt + 1)
 
     return _fallback_followup(reading, question, character_id)
 
