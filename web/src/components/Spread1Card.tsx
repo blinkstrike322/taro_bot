@@ -65,7 +65,7 @@ export default function Spread1Card({ apiCall, characterId, onError }: Spread1Ca
       return (
         <div className="flex flex-col items-center py-4 px-3 w-full h-full">
           <div className="flex-1 min-h-0 flex flex-col items-center justify-center w-full">
-            <div className="w-full max-w-[290px] sm:max-w-[336px]" style={{ transform: 'rotate(-2deg)' }}>
+            <div className="w-full max-w-[319px] sm:max-w-[370px]" style={{ transform: 'rotate(-2deg)' }}>
               <Card
                 card={card}
                 position="ТВОЯ КАРТА"
@@ -86,7 +86,7 @@ export default function Spread1Card({ apiCall, characterId, onError }: Spread1Ca
     return (
       <div className="flex flex-col items-center py-4 px-3 w-full">
         {/* компактная карта сверху */}
-        <div className="w-full max-w-[290px] sm:max-w-[336px] flex-shrink-0 pb-4" style={{ transform: 'rotate(-1.2deg)' }}>
+        <div className="w-full max-w-[319px] sm:max-w-[370px] flex-shrink-0 pb-4" style={{ transform: 'rotate(-1.2deg)' }}>
           <Card
             card={card}
             flipped={true}
