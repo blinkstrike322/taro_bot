@@ -18,7 +18,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from PIL import Image, ImageOps
+from PIL import Image, ImageChops, ImageFilter, ImageOps
 
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "static" / "default"
@@ -27,39 +27,70 @@ STATIC_DST = ROOT / "static" / "webapp" / "cards"
 
 TARGET_W, TARGET_H = 900, 1350  # 2:3, крупнее старого low-res 524x780
 
+# Акцентные диапазоны HSV (hue 0-255): золото/жёлтый + голубой/синий.
+# Белый не нужен в маске — он и так останется видимым на сером.
+SPOT_HUE_RANGES = [(18, 62), (112, 178)]
+SPOT_SAT_MIN = 35
+SPOT_VAL_MIN = 45
+
+
+def make_spot_color_mask(rgb: Image.Image) -> Image.Image:
+    """Return an 8-bit mask where accent colors stay visible on a grayscale card."""
+    hsv = rgb.convert("HSV")
+    h, s, v = hsv.split()
+
+    def in_ranges(i: int) -> int:
+        for lo, hi in SPOT_HUE_RANGES:
+            if lo <= i <= hi:
+                return 255
+        return 0
+
+    hue_mask = h.point(in_ranges)
+    sat_mask = s.point(lambda i: 255 if i >= SPOT_SAT_MIN else 0)
+    val_mask = v.point(lambda i: 255 if i >= SPOT_VAL_MIN else 0)
+
+    mask = ImageChops.multiply(hue_mask, ImageChops.multiply(sat_mask, val_mask))
+    # плавные края, чтобы цвет не выглядел вырезанным
+    return mask.filter(ImageFilter.GaussianBlur(radius=1.8))
+
 
 def convert_card(src_path: Path, dst_path: Path, force: bool = False) -> int:
     """Convert a source card to the target path. Returns written bytes."""
     if dst_path.exists() and not force:
         return 0
 
-    img = Image.open(src_path)
+    img = Image.open(src_path).convert("RGB")
 
-    # ч/б + авто-контраст: убирает желтизну JPEG и нормализует белое
-    g = ImageOps.grayscale(img)
-    g = ImageOps.autocontrast(g, cutoff=1)
+    # автоконтраст на цветном оригинале — убирает желтизну и выравнивает белое
+    rgb = ImageOps.autocontrast(img, cutoff=1)
+
+    # ч/б база
+    gray = ImageOps.grayscale(rgb)
+
+    # маска «spot color»: золото/жёлтое + голубое/синее остаются цветными
+    mask = make_spot_color_mask(rgb)
+    result = Image.composite(rgb, gray.convert("RGB"), mask)
 
     # паддинг по бокам до 2:3 — арт не режем, белое поле как «паспарту»
-    w, h = g.size
+    w, h = result.size
     target_ratio = TARGET_W / TARGET_H
     if w / h < target_ratio:
         new_w = round(h * target_ratio)
-        pad = Image.new("L", (new_w, h), 255)
-        pad.paste(g, ((new_w - w) // 2, 0))
-        g = pad
+        pad = Image.new("RGB", (new_w, h), (255, 255, 255))
+        pad.paste(result, ((new_w - w) // 2, 0))
+        result = pad
     else:
         new_h = round(w / target_ratio)
         y0 = max(0, (h - new_h) // 2)
-        g = g.crop((0, y0, w, y0 + new_h))
+        result = result.crop((0, y0, w, y0 + new_h))
 
-    g = g.resize((TARGET_W, TARGET_H), Image.LANCZOS)
+    result = result.resize((TARGET_W, TARGET_H), Image.LANCZOS)
 
     dst_path.parent.mkdir(parents=True, exist_ok=True)
     if dst_path.suffix.lower() == ".png":
-        # Grayscale PNG оптимизирован; для Telegram WebView быстро декодируется.
-        g.save(dst_path, "PNG", optimize=True)
+        result.save(dst_path, "PNG", optimize=True)
     else:
-        g.save(dst_path, "WEBP", quality=88, method=6)
+        result.save(dst_path, "WEBP", quality=88, method=6)
     return dst_path.stat().st_size
 
 
