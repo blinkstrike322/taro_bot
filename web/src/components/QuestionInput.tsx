@@ -109,11 +109,11 @@ export default function QuestionInput({ spreadType, onSubmit, loading = false, c
         </div>
       )}
 
-      {/* ── ирис-схема живёт фоном всего экрана (в index.tsx) —
-          здесь оставляем воздух: вопрос дышит над большим цветком */}
+      {/* ── воздух: ирис-схема живёт фоном всего экрана (в index.tsx) ── */}
+      <div className="flex-1 min-h-[10vh]" aria-hidden="true" />
 
       {/* ── кнопка: типографика-микс serif + pixel ── */}
-      <div className="flex justify-center flex-shrink-0 w-full pb-3">
+      <div className="flex justify-center flex-shrink-0 w-full pb-6 pt-2">
         {loading ? (
           <GuideLoading guide={guide} />
         ) : (
