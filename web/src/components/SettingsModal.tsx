@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { X } from 'lucide-react';
 import Button from './Button';
+import GuideAvatar from './GuideAvatar';
 import { getGuide, GUIDE_IDS, GuideMeta } from '@/lib/guides';
 
 interface SettingsModalProps {
@@ -141,15 +142,10 @@ function GuideCard({
       {/* ── портрет ── */}
       <div className="flex-shrink-0 w-[72px] h-[72px] relative">
         <div
-          className="w-full h-full guide-portrait-frame pixel-brackets"
+          className="w-full h-full guide-portrait-frame pixel-brackets overflow-hidden"
           style={{ border: `1px solid ${isActive ? guide.accent : 'var(--line-strong)'}` }}
         >
-          <img
-            src={guide.portrait}
-            alt={guide.name}
-            className="w-full h-full object-cover guide-portrait-scan"
-            style={{ imageRendering: 'pixelated' }}
-          />
+          <GuideAvatar guide={guide} className="w-full h-full" />
         </div>
         {isActive && (
           <span

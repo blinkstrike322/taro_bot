@@ -15,6 +15,8 @@ export interface GuideMeta {
   accentSoft: string;        // soft tint for backgrounds / chips
   accentDeep: string;        // deep variant for gradients
   portrait: string;          // pixel-art portrait path (square)
+  /** если задан — вместо портрета-картинки плоская плашка этого цвета */
+  portraitColor?: string;
   cardBack: string;          // per-guide card back image path (2:3)
   cardBackVersion: number;   // bump to bust TG WebView cache when card backs change
 
@@ -104,6 +106,7 @@ export const GUIDES: Record<string, GuideMeta> = {
     accentSoft: '#F4E9DC',
     accentDeep: '#9A5410',
     portrait: '/guides/ruin_keeper.png',
+    portraitColor: '#C96F1E',
     cardBack: '/cards/backs/back_ruin_keeper.png',
     cardBackVersion: 5,
     cornerSymbols: { tl: '☰', tr: '☥', bl: '◈', br: '⚹' },
@@ -140,6 +143,7 @@ export const GUIDES: Record<string, GuideMeta> = {
     accentSoft: '#F5E5EC',
     accentDeep: '#9B2453',
     portrait: '/guides/spark_of_chaos.png',
+    portraitColor: '#C9356F',
     cardBack: '/cards/backs/back_spark_of_chaos.png',
     cardBackVersion: 5,
     cornerSymbols: { tl: '⌇', tr: '✕', bl: '❦', br: '※' },
