@@ -22,18 +22,23 @@ def _zen_key() -> str | None:
     return settings.OPENCODE_ZEN_KEY or None
 
 
-# Primary — DeepSeek Flash via OpenCode Zen
-PRIMARY_MODEL = "deepseek-v4-flash-free"
-
-# Zen free-tier fallbacks (in order)
-ZEN_FALLBACKS = [
-    "deepseek-v4-flash-free",
+# Порядок Zen-моделей — по бенчмарку (scripts/benchmark_models.py, 2026-08):
+# скорость+качество на реальных промптах раскладов и доп-вопросов.
+# nemotron-3-ultra: ~15c / score 99 · muse-spark-1.2: ~24c / 99 (лучший текст)
+# laguna-s-2.1: ~22c / 89 · mimo: быстрый, но рейт-лимиты ·
+# deepseek: хорош, но регулярно «Model is unavailable» ·
+# nemotron-3.5-lightning: медленный и ломает JSON расклада — последним.
+# hy3 и x-preview-f исключены (500-е / обрывы соединения).
+ZEN_MODEL_ORDER = [
     "nemotron-3-ultra-free",
-    "north-mini-code-free",
+    "muse-spark-1.2-contributor-free",
+    "laguna-s-2.1-free",
     "mimo-v2.5-free",
+    "deepseek-v4-flash-free",
+    "nemotron-3.5-lightning-free",
 ]
 
-# OpenRouter fallbacks (kept as last resort)
+# OpenRouter fallbacks (последний рубеж)
 OPENROUTER_FALLBACKS = [
     "nvidia/nemotron-3-super-120b-a12b:free",
     "google/gemma-4-31b-it:free",
@@ -43,6 +48,15 @@ OPENROUTER_FALLBACKS = [
     "openrouter/free",
 ]
 
+# ── Скоростной контур: хеджированные попытки ──────────────────────
+# Первая модель получает 12 секунд форы; если не успела — параллельно
+# стартует следующая. Побеждает первый успешный ответ, остальные
+# отменяются. Таймаут одной попытки 45 c (вместо 180 c + 3 ретрая,
+# которые и давали «от 5 секунд до минуты»).
+HEDGE_DELAY_S = 12.0
+MAX_CONCURRENT_ATTEMPTS = 3
+ATTEMPT_TIMEOUT_S = 45.0
+
 
 def _build_provider_list() -> list[tuple[str, str, str | None, str]]:
     """Build ordered list of (model, base_url, api_key, label)."""
@@ -50,10 +64,8 @@ def _build_provider_list() -> list[tuple[str, str, str | None, str]]:
 
     key = _zen_key()
     if key:
-        providers.append((PRIMARY_MODEL, ZEN_URL, key, "zen"))
-        for m in ZEN_FALLBACKS:
-            if m != PRIMARY_MODEL:
-                providers.append((m, ZEN_URL, key, "zen"))
+        for m in ZEN_MODEL_ORDER:
+            providers.append((m, ZEN_URL, key, "zen"))
 
     or_key = settings.OPENROUTER_API_KEY
     if or_key:
@@ -126,7 +138,9 @@ async def call_llm(
     """Call a single LLM endpoint and return the text content.
 
     Handles reasoning models that return content in ``reasoning_content``
-    when the visible ``content`` field is empty.
+    when the visible ``content`` field is empty. Per-attempt timeout is
+    tight (connect 8s / read 45s) — slow or hung models must not block
+    the hedged pipeline.
     """
     client = _get_client()
     response = await client.post(
@@ -141,6 +155,7 @@ async def call_llm(
             "max_tokens": max_tokens,
             "temperature": 0.8,
         },
+        timeout=httpx.Timeout(ATTEMPT_TIMEOUT_S, connect=8.0),
     )
     response.raise_for_status()
     data = response.json()
@@ -172,47 +187,65 @@ async def call_llm_with_fallback(
     messages: list[dict],
     max_tokens: int = 2000,
 ) -> str:
-    last_error: Exception | None = None
+    """Hedged LLM call: first success wins, slow models don't block.
+
+    Модель №1 получает HEDGE_DELAY_S форы; если за это время не ответила —
+    параллельно стартует модель №2 (и так до MAX_CONCURRENT_ATTEMPTS).
+    Первый успешный ответ возвращается, остальные попытки отменяются.
+    429/5xx/таймаут просто скидывают попытку — вместо старых
+    «3 ретрая × 180 секунд» на каждую модель.
+    """
     provider_list = _build_provider_list()
 
     if not provider_list:
         raise RuntimeError("No LLM providers configured — set OPENCODE_ZEN_KEY or OPENROUTER_API_KEY")
 
-    logger.info(
-        "Attempting LLM call with %d provider(s) total",
-        len(provider_list),
+    logger.info("Hedged LLM call over %d provider(s)", len(provider_list))
+
+    pending: set[asyncio.Task] = set()
+    launched = 0
+    errors: list[str] = []
+
+    async def _attempt(model: str, base_url: str, api_key: str, label: str) -> str:
+        t0 = asyncio.get_running_loop().time()
+        result = await call_llm(messages, model, base_url, api_key, max_tokens=max_tokens)
+        dt = asyncio.get_running_loop().time() - t0
+        logger.info("OK: %s — %s (%d chars, %.1fs)", label, model, len(result), dt)
+        return result
+
+    try:
+        while True:
+            # добираем попытки, пока есть провайдеры и слоты
+            while (
+                launched < len(provider_list)
+                and len(pending) < MAX_CONCURRENT_ATTEMPTS
+            ):
+                model, base_url, api_key, label = provider_list[launched]
+                launched += 1
+                pending.add(asyncio.create_task(_attempt(model, base_url, api_key, label)))
+
+            if not pending:
+                break  # провайдеры кончились
+
+            done, pending = await asyncio.wait(
+                pending,
+                timeout=HEDGE_DELAY_S,
+                return_when=asyncio.FIRST_COMPLETED,
+            )
+            for task in done:
+                exc = task.exception()
+                if exc is None:
+                    return task.result()  # первый успех — побеждает
+                errors.append(f"{type(exc).__name__}: {str(exc)[:120]}")
+                logger.warning("Attempt failed (%d/%d): %s", launched, len(provider_list), errors[-1])
+    finally:
+        for task in pending:
+            task.cancel()
+
+    raise RuntimeError(
+        "All LLM attempts failed; launched %d/%d: %s"
+        % (launched, len(provider_list), " | ".join(errors[:4]))
     )
-
-    for model, base_url, api_key, label in provider_list:
-        for attempt in range(3):
-            try:
-                result = await call_llm(
-                    messages, model, base_url, api_key,
-                    max_tokens=max_tokens,
-                )
-                logger.info(
-                    "OK: %s — %s (%d chars)",
-                    label, model, len(result),
-                )
-                return result
-            except httpx.HTTPStatusError as e:
-                if e.response.status_code == 429 and attempt < 2:
-                    delay = (attempt + 1) * 2
-                    logger.warning(
-                        "%s — %s rate limited (429), retry %d/3 in %ds",
-                        label, model, attempt + 1, delay,
-                    )
-                    await asyncio.sleep(delay)
-                    continue
-                last_error = e
-                logger.warning("%s — %s failed: %s", label, model, e)
-                break
-            except Exception as e:
-                last_error = e
-                logger.warning("%s — %s failed: %s", label, model, e)
-                break
-
-    raise RuntimeError("All LLM models failed") from last_error
 
 
 async def interpret_reading(
