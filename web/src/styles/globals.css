@@ -37,7 +37,7 @@
   --accent: #6f6ca4;         /* приглушённый фиолетово-синий акцент */
 
   /* редкие глубокие акценты — visual punctuation, ~2% поверхности */
-  --accent-blue: #2b3fbf;    /* deep electric blue */
+  --accent-blue: #2749d2;    /* сигнатурный синий Селены (референс-ирис) */
   --accent-violet: #6550a8;  /* deep violet */
   --ink-dark: #282a43;       /* dark ink */
 
@@ -501,6 +501,40 @@ body {
     transparent 38px 43px
   );
   opacity: 0.55;
+}
+
+/* ================================================================
+   СИГНАТУРНЫЕ ПОЛОСЫ — схема-референс (ирис на синей миллиметровке)
+   ================================================================ */
+
+/* тонкая белая координатная сетка поверх цветной полосы */
+.band-grid {
+  background-image:
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.075) 0 1px, transparent 1px 12px),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.075) 0 1px, transparent 1px 12px);
+}
+
+/* текст на полосе */
+.band-text {
+  color: #f8f6f9;
+}
+
+.band-text-dim {
+  color: rgba(248, 246, 249, 0.72);
+}
+
+/* навигация на цветной полосе — белые слова, дизер-подчёркивание */
+.nav-word--band {
+  color: rgba(248, 246, 249, 0.82);
+}
+
+.nav-word--band::after {
+  background: radial-gradient(circle, #f8f6f9 0.8px, transparent 1.1px) 0 0 / 4px 3px repeat-x;
+}
+
+.nav-word--band:hover,
+.nav-word--band:active {
+  color: #ffffff;
 }
 
 /* ================================================================

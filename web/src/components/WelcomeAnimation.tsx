@@ -208,34 +208,35 @@ export default function WelcomeAnimation({ onComplete, spreadType, characterId =
         '--guide-accent-deep': guide.accentDeep,
       } as React.CSSProperties}
     >
-      {/* ── пиксель-цветок: прорастает слева-снизу, наполовину за экраном ── */}
+      {/* ── ирис-схема: прорастает слева-снизу, наполовину за экраном ── */}
       <div
         className="absolute pointer-events-none z-0"
-        style={{ bottom: '-22%', left: '-30%', width: '80vmin', height: '128vmin' }}
+        style={{ bottom: '-20%', left: '-26%', width: '72vmin' }}
         aria-hidden="true"
       >
         <PixelFlower
           seed={5}
-          size={760}
-          variant="stem"
+          size={680}
+          variant="iris"
           color={guide.accent}
-          accentColor="var(--accent-blue)"
-          opacity={0.22}
+          bgColor="var(--paper)"
+          opacity={0.24}
         />
       </div>
 
       {/* ─– второй, справа-сверху, растворяется в фоне ── */}
       <div
         className="absolute pointer-events-none z-0"
-        style={{ top: '-14%', right: '-30%', width: '62vmin', height: '62vmin' }}
+        style={{ top: '-12%', right: '-28%', width: '56vmin' }}
         aria-hidden="true"
       >
         <PixelFlower
           seed={42}
-          size={620}
+          size={560}
           color={guide.accent}
           accentColor="var(--accent-violet)"
-          opacity={0.13}
+          accentRate={0.03}
+          opacity={0.12}
           dense
         />
       </div>
