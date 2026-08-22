@@ -161,7 +161,8 @@ export const GUIDES: Record<string, GuideMeta> = {
   },
 };
 
-export const GUIDE_IDS = Object.keys(GUIDES);
+// порядок показа: Селена, Лилит, Веста
+export const GUIDE_IDS = ['shadow_walker', 'spark_of_chaos', 'ruin_keeper'];
 
 export function getGuide(id: string | undefined | null): GuideMeta {
   if (id && GUIDES[id]) return GUIDES[id];
