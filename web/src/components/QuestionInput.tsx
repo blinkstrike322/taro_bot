@@ -119,7 +119,8 @@ export default function QuestionInput({ spreadType, onSubmit, loading = false, c
         ) : (
           <Button onClick={handleSubmit} variant="primary">
             <span>получить</span>
-            <span className="btn-word__pix">ответ ✦</span>
+            <span className="btn-word__big">ответ</span>
+            <span className="btn-word__pix">✦</span>
           </Button>
         )}
       </div>
