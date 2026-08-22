@@ -54,6 +54,10 @@ async def _migrate_schema(db: aiosqlite.Connection) -> None:
     migrations = [
         "ALTER TABLE users ADD COLUMN subscription_end TEXT",
         "ALTER TABLE users ADD COLUMN first_month_done INTEGER DEFAULT 0",
+        "ALTER TABLE users ADD COLUMN reminders_enabled INTEGER DEFAULT 1",
+        "ALTER TABLE users ADD COLUMN last_sub_reminder_end TEXT",
+        "CREATE INDEX IF NOT EXISTS idx_readings_user_date ON readings(user_id, created_at)",
+        "CREATE INDEX IF NOT EXISTS idx_readings_user_char ON readings(user_id, character_id, id)",
     ]
     for sql in migrations:
         try:
@@ -290,13 +294,14 @@ async def get_recent_guide_texts(
     user_id: int,
     character_id: str,
     limit: int = 3,
+    exclude_reading_id: int | None = None,
 ) -> list[str]:
     """Recent intro/advice fragments by this character for anti-repetition prompts."""
     cursor = await db.execute(
         """SELECT interpretation FROM readings
-           WHERE user_id = ? AND character_id = ?
+           WHERE user_id = ? AND character_id = ? AND id != ?
            ORDER BY id DESC LIMIT ?""",
-        (user_id, character_id, limit),
+        (user_id, character_id, exclude_reading_id or -1, limit),
     )
     rows = await cursor.fetchall()
     fragments: list[str] = []
@@ -334,9 +339,10 @@ async def get_inactive_users(
     db: aiosqlite.Connection,
     days: int = 3,
 ) -> list[User]:
-    """Return users who have been inactive for at least the given number of days."""
+    """Users inactive for `days`, who have not opted out of reminders."""
     cursor = await db.execute(
-        "SELECT id, tg_id, character_id, created_at, last_active_at, last_reminder_sent_at FROM users WHERE last_active_at < datetime('now', ?)",
+        "SELECT id, tg_id, character_id, created_at, last_active_at, last_reminder_sent_at FROM users "
+        "WHERE last_active_at < datetime('now', ?) AND reminders_enabled = 1",
         (f"-{days} days",),
     )
     rows = await cursor.fetchall()
@@ -363,7 +369,11 @@ async def update_reminder_sent(db: aiosqlite.Connection, tg_id: int) -> None:
 
 
 async def is_subscribed(db: aiosqlite.Connection, tg_id: int) -> bool:
-    """Check if user has active subscription (not expired)."""
+    """Check if user has active subscription (not expired).
+
+    subscription_end хранится в формате sqlite datetime('now') —
+    "YYYY-MM-DD HH:MM:SS" (UTC). Сравниваем в том же формате.
+    """
     cursor = await db.execute(
         "SELECT subscription_end FROM users WHERE tg_id = ?",
         (tg_id,),
@@ -371,7 +381,37 @@ async def is_subscribed(db: aiosqlite.Connection, tg_id: int) -> bool:
     row = await cursor.fetchone()
     if row is None or row[0] is None:
         return False
-    return row[0] > datetime.utcnow().isoformat()[:19]
+    end = str(row[0]).replace("T", " ")
+    return end > datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+
+
+async def set_reminders_enabled(db: aiosqlite.Connection, tg_id: int, enabled: bool) -> None:
+    """Opt-in/opt-out of gentle re-engagement reminders."""
+    await db.execute(
+        "UPDATE users SET reminders_enabled = ? WHERE tg_id = ?",
+        (1 if enabled else 0, tg_id),
+    )
+    await db.commit()
+
+
+async def get_reminders_enabled(db: aiosqlite.Connection, tg_id: int) -> bool:
+    cursor = await db.execute(
+        "SELECT reminders_enabled FROM users WHERE tg_id = ?",
+        (tg_id,),
+    )
+    row = await cursor.fetchone()
+    if row is None or row[0] is None:
+        return True
+    return bool(row[0])
+
+
+async def set_last_sub_reminder_end(db: aiosqlite.Connection, tg_id: int, sub_end: str) -> None:
+    """Persist which subscription_end we already reminded about (no dup after restart)."""
+    await db.execute(
+        "UPDATE users SET last_sub_reminder_end = ? WHERE tg_id = ?",
+        (sub_end, tg_id),
+    )
+    await db.commit()
 
 
 async def get_daily_non_daily_count(db: aiosqlite.Connection, user_id: int) -> int:

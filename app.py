@@ -20,7 +20,7 @@ from bot.webapp_handler import router as webapp_router
 
 from storage.db import (
     init_db, get_db, get_user_readings_by_month, save_reading,
-    get_or_create_user, get_user_by_tg_id,
+    get_or_create_user, get_user_by_tg_id, update_last_active,
     get_reading_by_id, save_followup, get_followups, count_followups,
     get_recent_guide_texts,
 )
@@ -190,6 +190,7 @@ async def handle_spread(request):
         spread_type="daily" if is_daily else st,
         avoid_texts=avoid_texts,
     )
+    await update_last_active(db, tg_id)
     saved = await save_reading(
         db=db,
         user_id=user.id,
@@ -240,7 +241,10 @@ async def handle_followup(request):
         )
 
     history = await get_followups(db, reading.id)
-    avoid_texts = await get_recent_guide_texts(db, user.id, reading.character_id)
+    avoid_texts = await get_recent_guide_texts(
+        db, user.id, reading.character_id, exclude_reading_id=reading.id
+    )
+    await update_last_active(db, tg_id)
 
     cards_data = reading.cards_data if isinstance(reading.cards_data, dict) else {}
     reading_payload = {
@@ -324,9 +328,10 @@ async def main() -> None:
     bot = Bot(token=settings.BOT_TOKEN)
 
     await bot.set_my_commands([
-        BotCommand(command="start", description="Запустить бота"),
-        BotCommand(command="subscribe", description="Купить подписку"),
-        BotCommand(command="my", description="Статус подписки"),
+        BotCommand(command="start", description="Меню и расклады"),
+        BotCommand(command="subscribe", description="Подписка — 100 раскладов"),
+        BotCommand(command="my", description="Сколько раскладов осталось"),
+        BotCommand(command="notify", description="Напоминания вкл/выкл"),
     ])
 
     dp = Dispatcher(storage=MemoryStorage())
