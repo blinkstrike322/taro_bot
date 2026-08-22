@@ -9,18 +9,22 @@ interface ButtonProps {
   variant?: 'primary' | 'secondary';
 }
 
+/**
+ * Текстовая кнопка-типографика: serif-курсив + пиксель-капс внутри
+ * (смешение шрифтов, как на постере). Без плашки и обводки.
+ * Внутри children можно миксовать: <span>получить</span><span className="btn-word__pix">ответ ✦</span>
+ */
 export default function Button({
   children,
   onClick,
   className = '',
   variant = 'primary',
 }: ButtonProps) {
-  const base =
-    'btn-vibe relative flex items-center justify-center gap-1.5 font-sans text-[13px] font-bold px-4 py-2.5 tracking-wide select-none';
+  const base = 'btn-word select-none';
 
   const variants = {
-    primary: 'btn-vibe--primary',
-    secondary: 'btn-vibe--secondary',
+    primary: '',
+    secondary: 'btn-word--dim',
   };
 
   return (
@@ -29,7 +33,7 @@ export default function Button({
       className={`${base} ${variants[variant]} ${className}`}
       onClick={onClick}
     >
-      <span className="relative z-10 flex items-center gap-1.5">{children}</span>
+      {children}
     </button>
   );
 }
