@@ -78,17 +78,25 @@ export default function Layout({
         {/* ─── HEADER — сигнатурная полоса: белый ирис слева, как на схеме ─── */}
         <header className="relative z-20 flex-shrink-0" style={{ background: guide.accent }}>
           <div className="relative band-grid overflow-hidden">
-            {/* ирис-фрагмент у левого края — соцветие полностью в полосе,
-                стебель уходит за нижнюю кромку */}
+            {/* ирис у левого края: соцветие целиком в полосе, стебель тает
+                (маска), квадратики не срезаются нижней кромкой */}
             <div
               className="absolute pointer-events-none select-none"
-              style={{ top: -3, left: 4 }}
+              style={{
+                top: -2,
+                left: 6,
+                WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black 58%, transparent 88%)',
+                maskImage: 'linear-gradient(to bottom, black 0%, black 58%, transparent 88%)',
+              }}
               aria-hidden="true"
             >
-              <PixelFlower seed={9} size={96} variant="iris" color="#F8F6F9" bgColor={guide.accent} opacity={1} />
+              <PixelFlower seed={9} size={76} variant="iris" color="#F8F6F9" bgColor={guide.accent} opacity={1} />
             </div>
 
-            <div className="relative flex items-baseline gap-3 px-5 pt-4 pb-3.5">
+            <div
+              className="relative flex items-baseline gap-3 pt-4 pb-3.5"
+              style={{ paddingLeft: 92, paddingRight: 20 }}
+            >
               {/* бренд — белый, с точкой-пикселем */}
               <button
                 type="button"

@@ -171,10 +171,10 @@ export default function SpreadDaily({ characterId, onError, apiCall }: SpreadDai
       {/* веер карт */}
       <div className="flex-1 min-h-0 flex flex-col items-center justify-center w-full">
         <div className="relative flex items-end justify-center w-full max-w-[460px] py-6">
-          {/* ирис-схема прорастает из-под карт: соцветие выглядит между рубашками */}
+          {/* ирис-схема прорастает из-под карт: ниже и правее */}
           <div
             className="absolute pointer-events-none z-0"
-            style={{ bottom: '-28%', left: '2%', width: '58vmin' }}
+            style={{ bottom: '-38%', left: '7%', width: '58vmin' }}
             aria-hidden="true"
           >
             <PixelFlower
@@ -205,12 +205,15 @@ export default function SpreadDaily({ characterId, onError, apiCall }: SpreadDai
                     ? { ...data.cards[i], image_url: `/cards/${data.cards[i].id}.png` }
                     : { id: `wait-${i}`, name: '', image_url: '', is_reversed: false }
                 }
-                position={flipped[i] ? undefined : POSITIONS[i]}
                 flipped={flipped[i]}
                 onFlip={() => handleFlip(i)}
                 tilt={FAN[i].tilt}
                 characterId={characterId}
               />
+              {/* подпись позиции — под картой, не перекрывается веером */}
+              <div className="card-label mt-1" style={{ minHeight: '1.2em' }}>
+                {POSITIONS[i]}
+              </div>
             </div>
           ))}
         </div>
