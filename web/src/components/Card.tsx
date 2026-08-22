@@ -181,8 +181,8 @@ export default function Card({
               <img
                 src={`${guide.cardBack}?v=${guide.cardBackVersion}`}
                 alt=""
-                className="dither-img w-full h-full object-cover"
-                style={{ imageRendering: 'pixelated' }}
+                className="w-full h-full object-cover"
+                style={{ imageRendering: 'auto' }}
               />
               {/* пастельный отсвет на рубашке */}
               <div
