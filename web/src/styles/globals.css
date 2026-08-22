@@ -627,9 +627,12 @@ body {
    СИГНАТУРНЫЕ ПОЛОСЫ — схема-референс (ирис на синей миллиметровке)
    ================================================================ */
 
-/* тонкая белая координатная сетка поверх цветной полосы */
+/* тонкая белая координатная сетка поверх цветной полосы;
+   нижняя (и верхняя) кромка всегда закрыта линией — сетка не «обрывается» */
 .band-grid {
   background-image:
+    linear-gradient(to top, rgba(255, 255, 255, 0.075) 0, rgba(255, 255, 255, 0.075) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.075) 0, rgba(255, 255, 255, 0.075) 1px, transparent 1px),
     repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.075) 0 1px, transparent 1px 12px),
     repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.075) 0 1px, transparent 1px 12px);
 }
