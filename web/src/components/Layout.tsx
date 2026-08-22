@@ -75,19 +75,19 @@ export default function Layout({
           boxSizing: 'border-box',
         } as React.CSSProperties}
       >
-        {/* ─── HEADER — сигнатурная полоса: белый ирис на цветной миллиметровке ─── */}
+        {/* ─── HEADER — сигнатурная полоса: белый ирис слева, как на схеме ─── */}
         <header className="relative z-20 flex-shrink-0" style={{ background: guide.accent }}>
           <div className="relative band-grid overflow-hidden">
-            {/* ирис-фрагмент, обрезанный правым краем полосы — как на схеме */}
+            {/* ирис-фрагмент у левого края полосы */}
             <div
               className="absolute pointer-events-none select-none"
-              style={{ top: '-26%', right: '-7%', opacity: 0.95 }}
+              style={{ top: '-38%', left: '-9%' }}
               aria-hidden="true"
             >
-              <PixelFlower seed={9} size={150} variant="iris" color="#F8F6F9" bgColor={guide.accent} opacity={1} />
+              <PixelFlower seed={9} size={128} variant="iris" color="#F8F6F9" bgColor={guide.accent} opacity={1} />
             </div>
 
-            <div className="relative flex items-baseline gap-3 px-5 pt-4 pb-2.5">
+            <div className="relative flex items-baseline gap-3 px-5 pt-4 pb-3.5">
               {/* бренд — белый, с точкой-пикселем */}
               <button
                 type="button"
@@ -135,15 +135,6 @@ export default function Layout({
                 </span>
               </button>
             </div>
-
-            {/* строка глифов — белые символы схемы */}
-            <div className="relative flex items-center gap-3 px-5 pb-2 select-none" aria-hidden="true">
-              <Glyph name="constellation" size={11} style={{ color: 'rgba(248,246,249,0.6)' }} />
-              <Glyph name="star4" size={8} style={{ color: 'rgba(248,246,249,0.5)' }} />
-              <span style={{ flex: 1 }} />
-              <Glyph name="diamond" size={7} style={{ color: 'rgba(248,246,249,0.55)' }} />
-              <Glyph name="crescent" size={10} style={{ color: 'rgba(248,246,249,0.65)' }} />
-            </div>
           </div>
 
           {/* пиксельное растворение полосы в светлый интерфейс */}
@@ -152,37 +143,25 @@ export default function Layout({
 
         <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden relative z-10">{children}</div>
 
-        {/* ─── FOOTER — навигация на сигнатурной полосе ─── */}
-        <footer className="relative z-20 flex-shrink-0">
-          {/* пиксельное растворение снизу вверх */}
-          <PixelEdge color={guide.accent} height={14} seed={6} flip />
-
-          <div className="band-grid relative" style={{ background: guide.accent }}>
-            {/* маленькая глифовая композиция — асимметрия */}
-            <div className="flex items-end gap-4 px-5 pt-2 select-none" aria-hidden="true">
-              <Glyph name="star4" size={8} style={{ color: 'rgba(248,246,249,0.5)' }} />
-              <Glyph name="crescent" size={11} style={{ color: 'rgba(248,246,249,0.75)' }} />
-              <span style={{ flex: 1 }} />
-              <Glyph name="diamond" size={7} style={{ color: 'rgba(248,246,249,0.65)' }} />
-            </div>
-
-            <div className="flex items-center justify-center gap-2.5 flex-wrap px-4 py-2.5">
-              <button type="button" className="nav-word nav-word--band" onClick={onNewSpread}>
-                <Glyph name="sprig" size={11} />новый
-              </button>
-              <Glyph name="diamond" size={6} style={{ color: 'rgba(248,246,249,0.45)' }} />
-              <button type="button" className="nav-word nav-word--band" onClick={onOpenCatalog}>
-                <Glyph name="star4" size={11} />расклады
-              </button>
-              <Glyph name="constellation" size={11} style={{ color: 'rgba(248,246,249,0.45)' }} />
-              <button type="button" className="nav-word nav-word--band" onClick={onOpenSettings}>
-                <Glyph name="crescent" size={11} />проводница
-              </button>
-              <Glyph name="bud" size={9} style={{ color: 'rgba(248,246,249,0.45)' }} />
-              <button type="button" className="nav-word nav-word--band" onClick={onOpenCalendar}>
-                <Glyph name="cross" size={9} />история
-              </button>
-            </div>
+        {/* ─── FOOTER — лёгкая навигация сигнатурным цветом, без полосы ─── */}
+        <footer className="relative z-20 flex-shrink-0 px-4 pt-2 pb-4">
+          <span className="rule-pixel block mb-1.5" aria-hidden="true" />
+          <div className="flex items-center justify-center gap-2.5 flex-wrap">
+            <button type="button" className="nav-word" style={{ color: guide.accentDeep }} onClick={onNewSpread}>
+              <Glyph name="sprig" size={11} />новый
+            </button>
+            <Glyph name="diamond" size={6} style={{ color: 'var(--ink-faint)', opacity: 0.7 }} />
+            <button type="button" className="nav-word" style={{ color: guide.accentDeep }} onClick={onOpenCatalog}>
+              <Glyph name="star4" size={11} />расклады
+            </button>
+            <Glyph name="constellation" size={11} style={{ color: 'var(--ink-faint)', opacity: 0.7 }} />
+            <button type="button" className="nav-word" style={{ color: guide.accentDeep }} onClick={onOpenSettings}>
+              <Glyph name="crescent" size={11} />проводница
+            </button>
+            <Glyph name="bud" size={9} style={{ color: 'var(--ink-faint)', opacity: 0.7 }} />
+            <button type="button" className="nav-word" style={{ color: guide.accentDeep }} onClick={onOpenCalendar}>
+              <Glyph name="cross" size={9} />история
+            </button>
           </div>
         </footer>
 

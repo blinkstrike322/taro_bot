@@ -42,14 +42,14 @@ export default function PixelEdge({
       const base = hash1(seed + i * 7);
       // глубина колонки: 1..H уровней, редкие длинные шипы
       const depth = Math.max(1, Math.round(base * base * H));
-      const levels: number[] = [];
-      for (let l = 0; l < depth; l++) {
+      const levels: number[] = [0]; // l=0 — сплошная кромка, без разрывов
+      for (let l = 1; l < depth; l++) {
         // разрежаем нижние уровни (дизер)
         if (hash1(seed + i * 13 + l * 29) < 0.82 - l * 0.16) {
           levels.push(l);
         }
       }
-      if (levels.length > 0) out.push({ x, levels });
+      out.push({ x, levels });
     }
     return out;
   }, [seed]);
@@ -73,8 +73,8 @@ export default function PixelEdge({
           <rect
             key={`${i}-${l}`}
             x={col.x}
-            y={H - 1 - l}
-            width={1.1}
+            y={l}
+            width={1.15}
             height={1}
             fill={color}
             opacity={1 - l * 0.13}
