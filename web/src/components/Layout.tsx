@@ -81,7 +81,7 @@ export default function Layout({
               {/* бренд — белый, с точкой-пикселем */}
               <button
                 type="button"
-                className="font-serif text-[26px] font-medium leading-none tracking-tight text-left flex items-baseline band-text"
+                className="font-serif text-[29px] font-medium leading-none tracking-tight text-left flex items-center band-text"
                 onClick={onNewSpread}
                 aria-label="arcanum.ocv — новый расклад"
               >
@@ -136,9 +136,9 @@ export default function Layout({
 
         <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden relative z-10">{children}</div>
 
-        {/* ─── FOOTER — лёгкая навигация сигнатурным цветом, без полосы ─── */}
-        <footer className="relative z-20 flex-shrink-0 px-4 pt-2 pb-4">
-          <span className="rule-pixel block mb-1.5" aria-hidden="true" />
+        {/* ─── FOOTER — навигация на светлой квадратной сетке ─── */}
+        <footer className="relative z-20 flex-shrink-0 px-4 pt-3 pb-4 grid-light">
+          <span className="rule-pixel block mb-2" aria-hidden="true" />
           <div className="flex items-center justify-center gap-2.5 flex-wrap">
             <button type="button" className="nav-word" style={{ color: guide.accentDeep }} onClick={onNewSpread}>
               <Glyph name="sprig" size={11} />новый
