@@ -3,9 +3,6 @@
 import { useState, useMemo } from 'react';
 import Button from './Button';
 import GuideLoading from './GuideLoading';
-import PixelFlower from './PixelFlower';
-import PixelEdge from './PixelEdge';
-import Glyph from './Glyph';
 import { getGuide } from '@/lib/guides';
 
 interface QuestionInputProps {
@@ -112,38 +109,8 @@ export default function QuestionInput({ spreadType, onSubmit, loading = false, c
         </div>
       )}
 
-      {/* ── ирис-схема на сигнатурной плашке — эмоциональный центр сцены ──
-          белый цветок на цветной миллиметровке, край растворяется в пиксели */}
-      <div className="relative flex-1 min-h-0 flex items-end justify-center w-full">
-        <div
-          className="relative band-grid"
-          style={{
-            background: guide.accent,
-            width: 'min(66vw, 280px)',
-            transform: 'rotate(-1.2deg)',
-            marginTop: 12,
-          }}
-          aria-hidden="true"
-        >
-          <div className="flex justify-center pt-4 px-4" style={{ paddingBottom: 10 }}>
-            <PixelFlower
-              seed={31}
-              size={210}
-              variant="iris"
-              color="#F8F6F9"
-              bgColor={guide.accent}
-              opacity={1}
-            />
-          </div>
-          {/* подпись-схема внутри плашки */}
-          <div className="flex items-center gap-2.5 px-4 pb-2 select-none">
-            <Glyph name="star4" size={8} style={{ color: 'rgba(248,246,249,0.6)' }} />
-            <span className="tech-label band-text-dim">iris · chart · {guide.subtitle}</span>
-            <Glyph name="crescent" size={9} style={{ color: 'rgba(248,246,249,0.5)' }} />
-          </div>
-          <PixelEdge color={guide.accent} height={14} seed={8} />
-        </div>
-      </div>
+      {/* ── ирис-схема живёт фоном всего экрана (в index.tsx) —
+          здесь оставляем воздух: вопрос дышит над большим цветком */}
 
       {/* ── кнопка / загрузка ── */}
       <div className="flex justify-center flex-shrink-0 w-full pb-2">

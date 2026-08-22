@@ -103,22 +103,55 @@ body {
   pointer-events: none;
 }
 
-/* медленный световой проход, как облако над страницей */
+/* Медленный отблеск, проходящий по странице — как свет по шёлку:
+   диффузная полоса + яркое ядро + синие/лиловые тона по краям */
 .crt::after {
   content: "";
   position: absolute;
   left: 0;
   right: 0;
-  height: 110px;
+  height: 170px;
   z-index: 41;
-  background: linear-gradient(to bottom, transparent, rgba(248, 246, 249, 0.5), transparent);
+  background:
+    /* яркое ядро отблеска */
+    linear-gradient(to bottom,
+      transparent 0%,
+      rgba(248, 246, 249, 0) 38%,
+      rgba(255, 255, 255, 0.30) 48%,
+      rgba(255, 255, 255, 0.34) 52%,
+      rgba(248, 246, 249, 0) 62%,
+      transparent 100%),
+    /* диффузная широкая полоса */
+    linear-gradient(to bottom,
+      transparent 0%,
+      rgba(248, 246, 249, 0.10) 30%,
+      rgba(248, 246, 249, 0.16) 50%,
+      rgba(248, 246, 249, 0.10) 70%,
+      transparent 100%),
+    /* цветные тона — синий сверху ядра, лиловый снизу */
+    linear-gradient(to bottom,
+      transparent 0%,
+      rgba(39, 73, 210, 0.05) 42%,
+      transparent 55%,
+      rgba(101, 80, 168, 0.05) 68%,
+      transparent 100%);
+  filter: blur(1px);
   pointer-events: none;
-  animation: roll 11s linear infinite;
+  animation:
+    roll 14s linear infinite,
+    sheen-breathe 7s ease-in-out infinite;
 }
 
 @keyframes roll {
-  0%   { top: -110px; }
+  0%   { top: -180px; }
   100% { top: 100%; }
+}
+
+/* отблеск то усиливается, то тает — живой свет, не механический цикл */
+@keyframes sheen-breathe {
+  0%, 100% { opacity: 0.55; }
+  35%      { opacity: 1; }
+  70%      { opacity: 0.75; }
 }
 
 /* Слои фона:

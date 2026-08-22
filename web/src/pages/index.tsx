@@ -9,6 +9,7 @@ import SpreadDaily from '@/components/SpreadDaily';
 import CatalogModal from '@/components/CatalogModal';
 import SettingsModal from '@/components/SettingsModal';
 import CalendarModal from '@/components/CalendarModal';
+import PixelFlower from '@/components/PixelFlower';
 import ErrorModal from '@/components/ErrorModal';
 import * as API from '@/lib/api';
 import { getGuide, GuideMeta } from '@/lib/guides';
@@ -249,6 +250,21 @@ export default function Home() {
             aria-hidden="true"
           />
           <GuideParticles guide={guide} />
+          {/* большой ирис-схема — как на карте дня: сливается с фоном */}
+          <div
+            className="absolute pointer-events-none z-0"
+            style={{ bottom: '-24%', left: '-16%', width: '64vmin' }}
+            aria-hidden="true"
+          >
+            <PixelFlower
+              seed={17}
+              size={560}
+              variant="iris"
+              color={guide.accent}
+              bgColor="var(--paper)"
+              opacity={0.24}
+            />
+          </div>
           <div className="flex-1 w-full relative z-10 flex flex-col">
             {spreadType === '1' ? (
               <Spread1Card
