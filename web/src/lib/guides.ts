@@ -59,6 +59,8 @@ export interface GuideMeta {
     tint: string;
     blend: 'screen' | 'multiply';
     density: number;
+    /** цвет заливки облачной формы (PNG используется как маска) — на светлом фоне работает только multiply */
+    color: string;
   };
   flower: { seed: number; tilt: number };
   revealBurst: { symbol: string; count: number };
@@ -99,7 +101,7 @@ export const GUIDES: Record<string, GuideMeta> = {
       'О чём карты молчат?',
     ],
     tag: 'MOON.SIS',
-    clouds: { bank: 'moon', drift: 0.5, tint: 'brightness(1.05) saturate(0.8) hue-rotate(-10deg)', blend: 'screen', density: 2 },
+    clouds: { bank: 'moon', drift: 0.5, tint: 'brightness(1.05) saturate(0.8) hue-rotate(-10deg)', blend: 'multiply', density: 2, color: '#C6CDEA' },
     flower: { seed: 17, tilt: -3 },
     revealBurst: { symbol: '✦', count: 10 },
   },
@@ -139,7 +141,7 @@ export const GUIDES: Record<string, GuideMeta> = {
       'На что опереться на этой неделе?',
     ],
     tag: 'AMBER.KPR',
-    clouds: { bank: 'ember', drift: 0.3, tint: 'sepia(0.5) saturate(1.4) brightness(0.96)', blend: 'multiply', density: 1 },
+    clouds: { bank: 'ember', drift: 0.3, tint: 'sepia(0.5) saturate(1.4) brightness(0.96)', blend: 'multiply', density: 1, color: '#E5C9A9' },
     flower: { seed: 23, tilt: 2 },
     revealBurst: { symbol: '◆', count: 8 },
   },
@@ -179,7 +181,7 @@ export const GUIDES: Record<string, GuideMeta> = {
       'Что сделать уже сегодня?',
     ],
     tag: 'SPARK.FOX',
-    clouds: { bank: 'storm', drift: 1.3, tint: 'saturate(0.7) contrast(1.05)', blend: 'multiply', density: 2 },
+    clouds: { bank: 'storm', drift: 1.3, tint: 'saturate(0.7) contrast(1.05)', blend: 'multiply', density: 2, color: '#D3CCDF' },
     flower: { seed: 41, tilt: -5 },
     revealBurst: { symbol: '✧', count: 12 },
   },

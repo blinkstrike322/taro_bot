@@ -5,7 +5,6 @@ import { TarotCard } from './Card';
 import Card from './Card';
 import ReadingResult from './ReadingResult';
 import GuideLoading from './GuideLoading';
-import PixelFlower from './PixelFlower';
 import { getGuide } from '@/lib/guides';
 import * as API from '@/lib/api';
 
@@ -175,21 +174,6 @@ export default function SpreadDaily({ characterId, onError, apiCall }: SpreadDai
       {/* веер карт */}
       <div className="flex-1 min-h-0 flex flex-col items-center justify-center w-full">
         <div className="relative flex items-end justify-center w-full max-w-[500px] py-6">
-          {/* ирис-схема прорастает из-под карт: ниже и правее */}
-          <div
-            className="absolute pointer-events-none z-0"
-            style={{ bottom: '-38%', left: '7%', width: '58vmin' }}
-            aria-hidden="true"
-          >
-            <PixelFlower
-              seed={11}
-              size={520}
-              color={guide.accent}
-              bgColor="var(--paper)"
-              opacity={0.26}
-            />
-          </div>
-
           {[0, 1, 2].map((i) => (
             <div
               key={i}
