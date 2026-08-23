@@ -15,14 +15,15 @@ interface ReadingResultProps {
   interpretation: Interpretation;
   characterId?: string;
   readingId?: number | null;
+  className?: string;
 }
 
-export default function ReadingResult({ interpretation, characterId, readingId = null }: ReadingResultProps) {
+export default function ReadingResult({ interpretation, characterId, readingId = null, className = '' }: ReadingResultProps) {
   const { intro, short_answer, card_meaning, advice } = interpretation;
   const guide = getGuide(characterId);
 
   return (
-    <div className="px-5 pb-5 relative">
+    <div className={`px-5 pb-5 relative ${className}`}>
       {/* едва заметный цветок на полях толкования */}
       <div
         className="absolute pointer-events-none"
@@ -37,7 +38,7 @@ export default function ReadingResult({ interpretation, characterId, readingId =
       </div>
 
       <div
-        className="relative reading-card noise-bg px-4 py-5"
+        className="relative reading-card noise-bg px-4 py-5 flex flex-col justify-between"
         style={{
           '--guide-accent': guide.accent,
           '--guide-accent-deep': guide.accentDeep,

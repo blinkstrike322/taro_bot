@@ -63,8 +63,8 @@ export default function Spread1Card({ apiCall, characterId, onError }: Spread1Ca
 
     if (!flipped) {
       return (
-        <div className="flex flex-col items-center py-4 px-3 w-full h-full">
-          <div className="flex-1 min-h-0 flex flex-col items-center justify-center w-full">
+        <div className="flex flex-col items-center pt-12 pb-2 px-3 w-full">
+          <div className="flex flex-col items-center w-full">
             <div className="w-full max-w-[319px] sm:max-w-[370px]" style={{ transform: 'rotate(-2deg)' }}>
               <Card
                 card={card}
@@ -84,9 +84,9 @@ export default function Spread1Card({ apiCall, characterId, onError }: Spread1Ca
     }
 
     return (
-      <div className="flex flex-col items-center py-4 px-3 w-full">
+      <div className="flex flex-col items-center pt-4 pb-2 px-3 w-full">
         {/* компактная карта сверху */}
-        <div className="w-full max-w-[319px] sm:max-w-[370px] flex-shrink-0 pb-4" style={{ transform: 'rotate(-1.2deg)' }}>
+        <div className="w-full max-w-[319px] sm:max-w-[370px] flex-shrink-0 pb-2" style={{ transform: 'rotate(-1.2deg)' }}>
           <Card
             card={card}
             flipped={true}
@@ -94,7 +94,7 @@ export default function Spread1Card({ apiCall, characterId, onError }: Spread1Ca
             characterId={characterId}
           />
         </div>
-        {/* толкование ниже — родитель скроллит */}
+        {/* толкование */}
         <div className="w-full">
           <ReadingResult
             interpretation={data.interpretation}
