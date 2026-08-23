@@ -20,7 +20,7 @@ export default function FlowerAnchor() {
       ? { left: '50%', right: 'auto', bottom: '2%', width: '34vmin', transform: 'translateX(-50%)', op: 0.35 }
       : phase === 'reading'
         ? { left: 'auto', right: '-14%', bottom: '8%', width: '40vmin', transform: 'none', op: 0.2 }
-        : { left: '-14%', right: 'auto', bottom: '-20%', width: '70vmin', transform: 'none', op: 0.26 };
+        : { left: '-10%', right: 'auto', bottom: '-10%', width: '48vmin', transform: 'none', op: 0.3 };
 
   return (
     <div

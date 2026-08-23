@@ -1562,8 +1562,13 @@ body {
 .cloud-img {
   position: absolute;
   inset: 0;
-  background-size: cover;
-  background-position: center;
+  /* PNG-банк используется как маска альфы; цвет заливки задаёт проводница */
+  -webkit-mask-size: cover;
+  mask-size: cover;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
 }
 
 .cloud-dither {

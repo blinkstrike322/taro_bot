@@ -11,7 +11,7 @@ const BANK_SRC: Record<string, string> = {
 };
 
 /**
- * Гибридные облака: живописная PNG-основа (тонированная под проводницу)
+ * Гибридные облака: цветная форма проводницы (PNG-банк используется как маска)
  * + пиксель-дизер кромка (dot-паттерн, замаскированный тем же PNG).
  * Только transform/opacity-анимации. Фаза welcome — облака стянуты к центру.
  */
@@ -49,13 +49,20 @@ export default function CloudField() {
               mixBlendMode: guide.clouds.blend,
               filter: guide.clouds.tint,
               transition: 'opacity 1.2s ease, transform 1.6s cubic-bezier(0.4, 0, 0.2, 1)',
-              '--conv-x': i % 2 === 0 ? '-38%' : '38%',
-              '--conv-o': '0.12',
+              '--conv-x': i % 2 === 0 ? '-12%' : '14%',
+              '--conv-o': '0.3',
               transform: `scale(${l.scale})`,
             } as React.CSSProperties
           }
         >
-          <div className="cloud-img" style={{ backgroundImage: `url(${src})` }} />
+          <div
+            className="cloud-img"
+            style={{
+              backgroundColor: guide.clouds.color,
+              WebkitMaskImage: `url(${src})`,
+              maskImage: `url(${src})`,
+            }}
+          />
           <div
             className="cloud-dither"
             style={{ WebkitMaskImage: `url(${src})`, maskImage: `url(${src})` }}

@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { getGuide } from '@/lib/guides';
-import PixelFlower from './PixelFlower';
 
 interface WelcomeAnimationProps {
   onComplete: () => void;
@@ -208,36 +207,6 @@ export default function WelcomeAnimation({ onComplete, spreadType, characterId =
         '--guide-accent-deep': guide.accentDeep,
       } as React.CSSProperties}
     >
-      {/* ── ирис-схема: прорастает слева-снизу, наполовину за экраном ── */}
-      <div
-        className="absolute pointer-events-none z-0"
-        style={{ bottom: '-20%', left: '-26%', width: '72vmin' }}
-        aria-hidden="true"
-      >
-        <PixelFlower
-          seed={5}
-          size={680}
-          color={guide.accent}
-          bgColor="var(--paper)"
-          opacity={0.24}
-        />
-      </div>
-
-      {/* ─– второй, справа-сверху, растворяется в фоне ── */}
-      <div
-        className="absolute pointer-events-none z-0"
-        style={{ top: '-12%', right: '-28%', width: '56vmin' }}
-        aria-hidden="true"
-      >
-        <PixelFlower
-          seed={42}
-          size={560}
-          color={guide.accent}
-          accentColor="var(--accent-violet)"
-          opacity={0.12}
-        />
-      </div>
-
       {/* ── ГЕРОЙ: огромная строчная типографика, асимметрия ── */}
       <div className="relative z-30 px-6 pt-8">
         <h1 className="display-hero welcome-title">

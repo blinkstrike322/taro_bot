@@ -88,13 +88,16 @@ export default function PixelFlower({
       style={{
         opacity,
         '--ff-op': opacity,
+        // контролируется контейнером (FlowerAnchor задаёт vmin-ширину по фазе)
+        width: '100%',
+        height: 'auto',
+        display: 'block',
         transform: tilt ? `rotate(${tilt}deg)` : undefined,
         ...style,
       } as React.CSSProperties}
       shapeRendering="crispEdges"
       aria-hidden="true"
-    >
-      {groups.map((g, gi) =>
+    >      {groups.map((g, gi) =>
         g.length === 0 ? null : (
           <g key={gi} className="flower-sway" style={SWAY[gi]}>
             {g.map((c, i) => (
