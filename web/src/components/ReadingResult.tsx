@@ -2,7 +2,6 @@
 
 import { getGuide } from '@/lib/guides';
 import FollowupChat from './FollowupChat';
-import PixelFlower from './PixelFlower';
 
 interface Interpretation {
   intro: string;
@@ -15,93 +14,107 @@ interface ReadingResultProps {
   interpretation: Interpretation;
   characterId?: string;
   readingId?: number | null;
+  moodName?: string;
   className?: string;
 }
 
-export default function ReadingResult({ interpretation, characterId, readingId = null, className = '' }: ReadingResultProps) {
+export default function ReadingResult({ interpretation, characterId, readingId = null, moodName, className = '' }: ReadingResultProps) {
   const { intro, short_answer, card_meaning, advice } = interpretation;
   const guide = getGuide(characterId);
+  const meanings = Array.isArray(card_meaning) ? card_meaning : card_meaning ? [card_meaning] : [];
+
+  const adviceLabel =
+    guide.id === 'ruin_keeper' ? 'слово весты'
+    : guide.id === 'spark_of_chaos' ? 'от лилит'
+    : 'шёпот селены';
 
   return (
     <div className={`px-5 pb-5 relative ${className}`}>
-      {/* едва заметный цветок на полях толкования */}
-      <div
-        className="absolute pointer-events-none"
-        style={{ top: '6%', right: '-26%', width: '200px', height: '200px' }}
-        aria-hidden="true"
-      >
-        <PixelFlower seed={17} size={260} color={guide.accent} opacity={0.13} />
-      </div>
-
       <div className="section-label mb-3 relative z-10">
-        <span>толкование</span>
+        <span>толкование{moodName ? ` · ${moodName}` : ''}</span>
       </div>
 
       <div
-        className="relative reading-card noise-bg px-4 py-5 flex flex-col justify-between"
+        className="relative reading-card noise-bg px-4 py-5"
         style={{
           '--guide-accent': guide.accent,
           '--guide-accent-deep': guide.accentDeep,
           '--guide-accent-dim': guide.accentDim,
         } as React.CSSProperties}
       >
-        {/* интро — голос проводницы крупным курсивом */}
+        {/* шапка: сигилы + имя + тег */}
+        <div
+          className="reading-headline relative z-10 reveal-line"
+          style={{ '--rd': '0.05s' } as React.CSSProperties}
+        >
+          <span className="reading-sigils" aria-hidden="true">
+            {guide.cornerSymbols.tl} {guide.cornerSymbols.tr}
+          </span>
+          <span className="tech-label">{guide.name} · {guide.subtitle}</span>
+          <span className="ml-auto tech-label" style={{ color: 'var(--ink-faint)' }}>
+            {guide.tag}
+          </span>
+        </div>
+
+        {/* интро — голос проводницы */}
         {intro && (
-          <div className="relative z-10 mb-4 flex gap-3">
+          <div
+            className="relative z-10 mb-4 flex gap-3 reveal-line"
+            style={{ '--rd': '0.25s' } as React.CSSProperties}
+          >
             <span className="quote-mark" style={{ color: guide.accentDeep }} aria-hidden="true">«</span>
-            <p className="font-serif italic text-[23px] leading-[1.3] pt-2" style={{ color: guide.accentDeep }}>
-              {intro}
-            </p>
+            <p className="reading-intro pt-1">{intro}</p>
           </div>
         )}
 
-        {/* главное толкование */}
+        {/* главное толкование — с буквицей */}
         {short_answer && (
-          <div className="relative z-10 mb-4">
-            <p className="font-sans text-[15.5px] leading-[1.75] text-[color:var(--ink)]">
-              {short_answer}
-            </p>
+          <div
+            className="relative z-10 mb-4 reveal-line"
+            style={{ '--rd': '0.5s' } as React.CSSProperties}
+          >
+            <p className="reading-body">{short_answer}</p>
           </div>
         )}
 
-        {/* разбор по картам */}
-        {card_meaning && (Array.isArray(card_meaning) ? card_meaning.length > 0 : card_meaning) && (
-          <div className="relative z-10 mb-4">
+        {/* разбор по картам — ординалы + линейки */}
+        {meanings.length > 0 && (
+          <div
+            className="relative z-10 mb-4 reveal-line"
+            style={{ '--rd': '0.8s' } as React.CSSProperties}
+          >
             <div className="reading-section-label mb-2" style={{ color: guide.accentDeep }}>
               карты говорят
             </div>
             <div className="space-y-3">
-              {(Array.isArray(card_meaning) ? card_meaning : [card_meaning]).map((meaning, i) => (
-                <p
-                  key={i}
-                  className="relative pl-3.5 font-sans text-[14px] leading-[1.7] text-[color:var(--ink)] opacity-92"
-                >
-                  <span
-                    className="absolute left-0 top-[0.55em] w-1 h-1 rounded-full"
-                    style={{ backgroundColor: guide.accent }}
-                    aria-hidden="true"
-                  />
-                  {meaning}
-                </p>
+              {meanings.map((meaning, i) => (
+                <div key={i} className="flex gap-2 items-baseline">
+                  <span className="reading-ordinal">{String(i + 1).padStart(2, '0')}</span>
+                  <p className="flex-1 font-sans text-[14px] leading-[1.7] text-[color:var(--ink)] opacity-92 border-b border-[color:var(--line)] pb-2">
+                    {meaning}
+                  </p>
+                </div>
               ))}
             </div>
           </div>
         )}
 
-        {/* совет — маргиналия на линии */}
+        {/* совет — маргиналия */}
         {advice && (
-          <div className="marginalia mt-5 pt-1 relative z-10">
+          <div
+            className="marginalia mt-5 pt-1 relative z-10 reveal-line"
+            style={{ '--rd': '1.05s' } as React.CSSProperties}
+          >
             <div className="tech-label mb-1.5" style={{ color: guide.accentDeep }}>
-              {guide.id === 'ruin_keeper' ? 'слово весты' : guide.id === 'spark_of_chaos' ? 'от лилит' : 'шёпот селены'}
+              {adviceLabel}
             </div>
-            <p className="font-serif text-[19px] font-semibold leading-[1.4]" style={{ color: 'var(--ink)' }}>
+            <p className="font-serif text-[20px] font-semibold leading-[1.4]" style={{ color: 'var(--ink)' }}>
               {advice}
             </p>
           </div>
         )}
       </div>
 
-      {/* доп-вопросы по раскладу */}
       {readingId !== null && (
         <FollowupChat readingId={readingId} characterId={characterId} />
       )}

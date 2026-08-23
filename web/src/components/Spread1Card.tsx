@@ -18,6 +18,7 @@ interface ReadingData {
     card_meaning: string[] | string;
     advice: string;
   };
+  mood?: { id: string; name: string } | null;
 }
 
 interface Spread1CardProps {
@@ -104,6 +105,7 @@ export default function Spread1Card({ apiCall, characterId, onError }: Spread1Ca
             interpretation={data.interpretation}
             characterId={characterId}
             readingId={data.readingId}
+            moodName={data.mood?.name}
           />
         </div>
       </div>

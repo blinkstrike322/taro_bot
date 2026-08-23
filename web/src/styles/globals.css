@@ -865,14 +865,93 @@ body {
 }
 
 /* ================================================================
-   READING — editorial-подача толкования: линии, не коробки
+   READING v2 — манифест-плашка: иерархия + построчное проявление
    ================================================================ */
 .reading-card {
   position: relative;
-  background: rgba(248, 246, 249, 0.88);
+  background:
+    linear-gradient(to bottom, color-mix(in srgb, var(--guide-accent, #6f6ca4) 7%, transparent), transparent 34%),
+    rgba(248, 246, 249, 0.92);
   border-top: 1px solid var(--line-strong);
   border-bottom: 1px solid var(--line-strong);
   border-radius: 2px;
+}
+
+.reading-headline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 8px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid var(--line);
+  position: relative;
+}
+
+/* двойной рулерт */
+.reading-headline::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -4px;
+  height: 1px;
+  background: linear-gradient(90deg, var(--line), transparent);
+}
+
+.reading-sigils {
+  font-family: var(--font-pixel);
+  font-size: 10px;
+  letter-spacing: 0.3em;
+  color: var(--guide-accent, var(--accent));
+}
+
+.reading-intro {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 25px;
+  line-height: 1.28;
+  color: var(--guide-accent-deep, var(--deep));
+}
+
+.reading-body {
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.8;
+  color: var(--ink);
+}
+
+/* буквица — пиксельная, в цвет акцента */
+.reading-body::first-letter {
+  font-family: var(--font-pixel);
+  font-size: 2.1em;
+  line-height: 0.85;
+  color: var(--guide-accent, var(--accent-blue));
+  float: left;
+  padding: 4px 8px 0 0;
+  font-weight: 600;
+}
+
+.reading-ordinal {
+  font-family: var(--font-pixel);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: var(--guide-accent, var(--accent));
+  display: inline-block;
+  min-width: 26px;
+}
+
+/* построчное проявление — «фото в проявителе» */
+.reveal-line {
+  opacity: 0;
+  filter: blur(3px);
+  animation: reveal-develop 0.9s ease-out forwards;
+  animation-delay: var(--rd, 0s);
+}
+
+@keyframes reveal-develop {
+  0%   { opacity: 0; filter: blur(3px); transform: translateY(6px); }
+  60%  { opacity: 1; filter: blur(0.4px); }
+  100% { opacity: 1; filter: blur(0); transform: translateY(0); }
 }
 
 /* крупная кавычка-засечка у интро */
