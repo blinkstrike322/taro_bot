@@ -77,7 +77,7 @@ export default function Layout({
         {/* ─── HEADER — сигнатурная полоса с миллиметровкой ─── */}
         <header className="relative z-20 flex-shrink-0" style={{ background: guide.accent }}>
           <div className="relative band-grid overflow-hidden">
-            <div className="relative flex items-center gap-3 px-5 pt-4 pb-3.5">
+            <div className="relative flex items-center gap-3 px-5 pt-2 pb-1">
               {/* бренд — белый, с точкой-пикселем */}
               <button
                 type="button"
@@ -119,8 +119,7 @@ export default function Layout({
             </div>
           </div>
 
-          {/* пиксельное растворение полосы в светлый интерфейс */}
-          <PixelEdge color={guide.accent} height={16} seed={4} />
+          {/* пиксельный край убран для экономии вертикального пространства */}
         </header>
 
         <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden relative z-10">{children}</div>

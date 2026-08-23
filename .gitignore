@@ -1,5 +1,6 @@
 .sisyphus/
 .env
+.env.local
 web/node_modules/
 web/.next/
 /webapp/

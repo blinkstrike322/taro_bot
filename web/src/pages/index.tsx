@@ -159,6 +159,23 @@ export default function Home() {
 
   const arcanaCount = spreadType === '1' ? 1 : 3;
 
+  // Открыть только одно меню за раз
+  const openCatalog = useCallback(() => {
+    setSettingsOpen(false);
+    setCalendarOpen(false);
+    setCatalogOpen(true);
+  }, []);
+  const openSettings = useCallback(() => {
+    setCatalogOpen(false);
+    setCalendarOpen(false);
+    setSettingsOpen(true);
+  }, []);
+  const openCalendar = useCallback(() => {
+    setCatalogOpen(false);
+    setSettingsOpen(false);
+    setCalendarOpen(true);
+  }, []);
+
   // Общий API-вызов с маппингом карт и reading_id
   const makeApiCall = useCallback(
     (type: 1 | 3) => (question: string | null) =>
@@ -187,18 +204,19 @@ export default function Home() {
   );
 
   return (
-    <Layout
-      spreadType={spreadType ?? '—'}
-      arcanaCount={arcanaCount}
-      characterId={characterId}
-      onOpenCatalog={() => setCatalogOpen(true)}
-      onOpenSettings={() => setSettingsOpen(true)}
-      onOpenCalendar={() => setCalendarOpen(true)}
-      onNewSpread={handleNewSpread}
-      toastMessage={toastMsg}
-      toastVisible={toastVisible}
-      onToastHide={() => setToastVisible(false)}
-    >
+    <>
+      <Layout
+        spreadType={spreadType ?? '—'}
+        arcanaCount={arcanaCount}
+        characterId={characterId}
+        onOpenCatalog={openCatalog}
+        onOpenSettings={openSettings}
+        onOpenCalendar={openCalendar}
+        onNewSpread={handleNewSpread}
+        toastMessage={toastMsg}
+        toastVisible={toastVisible}
+        onToastHide={() => setToastVisible(false)}
+      >
       {screen === 'welcome' && spreadType && (
         <WelcomeAnimation
           spreadType={spreadType}
@@ -237,7 +255,7 @@ export default function Home() {
       {/* ─── РАСКЛАДЫ 1 / 3 С ВОПРОСОМ ─── */}
       {screen === 'spread' && (spreadType === '1' || spreadType === '3') && (
         <div
-          className="relative flex flex-col items-center w-full min-h-full"
+          className="relative flex flex-col items-center w-full"
           style={{
             '--guide-accent': guide.accent,
             '--guide-accent-deep': guide.accentDeep,
@@ -265,7 +283,7 @@ export default function Home() {
               opacity={0.24}
             />
           </div>
-          <div className="flex-1 w-full relative z-10 flex flex-col">
+          <div className="w-full relative z-10">
             {spreadType === '1' ? (
               <Spread1Card
                 key={spreadKey}
@@ -284,31 +302,32 @@ export default function Home() {
           </div>
         </div>
       )}
-
-      <CatalogModal
-        isOpen={catalogOpen}
-        onClose={() => setCatalogOpen(false)}
-        onSelect={handleCatalogSelect}
-        characterId={characterId}
-      />
-      <SettingsModal
-        isOpen={settingsOpen}
-        onClose={() => setSettingsOpen(false)}
-        currentCharacter={characterId}
-        onCharacterChange={handleCharacterChange}
-      />
-      <CalendarModal
-        isOpen={calendarOpen}
-        onClose={() => setCalendarOpen(false)}
-        initData={API.getInitData()}
-      />
-
-      <ErrorModal
-        message={errorMsg}
-        visible={errorVisible}
-        onHide={hideError}
-        characterId={characterId}
-      />
     </Layout>
-  );
+
+    <CatalogModal
+      isOpen={catalogOpen}
+      onClose={() => setCatalogOpen(false)}
+      onSelect={handleCatalogSelect}
+      characterId={characterId}
+    />
+    <SettingsModal
+      isOpen={settingsOpen}
+      onClose={() => setSettingsOpen(false)}
+      currentCharacter={characterId}
+      onCharacterChange={handleCharacterChange}
+    />
+    <CalendarModal
+      isOpen={calendarOpen}
+      onClose={() => setCalendarOpen(false)}
+      initData={API.getInitData()}
+    />
+
+    <ErrorModal
+      message={errorMsg}
+      visible={errorVisible}
+      onHide={hideError}
+      characterId={characterId}
+    />
+  </>
+);
 }

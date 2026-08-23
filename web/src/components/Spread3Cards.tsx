@@ -93,8 +93,8 @@ export default function Spread3Cards({ apiCall, characterId, onError }: Spread3C
 
     if (showResult) {
       return (
-        <div className="flex flex-col items-center py-3 px-3 w-full">
-          <div className="flex flex-col items-center w-full max-w-[460px] sm:max-w-[500px] px-2 flex-shrink-0 pb-3">
+        <div className="flex flex-col items-center pt-3 pb-1 px-3 w-full">
+          <div className="flex flex-col items-center w-full max-w-[460px] sm:max-w-[500px] px-2 flex-shrink-0 pb-1">
             {/* Верхняя карта (НАСТОЯЩЕЕ) */}
             <div
               className="w-full max-w-[211px] sm:max-w-[231px] mb-2"
@@ -148,8 +148,8 @@ export default function Spread3Cards({ apiCall, characterId, onError }: Spread3C
     }
 
     return (
-      <div className="flex flex-col items-center py-3 px-3 w-full h-full">
-        <div className="flex-1 min-h-0 flex flex-col items-center justify-center w-full">
+      <div className="flex flex-col items-center pt-12 pb-2 px-3 w-full">
+        <div className="flex flex-col items-center w-full">
           <div className="flex flex-col items-center w-full max-w-[460px] sm:max-w-[500px] px-2">
             {/* Верхняя карта (НАСТОЯЩЕЕ) */}
             <div
