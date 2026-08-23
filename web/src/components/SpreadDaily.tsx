@@ -18,6 +18,7 @@ interface ReadingData {
     card_meaning: string[] | string;
     advice: string;
   };
+  mood?: { id: string; name: string } | null;
 }
 
 interface SpreadDailyProps {
@@ -150,6 +151,7 @@ export default function SpreadDaily({ characterId, onError, apiCall }: SpreadDai
             interpretation={data.interpretation}
             characterId={characterId}
             readingId={data.readingId}
+            moodName={data.mood?.name}
           />
         </div>
       </div>
