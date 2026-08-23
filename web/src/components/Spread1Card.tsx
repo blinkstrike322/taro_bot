@@ -5,6 +5,7 @@ import { TarotCard } from './Card';
 import Card from './Card';
 import QuestionInput from './QuestionInput';
 import ReadingResult from './ReadingResult';
+import { useAtmosphere } from './atmosphere/AtmosphereContext';
 
 type Phase = 'input' | 'loading' | 'cards' | 'result';
 
@@ -26,6 +27,7 @@ interface Spread1CardProps {
 }
 
 export default function Spread1Card({ apiCall, characterId, onError }: Spread1CardProps) {
+  const { setPhase: setAtmoPhase } = useAtmosphere();
   const [phase, setPhase] = useState<Phase>('input');
   const [data, setData] = useState<ReadingData | null>(null);
   const [flipped, setFlipped] = useState(false);
@@ -45,7 +47,9 @@ export default function Spread1Card({ apiCall, characterId, onError }: Spread1Ca
 
   const handleFlip = useCallback(() => {
     setFlipped(true);
-  }, []);
+    setAtmoPhase('reveal');
+    setTimeout(() => setAtmoPhase('reading'), 1400);
+  }, [setAtmoPhase]);
 
   if (phase === 'input' || phase === 'loading') {
     return (

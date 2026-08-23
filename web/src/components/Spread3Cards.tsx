@@ -5,6 +5,7 @@ import { TarotCard } from './Card';
 import Card from './Card';
 import QuestionInput from './QuestionInput';
 import ReadingResult from './ReadingResult';
+import { useAtmosphere } from './atmosphere/AtmosphereContext';
 
 type Phase = 'input' | 'loading' | 'cards' | 'result';
 
@@ -30,6 +31,7 @@ const POSITIONS = ['ПРОШЛОЕ', 'НАСТОЯЩЕЕ', 'БУДУЩЕЕ'];
 const FLIP_ANIM_MS = 700;
 
 export default function Spread3Cards({ apiCall, characterId, onError }: Spread3CardsProps) {
+  const { setPhase: setAtmoPhase } = useAtmosphere();
   const [phase, setPhase] = useState<Phase>('input');
   const [data, setData] = useState<ReadingData | null>(null);
   const [flippedCards, setFlippedCards] = useState<boolean[]>([false, false, false]);
@@ -38,6 +40,7 @@ export default function Spread3Cards({ apiCall, characterId, onError }: Spread3C
 
   useEffect(() => {
     if (flippedCards.every(Boolean)) {
+      setAtmoPhase('reading');
       resultTimer.current = setTimeout(() => setShowResult(true), FLIP_ANIM_MS + 50);
     } else {
       setShowResult(false);
@@ -46,7 +49,7 @@ export default function Spread3Cards({ apiCall, characterId, onError }: Spread3C
     return () => {
       if (resultTimer.current) clearTimeout(resultTimer.current);
     };
-  }, [flippedCards]);
+  }, [flippedCards, setAtmoPhase]);
 
   const handleSubmit = useCallback(async (question: string | null) => {
     setPhase('loading');
@@ -68,7 +71,8 @@ export default function Spread3Cards({ apiCall, characterId, onError }: Spread3C
       next[index] = true;
       return next;
     });
-  }, []);
+    setAtmoPhase('reveal');
+  }, [setAtmoPhase]);
 
   if (phase === 'input' || phase === 'loading') {
     return (
