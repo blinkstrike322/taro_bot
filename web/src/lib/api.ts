@@ -25,10 +25,16 @@ export interface Interpretation {
   advice: string;
 }
 
+export interface GuideMood {
+  id: string;
+  name: string;
+}
+
 export interface SpreadResponse {
   reading_id: number;
   cards: TarotCardData[];
   interpretation: Interpretation;
+  mood?: GuideMood | null;
   remaining?: number | null;
   limit?: number | null;
 }

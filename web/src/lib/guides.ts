@@ -51,6 +51,17 @@ export interface GuideMeta {
 
   // Per-guide "type" indicator (retro tag)
   tag: string;
+
+  // ── Sensory identity (atmosphere engine) ──
+  clouds: {
+    bank: 'moon' | 'ember' | 'storm';
+    drift: number;
+    tint: string;
+    blend: 'screen' | 'multiply';
+    density: number;
+  };
+  flower: { seed: number; tilt: number };
+  revealBurst: { symbol: string; count: number };
 }
 
 export const GUIDES: Record<string, GuideMeta> = {
@@ -88,6 +99,9 @@ export const GUIDES: Record<string, GuideMeta> = {
       'О чём карты молчат?',
     ],
     tag: 'MOON.SIS',
+    clouds: { bank: 'moon', drift: 0.5, tint: 'brightness(1.05) saturate(0.8) hue-rotate(-10deg)', blend: 'screen', density: 2 },
+    flower: { seed: 17, tilt: -3 },
+    revealBurst: { symbol: '✦', count: 10 },
   },
 
   ruin_keeper: {
@@ -125,6 +139,9 @@ export const GUIDES: Record<string, GuideMeta> = {
       'На что опереться на этой неделе?',
     ],
     tag: 'AMBER.KPR',
+    clouds: { bank: 'ember', drift: 0.3, tint: 'sepia(0.5) saturate(1.4) brightness(0.96)', blend: 'multiply', density: 1 },
+    flower: { seed: 23, tilt: 2 },
+    revealBurst: { symbol: '◆', count: 8 },
   },
 
   spark_of_chaos: {
@@ -162,6 +179,9 @@ export const GUIDES: Record<string, GuideMeta> = {
       'Что сделать уже сегодня?',
     ],
     tag: 'SPARK.FOX',
+    clouds: { bank: 'storm', drift: 1.3, tint: 'saturate(0.7) contrast(1.05)', blend: 'multiply', density: 2 },
+    flower: { seed: 41, tilt: -5 },
+    revealBurst: { symbol: '✧', count: 12 },
   },
 };
 
