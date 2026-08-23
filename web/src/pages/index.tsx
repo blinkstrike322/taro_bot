@@ -9,8 +9,9 @@ import SpreadDaily from '@/components/SpreadDaily';
 import CatalogModal from '@/components/CatalogModal';
 import SettingsModal from '@/components/SettingsModal';
 import CalendarModal from '@/components/CalendarModal';
-import PixelFlower from '@/components/PixelFlower';
 import ErrorModal from '@/components/ErrorModal';
+import AtmosphereLayer from '@/components/atmosphere/AtmosphereLayer';
+import { AtmosphereProvider, useAtmosphere } from '@/components/atmosphere/AtmosphereContext';
 import * as API from '@/lib/api';
 import { getGuide, GuideMeta } from '@/lib/guides';
 
@@ -22,7 +23,6 @@ function GuideParticles({ guide }: { guide: GuideMeta }) {
   const particles = useMemo(() => {
     const PHI = 1.618033988749;
     const seeded = (s: number) => Math.abs((Math.sin(s * 12.9898 + 78.233) * 43758.5453) % 1);
-    // 12 частиц — атмосфера без лишнего рендера
     return Array.from({ length: 12 }, (_, i) => {
       const s = i * PHI + 7;
       return {
@@ -65,10 +65,11 @@ function GuideParticles({ guide }: { guide: GuideMeta }) {
   );
 }
 
-export default function Home() {
+function AppShell({ characterId, onCharacterChange }: { characterId: string; onCharacterChange: (id: string) => void }) {
+  const { setPhase } = useAtmosphere();
+
   const [spreadType, setSpreadType] = useState<SpreadType | null>(null);
   const [screen, setScreen] = useState<Screen>('welcome');
-  const [characterId, setCharacterId] = useState('shadow_walker');
 
   const [catalogOpen, setCatalogOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -89,20 +90,6 @@ export default function Home() {
     const params = new URLSearchParams(window.location.search);
     const type = (params.get('type') as SpreadType) || 'daily';
     setSpreadType(type);
-
-    // Мгновенно — из localStorage
-    try {
-      const stored = localStorage.getItem('taro_character');
-      if (stored) setCharacterId(stored);
-    } catch {}
-
-    // Затем синхронизация с бэкендом
-    API.getCharacter().then((serverId) => {
-      if (serverId) {
-        setCharacterId(serverId);
-        try { localStorage.setItem('taro_character', serverId); } catch {}
-      }
-    });
   }, []);
 
   const showToast = useCallback((msg: string) => {
@@ -120,8 +107,9 @@ export default function Home() {
   }, []);
 
   const handleWelcomeComplete = useCallback(() => {
+    setPhase('draw');
     setScreen(spreadType === 'daily' ? 'daily' : 'spread');
-  }, [spreadType]);
+  }, [spreadType, setPhase]);
 
   const handleCatalogSelect = useCallback((type: SpreadType) => {
     setSpreadType(type);
@@ -137,15 +125,13 @@ export default function Home() {
       setScreen('spread');
       setSpreadKey((k) => k + 1);
     }
-  }, [showToast]);
+    setPhase('draw');
+  }, [showToast, setPhase]);
 
   const handleCharacterChange = useCallback((id: string) => {
-    setCharacterId(id);
-    try {
-      localStorage.setItem('taro_character', id);
-    } catch {}
+    onCharacterChange(id);
     showToast('проводница рядом');
-  }, [showToast]);
+  }, [onCharacterChange, showToast]);
 
   const handleNewSpread = useCallback(() => {
     if (spreadType === 'daily') {
@@ -155,11 +141,11 @@ export default function Home() {
       setScreen('spread');
       setSpreadKey((k) => k + 1);
     }
-  }, [spreadType]);
+    setPhase('draw');
+  }, [spreadType, setPhase]);
 
   const arcanaCount = spreadType === '1' ? 1 : 3;
 
-  // Открыть только одно меню за раз
   const openCatalog = useCallback(() => {
     setSettingsOpen(false);
     setCalendarOpen(false);
@@ -176,7 +162,6 @@ export default function Home() {
     setCalendarOpen(true);
   }, []);
 
-  // Общий API-вызов с маппингом карт и reading_id
   const makeApiCall = useCallback(
     (type: 1 | 3) => (question: string | null) =>
       API.spread(type, question, characterId).then((res) => ({
@@ -186,6 +171,7 @@ export default function Home() {
           image_url: `/cards/${c.id}.webp`,
         })),
         interpretation: res.interpretation,
+        mood: res.mood,
       })),
     [characterId],
   );
@@ -199,6 +185,7 @@ export default function Home() {
           image_url: `/cards/${c.id}.webp`,
         })),
         interpretation: res.interpretation,
+        mood: res.mood,
       })),
     [characterId],
   );
@@ -217,116 +204,135 @@ export default function Home() {
         toastVisible={toastVisible}
         onToastHide={() => setToastVisible(false)}
       >
-      {screen === 'welcome' && spreadType && (
-        <WelcomeAnimation
-          spreadType={spreadType}
-          onComplete={handleWelcomeComplete}
-          characterId={characterId}
-        />
-      )}
+        <AtmosphereLayer />
 
-      {/* ─── РАСКЛАД ДНЯ ─── */}
-      {screen === 'daily' && (
-        <div
-          className="relative flex flex-col items-center w-full min-h-full"
-          style={{
-            '--guide-accent': guide.accent,
-            '--guide-accent-deep': guide.accentDeep,
-            '--guide-accent-dim': guide.accentDim,
-          } as React.CSSProperties}
-        >
-          <div
-            className="guide-ambient"
-            style={{ background: guide.ambientPattern }}
-            aria-hidden="true"
+        {screen === 'welcome' && spreadType && (
+          <WelcomeAnimation
+            spreadType={spreadType}
+            onComplete={handleWelcomeComplete}
+            characterId={characterId}
           />
-          <GuideParticles guide={guide} />
-          <div className="relative z-10 w-full">
-            <SpreadDaily
-              key={dailyKey}
-              characterId={characterId}
-              onError={showError}
-              apiCall={makeDailyApiCall}
-            />
-          </div>
-        </div>
-      )}
+        )}
 
-      {/* ─── РАСКЛАДЫ 1 / 3 С ВОПРОСОМ ─── */}
-      {screen === 'spread' && (spreadType === '1' || spreadType === '3') && (
-        <div
-          className="relative flex flex-col items-center w-full"
-          style={{
-            '--guide-accent': guide.accent,
-            '--guide-accent-deep': guide.accentDeep,
-            '--guide-accent-dim': guide.accentDim,
-          } as React.CSSProperties}
-        >
+        {/* ─── РАСКЛАД ДНЯ ─── */}
+        {screen === 'daily' && (
           <div
-            className="guide-ambient"
-            style={{ background: guide.ambientPattern }}
-            aria-hidden="true"
-          />
-          <GuideParticles guide={guide} />
-          {/* большой ирис-схема — как на карте дня: сливается с фоном */}
-          <div
-            className="absolute pointer-events-none z-0"
-            style={{ bottom: '-24%', left: '-16%', width: '64vmin' }}
-            aria-hidden="true"
+            className="relative flex flex-col items-center w-full min-h-full"
+            style={{
+              '--guide-accent': guide.accent,
+              '--guide-accent-deep': guide.accentDeep,
+              '--guide-accent-dim': guide.accentDim,
+            } as React.CSSProperties}
           >
-            <PixelFlower
-              seed={17}
-              size={560}
-              color={guide.accent}
-              bgColor="var(--paper)"
-              opacity={0.24}
+            <div
+              className="guide-ambient"
+              style={{ background: guide.ambientPattern }}
+              aria-hidden="true"
             />
-          </div>
-          <div className="w-full relative z-10">
-            {spreadType === '1' ? (
-              <Spread1Card
-                key={spreadKey}
+            <GuideParticles guide={guide} />
+            <div className="relative z-10 w-full">
+              <SpreadDaily
+                key={dailyKey}
                 characterId={characterId}
                 onError={showError}
-                apiCall={makeApiCall(1)}
+                apiCall={makeDailyApiCall}
               />
-            ) : (
-              <Spread3Cards
-                key={spreadKey}
-                characterId={characterId}
-                onError={showError}
-                apiCall={makeApiCall(3)}
-              />
-            )}
+            </div>
           </div>
-        </div>
-      )}
-    </Layout>
+        )}
 
-    <CatalogModal
-      isOpen={catalogOpen}
-      onClose={() => setCatalogOpen(false)}
-      onSelect={handleCatalogSelect}
-      characterId={characterId}
-    />
-    <SettingsModal
-      isOpen={settingsOpen}
-      onClose={() => setSettingsOpen(false)}
-      currentCharacter={characterId}
-      onCharacterChange={handleCharacterChange}
-    />
-    <CalendarModal
-      isOpen={calendarOpen}
-      onClose={() => setCalendarOpen(false)}
-      initData={API.getInitData()}
-    />
+        {/* ─── РАСКЛАДЫ 1 / 3 С ВОПРОСОМ ─── */}
+        {screen === 'spread' && (spreadType === '1' || spreadType === '3') && (
+          <div
+            className="relative flex flex-col items-center w-full"
+            style={{
+              '--guide-accent': guide.accent,
+              '--guide-accent-deep': guide.accentDeep,
+              '--guide-accent-dim': guide.accentDim,
+            } as React.CSSProperties}
+          >
+            <div
+              className="guide-ambient"
+              style={{ background: guide.ambientPattern }}
+              aria-hidden="true"
+            />
+            <GuideParticles guide={guide} />
+            <div className="w-full relative z-10">
+              {spreadType === '1' ? (
+                <Spread1Card
+                  key={spreadKey}
+                  characterId={characterId}
+                  onError={showError}
+                  apiCall={makeApiCall(1)}
+                />
+              ) : (
+                <Spread3Cards
+                  key={spreadKey}
+                  characterId={characterId}
+                  onError={showError}
+                  apiCall={makeApiCall(3)}
+                />
+              )}
+            </div>
+          </div>
+        )}
+      </Layout>
 
-    <ErrorModal
-      message={errorMsg}
-      visible={errorVisible}
-      onHide={hideError}
-      characterId={characterId}
-    />
-  </>
-);
+      <CatalogModal
+        isOpen={catalogOpen}
+        onClose={() => setCatalogOpen(false)}
+        onSelect={handleCatalogSelect}
+        characterId={characterId}
+      />
+      <SettingsModal
+        isOpen={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        currentCharacter={characterId}
+        onCharacterChange={handleCharacterChange}
+      />
+      <CalendarModal
+        isOpen={calendarOpen}
+        onClose={() => setCalendarOpen(false)}
+        initData={API.getInitData()}
+      />
+
+      <ErrorModal
+        message={errorMsg}
+        visible={errorVisible}
+        onHide={hideError}
+        characterId={characterId}
+      />
+    </>
+  );
+}
+
+export default function Home() {
+  const [characterId, setCharacterId] = useState('shadow_walker');
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('taro_character');
+      if (stored) setCharacterId(stored);
+    } catch {}
+
+    API.getCharacter().then((serverId) => {
+      if (serverId) {
+        setCharacterId(serverId);
+        try { localStorage.setItem('taro_character', serverId); } catch {}
+      }
+    });
+  }, []);
+
+  const handleCharacterChange = useCallback((id: string) => {
+    setCharacterId(id);
+    try {
+      localStorage.setItem('taro_character', id);
+    } catch {}
+  }, []);
+
+  return (
+    <AtmosphereProvider characterId={characterId}>
+      <AppShell characterId={characterId} onCharacterChange={handleCharacterChange} />
+    </AtmosphereProvider>
+  );
 }
