@@ -59,8 +59,23 @@ ATTEMPT_TIMEOUT_S = 45.0
 
 # Кулдаун только что упавших моделей: 429/5xx/«unavailable»/таймаут —
 # и модель на 5 минут выпадает из хедж-очереди, не тратит слот.
+# Честный streak: модель остывает после 2 подряд неудач, а не одной —
+# одиночный таймаут больше не выкидывает сильную модель из ротации.
 COOLDOWN_SECONDS = 300.0
+COOLDOWN_STREAK = 2
 _cooldown_until: dict[str, float] = {}
+_failure_streak: dict[str, int] = {}
+
+
+def _register_failure(model: str) -> bool:
+    """Учесть неудачу модели. True — если модель должна уйти в cooldown."""
+    n = _failure_streak.get(model, 0) + 1
+    _failure_streak[model] = n
+    return n >= COOLDOWN_STREAK
+
+
+def _register_success(model: str) -> None:
+    _failure_streak.pop(model, None)
 
 
 def _set_cooldown(model: str, why: str) -> None:
@@ -157,8 +172,12 @@ async def call_llm(
     base_url: str,
     api_key: str,
     max_tokens: int = 2000,
+    json_mode: bool = True,
 ) -> str:
     """Call a single LLM endpoint and return the text content.
+
+    json_mode: пробуем response_format={"type":"json_object"} — часть моделей
+    отвечает на него 400, тогда повторяем тот же запрос без json_mode.
 
     Handles reasoning models that return content in ``reasoning_content``
     when the visible ``content`` field is empty. Per-attempt timeout is
@@ -166,21 +185,37 @@ async def call_llm(
     the hedged pipeline.
     """
     client = _get_client()
-    response = await client.post(
-        base_url,
-        headers={
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json",
-        },
-        json={
-            "model": model,
-            "messages": messages,
-            "max_tokens": max_tokens,
-            "temperature": 0.8,
-        },
-        timeout=httpx.Timeout(ATTEMPT_TIMEOUT_S, connect=8.0),
-    )
-    response.raise_for_status()
+    payload: dict = {
+        "model": model,
+        "messages": messages,
+        "max_tokens": max_tokens,
+        "temperature": 0.75,
+    }
+    if json_mode:
+        payload["response_format"] = {"type": "json_object"}
+
+    async def _post(p: dict) -> httpx.Response:
+        return await client.post(
+            base_url,
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+            },
+            json=p,
+            timeout=httpx.Timeout(ATTEMPT_TIMEOUT_S, connect=8.0),
+        )
+
+    try:
+        response = await _post(payload)
+        response.raise_for_status()
+    except httpx.HTTPStatusError as e:
+        if json_mode and e.response.status_code == 400:
+            logger.info("json_mode rejected by %s — retrying without it", model)
+            payload.pop("response_format", None)
+            response = await _post(payload)
+            response.raise_for_status()
+        else:
+            raise
     data = response.json()
     choice = data["choices"][0]
     msg = choice["message"]
@@ -209,6 +244,7 @@ async def call_llm(
 async def call_llm_with_fallback(
     messages: list[dict],
     max_tokens: int = 2000,
+    json_mode: bool = True,
 ) -> str:
     """Hedged LLM call: first success wins, slow models don't block.
 
@@ -232,18 +268,24 @@ async def call_llm_with_fallback(
     async def _attempt(model: str, base_url: str, api_key: str, label: str) -> str:
         t0 = asyncio.get_running_loop().time()
         try:
-            result = await call_llm(messages, model, base_url, api_key, max_tokens=max_tokens)
+            result = await call_llm(
+                messages, model, base_url, api_key,
+                max_tokens=max_tokens, json_mode=json_mode,
+            )
         except httpx.HTTPStatusError as e:
-            # рейт-лимит / недоступна / серверная ошибка — модель остывает
+            # рейт-лимит / недоступна / серверная ошибка — модель остывает по streak
             if e.response.status_code in (429, 500, 502, 503, 504) or "unavailable" in e.response.text[:300].lower():
-                _set_cooldown(model, f"HTTP {e.response.status_code}")
+                if _register_failure(model):
+                    _set_cooldown(model, f"HTTP {e.response.status_code}")
             raise
         except (httpx.TimeoutException, httpx.TransportError) as e:
-            _set_cooldown(model, type(e).__name__)
+            if _register_failure(model):
+                _set_cooldown(model, type(e).__name__)
             raise
         dt = asyncio.get_running_loop().time() - t0
         logger.info("OK: %s — %s (%d chars, %.1fs)", label, model, len(result), dt)
         _clear_cooldown(model)
+        _register_success(model)
         return result
 
     try:
@@ -288,6 +330,7 @@ async def interpret_reading(
     spread_type: int | str = 1,
     avoid_texts: list[str] | None = None,
 ) -> dict:
+    from core.llm_gate import validate_interpretation
     from core.prompts import get_system_prompt, build_reading_prompt
 
     system_prompt = get_system_prompt(character_id, avoid_texts=avoid_texts)
@@ -302,20 +345,33 @@ async def interpret_reading(
     is_reasoning = _zen_key() is not None
     token_base = 6000 if is_reasoning else 4000
 
-    # До двух раундов: модель могла ответить быстро, но невалидно
-    # (сломанный JSON / пустые поля) — тогда ещё один хедж-заход.
-    for attempt in range(2):
+    # До трёх заходов: каждый заход — хедж-вызов; ответ должен пройти
+    # validation gate, иначе пробуем следующую модель. Так быстрые слабые
+    # модели больше не крадут расклад у качественных.
+    last_text = ""
+    for attempt in range(3):
         try:
             raw = await call_llm_with_fallback(messages, max_tokens=token_base)
-            cleaned = strip_emojis(raw)
-            if len(cleaned) != len(raw):
-                logger.warning("Emojis detected and removed from LLM response")
-            parsed = parse_llm_response(cleaned)
-            if parsed and isinstance(parsed.get("short_answer"), str) and parsed["short_answer"].strip():
-                return parsed
-            logger.warning("Unparseable/empty LLM output (attempt %d/2), re-trying", attempt + 1)
         except RuntimeError:
-            logger.error("All LLM models failed (attempt %d/2)", attempt + 1)
+            logger.error("All LLM models failed (attempt %d/3)", attempt + 1)
+            continue
+        had_emoji = len(strip_emojis(raw)) != len(raw)
+        cleaned = strip_emojis(raw)
+        last_text = cleaned
+        parsed = parse_llm_response(cleaned)
+        ok, reason = validate_interpretation(parsed, cards, character_id, had_emoji=had_emoji)
+        if ok:
+            return parsed
+        logger.warning(
+            "Gate rejected output (attempt %d/3): %s — trying next model",
+            attempt + 1, reason,
+        )
+
+    if last_text.strip():
+        parsed = parse_llm_response(last_text)
+        if isinstance(parsed.get("short_answer"), str) and parsed["short_answer"].strip():
+            logger.warning("Gate exhausted — returning best-effort parse")
+            return parsed
 
     return fallback_from_cards_db(cards, question, character_id)
 
@@ -337,25 +393,33 @@ async def interpret_followup(
     is_reasoning = _zen_key() is not None
     token_base = 4500 if is_reasoning else 3000
 
-    # До двух раундов — как в interpret_reading
-    for attempt in range(2):
+    # До трёх заходов с gate — как в interpret_reading
+    last_text = ""
+    for attempt in range(3):
         try:
             raw = await call_llm_with_fallback(messages, max_tokens=token_base)
-            cleaned = strip_emojis(raw)
-            parsed = parse_llm_response(cleaned)
-            if parsed:
-                for key in ("answer", "short_answer", "intro"):
-                    v = parsed.get(key)
-                    if isinstance(v, str) and v.strip():
-                        return v.strip()
-                text = json.dumps(parsed, ensure_ascii=False)
-                return text
-            if cleaned.strip():
-                return cleaned.strip()
-            logger.warning("Empty followup output (attempt %d/2), re-trying", attempt + 1)
         except RuntimeError:
-            logger.error("All LLM models failed for followup (attempt %d/2)", attempt + 1)
+            logger.error("All LLM models failed for followup (attempt %d/3)", attempt + 1)
+            continue
+        had_emoji = len(strip_emojis(raw)) != len(raw)
+        cleaned = strip_emojis(raw)
+        parsed = parse_llm_response(cleaned)
+        candidate = ""
+        for key in ("answer", "short_answer", "intro"):
+            v = parsed.get(key) if parsed else None
+            if isinstance(v, str) and v.strip():
+                candidate = v.strip()
+                break
+        if not candidate and cleaned.strip():
+            candidate = cleaned.strip()
+        last_text = candidate
+        ok, reason = validate_followup(candidate, character_id, had_emoji=had_emoji)
+        if ok:
+            return candidate
+        logger.warning("Followup gate rejected (attempt %d/3): %s", attempt + 1, reason)
 
+    if last_text:
+        return last_text
     return _fallback_followup(reading, question, character_id)
 
 
