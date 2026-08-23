@@ -217,7 +217,6 @@ export default function WelcomeAnimation({ onComplete, spreadType, characterId =
         <PixelFlower
           seed={5}
           size={680}
-          variant="iris"
           color={guide.accent}
           bgColor="var(--paper)"
           opacity={0.24}
@@ -235,9 +234,7 @@ export default function WelcomeAnimation({ onComplete, spreadType, characterId =
           size={560}
           color={guide.accent}
           accentColor="var(--accent-violet)"
-          accentRate={0.03}
           opacity={0.12}
-          dense
         />
       </div>
 

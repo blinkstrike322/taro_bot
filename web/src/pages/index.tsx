@@ -277,7 +277,6 @@ export default function Home() {
             <PixelFlower
               seed={17}
               size={560}
-              variant="iris"
               color={guide.accent}
               bgColor="var(--paper)"
               opacity={0.24}

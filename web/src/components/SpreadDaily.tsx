@@ -182,7 +182,6 @@ export default function SpreadDaily({ characterId, onError, apiCall }: SpreadDai
             <PixelFlower
               seed={11}
               size={520}
-              variant="iris"
               color={guide.accent}
               bgColor="var(--paper)"
               opacity={0.26}
