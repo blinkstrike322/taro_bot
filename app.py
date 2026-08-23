@@ -190,6 +190,8 @@ async def handle_spread(request):
         spread_type="daily" if is_daily else st,
         avoid_texts=avoid_texts,
     )
+    from core.moods import mood_of_day
+    mood = mood_of_day(character_id)
     await update_last_active(db, tg_id)
     saved = await save_reading(
         db=db,
@@ -204,6 +206,7 @@ async def handle_spread(request):
         "reading_id": saved.id,
         "cards": cards,
         "interpretation": interpretation,
+        "mood": {"id": mood["id"], "name": mood["name"]} if mood else None,
         "remaining": quota.get("remaining"),
         "limit": quota.get("limit"),
     })

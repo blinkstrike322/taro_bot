@@ -331,9 +331,12 @@ async def interpret_reading(
     avoid_texts: list[str] | None = None,
 ) -> dict:
     from core.llm_gate import validate_interpretation
+    from core.moods import mood_of_day
     from core.prompts import get_system_prompt, build_reading_prompt
 
-    system_prompt = get_system_prompt(character_id, avoid_texts=avoid_texts)
+    system_prompt = get_system_prompt(
+        character_id, mood=mood_of_day(character_id), avoid_texts=avoid_texts
+    )
     user_prompt = build_reading_prompt(cards, question, character_id, spread_type)
 
     messages = [

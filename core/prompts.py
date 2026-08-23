@@ -190,6 +190,16 @@ def get_system_prompt(
     if opener:
         parts.append("\nКак начать этот ответ:\n" + opener)
 
+    # Few-shot: мини-примеры голоса — на бесплатных моделях работают
+    # надёжнее любого описания характера
+    examples = ch.get("voice_examples") or []
+    if examples:
+        ex_lines = ["\nПримеры твоего голоса (НЕ копируй дословно, держи интонацию):"]
+        for ex in examples[:2]:
+            ex_lines.append(f"  Вопрос: «{ex['question']}»")
+            ex_lines.append(f"  Ты: «{ex['intro']} {ex['advice']}»")
+        parts.append("\n".join(ex_lines))
+
     # Anti-repetition: character clichés + global + recent texts
     forbidden = list(ch.get("forbidden") or []) + GLOBAL_FORBIDDEN
     if avoid_texts:
@@ -372,8 +382,8 @@ def build_followup_messages(
     history: list of {"question", "answer"} — earlier follow-ups.
     """
     ch = get_character(character_id)
-    moods = ch.get("moods") or []
-    mood = random.choice(moods) if moods else None
+    from core.moods import mood_of_day
+    mood = mood_of_day(character_id)
 
     system = get_system_prompt(character_id, mood=mood, avoid_texts=avoid_texts)
     system += (
