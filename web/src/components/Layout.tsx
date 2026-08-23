@@ -81,16 +81,19 @@ export default function Layout({
               {/* бренд — белый, с точкой-пикселем */}
               <button
                 type="button"
-                className="font-serif text-[29px] font-medium leading-none tracking-tight text-left flex items-center band-text"
+                className="font-serif text-[29px] font-medium tracking-tight text-left flex items-center band-text"
                 onClick={onNewSpread}
                 aria-label="arcanum.ocv — новый расклад"
               >
-                arcanum<span className="band-text-dim">.ocv</span>
-                <span
-                  className="inline-block ml-1.5"
-                  style={{ width: 4, height: 4, background: '#F8F6F9', marginBottom: 2 }}
-                  aria-hidden="true"
-                />
+                <span className="flex items-baseline">
+                  arcanum
+                  <span className="band-text-dim">.ocv</span>
+                  <span
+                    className="inline-block ml-1.5 self-center"
+                    style={{ width: 4, height: 4, background: '#F8F6F9' }}
+                    aria-hidden="true"
+                  />
+                </span>
               </button>
 
               <span

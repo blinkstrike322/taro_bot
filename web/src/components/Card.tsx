@@ -245,9 +245,8 @@ export default function Card({
       </div>
 
       <div
-        className={`font-serif text-[15px] font-semibold text-center min-h-[1.4em] leading-snug tracking-wide ${
-          raised ? 'text-[color:var(--ink)]' : 'text-[color:var(--ink-soft)]'
-        }`}
+        className="font-serif text-[17px] font-bold text-center min-h-[1.4em] leading-snug tracking-wide text-[color:var(--ink)]"
+        style={{ textShadow: '0 1px 2px rgba(242, 240, 244, 0.92), 0 0 1px rgba(55, 58, 77, 0.28)' }}
       >
         {flipped
           ? `${card.name}${card.is_reversed ? ' · перев.' : ''}`
