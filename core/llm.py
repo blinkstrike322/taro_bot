@@ -388,6 +388,7 @@ async def interpret_followup(
 ) -> str:
     """Answer a follow-up question about an existing reading, in character."""
     from core.prompts import build_followup_messages
+    from core.llm_gate import validate_followup
 
     messages = build_followup_messages(
         character_id, reading, history, question, avoid_texts=avoid_texts
@@ -415,6 +416,11 @@ async def interpret_followup(
                 break
         if not candidate and cleaned.strip():
             candidate = cleaned.strip()
+        # модель изредка отвечает сырым/битым JSON — парсинга не было, мусор
+        # в last_text не оставляем, пробуем ещё раз
+        if candidate.startswith("{") or candidate.startswith('{"'):
+            logger.warning("Followup looks like raw JSON (attempt %d/3)", attempt + 1)
+            continue
         last_text = candidate
         ok, reason = validate_followup(candidate, character_id, had_emoji=had_emoji)
         if ok:
