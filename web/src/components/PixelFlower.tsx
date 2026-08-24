@@ -26,7 +26,8 @@ interface PixelFlowerProps {
 const SWAY = [11, 13, 9.5, 12.5, 10, 14, 11.5, 9, 12, 10.5, 13.5, 9.8].map((d, i) => ({
   '--swd': `${d}s`,
   '--swdel': `${-i * 1.7}s`,
-  '--sw': `${1 + (i % 3) * 0.35}px`,
+  '--sw': `${1.2 + (i % 3) * 0.7}px`,
+  '--swr': `${0.3 + (i % 4) * 0.16}deg`,
 })) as React.CSSProperties[];
 
 function CellShape({ c, color, bgColor, accentColor }: { c: Cell; color: string; bgColor: string; accentColor: string }) {

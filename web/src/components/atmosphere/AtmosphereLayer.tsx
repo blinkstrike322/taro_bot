@@ -3,7 +3,6 @@
 import { Component, ReactNode } from 'react';
 import CloudField from './CloudField';
 import FlowerAnchor from './FlowerAnchor';
-import { useAtmosphere } from './AtmosphereContext';
 
 class SublayerBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
   state = { failed: false };
@@ -22,13 +21,8 @@ class SublayerBoundary extends Component<{ children: ReactNode }, { failed: bool
 }
 
 function LayerBody() {
-  const { phase } = useAtmosphere();
   return (
-    <div
-      className="atmo-layer"
-      data-reveal-pulse={phase === 'reveal' ? '1' : undefined}
-      aria-hidden="true"
-    >
+    <div className="atmo-layer" aria-hidden="true">
       <SublayerBoundary>
         <CloudField />
       </SublayerBoundary>

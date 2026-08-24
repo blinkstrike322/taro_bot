@@ -66,48 +66,40 @@ export default function Spread1Card({ apiCall, characterId, onError }: Spread1Ca
   if (phase === 'cards' && data) {
     const card = { ...data.cards[0], image_url: `/cards/${data.cards[0].id}.webp` };
 
-    if (!flipped) {
-      return (
-        <div className="flex flex-col items-center pt-12 pb-2 px-3 w-full">
-          <div className="flex flex-col items-center w-full">
-            <div className="w-full max-w-[319px] sm:max-w-[370px]" style={{ transform: 'rotate(-2deg)' }}>
-              <Card
-                card={card}
-                position="ТВОЯ КАРТА"
-                flipped={false}
-                onFlip={handleFlip}
-                tilt={-2}
-                characterId={characterId}
-              />
-            </div>
-            <div className="tech-label mt-4 blink">
-              коснись карты
-            </div>
-          </div>
-        </div>
-      );
-    }
-
+    // Единое дерево на весь цикл: карта не перемонтируется и не сдвигается,
+    // толкование просто въезжает снизу. pt-14 и до, и после — без рывка.
     return (
-      <div className="flex flex-col items-center pt-4 pb-2 px-3 w-full">
-        {/* компактная карта сверху */}
-        <div className="w-full max-w-[319px] sm:max-w-[370px] flex-shrink-0 pb-2" style={{ transform: 'rotate(-1.2deg)' }}>
+      <div className="flex flex-col items-center pt-14 pb-2 px-3 w-full">
+        <div
+          className="w-full max-w-[344px] sm:max-w-[400px] flex-shrink-0 pb-2"
+          style={{
+            transform: `rotate(${flipped ? -1.2 : -2}deg)`,
+            transition: 'transform 0.9s cubic-bezier(0.34, 1.2, 0.64, 1)',
+          }}
+        >
           <Card
             card={card}
-            flipped={true}
-            tilt={-1.2}
+            position="ТВОЯ КАРТА"
+            flipped={flipped}
+            onFlip={handleFlip}
+            tilt={flipped ? -1.2 : -2}
             characterId={characterId}
           />
         </div>
-        {/* толкование */}
-        <div className="w-full">
-          <ReadingResult
-            interpretation={data.interpretation}
-            characterId={characterId}
-            readingId={data.readingId}
-            moodName={data.mood?.name}
-          />
-        </div>
+        {!flipped ? (
+          <div className="tech-label mt-4 blink">
+            коснись карты
+          </div>
+        ) : (
+          <div className="w-full result-in">
+            <ReadingResult
+              interpretation={data.interpretation}
+              characterId={characterId}
+              readingId={data.readingId}
+              moodName={data.mood?.name}
+            />
+          </div>
+        )}
       </div>
     );
   }

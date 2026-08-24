@@ -2,7 +2,13 @@ const API_BASE = '';
 
 export function getInitData(): string {
   try {
-    return (window as any).Telegram?.WebApp?.initData || '';
+    // фолбэк ?init_data= — дев-проверка вне Telegram: часть встраиваемых
+    // браузеров подменяет window.Telegram пустым мостом, перетирая мок раннера
+    return (
+      (window as any).Telegram?.WebApp?.initData ||
+      new URLSearchParams(window.location.search).get('init_data') ||
+      ''
+    );
   } catch {
     return '';
   }
@@ -82,12 +88,8 @@ export async function spread(
   question: string | null,
   characterId: string = 'shadow_walker',
 ): Promise<SpreadResponse> {
-  let initData = '';
-  try {
-    initData = (window as any).Telegram?.WebApp?.initData || '';
-  } catch {}
   return postJSON('/api/spread', {
-    init_data: initData,
+    init_data: getInitData(),
     spread_type: spreadType,
     question,
     character_id: characterId,
@@ -98,12 +100,8 @@ export async function followup(
   readingId: number,
   question: string,
 ): Promise<FollowupResponse> {
-  let initData = '';
-  try {
-    initData = (window as any).Telegram?.WebApp?.initData || '';
-  } catch {}
   return postJSON('/api/followup', {
-    init_data: initData,
+    init_data: getInitData(),
     reading_id: readingId,
     question,
   });
