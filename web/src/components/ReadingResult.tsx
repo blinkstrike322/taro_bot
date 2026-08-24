@@ -132,9 +132,16 @@ export default function ReadingResult({ interpretation, characterId, readingId =
               {meanings.map((meaning, i) => (
                 <div key={i} className="flex gap-2 items-baseline">
                   <span className="reading-ordinal">{String(i + 1).padStart(2, '0')}</span>
-                  <p className="flex-1 font-sans text-[14px] leading-[1.7] text-[color:var(--ink)] opacity-92 border-b border-[color:var(--line)] pb-2">
-                    {meaning}
-                  </p>
+                  <div className="flex-1 border-b border-[color:var(--line)] pb-2">
+                    {splitParagraphs(meaning, 200).map((p, j) => (
+                      <p
+                        key={j}
+                        className={`font-sans text-[14px] leading-[1.7] text-[color:var(--ink)] opacity-92${j > 0 ? ' reading-body--next' : ''}`}
+                      >
+                        {p}
+                      </p>
+                    ))}
+                  </div>
                 </div>
               ))}
             </div>

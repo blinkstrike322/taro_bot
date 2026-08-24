@@ -14,7 +14,7 @@ interface CatalogModalProps {
 const SPREADS = [
   {
     type: 'daily' as const,
-    glyph: '☀',
+    icon: '/icons/spread-daily.png',
     title: 'Расклад дня',
     subtitle: '3 карты · каждый день новый',
     description: 'Энергия дня, его вызов и совет — утром узнай, как прожить день красиво.',
@@ -23,7 +23,7 @@ const SPREADS = [
   },
   {
     type: '1' as const,
-    glyph: '✦',
+    icon: '/icons/spread-1.png',
     title: 'Одна карта',
     subtitle: 'вопрос — и прямой ответ',
     description: 'Когда нужна конкретика. Задай вопрос — карта ответит по существу.',
@@ -32,7 +32,7 @@ const SPREADS = [
   },
   {
     type: '3' as const,
-    glyph: '☾',
+    icon: '/icons/spread-3.png',
     title: 'Три карты',
     subtitle: 'прошлое · настоящее · будущее',
     description: 'Связная история твоей ситуации: как ты пришла сюда и куда держишь путь.',
@@ -107,18 +107,15 @@ export default function CatalogModal({ isOpen, onClose, onSelect }: CatalogModal
                 onClose();
               }}
             >
-              {/* глиф + заголовок */}
-              <span className="flex items-center gap-3 w-full">
-                <span
-                  className="flex items-center justify-center w-9 h-9 flex-shrink-0 font-serif text-[18px]"
-                  style={{
-                    background: 'transparent',
-                    border: `1px solid ${spread.accent}`,
-                    color: spread.accent,
-                    borderRadius: 2,
-                  }}
-                >
-                  {spread.glyph}
+              {/* акварельная иконка + заголовок */}
+              <span className="flex items-center gap-3.5 w-full">
+                <span className="flex items-center justify-center w-12 h-14 flex-shrink-0">
+                  <img
+                    src={spread.icon}
+                    alt=""
+                    className="max-h-full max-w-full object-contain"
+                    style={{ filter: 'saturate(0.92)' }}
+                  />
                 </span>
                 <span className="flex flex-col flex-1 min-w-0">
                   <span className="font-serif text-[21px] font-semibold text-[color:var(--ink)] leading-tight">

@@ -80,8 +80,7 @@ export default function FollowupChat({ readingId, characterId }: FollowupChatPro
             <img
               src={guide.portrait}
               alt={guide.name}
-              className="w-full h-full object-cover guide-portrait-scan"
-              style={{ imageRendering: 'pixelated' }}
+              className="w-full h-full object-cover"
             />
           </span>
           <div className="flex flex-col leading-tight">
@@ -123,8 +122,7 @@ export default function FollowupChat({ readingId, characterId }: FollowupChatPro
                   <img
                     src={guide.portrait}
                     alt=""
-                    className="w-full h-full object-cover guide-portrait-scan"
-                    style={{ imageRendering: 'pixelated' }}
+                    className="w-full h-full object-cover"
                   />
                 </span>
                 <div
@@ -152,8 +150,7 @@ export default function FollowupChat({ readingId, characterId }: FollowupChatPro
                 <img
                   src={guide.portrait}
                   alt=""
-                  className="w-full h-full object-cover guide-portrait-scan"
-                  style={{ imageRendering: 'pixelated' }}
+                  className="w-full h-full object-cover"
                 />
               </span>
               <div
@@ -191,7 +188,7 @@ export default function FollowupChat({ readingId, characterId }: FollowupChatPro
           <button
             type="button"
             className="btn-vibe flex-shrink-0 w-10 h-10 flex items-center justify-center"
-            style={{ background: 'var(--accent-blue)', borderColor: 'var(--accent-blue)' }}
+            style={{ background: guide.accent, borderColor: guide.accent }}
             onClick={() => submit(input)}
             disabled={disabled || !input.trim()}
             aria-label="Отправить вопрос"

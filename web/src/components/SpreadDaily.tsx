@@ -148,7 +148,7 @@ export default function SpreadDaily({ characterId, onError, apiCall }: SpreadDai
               <Card
                 card={
                   data
-                    ? { ...data.cards[i], image_url: `/cards/${data.cards[i].id}.webp` }
+                    ? { ...data.cards[i], image_url: `/cards/${data.cards[i].id}.webp?v=2` }
                     : { id: `wait-${i}`, name: '', image_url: '', is_reversed: false }
                 }
                 position={POSITIONS[i]}

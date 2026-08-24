@@ -164,7 +164,7 @@ export const GUIDES: Record<string, GuideMeta> = {
     portrait: '/guides/spark_of_chaos.png',
     portraitColor: '#C9356F',
     cardBack: '/cards/backs/back_spark_of_chaos.png',
-    cardBackVersion: 5,
+    cardBackVersion: 6,
     cornerSymbols: { tl: '✧', tr: '◇', bl: '✦', br: '○' },
     auraAlphabet: '·•✦✧◇◎∘○°~ﾟ',
     ambientSymbols: ['✦', '✧', '◇', '○', '·', '•'],
