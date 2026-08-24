@@ -20,6 +20,8 @@ interface CardProps {
   characterId?: string;
   /** intentional rotation, degrees — organic composition */
   tilt?: number;
+  /** не прятать подпись позиции после флипа (веер дня: позиция важна и открыта) */
+  keepLabel?: boolean;
 }
 
 function pseudoRand(seed: number): number {
@@ -27,7 +29,6 @@ function pseudoRand(seed: number): number {
 }
 
 interface AuraDot {
-  ch: string;
   x: number;
   y: number;
   op: number;
@@ -36,17 +37,17 @@ interface AuraDot {
   dur: number;
 }
 
-function makeAuraDots(count: number, offset: number, alphabet: string): AuraDot[] {
+// дизер-точечки вокруг карты: редкие пиксельные квадраты, заметно тише глифов
+function makeAuraDots(count: number, offset: number): AuraDot[] {
   return Array.from({ length: count }, (_, i) => {
     const s = offset + i;
     const angle = pseudoRand(s * 7) * Math.PI * 2;
     const dist = 0.15 + pseudoRand(s * 11) * 0.55;
     return {
-      ch: alphabet[Math.floor(pseudoRand(s * 2) * alphabet.length)],
       x: 50 + Math.cos(angle) * dist * 60,
       y: 50 + Math.sin(angle) * dist * 60,
-      op: 0.05 + pseudoRand(s * 13) * 0.09,
-      size: 5 + Math.floor(pseudoRand(s * 17) * 5),
+      op: 0.05 + pseudoRand(s * 13) * 0.1,
+      size: pseudoRand(s * 17) > 0.75 ? 4 : 2 + Math.floor(pseudoRand(s * 17) * 2),
       delay: pseudoRand(s * 19) * 8,
       dur: 4 + pseudoRand(s * 23) * 6,
     };
@@ -89,6 +90,7 @@ export default function Card({
   flipped = false,
   characterId,
   tilt = 0,
+  keepLabel = false,
 }: CardProps) {
   const guide = getGuide(characterId);
 
@@ -101,10 +103,7 @@ export default function Card({
     onFlip?.();
   }, [flipped, onFlip]);
 
-  const auraDots = useMemo(
-    () => makeAuraDots(18, 0, guide.auraAlphabet),
-    [guide.auraAlphabet],
-  );
+  const auraDots = useMemo(() => makeAuraDots(14, 0), []);
 
   const burstParticles = useMemo(
     () => makeBurstParticles(guide.auraAlphabet, 16),
@@ -113,9 +112,11 @@ export default function Card({
 
   return (
     <div className="flex flex-col items-center gap-0.5">
-      {position && !flipped && (
+      {/* подпись не размонтируется, а гаснет — высота слота неизменна,
+          карта не прыгает вверх в момент флипа */}
+      {position && (
         <div
-          className="card-label"
+          className={`card-label ${flipped && !keepLabel ? 'card-label--hidden' : ''}`}
           style={{ color: raised ? guide.accent : 'var(--ink-soft)' }}
         >
           {position}
@@ -130,7 +131,7 @@ export default function Card({
           '--guide-accent-dim': guide.accentDim,
         } as React.CSSProperties}
       >
-        {/* ── пастельная аура вокруг карты ── */}
+        {/* ── дизер-точечки вокруг карты ── */}
         <div
           className={`card-aura ${flipped ? 'card-aura--expanded' : ''}`}
           aria-hidden="true"
@@ -142,15 +143,14 @@ export default function Card({
               style={{
                 left: `${d.x}%`,
                 top: `${d.y}%`,
-                fontSize: `${Math.min(d.size + 3, 13)}px`,
+                width: `${d.size}px`,
+                height: `${d.size}px`,
                 color: guide.accent,
-                '--max-op': Math.min(d.op + 0.08, 0.42),
+                '--max-op': Math.min(d.op + 0.06, 0.24),
                 '--ad': `${d.delay}s`,
                 '--a-dur': `${d.dur}s`,
               } as React.CSSProperties}
-            >
-              {d.ch}
-            </span>
+            />
           ))}
         </div>
 
@@ -245,8 +245,11 @@ export default function Card({
       </div>
 
       <div
-        className="font-serif text-[17px] font-bold text-center min-h-[1.4em] leading-snug tracking-wide text-[color:var(--ink)]"
-        style={{ textShadow: '0 1px 2px rgba(242, 240, 244, 0.92), 0 0 1px rgba(55, 58, 77, 0.28)' }}
+        className="font-serif text-[14px] font-bold text-center min-h-[1.4em] leading-snug tracking-wide"
+        style={{
+          color: guide.accentDeep,
+          textShadow: '0 1px 2px rgba(242, 240, 244, 0.92), 0 0 1px rgba(55, 58, 77, 0.18)',
+        }}
       >
         {flipped
           ? `${card.name}${card.is_reversed ? ' · перев.' : ''}`

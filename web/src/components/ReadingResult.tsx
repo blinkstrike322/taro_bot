@@ -10,6 +10,34 @@ interface Interpretation {
   advice: string;
 }
 
+/**
+ * Сплошной простыня-текст ЛЛМ тяжело читать: делим на абзацы.
+ * Явные \n\n уважаем; иначе режем на предложения (без lookbehind —
+ * старые WebView) и собираем абзацы по ~2 предложения / ~220 знаков.
+ */
+export function splitParagraphs(text: string, maxLen = 220): string[] {
+  const clean = (text || '').trim();
+  if (!clean) return [];
+  if (/\n\n+/.test(clean)) {
+    return clean.split(/\n\n+/).map((s) => s.trim()).filter(Boolean);
+  }
+  const sentences = clean.match(/[^.!?…]+[.!?…]+["»)\]]*\s*/g) ?? [clean];
+  const paras: string[] = [];
+  let cur = '';
+  for (const raw of sentences) {
+    const s = raw.trim();
+    if (!s) continue;
+    if (cur && cur.length + s.length > maxLen) {
+      paras.push(cur);
+      cur = s;
+    } else {
+      cur = cur ? `${cur} ${s}` : s;
+    }
+  }
+  if (cur) paras.push(cur);
+  return paras;
+}
+
 interface ReadingResultProps {
   interpretation: Interpretation;
   characterId?: string;
@@ -22,6 +50,9 @@ export default function ReadingResult({ interpretation, characterId, readingId =
   const { intro, short_answer, card_meaning, advice } = interpretation;
   const guide = getGuide(characterId);
   const meanings = Array.isArray(card_meaning) ? card_meaning : card_meaning ? [card_meaning] : [];
+  const introParas = splitParagraphs(intro, 180);
+  const bodyParas = splitParagraphs(short_answer);
+  const adviceParas = splitParagraphs(advice, 180);
 
   const adviceLabel =
     guide.id === 'ruin_keeper' ? 'слово весты'
@@ -29,7 +60,7 @@ export default function ReadingResult({ interpretation, characterId, readingId =
     : 'шёпот селены';
 
   return (
-    <div className={`px-5 pb-5 relative ${className}`}>
+    <div className={`px-3 pb-5 relative ${className}`}>
       <div className="section-label mb-3 relative z-10">
         <span>толкование{moodName ? ` · ${moodName}` : ''}</span>
       </div>
@@ -57,23 +88,34 @@ export default function ReadingResult({ interpretation, characterId, readingId =
         </div>
 
         {/* интро — голос проводницы */}
-        {intro && (
+        {introParas.length > 0 && (
           <div
             className="relative z-10 mb-4 flex gap-3 reveal-line"
             style={{ '--rd': '0.25s' } as React.CSSProperties}
           >
             <span className="quote-mark" style={{ color: guide.accentDeep }} aria-hidden="true">«</span>
-            <p className="reading-intro pt-1">{intro}</p>
+            <div className="pt-1">
+              {introParas.map((p, i) => (
+                <p key={i} className={`reading-intro${i > 0 ? ' reading-body--next' : ''}`}>{p}</p>
+              ))}
+            </div>
           </div>
         )}
 
-        {/* главное толкование — с буквицей */}
-        {short_answer && (
+        {/* главное толкование — абзацы, у первого буквица */}
+        {bodyParas.length > 0 && (
           <div
             className="relative z-10 mb-4 reveal-line"
             style={{ '--rd': '0.5s' } as React.CSSProperties}
           >
-            <p className="reading-body">{short_answer}</p>
+            {bodyParas.map((p, i) => (
+              <p
+                key={i}
+                className={`reading-body${i === 0 ? ' reading-body--lead' : ' reading-body--next'}`}
+              >
+                {p}
+              </p>
+            ))}
           </div>
         )}
 
@@ -100,7 +142,7 @@ export default function ReadingResult({ interpretation, characterId, readingId =
         )}
 
         {/* совет — маргиналия */}
-        {advice && (
+        {adviceParas.length > 0 && (
           <div
             className="marginalia mt-5 pt-1 relative z-10 reveal-line"
             style={{ '--rd': '1.05s' } as React.CSSProperties}
@@ -108,9 +150,15 @@ export default function ReadingResult({ interpretation, characterId, readingId =
             <div className="tech-label mb-1.5" style={{ color: guide.accentDeep }}>
               {adviceLabel}
             </div>
-            <p className="font-serif text-[20px] font-semibold leading-[1.4]" style={{ color: 'var(--ink)' }}>
-              {advice}
-            </p>
+            {adviceParas.map((p, i) => (
+              <p
+                key={i}
+                className={`font-serif text-[20px] font-semibold leading-[1.4]${i > 0 ? ' reading-body--next' : ''}`}
+                style={{ color: 'var(--ink)' }}
+              >
+                {p}
+              </p>
+            ))}
           </div>
         )}
       </div>

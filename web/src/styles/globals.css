@@ -373,7 +373,8 @@ body {
 }
 
 /* ================================================================
-   CARD AURA — растаявшие символы
+   CARD AURA — дизер-точечки: редкие пиксельные квадратики в цвет
+   проводницы, заметно тише прежних глифов
    ================================================================ */
 .card-aura {
   position: absolute;
@@ -384,13 +385,15 @@ body {
 }
 
 .card-aura--expanded {
-  transform: scale(1.08, 1.04);
+  transform: scale(1.03, 1.02);
 }
 
 .aura-char {
   position: absolute;
+  width: var(--ds, 3px);
+  height: var(--ds, 3px);
+  background: currentColor;
   line-height: 1;
-  white-space: nowrap;
   animation: aura-fade var(--a-dur, 6s) ease-in-out infinite;
   animation-delay: var(--ad, 0s);
 }
@@ -403,19 +406,18 @@ body {
 }
 
 /* ================================================================
-   FLIP SHIMMER — проявление, как при печати
+   FLIP DEVELOP — карта проявляется, как отпечаток в фиксаже:
+   из контрастного ч/б мягко наливается цвет, лёгкий выдох масштабом.
+   Никакого джиттера — только filter + scale.
    ================================================================ */
-@keyframes flip-shimmer {
-  0%   { filter: grayscale(1) contrast(1.22) brightness(1.02); transform: translate(0, 0); }
-  20%  { filter: grayscale(0.25) contrast(1.05) brightness(1.1) saturate(1.3); transform: translate(-1.5px, 1px); }
-  40%  { filter: grayscale(1) contrast(0.85) brightness(1.22); transform: translate(1.5px, -1px); }
-  60%  { filter: grayscale(0.5) contrast(1.05) brightness(1.12) saturate(1.2); transform: translate(-1px, 0); }
-  80%  { filter: grayscale(0.9) contrast(1.18) brightness(1.05); transform: translate(1px, 0.5px); }
-  100% { filter: grayscale(1) contrast(1.22) brightness(1.02); transform: translate(0, 0); }
+@keyframes flip-develop {
+  0%   { filter: grayscale(1) contrast(1.28) brightness(1.04); transform: scale(1.035); }
+  45%  { filter: grayscale(0.55) contrast(1.06) brightness(1.12) saturate(1.35); transform: scale(1.015); }
+  100% { filter: grayscale(0) contrast(1) brightness(1) saturate(1); transform: scale(1); }
 }
 
 .flip.is-flipped .flip-glitch {
-  animation: flip-shimmer 0.7s ease-out 1;
+  animation: flip-develop 0.9s ease-out 1;
 }
 
 /* ================================================================
@@ -858,6 +860,11 @@ body {
   text-transform: uppercase;
   padding-top: 0.25rem;
   text-shadow: 0 1px 1px rgba(242, 240, 244, 0.8);
+  transition: opacity 0.55s ease;
+}
+
+.card-label--hidden {
+  opacity: 0;
 }
 
 .card-slot-center {
@@ -920,14 +927,19 @@ body {
   color: var(--ink);
 }
 
-/* буквица — пиксельная, в цвет акцента */
-.reading-body::first-letter {
+/* толкование — абзацы: у лидирующего пиксельная буквица, у остальных нет */
+.reading-body--next {
+  margin-top: 0.9em;
+}
+
+/* буквица — пиксельная, в цвет акцента; inline, не float: плавающая буква
+   сдвигала вторую строку абзаца */
+.reading-body--lead::first-letter {
   font-family: var(--font-pixel);
-  font-size: 2.1em;
-  line-height: 0.85;
+  font-size: 1.75em;
+  line-height: 1;
   color: var(--guide-accent, var(--accent-blue));
-  float: left;
-  padding: 4px 8px 0 0;
+  padding-right: 3px;
   font-weight: 600;
 }
 
@@ -1320,13 +1332,14 @@ body {
 }
 
 .flower-sway {
+  transform-origin: 50% 100%;
   animation: sway var(--swd, 11s) ease-in-out infinite;
   animation-delay: var(--swdel, 0s);
 }
 
 @keyframes sway {
-  0%, 100% { transform: translateX(0); }
-  50%      { transform: translateX(var(--sw, 1.2px)); }
+  0%, 100% { transform: translateX(calc(var(--sw, 1.4px) * -0.6)) rotate(calc(var(--swr, 0.4deg) * -1)); }
+  50%      { transform: translateX(var(--sw, 1.4px)) rotate(var(--swr, 0.4deg)); }
 }
 
 .loose-pixel {
@@ -1535,48 +1548,55 @@ body {
   overflow: hidden;
 }
 
-.cloud-field {
+.cloud-field-v2 {
   position: absolute;
-  inset: -6% -12%;
+  inset: 0;
 }
 
-.cloud-layer {
+.cloud-row {
   position: absolute;
-  left: 0;
-  width: 100%;
-  height: 46%;
-  animation: cloud-drift linear infinite;
+  /* ряд шире экрана: converge-сдвиг/масштаб на welcome не обнажают край */
+  left: -25%;
+  width: 150%;
+  overflow: hidden;
+  will-change: transform, opacity;
+}
+
+/* зеркальный ряд: тот же банк, другой силуэт — гряда не читается полосами */
+.cloud-row--mirror .cloud-seg {
+  transform: scaleX(-1);
+}
+
+.cloud-row--converged {
+  transform: translateX(var(--conv-x, 0)) scale(0.9) !important;
+  opacity: var(--conv-o, 0.25) !important;
+}
+
+/* бесшовный marquee: полоса нарисована тайлами, сдвиг на ширину сегмента = цикл */
+.cloud-track {
+  display: flex;
+  width: max-content;
+  height: 100%;
+  animation: cloud-marquee linear infinite;
   will-change: transform;
 }
 
-.cloud-layer--converged {
-  transform: translateX(var(--conv-x, 0)) scale(0.72) !important;
-  opacity: var(--conv-o, 0.1) !important;
+/* встречный ход дальнего ряда — параллакс */
+.cloud-track--reverse {
+  animation-direction: reverse;
 }
 
-@keyframes cloud-drift {
-  from { translate: -7% 0; }
-  to   { translate: 7% 0; }
+.cloud-seg {
+  flex: none;
+  height: 100%;
+  aspect-ratio: 1400 / 380;
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
 }
 
-.cloud-img {
-  position: absolute;
-  inset: 0;
-  /* PNG-банк используется как маска альфы; цвет заливки задаёт проводница */
-  -webkit-mask-size: cover;
-  mask-size: cover;
-  -webkit-mask-position: center;
-  mask-position: center;
-  -webkit-mask-repeat: no-repeat;
-  mask-repeat: no-repeat;
-}
-
-.cloud-dither {
-  position: absolute;
-  inset: 0;
-  background-image: radial-gradient(circle, rgba(55, 58, 77, 0.5) 0.7px, transparent 1px) 0 0 / 4px 4px;
-  opacity: 0.16;
-  mix-blend-mode: multiply;
+@keyframes cloud-marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
 }
 
 .cloud-fade-in {
@@ -1593,20 +1613,40 @@ body {
   pointer-events: none;
 }
 
-/* reveal: цветок вздрагивает — усиленное покачивание на 1 цикл */
-.flower-anchor[data-phase='reveal'] .flower-sway {
-  animation-duration: calc(var(--swd, 11s) * 0.45);
+/* reveal: цветок мягко «распускается» — один вдох, без тряски */
+.flower-bloom {
+  transform-origin: 50% 85%;
 }
 
-/* reveal: короткая вспышка-дыхание всей атмосферы */
-.atmo-layer[data-reveal-pulse='1'] {
-  animation: atmo-pulse 0.9s ease-out 1;
+.flower-anchor[data-phase='reveal'] .flower-bloom {
+  animation: flower-bloom 1.3s cubic-bezier(0.34, 1.3, 0.64, 1) 1;
 }
 
-@keyframes atmo-pulse {
-  0% { opacity: 1; }
-  25% { opacity: 0.55; }
-  100% { opacity: 1; }
+@keyframes flower-bloom {
+  0%   { transform: scale(1); }
+  45%  { transform: scale(1.06); }
+  100% { transform: scale(1); }
+}
+
+/* постоянное медленное дыхание — цветок никогда не статичен (без наклонов) */
+.flower-float {
+  animation: flower-float var(--ffd, 16s) ease-in-out infinite;
+  animation-delay: var(--ffdel, -6s);
+}
+
+@keyframes flower-float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-8px); }
+}
+
+/* толкование появляется ниже карт без их сдвига: мягкий въезд снизу */
+.result-in {
+  animation: result-in 0.65s cubic-bezier(0.22, 0.61, 0.36, 1) 1 both;
+}
+
+@keyframes result-in {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: none; }
 }
 
 /* ================================================================
@@ -1623,12 +1663,16 @@ body {
   .sigil-rotate-slow-rev,
   .sigil-pulse,
   .pixel-flower,
-  .flower-sway,
-  .loose-pixel,
+  .flower-float,
   .atmo-layer {
     animation: none !important;
   }
-  .cloud-layer {
+  /* лёгкий sway цветка и loose-пиксели остаются — амплитуда 1px, не триггерит */
+  .flower-sway {
+    animation: sway var(--swd, 11s) ease-in-out infinite !important;
+    animation-delay: var(--swdel, 0s) !important;
+  }
+  .cloud-track {
     animation: none !important;
     transform: none !important;
   }
@@ -1636,6 +1680,9 @@ body {
     animation: none !important;
     opacity: 1 !important;
     filter: none !important;
+  }
+  .result-in {
+    animation: none !important;
   }
   .flip-inner {
     transition-duration: 0.01s;

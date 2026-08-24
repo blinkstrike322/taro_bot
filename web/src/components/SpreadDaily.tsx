@@ -114,50 +114,9 @@ export default function SpreadDaily({ characterId, onError, apiCall }: SpreadDai
   const allFlipped = flipped.every(Boolean);
   const revealCount = flipped.filter(Boolean).length;
 
-  // ── Результат: карты остаются веером, толкование editorial-лентой ниже ──
-  if (showResult && data) {
-    return (
-      <div className="relative flex flex-col items-center py-2 px-5 w-full">
-        <div className="tech-label self-start mb-2" style={{ color: guide.accentDeep }}>
-          ✦ твой день раскладывается так
-        </div>
-        <div className="flex items-end justify-center w-full max-w-[440px] -mt-2">
-          {data.cards.map((c, i) => (
-            <div
-              key={i}
-              className={i === 1 ? 'z-30' : 'z-10'}
-              style={{
-                width: `${FAN[i].w}%`,
-                marginLeft: FAN[i].overlapL ? `${FAN[i].overlapL}%` : undefined,
-                marginRight: FAN[i].overlapR ? `${FAN[i].overlapR}%` : undefined,
-                transform: `translateY(${FAN[i].dy * 0.55}px)`,
-              }}
-            >
-              <Card
-                card={{ ...c, image_url: `/cards/${c.id}.webp` }}
-                flipped={true}
-                tilt={FAN[i].tilt * 0.6}
-                characterId={characterId}
-              />
-              <div className="tech-label text-center mt-1.5" style={{ letterSpacing: '0.14em' }}>
-                {POSITIONS[i]}
-              </div>
-            </div>
-          ))}
-        </div>
-        <div className="w-full mt-4">
-          <ReadingResult
-            interpretation={data.interpretation}
-            characterId={characterId}
-            readingId={data.readingId}
-            moodName={data.mood?.name}
-          />
-        </div>
-      </div>
-    );
-  }
-
-  // ── Сцена выбора: curiosity → anticipation → reveal ──
+  // ── Единая сцена: веер остаётся ровно там, где его открыли. Толкование —
+  // абсолютный блок под сценой (top-full): раскладку сцены не трогает,
+  // появляется под сгибом, до него доскролливается. ──
   return (
     <div className="relative flex flex-col items-center py-3 px-5 w-full min-h-full">
       {/* editorial-заголовок: асимметрия */}
@@ -192,7 +151,8 @@ export default function SpreadDaily({ characterId, onError, apiCall }: SpreadDai
                     ? { ...data.cards[i], image_url: `/cards/${data.cards[i].id}.webp` }
                     : { id: `wait-${i}`, name: '', image_url: '', is_reversed: false }
                 }
-                position={flipped[i] ? undefined : POSITIONS[i]}
+                position={POSITIONS[i]}
+                keepLabel={true}
                 flipped={flipped[i]}
                 onFlip={() => handleFlip(i)}
                 tilt={FAN[i].tilt}
@@ -202,10 +162,14 @@ export default function SpreadDaily({ characterId, onError, apiCall }: SpreadDai
           ))}
         </div>
 
-        {/* статус-строка */}
-        <div className="relative z-10 flex flex-col items-center gap-1.5 mt-9 pb-4">
+        {/* статус-строка: фиксированная высота — смена содержимого не двигает веер */}
+        <div className="relative z-10 flex flex-col items-center justify-center gap-1.5 mt-9 h-14 w-full">
           {fetching ? (
             <GuideLoading guide={guide} />
+          ) : showResult ? (
+            <div className="tech-label" style={{ color: guide.accentDeep }}>
+              толкование ниже ↓
+            </div>
           ) : !allFlipped ? (
             <div className="tech-label blink">
               открой все три — {3 - revealCount} осталось
@@ -215,6 +179,21 @@ export default function SpreadDaily({ characterId, onError, apiCall }: SpreadDai
           )}
         </div>
       </div>
+
+      {/* толкование — под сгибом, сцена не перестраивается */}
+      {showResult && data && (
+        <div className="result-in absolute left-0 right-0 top-full px-5 pb-5 z-10">
+          <div className="tech-label mb-2" style={{ color: guide.accentDeep }}>
+            ✦ твой день раскладывается так
+          </div>
+          <ReadingResult
+            interpretation={data.interpretation}
+            characterId={characterId}
+            readingId={data.readingId}
+            moodName={data.mood?.name}
+          />
+        </div>
+      )}
     </div>
   );
 }
