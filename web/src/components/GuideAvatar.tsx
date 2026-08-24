@@ -33,7 +33,6 @@ export default function GuideAvatar({
       src={guide.portrait}
       alt={guide.name}
       className={`object-cover ${className}`}
-      style={{ imageRendering: 'pixelated' }}
     />
   );
 }

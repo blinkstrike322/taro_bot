@@ -54,30 +54,25 @@ function makeAuraDots(count: number, offset: number): AuraDot[] {
   });
 }
 
-// ── Burst particles — fly outward on flip ──
-interface BurstParticle {
-  ch: string;
+// ── Burst — разлетающиеся дизер-точечки при флипе ──
+interface BurstDot {
   angle: number;
   distance: number;
   size: number;
   delay: number;
   dur: number;
-  rot: number;
-  isAccent: boolean;
 }
 
-function makeBurstParticles(alphabet: string, count: number = 16): BurstParticle[] {
+function makeBurstDots(count: number = 12): BurstDot[] {
   return Array.from({ length: count }, (_, i) => {
-    const s = i * 31 + 7;
+    const s = i * 29 + 5;
+    const angle = pseudoRand(s * 3) * Math.PI * 2;
     return {
-      ch: alphabet[Math.floor(pseudoRand(s) * alphabet.length)],
-      angle: pseudoRand(s * 3) * Math.PI * 2,
-      distance: 55 + pseudoRand(s * 5) * 85,
-      size: 9 + Math.floor(pseudoRand(s * 7) * 10),
-      delay: pseudoRand(s * 11) * 0.15,
-      dur: 0.7 + pseudoRand(s * 13) * 0.4,
-      rot: (pseudoRand(s * 17) - 0.5) * 360,
-      isAccent: pseudoRand(s * 19) > 0.45,
+      angle,
+      distance: 46 + pseudoRand(s * 5) * 72,
+      size: pseudoRand(s * 7) > 0.7 ? 4 : 2 + Math.floor(pseudoRand(s * 7) * 2),
+      delay: pseudoRand(s * 11) * 0.12,
+      dur: 0.6 + pseudoRand(s * 13) * 0.35,
     };
   });
 }
@@ -103,12 +98,9 @@ export default function Card({
     onFlip?.();
   }, [flipped, onFlip]);
 
-  const auraDots = useMemo(() => makeAuraDots(14, 0), []);
+  const auraDots = useMemo(() => makeAuraDots(12, 0), []);
 
-  const burstParticles = useMemo(
-    () => makeBurstParticles(guide.auraAlphabet, 16),
-    [guide.auraAlphabet],
-  );
+  const burstDots = useMemo(() => makeBurstDots(), []);
 
   return (
     <div className="flex flex-col items-center gap-0.5">
@@ -131,28 +123,28 @@ export default function Card({
           '--guide-accent-dim': guide.accentDim,
         } as React.CSSProperties}
       >
-        {/* ── дизер-точечки вокруг карты ── */}
-        <div
-          className={`card-aura ${flipped ? 'card-aura--expanded' : ''}`}
-          aria-hidden="true"
-        >
-          {auraDots.map((d, i) => (
-            <span
-              key={i}
-              className="aura-char"
-              style={{
-                left: `${d.x}%`,
-                top: `${d.y}%`,
-                width: `${d.size}px`,
-                height: `${d.size}px`,
-                color: guide.accent,
-                '--max-op': Math.min(d.op + 0.06, 0.24),
-                '--ad': `${d.delay}s`,
-                '--a-dur': `${d.dur}s`,
-              } as React.CSSProperties}
-            />
-          ))}
-        </div>
+          {/* ── дизер-точечки вокруг карты ── */}
+          <div
+            className={`card-aura ${flipped ? 'card-aura--expanded' : ''}`}
+            aria-hidden="true"
+          >
+            {auraDots.map((d, i) => (
+              <span
+                key={i}
+                className="aura-char"
+                style={{
+                  left: `${d.x}%`,
+                  top: `${d.y}%`,
+                  width: `${d.size}px`,
+                  height: `${d.size}px`,
+                  color: guide.accent,
+                  '--max-op': Math.min(d.op + 0.03, 0.13),
+                  '--ad': `${d.delay}s`,
+                  '--a-dur': `${d.dur}s`,
+                } as React.CSSProperties}
+              />
+            ))}
+          </div>
 
         <button
           type="button"
@@ -217,9 +209,9 @@ export default function Card({
           {/* ── вспышка-мерцание при перевороте ── */}
           <div className="burst-flash" aria-hidden="true" />
 
-          {/* ── разлетающиеся символы проводницы ── */}
+          {/* ── разлетающиеся дизер-точечки ── */}
           <div className="burst-layer" aria-hidden="true">
-            {burstParticles.map((p, i) => {
+            {burstDots.map((p, i) => {
               const dx = Math.cos(p.angle) * p.distance;
               const dy = Math.sin(p.angle) * p.distance;
               return (
@@ -227,17 +219,15 @@ export default function Card({
                   key={i}
                   className="burst-particle"
                   style={{
-                    color: p.isAccent ? guide.accent : '#5B4A66',
-                    fontSize: `${p.size}px`,
+                    color: guide.accent,
+                    width: `${p.size}px`,
+                    height: `${p.size}px`,
                     '--bx': `${dx}px`,
                     '--by': `${dy}px`,
-                    '--brot': `${p.rot}deg`,
                     '--bdur': `${p.dur}s`,
                     '--bdelay': `${p.delay}s`,
                   } as React.CSSProperties}
-                >
-                  {p.ch}
-                </span>
+                />
               );
             })}
           </div>

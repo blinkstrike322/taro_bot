@@ -473,8 +473,7 @@ function ReadingDetail({ reading, onBack }: { reading: ReadingEntry; onBack: () 
           <img
             src={guide.portrait}
             alt={guide.name}
-            className="w-full h-full object-cover guide-portrait-scan"
-            style={{ imageRendering: 'pixelated' }}
+            className="w-full h-full object-cover"
           />
         </div>
         <span className="font-serif text-[16px] font-semibold text-[color:var(--ink)]">

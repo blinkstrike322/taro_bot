@@ -64,15 +64,16 @@ export default function Spread1Card({ apiCall, characterId, onError }: Spread1Ca
   }
 
   if (phase === 'cards' && data) {
-    const card = { ...data.cards[0], image_url: `/cards/${data.cards[0].id}.webp` };
+    const card = { ...data.cards[0], image_url: `/cards/${data.cards[0].id}.webp?v=2` };
 
     // Единое дерево на весь цикл: карта не перемонтируется и не сдвигается,
     // толкование просто въезжает снизу. pt-14 и до, и после — без рывка.
     return (
       <div className="flex flex-col items-center pt-14 pb-2 px-3 w-full">
         <div
-          className="w-full max-w-[344px] sm:max-w-[400px] flex-shrink-0 pb-2"
+          className="w-full flex-shrink-0 pb-2"
           style={{
+            maxWidth: 'min(440px, 92vw)',
             transform: `rotate(${flipped ? -1.2 : -2}deg)`,
             transition: 'transform 0.9s cubic-bezier(0.34, 1.2, 0.64, 1)',
           }}
