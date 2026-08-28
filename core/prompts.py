@@ -42,7 +42,17 @@ def get_system_prompt(character_id: str) -> str:
         "REMEMBER: Your response will be REJECTED if it contains any emoji. "
         "This is a hard rule with zero exceptions."
     )
-    return base_prompt + no_emoji_rule
+    no_latin_rule = (
+        "\n\nЯЗЫК: Весь ответ — ТОЛЬКО на русском языке. "
+        "СТРОГО ЗАПРЕЩЕНО любое латинское/английское слово в тексте, "
+        "ключах JSON, значениях и прозе. Никаких английских слов, "
+        "даже «по привычке» (navigate, truly, mindset, choice и т.п.). "
+        "Если не знаешь русский эквивалент — перефразируй по-русски своими словами "
+        "или пиши транслитом, но НЕ вставляй латиницу размером 3+ буквы подряд.\n"
+        "REMEMBER: Ответ с любым латинским словом из 3+ букв будет отклонён. "
+        "Это жёсткое правило без исключений."
+    )
+    return base_prompt + no_emoji_rule + no_latin_rule
 
 
 def build_reading_prompt(

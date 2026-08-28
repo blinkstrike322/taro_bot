@@ -102,6 +102,19 @@ def strip_emojis(text: str) -> str:
     return EMOJI_PATTERN.sub("", text)
 
 
+LATIN_WORD = re.compile(r"\b[A-Za-z]{3,}\b")
+
+
+def _warn_latin_leak(text: str) -> None:
+    """Лог о латинских словах в ответе модели — правило «только русский» в промпте."""
+    latin = set(LATIN_WORD.findall(text))
+    if latin:
+        logger.warning(
+            "Model leaked latin words: %s — тексты будут проверены",
+            sorted(latin)[:5],
+        )
+
+
 async def call_llm(
     messages: list[dict],
     model: str,
@@ -223,6 +236,7 @@ async def interpret_reading(
 
     try:
         raw = await call_llm_with_fallback(messages, max_tokens=token_base)
+        _warn_latin_leak(raw)
         cleaned = strip_emojis(raw)
         if len(cleaned) != len(raw):
             logger.warning("Emojis detected and removed from LLM response")
