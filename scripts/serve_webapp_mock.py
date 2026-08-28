@@ -7,15 +7,20 @@
 #     → http://localhost:3000
 #
 # Отдаёт статику из static/webapp/ (прод-экспорт Next.js) и
-# мокает три эндпоинта бэкенда (/api/spread, /api/character,
-# /api/readings), чтобы терминал можно было тестировать без aiohttp.
+# мокает эндпоинты бэкенда (/api/spread, /api/spread/begin,
+# /api/spread/poll, /api/character, /api/readings), чтобы терминал
+# можно было тестировать без aiohttp. /api/spread/begin отдаёт карты
+# сразу, а «ЛЛМ» (poll) готовит толкование ~7 секунд — как живой канал.
 # ─────────────────────────────────────────────────────────────
 import json
 import os
 import random
 import sys
+import threading
+import time
+import uuid
 from http.server import HTTPServer, SimpleHTTPRequestHandler
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlparse
 
 ROOT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "static", "webapp")
 PORT = int(os.environ.get("PORT", "3000"))
@@ -55,11 +60,13 @@ MEANING_TPL = [
     "будущее просит не скорости, а направления.",
 ]
 
+# двухфазный спред: токен → (ready_at, payload)
+LLM_LATENCY = float(os.environ.get("MOCK_LLM_LATENCY", "7"))
+_pending: dict[str, dict] = {}
+_pending_lock = threading.Lock()
+
 
 class Handler(SimpleHTTPRequestHandler):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, directory=ROOT, **kwargs)
-
     def log_message(self, fmt, *args):
         sys.stderr.write("[tarot-mock] %s\n" % (fmt % args))
 
@@ -83,6 +90,17 @@ class Handler(SimpleHTTPRequestHandler):
         parsed = urlparse(self.path)
         if parsed.path == "/api/character":
             return self._json({"character_id": "shadow_walker"})
+        if parsed.path == "/api/spread/poll":
+            token = (parse_qs(parsed.query).get("token") or [""])[0]
+            with _pending_lock:
+                job = _pending.get(token)
+            if job is None:
+                return self._json({"error": "unknown token"}, 404)
+            if time.time() < job["ready_at"]:
+                return self._json({"ready": False})
+            with _pending_lock:
+                _pending.pop(token, None)
+            return self._json({"ready": True, "interpretation": job["interpretation"]})
         if parsed.path == "/api/readings":
             return self._json({
                 "readings": [
@@ -102,15 +120,7 @@ class Handler(SimpleHTTPRequestHandler):
             return self._json({"error": "unknown endpoint"}, 404)
         return super().do_GET()
 
-    def do_POST(self):
-        parsed = urlparse(self.path)
-        if parsed.path != "/api/spread":
-            return self._json({"error": "unknown endpoint"}, 404)
-        length = int(self.headers.get("Content-Length") or 0)
-        try:
-            payload = json.loads(self.rfile.read(length) or b"{}")
-        except json.JSONDecodeError:
-            payload = {}
+    def _draw_cards(self, payload):
         n = 3 if payload.get("spread_type") == 3 else 1
         pick = random.sample(DECK, n)
         now = random.randrange(10 ** 6)
@@ -131,19 +141,48 @@ class Handler(SimpleHTTPRequestHandler):
             )
             for i, (cid, name) in enumerate(pick)
         ]
-        return self._json({
-            "cards": cards,
-            "interpretation": {
-                "intro": INTROS[now % len(INTROS)],
-                "short_answer": ANSWERS[now % len(ANSWERS)],
-                "card_meaning": meanings,
-                "advice": ADVICES[now % len(ADVICES)],
-            },
-        })
+        interpretation = {
+            "intro": INTROS[now % len(INTROS)],
+            "short_answer": ANSWERS[now % len(ANSWERS)],
+            "card_meaning": meanings,
+            "advice": ADVICES[now % len(ADVICES)],
+        }
+        return cards, interpretation
+
+    def do_POST(self):
+        parsed = urlparse(self.path)
+        if parsed.path not in ("/api/spread", "/api/spread/begin"):
+            return self._json({"error": "unknown endpoint"}, 404)
+        length = int(self.headers.get("Content-Length") or 0)
+        try:
+            payload = json.loads(self.rfile.read(length) or b"{}")
+        except json.JSONDecodeError:
+            payload = {}
+        cards, interpretation = self._draw_cards(payload)
+        if parsed.path == "/api/spread":
+            return self._json({"cards": cards, "interpretation": interpretation})
+        # двухфазный: карты сразу, шёпот — через LLM_LATENCY секунд
+        token = uuid.uuid4().hex[:20]
+        with _pending_lock:
+            _pending[token] = {
+                "ready_at": time.time() + LLM_LATENCY,
+                "interpretation": interpretation,
+            }
+        return self._json({"cards": cards, "token": token})
+
+
+def _sweep():
+    # выметаем забытые токены, чтобы реестр не тек
+    while True:
+        time.sleep(300)
+        with _pending_lock:
+            for t in [t for t, j in _pending.items() if time.time() - j["ready_at"] > 600]:
+                _pending.pop(t, None)
 
 
 def main():
     os.chdir(ROOT)
+    threading.Thread(target=_sweep, daemon=True).start()
     server = HTTPServer(("0.0.0.0", PORT), Handler)
     print(f"[tarot-mock] serving {ROOT} on http://localhost:{PORT}", flush=True)
     server.serve_forever()

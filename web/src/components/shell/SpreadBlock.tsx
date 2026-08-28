@@ -14,6 +14,8 @@ interface SpreadBlockProps {
   count: 1 | 3;
   /** метка позиции для одиночной карты */
   singleLabel?: string;
+  /** фоновый шёпот уже доставлен из канала */
+  whisperReady?: boolean;
   onFlip: (index: number) => void;
 }
 
@@ -24,7 +26,7 @@ const OFFSETS = [
   { x: -3, y: -4 },
 ];
 
-export default function SpreadBlock({ cards, flipped, count, singleLabel, onFlip }: SpreadBlockProps) {
+export default function SpreadBlock({ cards, flipped, count, singleLabel, whisperReady, onFlip }: SpreadBlockProps) {
   if (count === 3) {
     const allFlipped = flipped.every(Boolean);
     return (
@@ -74,8 +76,12 @@ export default function SpreadBlock({ cards, flipped, count, singleLabel, onFlip
           </div>
         </div>
         {!allFlipped && (
-          <div className="tl tl-comment spread-hint">
-            <span className="blink">//</span> переверни все карты
+          <div className={`tl tl-comment spread-hint${whisperReady ? ' spread-hint--ready' : ''}`}>
+            {whisperReady ? (
+              <><span className="blink">//</span> шёпот уже здесь · переверни остальные</>
+            ) : (
+              <><span className="blink">//</span> переверни карты · канал шепчет</>
+            )}
           </div>
         )}
       </div>
@@ -97,8 +103,12 @@ export default function SpreadBlock({ cards, flipped, count, singleLabel, onFlip
         />
       </div>
       {!isFlipped && (
-        <div className="tl tl-comment spread-hint">
-          <span className="blink">//</span> коснись карты, чтобы вскрыть
+        <div className={`tl tl-comment spread-hint${whisperReady ? ' spread-hint--ready' : ''}`}>
+          {whisperReady ? (
+            <><span className="blink">//</span> шёпот уже здесь · коснись, чтобы вскрыть</>
+          ) : (
+            <><span className="blink">//</span> коснись карты, чтобы вскрыть · канал шепчет</>
+          )}
         </div>
       )}
     </div>

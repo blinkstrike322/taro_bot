@@ -13,24 +13,37 @@ interface CommandBarProps {
   busy: boolean;
   pendingQuestion: boolean;
   pendingCards: 1 | 3;
+  soundOn: boolean;
   onSubmit: (value: string) => void;
   onCancelPending: () => void;
 }
 
+/** основные команды терминала */
 const QUICK_CHIPS = [
   'taro daily',
   'taro ask',
   'taro catalog',
   'taro guides',
   'taro history',
-  'help',
 ];
+
+/** системные — глушше, без стрелки, с пиктограммами */
+const SYS_CHIPS = ['taro sound', 'clear', 'help'] as const;
+
+/** пиктограмма для системного чипа (звук — живая, зависит от состояния) */
+function sysIcon(chip: string, soundOn: boolean): string {
+  if (chip === 'taro sound') return soundOn ? '♪' : '♩';
+  if (chip === 'clear') return '⌫';
+  if (chip === 'help') return '?';
+  return '·';
+}
 
 export default function CommandBar({
   characterId,
   busy,
   pendingQuestion,
   pendingCards,
+  soundOn,
   onSubmit,
   onCancelPending,
 }: CommandBarProps) {
@@ -123,6 +136,19 @@ export default function CommandBar({
               disabled={busy}
             >
               <span className="chip-arrow">▸</span> {chip}
+            </button>
+          ))}
+          <span className="chips-sep" aria-hidden="true">│</span>
+          {SYS_CHIPS.map((chip) => (
+            <button
+              key={chip}
+              type="button"
+              className={`chip chip--sys${chip === 'taro sound' && !soundOn ? ' chip--muted' : ''}`}
+              onClick={() => runChip(chip)}
+              disabled={busy}
+              aria-label={chip}
+            >
+              <span className="chip-icon">{sysIcon(chip, soundOn)}</span> {chip}
             </button>
           ))}
         </div>

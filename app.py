@@ -5,6 +5,8 @@ import json
 import logging
 import os
 import shutil
+import time
+import uuid
 from pathlib import Path
 from urllib.parse import parse_qs
 
@@ -138,18 +140,124 @@ async def handle_character(request):
 
 
 async def handle_spread(request):
+    """Classic one-shot spread: cards + interpretation in a single response."""
+    parsed = await _spread_request_context(request)
+    if isinstance(parsed, web.Response):
+        return parsed
+    ctx = parsed
+    cards = ctx["cards"]
+    interpretation = await interpret_reading(
+        question=ctx["question"],
+        cards=cards,
+        character_id=ctx["character_id"],
+        spread_type=ctx["spread_type"],
+    )
+    await save_reading(
+        db=ctx["db"],
+        user_id=ctx["user_id"],
+        type=ctx["reading_type"],
+        question=ctx["question"],
+        cards_data={"cards": cards, "spread_type": ctx["spread_type"]},
+        interpretation=interpretation,
+        character_id=ctx["character_id"],
+    )
+    return web.json_response({
+        "cards": cards,
+        "interpretation": interpretation,
+        "remaining": ctx["quota"].get("remaining"),
+        "limit": ctx["quota"].get("limit"),
+    })
+
+
+# ── Two-phase spread: cards first, interpretation while the user flips ──
+# Token → background job state. The LLM whisper runs as an asyncio task
+# while the operator reveals the cards; the client polls for the result.
+_pending_spreads: dict[str, dict] = {}
+_PENDING_TTL = 900  # sweep abandoned whispers after 15 minutes
+
+
+async def _whisper_task(token, ctx, cards):
+    """Background LLM interpretation + DB save for a two-phase spread."""
+    state = _pending_spreads[token]
+    try:
+        interpretation = await interpret_reading(
+            question=ctx["question"],
+            cards=cards,
+            character_id=ctx["character_id"],
+            spread_type=ctx["spread_type"],
+        )
+        await save_reading(
+            db=await get_db(),
+            user_id=ctx["user_id"],
+            type=ctx["reading_type"],
+            question=ctx["question"],
+            cards_data={"cards": cards, "spread_type": ctx["spread_type"]},
+            interpretation=interpretation,
+            character_id=ctx["character_id"],
+        )
+        state["interpretation"] = interpretation
+    except Exception as e:  # noqa: BLE001 — any failure must reach the poller
+        state["error"] = str(e) or "interpretation failed"
+    finally:
+        state["done"] = True
+
+
+async def handle_spread_begin(request):
+    """Phase 1: quota check, draw cards, spawn the LLM whisper, return at once."""
+    parsed = await _spread_request_context(request)
+    if isinstance(parsed, web.Response):
+        return parsed
+    ctx = parsed
+    cards = ctx["cards"]
+
+    # sweep stale whispers so the registry can not leak
+    now = time.time()
+    for stale in [k for k, v in _pending_spreads.items() if now - v["created"] > _PENDING_TTL]:
+        _pending_spreads.pop(stale, None)
+
+    token = uuid.uuid4().hex[:20]
+    _pending_spreads[token] = {"created": now, "done": False}
+    _pending_spreads[token]["task"] = asyncio.create_task(_whisper_task(token, ctx, cards))
+
+    return web.json_response({
+        "cards": cards,
+        "token": token,
+        "remaining": ctx["quota"].get("remaining"),
+        "limit": ctx["quota"].get("limit"),
+    })
+
+
+async def handle_spread_poll(request):
+    """Phase 2: is the whisper ready?"""
+    token = request.query.get("token", "")
+    state = _pending_spreads.get(token)
+    if state is None:
+        return web.json_response({"error": "unknown token"}, status=404)
+    if not state.get("done"):
+        return web.json_response({"ready": False})
+    _pending_spreads.pop(token, None)  # delivered — free the registry
+    if state.get("error"):
+        return web.json_response({"ready": True, "error": state["error"]})
+    return web.json_response({"ready": True, "interpretation": state.get("interpretation")})
+
+
+async def _spread_request_context(request):
+    """Shared prelude for spread handlers: auth → quota → draw.
+
+    Returns a context dict or a ready-to-send error Response.
+    """
     try:
         body = await request.json()
     except Exception:
         return web.json_response({"error": "invalid json"}, status=400)
-    init_data = body.get('init_data', '')
+    init_data = body.get("init_data", "")
     user_data = verify_telegram_init_data(init_data)
     if not user_data:
         return web.json_response({"error": "unauthorized"}, status=403)
-    tg_id = user_data.get('id', 0)
-    spread_type = body.get('spread_type', 1)
-    question = body.get('question')
-    character_id = body.get('character_id', 'shadow_walker')
+    tg_id = user_data.get("id", 0)
+    spread_type = body.get("spread_type", 1)
+    question = body.get("question")
+    character_id = body.get("character_id", "shadow_walker")
     if not tg_id:
         return web.json_response({"error": "tg_id required"}, status=400)
 
@@ -164,27 +272,16 @@ async def handle_spread(request):
     is_daily = spread_type_str == "daily"
     count = 3 if not is_daily and spread_type == 3 else 1
     cards = draw_cards(count)
-    interpretation = await interpret_reading(
-        question=question,
-        cards=cards,
-        character_id=character_id,
-        spread_type=spread_type,
-    )
-    await save_reading(
-        db=db,
-        user_id=user.id,
-        type="daily" if is_daily else f"spread_{spread_type}",
-        question=question,
-        cards_data={"cards": cards, "spread_type": spread_type},
-        interpretation=interpretation,
-        character_id=character_id,
-    )
-    return web.json_response({
+    return {
+        "db": db,
+        "user_id": user.id,
         "cards": cards,
-        "interpretation": interpretation,
-        "remaining": quota.get("remaining"),
-        "limit": quota.get("limit"),
-    })
+        "question": question,
+        "character_id": character_id,
+        "spread_type": spread_type,
+        "reading_type": "daily" if is_daily else f"spread_{spread_type}",
+        "quota": quota,
+    }
 
 
 def create_webapp() -> web.Application:
@@ -193,6 +290,8 @@ def create_webapp() -> web.Application:
     app.router.add_get('/api/disk', handle_disk_usage)
     app.router.add_get('/api/character', handle_character)
     app.router.add_post('/api/spread', handle_spread)
+    app.router.add_post('/api/spread/begin', handle_spread_begin)
+    app.router.add_get('/api/spread/poll', handle_spread_poll)
     webapp_dir = Path(__file__).parent / "static" / "webapp"
     if webapp_dir.is_dir():
         index = webapp_dir / "index.html"
