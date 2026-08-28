@@ -332,6 +332,7 @@ def fallback_from_cards_db(
     character_id: str = "shadow_walker",
 ) -> dict:
     from core.tarot import load_cards
+    from core.prompts import _positions_for_question
 
     all_cards = load_cards()
     cards_by_name = {c["name"]: c for c in all_cards}
@@ -348,6 +349,7 @@ def fallback_from_cards_db(
     }
 
     meanings = []
+    positions = _positions_for_question(question) if len(cards) == 3 else None
     for i, card in enumerate(cards):
         name = card.get("name", "")
         orientation = card.get("orientation", "upright")
@@ -355,11 +357,8 @@ def fallback_from_cards_db(
         meaning = card_data.get(orientation, card_data.get("upright", "—"))
 
         prefix = ""
-        if len(cards) == 3:
-            positions = ["Прошлое", "Настоящее", "Будущее"]
+        if positions:
             prefix = f"[{positions[i]}] "
-        elif len(cards) == 1:
-            prefix = ""
 
         meanings.append(f"{prefix}{name}: {meaning}")
 
