@@ -105,6 +105,18 @@ def strip_emojis(text: str) -> str:
 LATIN_WORD = re.compile(r"\b[A-Za-z]{3,}\b")
 
 
+def _iter_prose(value):
+    """Yield every string leaf of the interpretation dict (prose, not keys)."""
+    if isinstance(value, str):
+        yield value
+    elif isinstance(value, dict):
+        for v in value.values():
+            yield from _iter_prose(v)
+    elif isinstance(value, list):
+        for v in value:
+            yield from _iter_prose(v)
+
+
 def _warn_latin_leak(text: str) -> None:
     """Лог о латинских словах в ответе модели — правило «только русский» в промпте."""
     latin = set(LATIN_WORD.findall(text))
@@ -236,13 +248,13 @@ async def interpret_reading(
 
     try:
         raw = await call_llm_with_fallback(messages, max_tokens=token_base)
-        _warn_latin_leak(raw)
         cleaned = strip_emojis(raw)
         if len(cleaned) != len(raw):
             logger.warning("Emojis detected and removed from LLM response")
         raw = cleaned
         parsed = parse_llm_response(raw)
         if parsed:
+            _warn_latin_leak(" ".join(_iter_prose(parsed)))
             return parsed
     except RuntimeError:
         logger.error("All LLM models failed, using fallback")
