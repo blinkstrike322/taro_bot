@@ -28,20 +28,46 @@ def test_build_reading_prompt_three_cards():
         {"name": "Верховная Жрица", "orientation": "upright"},
     ]
     prompt = build_reading_prompt(cards, None, "shadow_walker", spread_type=3)
-    assert "Расклад 3 карты" in prompt
-    assert "Прошлое" in prompt
-    assert "Настоящее" in prompt
-    assert "Будущее" in prompt
-    assert "позиция Прошлое" in prompt
-    assert "позиция Настоящее" in prompt
-    assert "позиция Будущее" in prompt
+    assert "Расклад «3 карты»" in prompt
+    assert "Что запускает ситуацию" in prompt
+    assert "Ядро ситуации" in prompt
+    assert "Куда ведёт текущая динамика" in prompt
+    assert "позиции" in prompt
+    assert "связь_карт" in prompt
+
+
+def test_build_reading_prompt_three_cards_future_positions():
+    cards = [
+        {"name": "Шут", "orientation": "upright"},
+        {"name": "Маг", "orientation": "reversed"},
+        {"name": "Верховная Жрица", "orientation": "upright"},
+    ]
+    prompt = build_reading_prompt(
+        cards, "что будет интересного со мной в этом месяце", "shadow_walker", spread_type=3
+    )
+    assert "Что входит в период" in prompt
+    assert "Главная динамика периода" in prompt
+    assert "К чему ведёт текущая линия" in prompt
+    assert "Прошлое" not in prompt
+    assert "Настоящее" not in prompt
+
+
+def test_build_reading_prompt_daily_schema():
+    cards = [{"name": "Паж Пентаклей", "orientation": "upright"}]
+    prompt = build_reading_prompt(cards, None, "spark_of_chaos", spread_type="daily")
+    assert "Карта дня" in prompt
+    assert "проявление" in prompt
+    assert "на_что_смотреть" in prompt
+    assert "траектория" in prompt
 
 
 def test_build_reading_prompt_no_question():
     cards = [{"name": "Шут", "orientation": "upright"}]
     prompt = build_reading_prompt(cards, None, "ruin_keeper", spread_type=1)
+    # 1 карта без вопроса в приложении всегда маршрутизируется как карта дня.
     assert "?" not in prompt
-    assert "спонтанный расклад" in prompt
+    assert "Карта дня" in prompt
+    assert "проявление" in prompt
 
 
 def test_build_reading_prompt_json_intro_field():

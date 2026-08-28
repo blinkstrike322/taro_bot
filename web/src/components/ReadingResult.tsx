@@ -3,7 +3,7 @@
 // ─────────────────────────────────────────────────────────────
 // ReadingResult — JSON-вывод расклада как ответ живого канала.
 // Структура печатается построчно, а проза — посимвольно:
-// шёпот → ответ (с мерцанием фосфора) → значения → совет.
+// шёпот → ответ/сигнал → тело (значения | позиции+связь | день) → совет.
 // Оркестрация через вычисленную временную шкалу.
 // ─────────────────────────────────────────────────────────────
 import { getGuide } from '@/lib/guides';
@@ -11,11 +11,24 @@ import type { TarotCard } from './Card';
 import ProseType, { proseDuration } from './shell/ProseType';
 import { joinedParagraphs } from '@/lib/prose';
 
+interface ReadingPosition {
+  позиция?: string;
+  карта?: string;
+  реверс?: boolean;
+  трактовка?: string;
+}
+
 interface Interpretation {
   intro: string;
   short_answer: string;
-  card_meaning: string[] | string;
-  advice: string;
+  card_meaning?: string[] | string;
+  advice?: string;
+  // новая схема этапа 2 (аддитивная, легаси-фолбэк на card_meaning)
+  позиции?: ReadingPosition[];
+  связь_карт?: string;
+  проявление?: string;
+  на_что_смотреть?: string;
+  траектория?: { утро?: string; день?: string; вечер?: string };
 }
 
 interface ReadingResultProps {
@@ -27,6 +40,49 @@ interface ReadingResultProps {
   question?: string | null;
   /** spread label: "карта дня" | "одна карта" | "три карты" */
   spreadLabel?: string;
+}
+
+type BodyRow =
+  | { kind: 'prose'; label: string | null; prose: string }
+  | { kind: 'header'; text: string }
+  | { kind: 'close'; text: string };
+
+function buildBodyRows(interp: Interpretation): { header: string | null; rows: BodyRow[] } {
+  const positions = Array.isArray(interp.позиции) ? interp.позиции : null;
+  const dailyMeta = interp.проявление || interp.траектория;
+  const rows: BodyRow[] = [];
+  let header: string | null = null;
+
+  if (positions) {
+    header = 'позиции';
+    positions.forEach((p, i) => {
+      const card = `${p.карта ?? ''}${p.реверс ? ' ⟲' : ''}`;
+      const label = `${String(i + 1).padStart(2, '0')} · ${p.позиция ?? ''}${card ? ` — ${card}` : ''}`;
+      rows.push({ kind: 'prose', label, prose: p.трактовка ?? '' });
+    });
+    if (interp.связь_карт) rows.push({ kind: 'prose', label: 'связь_карт', prose: interp.связь_карт });
+  } else if (dailyMeta) {
+    if (interp.проявление) rows.push({ kind: 'prose', label: 'проявление', prose: interp.проявление });
+    if (interp.на_что_смотреть) rows.push({ kind: 'prose', label: 'на что смотреть', prose: interp.на_что_смотреть });
+    if (interp.траектория) {
+      for (const t of ['утро', 'день', 'вечер'] as const) {
+        const v = interp.траектория[t];
+        if (v) rows.push({ kind: 'prose', label: `траектория · ${t}`, prose: v });
+      }
+    }
+  } else {
+    const meanings = Array.isArray(interp.card_meaning)
+      ? interp.card_meaning
+      : interp.card_meaning
+        ? [interp.card_meaning]
+        : [];
+    header = meanings.length ? 'значения' : null;
+    meanings.forEach((m) => rows.push({ kind: 'prose', label: null, prose: m }));
+  }
+
+  if (header) rows.unshift({ kind: 'header', text: header });
+  if (header) rows.push({ kind: 'close', text: '' });
+  return { header, rows };
 }
 
 // Convert hex color (#RRGGBB) to rgba string at given opacity
@@ -54,14 +110,17 @@ export default function ReadingResult({
   question,
   spreadLabel = 'три карты',
 }: ReadingResultProps) {
-  const { intro, short_answer, card_meaning, advice } = interpretation;
+  const { intro, short_answer, advice } = interpretation;
   const guide = getGuide(characterId);
   const adviceColor = hexToRgba(guide.accent, 0.78);
   const adviceGlow = `0 0 4px ${hexToRgba(guide.accent, 0.30)}, 0 0 8px ${hexToRgba(guide.accent, 0.15)}`;
 
-  const meanings = Array.isArray(card_meaning) ? card_meaning : (card_meaning ? [card_meaning] : []);
+  const dailyMeta = interpretation.проявление || interpretation.траектория;
+  const answerKey = dailyMeta ? 'сигнал' : 'ответ';
+  const { rows: bodyRows } = buildBodyRows(interpretation);
+  const bodyHeader = bodyRows[0]?.kind === 'header' ? bodyRows[0].text : null;
 
-  // ── временная шкала: структура → шёпот → ответ → значения → совет ──
+  // ── временная шкала: структура → шёпот → ответ → тело → совет ──
   const headerLineCount =
     1 + // {
     1 + // сеанс
@@ -72,8 +131,8 @@ export default function ReadingResult({
   const tHeader = headerLineCount * LINE_STEP + 90;
   const tWhisper = tHeader;
   const tAnswer = tWhisper + (intro ? proseDuration(intro, TYPE_SPEED) : 0);
-  const tMeanings = tAnswer + proseDuration(short_answer, TYPE_SPEED);
-  const tAdvice = tMeanings + meanings.length * 110 + 150;
+  const tBody = tAnswer + proseDuration(short_answer, TYPE_SPEED);
+  const tAdvice = tBody + bodyRows.length * 110 + 150;
   const tClose = tAdvice + (advice ? proseDuration(advice, TYPE_SPEED) : 0) + 160;
 
   let delay = 0;
@@ -178,39 +237,51 @@ export default function ReadingResult({
             </div>
           )}
 
-          {/* "ответ": short answer — яркая строка с мерцанием фосфора */}
+          {/* "ответ"/"сигнал": short answer — яркая строка с мерцанием фосфора */}
           <div className="json-line" style={{ '--jl-delay': `${tAnswer}ms` } as React.CSSProperties}>
-            {'  '}<K glow>ответ</K><P>: </P>
+            {'  '}<K glow>{answerKey}</K><P>: </P>
             <ProseType
               text={short_answer}
               startDelay={tAnswer}
               speed={TYPE_SPEED}
-              tail={meanings.length > 0 || advice ? ',' : undefined}
+              tail={bodyRows.length > 0 || advice ? ',' : undefined}
               shimmer
               className="j-str j-multiline text-[14px] font-medium"
               style={{ color: '#ffffff' }}
             />
           </div>
 
-          {/* "значения": [ ... ] */}
-          {meanings.length > 0 && (
+          {/* тело: значения (легаси) / позиции+связь_карт / карта дня */}
+          {bodyRows.length > 0 && (
             <>
-              <div className="json-line" style={{ '--jl-delay': `${tMeanings}ms` } as React.CSSProperties}>
-                {'  '}<K>значения</K><P>: [</P>
-              </div>
-              {meanings.map((m, i) => (
-                <div
-                  key={i}
-                  className="json-line"
-                  style={{ '--jl-delay': `${tMeanings + 110 + i * 110}ms` } as React.CSSProperties}
-                >
-                  {'    '}<span className="j-str j-multiline text-white/80">&quot;{joinedParagraphs(m)}&quot;</span>
-                  <P>{i < meanings.length - 1 ? ',' : ''}</P>
+              {bodyHeader && (
+                <div className="json-line" style={{ '--jl-delay': `${tBody}ms` } as React.CSSProperties}>
+                  {'  '}<K>{bodyHeader}</K><P>: </P><P>[</P>
                 </div>
-              ))}
-              <div className="json-line" style={{ '--jl-delay': `${tMeanings + 110 + meanings.length * 110}ms` } as React.CSSProperties}>
-                {'  '}<P>]{advice ? ',' : ''}</P>
-              </div>
+              )}
+              {bodyRows
+                .filter((r): r is Extract<BodyRow, { kind: 'prose' }> => r.kind === 'prose')
+                .map((r, i, arr) => {
+                  const comma = bodyHeader
+                    ? i < arr.length - 1 || advice
+                      ? ','
+                      : ''
+                    : ',';
+                  const delay = `${tBody + 110 + i * 110}ms`;
+                  return (
+                    <div key={i} className="json-line" style={{ '--jl-delay': delay } as React.CSSProperties}>
+                      {'  '}
+                      {r.label ? <><K>{r.label}</K><P>: </P></> : <P>  </P>}
+                      <span className="j-str j-multiline text-white/80">&quot;{joinedParagraphs(r.prose)}&quot;</span>
+                      <P>{comma}</P>
+                    </div>
+                  );
+                })}
+              {bodyHeader && (
+                <div className="json-line" style={{ '--jl-delay': `${tBody + 110 * bodyRows.length}ms` } as React.CSSProperties}>
+                  {'  '}<P>]{advice ? ',' : ''}</P>
+                </div>
+              )}
             </>
           )}
 
