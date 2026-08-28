@@ -1,7 +1,7 @@
 'use client';
 
 import { getGuide } from '@/lib/guides';
-import FollowupChat from './FollowupChat';
+import type { TarotCard } from './Card';
 
 interface Interpretation {
   intro: string;
@@ -10,169 +10,194 @@ interface Interpretation {
   advice: string;
 }
 
-/**
- * Сплошной простыня-текст ЛЛМ тяжело читать: делим на абзацы.
- * Явные \n\n уважаем; иначе режем на предложения (без lookbehind —
- * старые WebView) и собираем абзацы по ~2 предложения / ~220 знаков.
- */
-export function splitParagraphs(text: string, maxLen = 220): string[] {
-  const clean = (text || '').trim();
-  if (!clean) return [];
-  if (/\n\n+/.test(clean)) {
-    return clean.split(/\n\n+/).map((s) => s.trim()).filter(Boolean);
-  }
-  const sentences = clean.match(/[^.!?…]+[.!?…]+["»)\]]*\s*/g) ?? [clean];
-  const paras: string[] = [];
-  let cur = '';
-  for (const raw of sentences) {
-    const s = raw.trim();
-    if (!s) continue;
-    if (cur && cur.length + s.length > maxLen) {
-      paras.push(cur);
-      cur = s;
-    } else {
-      cur = cur ? `${cur} ${s}` : s;
-    }
-  }
-  if (cur) paras.push(cur);
-  return paras;
-}
-
 interface ReadingResultProps {
   interpretation: Interpretation;
   characterId?: string;
-  readingId?: number | null;
-  moodName?: string;
-  className?: string;
+  /** cards of the spread — rendered as the "карты" JSON array */
+  cards?: TarotCard[];
+  /** question asked — rendered as "вопрос" (null → JSON null) */
+  question?: string | null;
+  /** spread label: "карта дня" | "одна карта" | "три карты" */
+  spreadLabel?: string;
 }
 
-export default function ReadingResult({ interpretation, characterId, readingId = null, moodName, className = '' }: ReadingResultProps) {
+// Convert hex color (#RRGGBB) to rgba string at given opacity
+function hexToRgba(hex: string, alpha: number): string {
+  const h = hex.replace('#', '');
+  const r = parseInt(h.substring(0, 2), 16);
+  const g = parseInt(h.substring(2, 4), 16);
+  const b = parseInt(h.substring(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+/* ── tiny JSON token components ── */
+const P = ({ children }: { children: React.ReactNode }) => <span className="j-punct">{children}</span>;
+const K = ({ children, glow }: { children: React.ReactNode; glow?: boolean }) => (
+  <span className={`j-key${glow ? ' j-key-glow' : ''}`}>&quot;{children}&quot;</span>
+);
+
+export default function ReadingResult({
+  interpretation,
+  characterId,
+  cards,
+  question,
+  spreadLabel = 'три карты',
+}: ReadingResultProps) {
   const { intro, short_answer, card_meaning, advice } = interpretation;
   const guide = getGuide(characterId);
-  const meanings = Array.isArray(card_meaning) ? card_meaning : card_meaning ? [card_meaning] : [];
-  const introParas = splitParagraphs(intro, 180);
-  const bodyParas = splitParagraphs(short_answer);
-  const adviceParas = splitParagraphs(advice, 180);
+  const adviceColor = hexToRgba(guide.accent, 0.75);
+  const adviceGlow = `0 0 4px ${hexToRgba(guide.accent, 0.30)}, 0 0 8px ${hexToRgba(guide.accent, 0.15)}`;
 
-  const adviceLabel =
-    guide.id === 'ruin_keeper' ? 'слово весты'
-    : guide.id === 'spark_of_chaos' ? 'от лилит'
-    : 'шёпот селены';
+  const meanings = Array.isArray(card_meaning) ? card_meaning : (card_meaning ? [card_meaning] : []);
+  let delay = 0;
+  const next = () => {
+    delay += 70;
+    return `${delay}ms`;
+  };
 
   return (
-    <div className={`px-3 pb-5 relative ${className}`}>
-      <div className="section-label mb-3 relative z-10">
-        <span>толкование{moodName ? ` · ${moodName}` : ''}</span>
-      </div>
+    <div className="px-1 py-2">
+      <div className="relative frame-ritual noise-bg p-3 min-h-[120px]">
+        {/* asymmetrical corner ornaments */}
+        <span className="corner-tl">╔</span>
+        <span className="corner-tr">┐</span>
+        <span className="corner-bl">└</span>
+        <span className="corner-br">╝</span>
 
-      <div
-        className="relative reading-card noise-bg px-4 py-5"
-        style={{
-          '--guide-accent': guide.accent,
-          '--guide-accent-deep': guide.accentDeep,
-          '--guide-accent-dim': guide.accentDim,
-        } as React.CSSProperties}
-      >
-        {/* шапка: сигилы + имя + тег */}
+        {/* circuit traces */}
         <div
-          className="reading-headline relative z-10 reveal-line"
-          style={{ '--rd': '0.05s' } as React.CSSProperties}
-        >
-          <span className="reading-sigils" aria-hidden="true">
-            {guide.cornerSymbols.tl} {guide.cornerSymbols.tr}
-          </span>
-          <span className="tech-label">{guide.name} · {guide.subtitle}</span>
-          <span className="ml-auto tech-label" style={{ color: 'var(--ink-faint)' }}>
-            {guide.tag}
-          </span>
-        </div>
+          className="circuit-trace circuit-trace--v"
+          style={{ left: '12%', top: 0, bottom: 0 }}
+        />
+        <div
+          className="circuit-trace circuit-trace--h"
+          style={{ bottom: '20%', left: 0, right: 0 }}
+        />
 
-        {/* интро — голос проводницы */}
-        {introParas.length > 0 && (
-          <div
-            className="relative z-10 mb-4 flex gap-3 reveal-line"
-            style={{ '--rd': '0.25s' } as React.CSSProperties}
-          >
-            <span className="quote-mark" style={{ color: guide.accentDeep }} aria-hidden="true">«</span>
-            <div className="pt-1">
-              {introParas.map((p, i) => (
-                <p key={i} className={`reading-intro${i > 0 ? ' reading-body--next' : ''}`}>{p}</p>
-              ))}
-            </div>
+        {/* square and dot ornaments along edges */}
+        <span className="glyph-fragment" style={{ top: '8px', right: '20%' }}>■</span>
+        <span className="glyph-fragment" style={{ top: '8px', right: '12%' }}>·</span>
+        <span className="glyph-fragment" style={{ bottom: '8px', right: '20%' }}>·</span>
+        <span className="glyph-fragment" style={{ bottom: '8px', right: '12%' }}>■</span>
+        <span className="glyph-fragment" style={{ top: '8px', left: '20%' }}>·</span>
+        <span className="glyph-fragment" style={{ top: '8px', left: '12%' }}>■</span>
+        <span className="glyph-fragment" style={{ bottom: '8px', left: '20%' }}>■</span>
+        <span className="glyph-fragment" style={{ bottom: '8px', left: '12%' }}>·</span>
+
+        <div className="json-readout relative z-10">
+          {/* { */}
+          <div className="json-line" style={{ '--jl-delay': next() } as React.CSSProperties}>
+            <P>{'{ '}</P>
           </div>
-        )}
 
-        {/* главное толкование — абзацы, у первого буквица */}
-        {bodyParas.length > 0 && (
-          <div
-            className="relative z-10 mb-4 reveal-line"
-            style={{ '--rd': '0.5s' } as React.CSSProperties}
-          >
-            {bodyParas.map((p, i) => (
-              <p
-                key={i}
-                className={`reading-body${i === 0 ? ' reading-body--lead' : ' reading-body--next'}`}
-              >
-                {p}
-              </p>
-            ))}
+          {/* "сеанс" / "вопрос" */}
+          <div className="json-line" style={{ '--jl-delay': next() } as React.CSSProperties}>
+            {'  '}<K>сеанс</K><P>: </P>
+            <span className="j-str">&quot;{spreadLabel}&quot;</span><P>,</P>
           </div>
-        )}
 
-        {/* разбор по картам — ординалы + линейки */}
-        {meanings.length > 0 && (
-          <div
-            className="relative z-10 mb-4 reveal-line"
-            style={{ '--rd': '0.8s' } as React.CSSProperties}
-          >
-            <div className="reading-section-label mb-2" style={{ color: guide.accentDeep }}>
-              карты говорят
+          {question != null && (
+            <div className="json-line" style={{ '--jl-delay': next() } as React.CSSProperties}>
+              {'  '}<K>вопрос</K><P>: </P>
+              <span className="j-str">&quot;{question}&quot;</span><P>,</P>
             </div>
-            <div className="space-y-3">
-              {meanings.map((meaning, i) => (
-                <div key={i} className="flex gap-2 items-baseline">
-                  <span className="reading-ordinal">{String(i + 1).padStart(2, '0')}</span>
-                  <div className="flex-1 border-b border-[color:var(--line)] pb-2">
-                    {splitParagraphs(meaning, 200).map((p, j) => (
-                      <p
-                        key={j}
-                        className={`font-sans text-[14px] leading-[1.7] text-[color:var(--ink)] opacity-92${j > 0 ? ' reading-body--next' : ''}`}
-                      >
-                        {p}
-                      </p>
-                    ))}
-                  </div>
+          )}
+
+          {/* "проводник" */}
+          <div className="json-line" style={{ '--jl-delay': next() } as React.CSSProperties}>
+            {'  '}<K>проводник</K><P>: </P>
+            <span className="j-str">&quot;{guide.name}&quot;</span><P>,</P>
+          </div>
+
+          {/* "карты": [ {...}, {...} ] */}
+          {cards && cards.length > 0 && (
+            <>
+              <div className="json-line" style={{ '--jl-delay': next() } as React.CSSProperties}>
+                {'  '}<K>карты</K><P>: [</P>
+              </div>
+              {cards.map((c, i) => (
+                <div
+                  key={c.id + i}
+                  className="json-line"
+                  style={{ '--jl-delay': next() } as React.CSSProperties}
+                >
+                  {'    '}
+                  <P>{'{ '}</P>
+                  <K>имя</K><P>: </P>
+                  <span className="j-str">&quot;{c.name}&quot;</span><P>, </P>
+                  <K>реверс</K><P>: </P>
+                  <span className="j-val">{String(c.is_reversed)}</span>
+                  <P> {'}'}{i < cards.length - 1 ? ',' : ''}</P>
                 </div>
               ))}
-            </div>
-          </div>
-        )}
+              <div className="json-line" style={{ '--jl-delay': next() } as React.CSSProperties}>
+                {'  '}<P>],</P>
+              </div>
+            </>
+          )}
 
-        {/* совет — маргиналия */}
-        {adviceParas.length > 0 && (
-          <div
-            className="marginalia mt-5 pt-1 relative z-10 reveal-line"
-            style={{ '--rd': '1.05s' } as React.CSSProperties}
-          >
-            <div className="tech-label mb-1.5" style={{ color: guide.accentDeep }}>
-              {adviceLabel}
+          {/* "шёпот": intro */}
+          {intro && (
+            <div className="json-line" style={{ '--jl-delay': next() } as React.CSSProperties}>
+              {'  '}<K glow>шёпот</K><P>: </P>
+              <span className="j-str j-multiline italic text-white/60">&quot;{intro}&quot;</span><P>,</P>
             </div>
-            {adviceParas.map((p, i) => (
-              <p
-                key={i}
-                className={`font-serif text-[20px] font-semibold leading-[1.4]${i > 0 ? ' reading-body--next' : ''}`}
-                style={{ color: 'var(--ink)' }}
-              >
-                {p}
-              </p>
-            ))}
+          )}
+
+          {/* "ответ": short answer — the bright one */}
+          <div className="json-line" style={{ '--jl-delay': next() } as React.CSSProperties}>
+            {'  '}<K glow>ответ</K><P>: </P>
+            <span className="j-str j-multiline text-[14px] font-medium text-white">&quot;{short_answer}&quot;</span>
+            {meanings.length > 0 || advice ? <P>,</P> : null}
           </div>
-        )}
+
+          {/* "значения": [ ... ] */}
+          {meanings.length > 0 && (
+            <>
+              <div className="json-line" style={{ '--jl-delay': next() } as React.CSSProperties}>
+                {'  '}<K>значения</K><P>: [</P>
+              </div>
+              {meanings.map((m, i) => (
+                <div
+                  key={i}
+                  className="json-line"
+                  style={{ '--jl-delay': next() } as React.CSSProperties}
+                >
+                  {'    '}<span className="j-str j-multiline text-white/80">&quot;{m}&quot;</span>
+                  <P>{i < meanings.length - 1 ? ',' : ''}</P>
+                </div>
+              ))}
+              <div className="json-line" style={{ '--jl-delay': next() } as React.CSSProperties}>
+                {'  '}<P>]{advice ? ',' : ''}</P>
+              </div>
+            </>
+          )}
+
+          {/* "совет": advice — accent + glow */}
+          {advice && (
+            <div className="json-line" style={{ '--jl-delay': next() } as React.CSSProperties}>
+              {'  '}<K glow>совет</K><P>: </P>
+              <span
+                className="j-str j-multiline text-[14px] font-medium"
+                style={{ color: adviceColor, textShadow: adviceGlow }}
+              >
+                &quot;{advice}&quot;
+              </span>
+            </div>
+          )}
+
+          {/* } */}
+          <div className="json-line" style={{ '--jl-delay': next() } as React.CSSProperties}>
+            <P>{'}'}</P>
+          </div>
+        </div>
       </div>
 
-      {readingId !== null && (
-        <FollowupChat readingId={readingId} characterId={characterId} />
-      )}
+      {/* exit status */}
+      <div className="term-exit mt-1.5 flex items-center justify-between">
+        <span><span className="te-ok">✓</span> расклад завершён</span>
+        <span>exit 0</span>
+      </div>
     </div>
   );
 }

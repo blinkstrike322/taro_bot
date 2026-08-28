@@ -18,17 +18,29 @@ interface CardProps {
   flipped?: boolean;
   /** character/guide id — drives per-guide card back + accent */
   characterId?: string;
-  /** intentional rotation, degrees — organic composition */
-  tilt?: number;
-  /** не прятать подпись позиции после флипа (веер дня: позиция важна и открыта) */
-  keepLabel?: boolean;
+  /** print trailing comma after the JSON value (last card in array may drop it) */
+  comma?: boolean;
 }
 
 function pseudoRand(seed: number): number {
   return Math.abs((Math.sin(seed * 12.9898 + 78.233) * 43758.5453) % 1);
 }
 
+const ABOVE = ['\u0300','\u0301','\u0302','\u0308','\u030A','\u0304','\u030D','\u0306','\u030C','\u030F'];
+const BELOW = ['\u0316','\u0323','\u0325','\u0329','\u032E','\u031C','\u0320'];
+
+function auraChar(seed: number, alphabet: string): string {
+  const base = alphabet[Math.floor(pseudoRand(seed) * alphabet.length)];
+  let r = base;
+  r += ABOVE[Math.floor(pseudoRand(seed * 3) * ABOVE.length)];
+  if (pseudoRand(seed * 5) > 0.45) {
+    r += BELOW[Math.floor(pseudoRand(seed * 7) * BELOW.length)];
+  }
+  return r;
+}
+
 interface AuraDot {
+  ch: string;
   x: number;
   y: number;
   op: number;
@@ -37,42 +49,47 @@ interface AuraDot {
   dur: number;
 }
 
-// дизер-точечки вокруг карты: редкие пиксельные квадраты, заметно тише глифов
-function makeAuraDots(count: number, offset: number): AuraDot[] {
+function makeAuraDots(count: number, offset: number, alphabet: string): AuraDot[] {
   return Array.from({ length: count }, (_, i) => {
     const s = offset + i;
     const angle = pseudoRand(s * 7) * Math.PI * 2;
     const dist = 0.15 + pseudoRand(s * 11) * 0.55;
     return {
+      ch: auraChar(s, alphabet),
       x: 50 + Math.cos(angle) * dist * 60,
       y: 50 + Math.sin(angle) * dist * 60,
-      op: 0.05 + pseudoRand(s * 13) * 0.1,
-      size: pseudoRand(s * 17) > 0.75 ? 4 : 2 + Math.floor(pseudoRand(s * 17) * 2),
+      op: 0.10 + pseudoRand(s * 13) * 0.28,
+      size: 5 + Math.floor(pseudoRand(s * 17) * 6),
       delay: pseudoRand(s * 19) * 8,
-      dur: 4 + pseudoRand(s * 23) * 6,
+      dur: 3 + pseudoRand(s * 23) * 6,
     };
   });
 }
 
-// ── Burst — разлетающиеся дизер-точечки при флипе ──
-interface BurstDot {
-  angle: number;
-  distance: number;
+// ── Burst particles — fly outward on flip ──
+interface BurstParticle {
+  ch: string;
+  angle: number;       // radians
+  distance: number;    // px from center
   size: number;
-  delay: number;
-  dur: number;
+  delay: number;       // seconds
+  dur: number;         // seconds
+  rot: number;         // rotation deg at end
+  isAccent: boolean;
 }
 
-function makeBurstDots(count: number = 12): BurstDot[] {
+function makeBurstParticles(alphabet: string, count: number = 18): BurstParticle[] {
   return Array.from({ length: count }, (_, i) => {
-    const s = i * 29 + 5;
-    const angle = pseudoRand(s * 3) * Math.PI * 2;
+    const s = i * 31 + 7;
     return {
-      angle,
-      distance: 46 + pseudoRand(s * 5) * 72,
-      size: pseudoRand(s * 7) > 0.7 ? 4 : 2 + Math.floor(pseudoRand(s * 7) * 2),
-      delay: pseudoRand(s * 11) * 0.12,
-      dur: 0.6 + pseudoRand(s * 13) * 0.35,
+      ch: alphabet[Math.floor(pseudoRand(s) * alphabet.length)],
+      angle: pseudoRand(s * 3) * Math.PI * 2,
+      distance: 60 + pseudoRand(s * 5) * 90, // 60–150px
+      size: 8 + Math.floor(pseudoRand(s * 7) * 10),
+      delay: pseudoRand(s * 11) * 0.15, // small stagger
+      dur: 0.7 + pseudoRand(s * 13) * 0.4,
+      rot: (pseudoRand(s * 17) - 0.5) * 360,
+      isAccent: pseudoRand(s * 19) > 0.5,
     };
   });
 }
@@ -84,8 +101,7 @@ export default function Card({
   onFlip,
   flipped = false,
   characterId,
-  tilt = 0,
-  keepLabel = false,
+  comma = true,
 }: CardProps) {
   const guide = getGuide(characterId);
 
@@ -98,120 +114,122 @@ export default function Card({
     onFlip?.();
   }, [flipped, onFlip]);
 
-  const auraDots = useMemo(() => makeAuraDots(12, 0), []);
+  const auraDots = useMemo(
+    () => makeAuraDots(50, 0, guide.auraAlphabet),
+    [guide.auraAlphabet],
+  );
 
-  const burstDots = useMemo(() => makeBurstDots(), []);
+  const burstParticles = useMemo(
+    () => makeBurstParticles(guide.auraAlphabet, 18),
+    [guide.auraAlphabet],
+  );
 
   return (
     <div className="flex flex-col items-center gap-0.5">
-      {/* подпись не размонтируется, а гаснет — высота слота неизменна,
-          карта не прыгает вверх в момент флипа */}
-      {position && (
+      {position && !flipped && (
         <div
-          className={`card-label ${flipped && !keepLabel ? 'card-label--hidden' : ''}`}
-          style={{ color: raised ? guide.accent : 'var(--ink-soft)' }}
+          className="card-label"
+          style={{ color: raised ? guide.accent : 'rgba(255,255,255,0.55)' }}
         >
-          {position}
+          <span className="cl-punct">{'{'}</span>
+          <span className="cl-key">&quot;{position}&quot;</span>
+          <span className="cl-punct">:</span>
         </div>
       )}
 
-      <div
-        className="relative w-full"
-        style={{
-          '--guide-accent': guide.accent,
-          '--guide-accent-deep': guide.accentDeep,
-          '--guide-accent-dim': guide.accentDim,
-        } as React.CSSProperties}
-      >
-          {/* ── дизер-точечки вокруг карты ── */}
-          <div
-            className={`card-aura ${flipped ? 'card-aura--expanded' : ''}`}
-            aria-hidden="true"
-          >
-            {auraDots.map((d, i) => (
-              <span
-                key={i}
-                className="aura-char"
-                style={{
-                  left: `${d.x}%`,
-                  top: `${d.y}%`,
-                  width: `${d.size}px`,
-                  height: `${d.size}px`,
-                  color: guide.accent,
-                  '--max-op': Math.min(d.op + 0.03, 0.13),
-                  '--ad': `${d.delay}s`,
-                  '--a-dur': `${d.dur}s`,
-                } as React.CSSProperties}
-              />
-            ))}
-          </div>
+      <div className="relative w-full" style={{ '--guide-accent': guide.accent } as React.CSSProperties}>
+        {/* ── per-guide accent aura ── */}
+        <div
+          className={`card-aura ${flipped ? 'card-aura--expanded' : ''}`}
+          aria-hidden="true"
+        >
+          {auraDots.map((d, i) => (
+            <span
+              key={i}
+              className="aura-char"
+              style={{
+                left: `${d.x}%`,
+                top: `${d.y}%`,
+                fontSize: `${Math.min(d.size + 3, 12)}px`,
+                color: guide.accent,
+                textShadow: `0 0 4px ${guide.accentDim}, 0 0 8px ${guide.accentDim}`,
+                '--max-op': Math.min(d.op + 0.10, 0.50),
+                '--ad': `${d.delay}s`,
+                '--a-dur': `${d.dur}s`,
+              } as React.CSSProperties}
+            >
+              {d.ch}
+            </span>
+          ))}
+        </div>
 
         <button
           type="button"
           className={`flip block w-full aspect-[2/3] ${flipped ? 'is-flipped' : ''} ${raised ? 'raise card-slot-center' : ''}`}
           onClick={handleClick}
-          style={{ '--tilt': `${tilt}deg` } as React.CSSProperties}
           aria-label={position ? `${position} — перевернуть карту` : 'Перевернуть карту'}
         >
-          {/* угловые символы проводницы */}
-          <span className="card-corner" style={{ top: '-7px', left: '-5px', color: guide.accent }}>
+          {/* per-guide arcane corner symbols (replacing static ✦/⚹/†/⛧) */}
+          <span className="card-corner" style={{ top: '-6px', left: '-4px', color: guide.accent }}>
             {guide.cornerSymbols.tl}
           </span>
-          <span className="card-corner" style={{ top: '-7px', right: '-5px', color: guide.accent }}>
+          <span className="card-corner" style={{ top: '-6px', right: '-4px', color: guide.accent }}>
             {guide.cornerSymbols.tr}
           </span>
-          <span className="card-corner" style={{ bottom: '-7px', left: '-5px', color: guide.accent }}>
+          <span className="card-corner" style={{ bottom: '-6px', left: '-4px', color: guide.accent }}>
             {guide.cornerSymbols.bl}
           </span>
-          <span className="card-corner" style={{ bottom: '-7px', right: '-5px', color: guide.accent }}>
+          <span className="card-corner" style={{ bottom: '-6px', right: '-4px', color: guide.accent }}>
             {guide.cornerSymbols.br}
           </span>
 
-          <div className="flip-inner card-frame pixel-brackets scan-heavy">
-            {/* ── рубашка: тёмный арт проводницы в светлой рамке ── */}
-            <div className="flip-face relative overflow-hidden" style={{ background: '#241B2E' }}>
+          <div
+            className="flip-inner border-2 border-white scan-heavy card-edges"
+            style={{
+              boxShadow: `3px 3px 0 #000, 0 0 0 1px #000, 0 0 6px ${guide.accentDim}`,
+            }}
+          >
+            {/* ── face-down: per-guide card back ── */}
+            <div className="flip-face relative overflow-hidden" style={{ background: '#000' }}>
               <img
                 src={`${guide.cardBack}?v=${guide.cardBackVersion}`}
                 alt=""
-                className="w-full h-full object-cover"
-                style={{ imageRendering: 'auto' }}
+                className="dither-img w-full h-full object-cover"
+                style={{ imageRendering: 'pixelated' }}
               />
-              {/* пастельный отсвет на рубашке */}
+              {/* subtle accent overlay on back */}
               <div
                 className="absolute inset-0 pointer-events-none"
-                style={{ background: `radial-gradient(ellipse at center, ${guide.accentDim} 0%, transparent 70%)` }}
+                style={{ background: `radial-gradient(ellipse at center, ${guide.accentDim} 0%, transparent 65%)` }}
               />
             </div>
 
-            {/* ── лицо: HQ гравюра + динамический акцент проводницы ── */}
-            <div className="flip-face flip-back scan-soft relative overflow-hidden" style={{ background: 'var(--paper-bright)' }}>
+            {/* ── face-up: card art with flip-glitch ── */}
+            <div className="flip-face flip-back bg-white scan-soft relative overflow-hidden">
               <img
                 src={card.image_url}
                 alt={card.name}
-                loading="eager"
-                className={`dither-img w-full h-full object-cover flip-glitch ${card.is_reversed ? 'rotate-180' : ''}`}
+                className={`dither-img w-full h-full object-cover crt-distort flip-glitch ${card.is_reversed ? 'rotate-180' : ''}`}
               />
-              {/* динамический акцент проводницы — едва заметная тонировка */}
-              <div
-                className="card-tint"
-                style={{ backgroundColor: guide.accent }}
-                aria-hidden="true"
-              />
-              {/* перевернутая карта — шильдик */}
+              {/* reversed marker — pixel inversion hint */}
               {card.is_reversed && (
-                <span className="absolute top-2 right-2 rev-chip z-10" aria-hidden="true">
-                  ⇅ ПЕР.
+                <span
+                  className="absolute top-1 right-1 font-pixel text-[7px] tracking-wider z-10"
+                  style={{ color: guide.accent, textShadow: '0 0 3px #000' }}
+                  aria-hidden="true"
+                >
+                  ⧖
                 </span>
               )}
             </div>
           </div>
 
-          {/* ── вспышка-мерцание при перевороте ── */}
+          {/* ── burst flash — accent glow on flip ── */}
           <div className="burst-flash" aria-hidden="true" />
 
-          {/* ── разлетающиеся дизер-точечки ── */}
+          {/* ── burst particles — per-guide symbols fly outward ── */}
           <div className="burst-layer" aria-hidden="true">
-            {burstDots.map((p, i) => {
+            {burstParticles.map((p, i) => {
               const dx = Math.cos(p.angle) * p.distance;
               const dy = Math.sin(p.angle) * p.distance;
               return (
@@ -219,15 +237,18 @@ export default function Card({
                   key={i}
                   className="burst-particle"
                   style={{
-                    color: guide.accent,
-                    width: `${p.size}px`,
-                    height: `${p.size}px`,
+                    color: p.isAccent ? guide.accent : '#fff',
+                    fontSize: `${p.size}px`,
+                    textShadow: `0 0 4px ${p.isAccent ? guide.accentDim : 'rgba(255,255,255,0.4)'}, 0 0 8px ${guide.accentDim}`,
                     '--bx': `${dx}px`,
                     '--by': `${dy}px`,
+                    '--brot': `${p.rot}deg`,
                     '--bdur': `${p.dur}s`,
                     '--bdelay': `${p.delay}s`,
                   } as React.CSSProperties}
-                />
+                >
+                  {p.ch}
+                </span>
               );
             })}
           </div>
@@ -235,15 +256,19 @@ export default function Card({
       </div>
 
       <div
-        className="font-serif text-[14px] font-bold text-center min-h-[1.4em] leading-snug tracking-wide"
-        style={{
-          color: guide.accentDeep,
-          textShadow: '0 1px 2px rgba(242, 240, 244, 0.92), 0 0 1px rgba(55, 58, 77, 0.18)',
-        }}
+        className={`card-name-json ${raised ? 'text-white' : 'text-white/55'}`}
       >
-        {flipped
-          ? `${card.name}${card.is_reversed ? ' · перев.' : ''}`
-          : ''}
+        {flipped ? (
+          <>
+            <span className="cn-punct">&quot;</span>
+            {card.name}
+            <span className="cn-punct">&quot;</span>
+            {card.is_reversed && (
+              <span className="cn-rev" title="перевёрнута"> ⤓</span>
+            )}
+            {comma && <span className="cn-punct">,</span>}
+          </>
+        ) : ''}
       </div>
     </div>
   );

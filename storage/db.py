@@ -32,19 +32,6 @@ CREATE TABLE IF NOT EXISTS readings (
 )
 """
 
-_CREATE_FOLLOWUPS_TABLE = """
-CREATE TABLE IF NOT EXISTS followups (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    reading_id INTEGER NOT NULL,
-    user_id INTEGER NOT NULL,
-    question TEXT NOT NULL,
-    answer TEXT NOT NULL,
-    created_at TEXT NOT NULL DEFAULT (datetime('now')),
-    FOREIGN KEY (reading_id) REFERENCES readings(id),
-    FOREIGN KEY (user_id) REFERENCES users(id)
-)
-"""
-
 
 _db_connection: Optional[aiosqlite.Connection] = None
 
@@ -54,10 +41,6 @@ async def _migrate_schema(db: aiosqlite.Connection) -> None:
     migrations = [
         "ALTER TABLE users ADD COLUMN subscription_end TEXT",
         "ALTER TABLE users ADD COLUMN first_month_done INTEGER DEFAULT 0",
-        "ALTER TABLE users ADD COLUMN reminders_enabled INTEGER DEFAULT 1",
-        "ALTER TABLE users ADD COLUMN last_sub_reminder_end TEXT",
-        "CREATE INDEX IF NOT EXISTS idx_readings_user_date ON readings(user_id, created_at)",
-        "CREATE INDEX IF NOT EXISTS idx_readings_user_char ON readings(user_id, character_id, id)",
     ]
     for sql in migrations:
         try:
@@ -77,7 +60,6 @@ async def init_db(db_path: str = "taro_bot.db") -> aiosqlite.Connection:
     await conn.execute("PRAGMA foreign_keys=ON")
     await conn.execute(_CREATE_USERS_TABLE)
     await conn.execute(_CREATE_READINGS_TABLE)
-    await conn.execute(_CREATE_FOLLOWUPS_TABLE)
     await _migrate_schema(conn)
     await conn.commit()
     _db_connection = conn
@@ -230,93 +212,6 @@ async def get_user_readings_by_month(
     return result
 
 
-async def get_reading_by_id(db: aiosqlite.Connection, reading_id: int) -> Optional[Reading]:
-    """Load one reading by id (with owner's user_id for access checks)."""
-    cursor = await db.execute(
-        "SELECT id, user_id, type, question, cards_data, interpretation, character_id, created_at FROM readings WHERE id = ?",
-        (reading_id,),
-    )
-    row = await cursor.fetchone()
-    if row is None:
-        return None
-    return Reading(
-        id=row[0],
-        user_id=row[1],
-        type=row[2],
-        question=row[3],
-        cards_data=json.loads(row[4]),
-        interpretation=json.loads(row[5]),
-        character_id=row[6],
-        created_at=row[7],
-    )
-
-
-async def save_followup(
-    db: aiosqlite.Connection,
-    reading_id: int,
-    user_id: int,
-    question: str,
-    answer: str,
-) -> None:
-    """Save a follow-up Q&A tied to a reading."""
-    await db.execute(
-        "INSERT INTO followups (reading_id, user_id, question, answer) VALUES (?, ?, ?, ?)",
-        (reading_id, user_id, question, answer),
-    )
-    await db.commit()
-
-
-async def get_followups(
-    db: aiosqlite.Connection,
-    reading_id: int,
-    limit: int = 20,
-) -> list[dict]:
-    """Return follow-up Q&A list for a reading, oldest first."""
-    cursor = await db.execute(
-        "SELECT question, answer FROM followups WHERE reading_id = ? ORDER BY id LIMIT ?",
-        (reading_id, limit),
-    )
-    rows = await cursor.fetchall()
-    return [{"question": r[0], "answer": r[1]} for r in rows]
-
-
-async def count_followups(db: aiosqlite.Connection, reading_id: int) -> int:
-    cursor = await db.execute(
-        "SELECT COUNT(*) FROM followups WHERE reading_id = ?",
-        (reading_id,),
-    )
-    row = await cursor.fetchone()
-    return row[0]
-
-
-async def get_recent_guide_texts(
-    db: aiosqlite.Connection,
-    user_id: int,
-    character_id: str,
-    limit: int = 3,
-    exclude_reading_id: int | None = None,
-) -> list[str]:
-    """Recent intro/advice fragments by this character for anti-repetition prompts."""
-    cursor = await db.execute(
-        """SELECT interpretation FROM readings
-           WHERE user_id = ? AND character_id = ? AND id != ?
-           ORDER BY id DESC LIMIT ?""",
-        (user_id, character_id, exclude_reading_id or -1, limit),
-    )
-    rows = await cursor.fetchall()
-    fragments: list[str] = []
-    for (raw,) in rows:
-        try:
-            interp = json.loads(raw) if raw else {}
-        except (json.JSONDecodeError, TypeError):
-            continue
-        for key in ("intro", "advice"):
-            v = interp.get(key)
-            if isinstance(v, str) and v.strip():
-                fragments.append(v.strip())
-    return fragments
-
-
 async def update_character(db: aiosqlite.Connection, tg_id: int, character_id: str) -> None:
     """Update the selected character for a user."""
     await db.execute(
@@ -339,10 +234,9 @@ async def get_inactive_users(
     db: aiosqlite.Connection,
     days: int = 3,
 ) -> list[User]:
-    """Users inactive for `days`, who have not opted out of reminders."""
+    """Return users who have been inactive for at least the given number of days."""
     cursor = await db.execute(
-        "SELECT id, tg_id, character_id, created_at, last_active_at, last_reminder_sent_at FROM users "
-        "WHERE last_active_at < datetime('now', ?) AND reminders_enabled = 1",
+        "SELECT id, tg_id, character_id, created_at, last_active_at, last_reminder_sent_at FROM users WHERE last_active_at < datetime('now', ?)",
         (f"-{days} days",),
     )
     rows = await cursor.fetchall()
@@ -369,11 +263,7 @@ async def update_reminder_sent(db: aiosqlite.Connection, tg_id: int) -> None:
 
 
 async def is_subscribed(db: aiosqlite.Connection, tg_id: int) -> bool:
-    """Check if user has active subscription (not expired).
-
-    subscription_end хранится в формате sqlite datetime('now') —
-    "YYYY-MM-DD HH:MM:SS" (UTC). Сравниваем в том же формате.
-    """
+    """Check if user has active subscription (not expired)."""
     cursor = await db.execute(
         "SELECT subscription_end FROM users WHERE tg_id = ?",
         (tg_id,),
@@ -381,37 +271,7 @@ async def is_subscribed(db: aiosqlite.Connection, tg_id: int) -> bool:
     row = await cursor.fetchone()
     if row is None or row[0] is None:
         return False
-    end = str(row[0]).replace("T", " ")
-    return end > datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
-
-
-async def set_reminders_enabled(db: aiosqlite.Connection, tg_id: int, enabled: bool) -> None:
-    """Opt-in/opt-out of gentle re-engagement reminders."""
-    await db.execute(
-        "UPDATE users SET reminders_enabled = ? WHERE tg_id = ?",
-        (1 if enabled else 0, tg_id),
-    )
-    await db.commit()
-
-
-async def get_reminders_enabled(db: aiosqlite.Connection, tg_id: int) -> bool:
-    cursor = await db.execute(
-        "SELECT reminders_enabled FROM users WHERE tg_id = ?",
-        (tg_id,),
-    )
-    row = await cursor.fetchone()
-    if row is None or row[0] is None:
-        return True
-    return bool(row[0])
-
-
-async def set_last_sub_reminder_end(db: aiosqlite.Connection, tg_id: int, sub_end: str) -> None:
-    """Persist which subscription_end we already reminded about (no dup after restart)."""
-    await db.execute(
-        "UPDATE users SET last_sub_reminder_end = ? WHERE tg_id = ?",
-        (sub_end, tg_id),
-    )
-    await db.commit()
+    return row[0] > datetime.utcnow().isoformat()[:19]
 
 
 async def get_daily_non_daily_count(db: aiosqlite.Connection, user_id: int) -> int:

@@ -3,17 +3,17 @@ import Script from 'next/script';
 
 export default function Document() {
   return (
-    <Html lang="ru" style={{ background: '#F2F0F4' }}>
+    <Html lang="ru" className="bg-black">
       <Head>
-        <meta name="theme-color" content="#F2F0F4" />
+        <meta name="theme-color" content="#000000" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=Manrope:wght@400;500;600;700;800&family=Pixelify+Sans:wght@400;600&display=swap"
+          href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,500&display=swap"
           rel="stylesheet"
         />
       </Head>
-      <body style={{ background: '#F2F0F4', color: '#373A4D' }}>
+      <body className="font-mono text-white flex flex-col">
         <Main />
         <NextScript />
         <Script

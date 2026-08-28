@@ -1,6 +1,5 @@
 .sisyphus/
 .env
-.env.local
 web/node_modules/
 web/.next/
 /webapp/
@@ -21,4 +20,3 @@ build/
 static/default/
 art_references/
 temp/
-.omo/
