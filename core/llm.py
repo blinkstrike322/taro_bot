@@ -21,15 +21,13 @@ ZEN_URL = "https://opencode.ai/zen/v1/chat/completions"
 def _zen_key() -> str | None:
     return settings.OPENCODE_ZEN_KEY or None
 
-# Primary — DeepSeek Flash via OpenCode Zen
-PRIMARY_MODEL = "deepseek-v4-flash-free"
+# Primary — Ling via OpenCode Zen (DeepSeek free was retired by provider)
+PRIMARY_MODEL = "ling-3.0-flash-fin-free"
 
 # Zen free-tier fallbacks (in order)
 ZEN_FALLBACKS = [
-    "deepseek-v4-flash-free",
-    "nemotron-3-ultra-free",
-    "north-mini-code-free",
-    "mimo-v2.5-free",
+    "laguna-s-2.1-free",
+    "hy3-free",
 ]
 
 # OpenRouter fallbacks (kept as last resort)
