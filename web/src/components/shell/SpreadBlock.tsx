@@ -16,6 +16,8 @@ interface SpreadBlockProps {
   singleLabel?: string;
   /** фоновый шёпот уже доставлен из канала */
   whisperReady?: boolean;
+  /** проводник — определяет цвет ауры/уголков карт */
+  characterId?: string;
   onFlip: (index: number) => void;
 }
 
@@ -26,7 +28,7 @@ const OFFSETS = [
   { x: -3, y: -4 },
 ];
 
-export default function SpreadBlock({ cards, flipped, count, singleLabel, whisperReady, onFlip }: SpreadBlockProps) {
+export default function SpreadBlock({ cards, flipped, count, singleLabel, whisperReady, characterId, onFlip }: SpreadBlockProps) {
   if (count === 3) {
     const allFlipped = flipped.every(Boolean);
     return (
@@ -43,6 +45,7 @@ export default function SpreadBlock({ cards, flipped, count, singleLabel, whispe
               raised
               flipped={flipped[1]}
               onFlip={() => onFlip(1)}
+              characterId={characterId}
               floatSeed={11}
             />
           </div>
@@ -57,6 +60,7 @@ export default function SpreadBlock({ cards, flipped, count, singleLabel, whispe
                 position={POSITIONS3[0]}
                 flipped={flipped[0]}
                 onFlip={() => onFlip(0)}
+                characterId={characterId}
                 floatSeed={2}
               />
             </div>
@@ -69,6 +73,7 @@ export default function SpreadBlock({ cards, flipped, count, singleLabel, whispe
                 position={POSITIONS3[2]}
                 flipped={flipped[2]}
                 onFlip={() => onFlip(2)}
+                characterId={characterId}
                 comma={false}
                 floatSeed={23}
               />
@@ -98,6 +103,7 @@ export default function SpreadBlock({ cards, flipped, count, singleLabel, whispe
           position={singleLabel}
           flipped={isFlipped}
           onFlip={() => onFlip(0)}
+          characterId={characterId}
           comma={false}
           floatSeed={7}
         />

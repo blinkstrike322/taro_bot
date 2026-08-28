@@ -146,6 +146,7 @@ export default function Shell({
               count={1}
               singleLabel="карта дня"
               whisperReady={entry.whisperReady}
+              characterId={characterId}
               onFlip={(i) => onFlip(entry.id, i)}
             />
           </div>
@@ -159,6 +160,7 @@ export default function Shell({
               flipped={entry.flipped}
               count={entry.count}
               whisperReady={entry.whisperReady}
+              characterId={characterId}
               onFlip={(i) => onFlip(entry.id, i)}
             />
           </div>

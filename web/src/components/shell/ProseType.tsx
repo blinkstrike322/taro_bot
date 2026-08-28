@@ -6,8 +6,9 @@
 // мигающий блок-курсор, открывающая кавычка ждёт текст.
 // Когда допечатал — может включить мерцание фосфора (shimmer).
 // ─────────────────────────────────────────────────────────────
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { sType } from '@/lib/sound';
+import { joinedParagraphs } from '@/lib/prose';
 
 interface ProseTypeProps {
   text: string;
@@ -36,8 +37,9 @@ function charDelay(ch: string): number {
 
 // сколько займёт печать строки (мс) — для оркестратора
 export function proseDuration(text: string, speed = 15): number {
-  let ms = text.length * (speed + 4);
-  for (const ch of text) ms += charDelay(ch);
+  const target = joinedParagraphs(text);
+  let ms = target.length * (speed + 4);
+  for (const ch of target) ms += charDelay(ch);
   return ms + 90;
 }
 
@@ -54,11 +56,12 @@ export default function ProseType({
 }: ProseTypeProps) {
   const [n, setN] = useState(0);
   const doneRef = useRef(false);
+  const target = useMemo(() => joinedParagraphs(text), [text]);
 
   useEffect(() => {
     setN(0);
     doneRef.current = false;
-    if (!text) {
+    if (!target) {
       onDone?.();
       return;
     }
@@ -68,24 +71,24 @@ export default function ProseType({
       i += 1;
       setN(i);
       if (sound) sType();
-      if (i >= text.length) {
+      if (i >= target.length) {
         doneRef.current = true;
         onDone?.();
         return;
       }
-      t = setTimeout(step, speed + charDelay(text[i - 1]) + Math.random() * 8);
+      t = setTimeout(step, speed + charDelay(target[i - 1]) + Math.random() * 8);
     };
     t = setTimeout(step, startDelay);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [text, startDelay, speed]);
+  }, [target, startDelay, speed]);
 
-  const done = n >= text.length;
+  const done = n >= target.length;
 
   return (
     <span className={`j-prose ${className ?? ''}`} style={style}>
       {'"'}
-      <span className={done && shimmer ? 'j-shimmer' : undefined}>{text.slice(0, n)}</span>
+      <span className={done && shimmer ? 'j-shimmer' : undefined}>{target.slice(0, n)}</span>
       {!done && <span className="prose-cursor" aria-hidden="true">▊</span>}
       {done && '"'}
       {done && tail && <span className="j-punct">{tail}</span>}
