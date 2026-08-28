@@ -9,6 +9,7 @@
 import { getGuide } from '@/lib/guides';
 import type { TarotCard } from './Card';
 import ProseType, { proseDuration } from './shell/ProseType';
+import { joinedParagraphs } from '@/lib/prose';
 
 interface Interpretation {
   intro: string;
@@ -203,7 +204,7 @@ export default function ReadingResult({
                   className="json-line"
                   style={{ '--jl-delay': `${tMeanings + 110 + i * 110}ms` } as React.CSSProperties}
                 >
-                  {'    '}<span className="j-str j-multiline text-white/80">&quot;{m}&quot;</span>
+                  {'    '}<span className="j-str j-multiline text-white/80">&quot;{joinedParagraphs(m)}&quot;</span>
                   <P>{i < meanings.length - 1 ? ',' : ''}</P>
                 </div>
               ))}
