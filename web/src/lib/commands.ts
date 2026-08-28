@@ -12,6 +12,7 @@ export type Cmd =
   | { kind: 'history' }
   | { kind: 'help' }
   | { kind: 'clear' }
+  | { kind: 'sound' }
   | { kind: 'whoami' }
   | { kind: 'uname' }
   | { kind: 'date' }
@@ -105,6 +106,11 @@ export function parseCommand(rawInput: string): Cmd | null {
     case 'log':
     case 'лог':
       return { kind: 'history' };
+
+    case 'sound':
+    case 'звук':
+    case 'аудио':
+      return { kind: 'sound' };
 
     case '': // bare `taro`
       return { kind: 'unknown', cmd: 'taro' };

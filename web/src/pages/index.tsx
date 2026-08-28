@@ -10,6 +10,7 @@ import Shell, { ShellMode } from '@/components/shell/Shell';
 import { parseCommand } from '@/lib/commands';
 import * as API from '@/lib/api';
 import { getGuide } from '@/lib/guides';
+import * as SFX from '@/lib/sound';
 import {
   Entry, OutLine, HistoryRow, randomWhisper, randomHex, sleep,
 } from '@/lib/transcript';
@@ -30,6 +31,7 @@ export default function Home() {
   const [mode, setMode] = useState<ShellMode>('БУТ');
   const [sessionHex, setSessionHex] = useState('');
   const [scrollTick, setScrollTick] = useState(0);
+  const [soundOn, setSoundOn] = useState(true);
 
   const nidRef = useRef(1);
   const busyRef = useRef(false);
@@ -47,6 +49,8 @@ export default function Home() {
       const stored = localStorage.getItem('taro_character');
       if (stored) setCharacterId(stored);
     } catch {}
+
+    setSoundOn(SFX.loadSoundPref());
 
     API.getCharacter().then((serverId) => {
       if (serverId) {
@@ -70,6 +74,17 @@ export default function Home() {
 
   const pushCmd = useCallback((text: string) => {
     push({ kind: 'cmd', text });
+  }, []);
+
+  // ── звук терминала: вкл/выкл с памятью ──
+  const toggleSound = useCallback(() => {
+    setSoundOn((prev) => {
+      const next = !prev;
+      SFX.setSoundEnabled(next);
+      SFX.saveSoundPref(next);
+      if (next) SFX.sEnter();
+      return next;
+    });
   }, []);
 
   const updateEntry = useCallback((id: number, patch: Partial<Entry>) => {
@@ -110,6 +125,7 @@ export default function Home() {
       });
       setMode('РАСКЛАД');
     } catch (err: any) {
+      SFX.sError();
       push({ kind: 'error', msg: err?.message || 'канал недоступен' });
       setMode('ОЖИДАНИЕ');
     } finally {
@@ -149,6 +165,7 @@ export default function Home() {
       });
       setMode('РАСКЛАД');
     } catch (err: any) {
+      SFX.sError();
       push({ kind: 'error', msg: err?.message || 'канал недоступен' });
       setMode('ОЖИДАНИЕ');
     } finally {
@@ -185,6 +202,7 @@ export default function Home() {
     await echoCmd(`taro guide ${id}`);
     setCharacterId(id);
     try { localStorage.setItem('taro_character', id); } catch {}
+    SFX.sWhisper();
     push({ kind: 'ok', msg: `проводник сменён: ${guide.name} · ${guide.tag}` });
     pushOut([
       { text: `«${guide.greeting}»`, tone: 'comment' },
@@ -258,6 +276,7 @@ export default function Home() {
       { text: '  taro catalog            виды раскладов' },
       { text: '  taro guides             сменить проводника' },
       { text: '  taro history            журнал сеансов' },
+      { text: '  taro sound              звук терминала вкл/выкл' },
       { text: '  clear                   очистить экран' },
       { text: '' },
       { text: 'ОПИСАНИЕ', tone: 'accent' },
@@ -338,6 +357,12 @@ export default function Home() {
           setMode('ОЖИДАНИЕ');
           return;
 
+        case 'sound':
+          await echoCmd('taro sound');
+          toggleSound();
+          setMode('ОЖИДАНИЕ');
+          return;
+
         case 'clear':
           await echoCmd('clear');
           setEntries([]);
@@ -410,7 +435,7 @@ export default function Home() {
           push({ kind: 'json', interpretation: entry.interpretation, cards: [entry.card], question: null, spreadLabel: 'карта дня' });
           pushOut([{ text: randomWhisper(), tone: 'comment' }]);
           setMode('ОЖИДАНИЕ');
-        }, 780);
+        }, 950);
         return prev.map((e) => (e.id === entryId ? ({ ...e, flipped: true } as Entry) : e));
       }
 
@@ -427,7 +452,7 @@ export default function Home() {
               pushOut([{ text: randomWhisper(), tone: 'comment' }]);
               setMode('ОЖИДАНИЕ');
             })();
-          }, 780);
+          }, 950);
         }
         return prev.map((e) => (e.id === entryId ? ({ ...e, flipped } as Entry) : e));
       }
@@ -482,6 +507,8 @@ export default function Home() {
       pendingQuestion={pendingQuestion !== null}
       pendingCards={pendingQuestion?.cards ?? 3}
       bootDone={bootDone}
+      soundOn={soundOn}
+      onToggleSound={toggleSound}
       onBootDone={handleBootDone}
       onRunCmd={(cmd) => executeCommand(cmd)}
       onSubmitInput={handleSubmitInput}
