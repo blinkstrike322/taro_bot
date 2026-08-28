@@ -2,6 +2,11 @@ import type { AppProps } from 'next/app';
 import { useEffect } from 'react';
 import '@/styles/globals.css';
 
+// Dev-only backend mock — strips out of the production export.
+if (process.env.NODE_ENV !== 'production') {
+  require('@/lib/mockApi').installMockApi();
+}
+
 function setAppHeight() {
   const h = window.innerHeight;
   document.documentElement.style.setProperty('--app-height', `${h}px`);

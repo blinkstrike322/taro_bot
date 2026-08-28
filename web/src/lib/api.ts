@@ -2,13 +2,7 @@ const API_BASE = '';
 
 export function getInitData(): string {
   try {
-    // фолбэк ?init_data= — дев-проверка вне Telegram: часть встраиваемых
-    // браузеров подменяет window.Telegram пустым мостом, перетирая мок раннера
-    return (
-      (window as any).Telegram?.WebApp?.initData ||
-      new URLSearchParams(window.location.search).get('init_data') ||
-      ''
-    );
+    return (window as any).Telegram?.WebApp?.initData || '';
   } catch {
     return '';
   }
@@ -31,23 +25,9 @@ export interface Interpretation {
   advice: string;
 }
 
-export interface GuideMood {
-  id: string;
-  name: string;
-}
-
 export interface SpreadResponse {
-  reading_id: number;
   cards: TarotCardData[];
   interpretation: Interpretation;
-  mood?: GuideMood | null;
-  remaining?: number | null;
-  limit?: number | null;
-}
-
-export interface FollowupResponse {
-  answer: string;
-  remaining: number;
 }
 
 export interface ReadingEntry {
@@ -64,47 +44,34 @@ export interface ReadingsResponse {
   readings: ReadingEntry[];
 }
 
-async function postJSON<T>(url: string, body: unknown): Promise<T> {
-  const res = await fetch(`${API_BASE}${url}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) {
-    let msg = 'Ошибка. Попробуй снова.';
-    try {
-      const data = await res.json();
-      if (data?.error) msg = data.error;
-    } catch {}
-    const err = new Error(msg) as Error & { status?: number };
-    err.status = res.status;
-    throw err;
-  }
-  return res.json();
-}
-
 export async function spread(
-  spreadType: 1 | 3 | 'daily',
+  spreadType: 1 | 3,
   question: string | null,
   characterId: string = 'shadow_walker',
 ): Promise<SpreadResponse> {
-  return postJSON('/api/spread', {
-    init_data: getInitData(),
-    spread_type: spreadType,
-    question,
-    character_id: characterId,
+  let initData = '';
+  try {
+    initData = (window as any).Telegram?.WebApp?.initData || '';
+  } catch {}
+  const res = await fetch(`${API_BASE}/api/spread`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      init_data: initData,
+      spread_type: spreadType,
+      question,
+      character_id: characterId,
+    }),
   });
-}
-
-export async function followup(
-  readingId: number,
-  question: string,
-): Promise<FollowupResponse> {
-  return postJSON('/api/followup', {
-    init_data: getInitData(),
-    reading_id: readingId,
-    question,
-  });
+  if (!res.ok) {
+    let msg = 'Spread failed';
+    try {
+      const body = await res.json();
+      if (body?.error) msg = body.error;
+    } catch {}
+    throw new Error(msg);
+  }
+  return res.json();
 }
 
 export async function getCharacter(): Promise<string> {
