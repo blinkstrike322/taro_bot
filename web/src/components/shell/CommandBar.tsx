@@ -6,6 +6,7 @@
 // В режиме вопроса промпт меняется на «вопрос ▸».
 import { useEffect, useRef, useState } from 'react';
 import { shellUser } from '@/lib/commands';
+import { sEnter, sKey } from '@/lib/sound';
 
 interface CommandBarProps {
   characterId: string;
@@ -50,15 +51,19 @@ export default function CommandBar({
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault();
+      sEnter();
       handleSubmit();
     } else if (e.key === 'Escape' && pendingQuestion) {
       e.preventDefault();
       onCancelPending();
+    } else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      sKey();
     }
   };
 
   const runChip = (chip: string) => {
     if (busy) return;
+    sEnter();
     onSubmit(chip);
   };
 

@@ -41,6 +41,7 @@ export default function SpreadBlock({ cards, flipped, count, singleLabel, onFlip
               raised
               flipped={flipped[1]}
               onFlip={() => onFlip(1)}
+              floatSeed={11}
             />
           </div>
           {/* нижний ряд — прошлое + будущее */}
@@ -54,6 +55,7 @@ export default function SpreadBlock({ cards, flipped, count, singleLabel, onFlip
                 position={POSITIONS3[0]}
                 flipped={flipped[0]}
                 onFlip={() => onFlip(0)}
+                floatSeed={2}
               />
             </div>
             <div
@@ -66,6 +68,7 @@ export default function SpreadBlock({ cards, flipped, count, singleLabel, onFlip
                 flipped={flipped[2]}
                 onFlip={() => onFlip(2)}
                 comma={false}
+                floatSeed={23}
               />
             </div>
           </div>
@@ -90,6 +93,7 @@ export default function SpreadBlock({ cards, flipped, count, singleLabel, onFlip
           flipped={isFlipped}
           onFlip={() => onFlip(0)}
           comma={false}
+          floatSeed={7}
         />
       </div>
       {!isFlipped && (

@@ -5,6 +5,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { getGuide } from '@/lib/guides';
 import { randomHex } from '@/lib/transcript';
+import { sBoot } from '@/lib/sound';
 
 interface BootSequenceProps {
   characterId: string;

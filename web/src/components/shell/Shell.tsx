@@ -7,6 +7,7 @@
 //   └ командная строка с чипами
 import { ReactNode, useEffect, useRef, useState } from 'react';
 import CrtOverlay from '@/components/CrtOverlay';
+import CrtNoise from '@/components/CrtNoise';
 import { getGuide } from '@/lib/guides';
 import { shellUser } from '@/lib/commands';
 import type { Entry } from '@/lib/transcript';
@@ -34,6 +35,8 @@ interface ShellProps {
   pendingQuestion: boolean;
   pendingCards: 1 | 3;
   bootDone: boolean;
+  soundOn: boolean;
+  onToggleSound: () => void;
   onBootDone: () => void;
   onRunCmd: (cmd: string) => void;
   onSubmitInput: (value: string) => void;
@@ -56,6 +59,8 @@ export default function Shell({
   pendingQuestion,
   pendingCards,
   bootDone,
+  soundOn,
+  onToggleSound,
   onBootDone,
   onRunCmd,
   onSubmitInput,
@@ -103,7 +108,7 @@ export default function Shell({
           <div key={entry.id} className="prompt-line tl">
             <span className="cd-user">{shellUser(characterId)}</span>
             <span className="cd-path">:~$ </span>
-            <Typewriter text={entry.text} className="cmd-echo" />
+            <Typewriter text={entry.text} className="cmd-echo" sound speedMs={18} />
           </div>
         );
 
@@ -206,8 +211,17 @@ export default function Shell({
     <CrtOverlay>
       <div
         className="shell-root"
-        style={{ '--guide-accent': guide.accent } as React.CSSProperties}
+        style={{
+          '--guide-accent': guide.accent,
+          '--guide-accent-dim': guide.accentDim,
+          '--guide-glow': guide.accentGlow,
+          '--t-bg': guide.bgDeep,
+          '--glow-center': guide.glowCenter,
+        } as React.CSSProperties}
       >
+        {/* ── живое зерно катодной трубки ── */}
+        <CrtNoise />
+
         {/* ── титл-бар терминала ── */}
         <div className="shell-title">
           <span className="st-tab">[ ARCANUM.ocv ]</span>
@@ -236,6 +250,15 @@ export default function Shell({
         <div className="statusline">
           <span className="sl-mode">-- {mode} --</span>
           <span className="sl-mid">сеанс #{sessionHex} · {guide.tag}</span>
+          <button
+            type="button"
+            className={`sl-sound${soundOn ? '' : ' sl-sound--off'}`}
+            onClick={onToggleSound}
+            aria-label={soundOn ? 'выключить звук' : 'включить звук'}
+            title="звук терминала"
+          >
+            ♪
+          </button>
           <span className="sl-right">utf-8 · ru · {clock}</span>
         </div>
 

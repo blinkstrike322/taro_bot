@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo } from 'react';
 import { getGuide } from '@/lib/guides';
+import { sFlip, sReveal } from '@/lib/sound';
 
 export interface TarotCard {
   id: string;
@@ -20,6 +21,8 @@ interface CardProps {
   characterId?: string;
   /** print trailing comma after the JSON value (last card in array may drop it) */
   comma?: boolean;
+  /** зерно левитации — у каждой карты свой ритм */
+  floatSeed?: number;
 }
 
 function pseudoRand(seed: number): number {
@@ -102,6 +105,7 @@ export default function Card({
   flipped = false,
   characterId,
   comma = true,
+  floatSeed = 0,
 }: CardProps) {
   const guide = getGuide(characterId);
 
@@ -111,6 +115,8 @@ export default function Card({
       const tg = (window as any).Telegram?.WebApp;
       tg?.HapticFeedback?.impactOccurred('medium');
     } catch {}
+    sFlip();
+    setTimeout(sReveal, 380);
     onFlip?.();
   }, [flipped, onFlip]);
 
@@ -123,6 +129,13 @@ export default function Card({
     () => makeBurstParticles(guide.auraAlphabet, 18),
     [guide.auraAlphabet],
   );
+
+  // ритм левитации — псевдослучайный, но стабильный между рендерами
+  const floatVars = useMemo(() => ({
+    '--fdur': `${(4.9 + pseudoRand(floatSeed * 29 + 3) * 2.2).toFixed(2)}s`,
+    '--fdel': `${(-pseudoRand(floatSeed * 31 + 7) * 3.6).toFixed(2)}s`,
+    '--sdur': `${(6.2 + pseudoRand(floatSeed * 37 + 11) * 2.6).toFixed(2)}s`,
+  } as React.CSSProperties), [floatSeed]);
 
   return (
     <div className="flex flex-col items-center gap-0.5">
@@ -137,7 +150,14 @@ export default function Card({
         </div>
       )}
 
-      <div className="relative w-full" style={{ '--guide-accent': guide.accent } as React.CSSProperties}>
+      <div
+        className={`relative w-full card-float${flipped ? ' card-float--rest' : ''}`}
+        style={{
+          '--guide-accent': guide.accent,
+          '--guide-accent-dim': guide.accentDim,
+          ...floatVars,
+        } as React.CSSProperties}
+      >
         {/* ── per-guide accent aura ── */}
         <div
           className={`card-aura ${flipped ? 'card-aura--expanded' : ''}`}
@@ -183,12 +203,7 @@ export default function Card({
             {guide.cornerSymbols.br}
           </span>
 
-          <div
-            className="flip-inner border-2 border-white scan-heavy card-edges"
-            style={{
-              boxShadow: `3px 3px 0 #000, 0 0 0 1px #000, 0 0 6px ${guide.accentDim}`,
-            }}
-          >
+          <div className="flip-inner border-2 border-white scan-heavy card-edges">
             {/* ── face-down: per-guide card back ── */}
             <div className="flip-face relative overflow-hidden" style={{ background: '#000' }}>
               <img
@@ -202,6 +217,8 @@ export default function Card({
                 className="absolute inset-0 pointer-events-none"
                 style={{ background: `radial-gradient(ellipse at center, ${guide.accentDim} 0%, transparent 65%)` }}
               />
+              {/* блик фольги — проходит по рубашке раз в несколько секунд */}
+              <div className="card-sheen" aria-hidden="true" />
             </div>
 
             {/* ── face-up: card art with flip-glitch ── */}
@@ -226,6 +243,9 @@ export default function Card({
 
           {/* ── burst flash — accent glow on flip ── */}
           <div className="burst-flash" aria-hidden="true" />
+
+          {/* ── ударная волна — расширяющееся кольцо при вскрытии ── */}
+          <div className="shockwave" aria-hidden="true" />
 
           {/* ── burst particles — per-guide symbols fly outward ── */}
           <div className="burst-layer" aria-hidden="true">

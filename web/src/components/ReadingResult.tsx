@@ -1,7 +1,14 @@
 'use client';
 
+// ─────────────────────────────────────────────────────────────
+// ReadingResult — JSON-вывод расклада как ответ живого канала.
+// Структура печатается построчно, а проза — посимвольно:
+// шёпот → ответ (с мерцанием фосфора) → значения → совет.
+// Оркестрация через вычисленную временную шкалу.
+// ─────────────────────────────────────────────────────────────
 import { getGuide } from '@/lib/guides';
 import type { TarotCard } from './Card';
+import ProseType, { proseDuration } from './shell/ProseType';
 
 interface Interpretation {
   intro: string;
@@ -30,6 +37,9 @@ function hexToRgba(hex: string, alpha: number): string {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
+const TYPE_SPEED = 15; // мс/символ прозаических значений
+const LINE_STEP = 65;  // мс между строками структуры
+
 /* ── tiny JSON token components ── */
 const P = ({ children }: { children: React.ReactNode }) => <span className="j-punct">{children}</span>;
 const K = ({ children, glow }: { children: React.ReactNode; glow?: boolean }) => (
@@ -45,13 +55,29 @@ export default function ReadingResult({
 }: ReadingResultProps) {
   const { intro, short_answer, card_meaning, advice } = interpretation;
   const guide = getGuide(characterId);
-  const adviceColor = hexToRgba(guide.accent, 0.75);
+  const adviceColor = hexToRgba(guide.accent, 0.78);
   const adviceGlow = `0 0 4px ${hexToRgba(guide.accent, 0.30)}, 0 0 8px ${hexToRgba(guide.accent, 0.15)}`;
 
   const meanings = Array.isArray(card_meaning) ? card_meaning : (card_meaning ? [card_meaning] : []);
+
+  // ── временная шкала: структура → шёпот → ответ → значения → совет ──
+  const headerLineCount =
+    1 + // {
+    1 + // сеанс
+    (question != null ? 1 : 0) +
+    1 + // проводник
+    (cards && cards.length > 0 ? 2 + cards.length : 0); // карты: [ ... ]
+
+  const tHeader = headerLineCount * LINE_STEP + 90;
+  const tWhisper = tHeader;
+  const tAnswer = tWhisper + (intro ? proseDuration(intro, TYPE_SPEED) : 0);
+  const tMeanings = tAnswer + proseDuration(short_answer, TYPE_SPEED);
+  const tAdvice = tMeanings + meanings.length * 110 + 150;
+  const tClose = tAdvice + (advice ? proseDuration(advice, TYPE_SPEED) : 0) + 160;
+
   let delay = 0;
   const next = () => {
-    delay += 70;
+    delay += LINE_STEP;
     return `${delay}ms`;
   };
 
@@ -136,65 +162,83 @@ export default function ReadingResult({
             </>
           )}
 
-          {/* "шёпот": intro */}
+          {/* "шёпот": intro — печатается посимвольно */}
           {intro && (
-            <div className="json-line" style={{ '--jl-delay': next() } as React.CSSProperties}>
+            <div className="json-line" style={{ '--jl-delay': `${tWhisper}ms` } as React.CSSProperties}>
               {'  '}<K glow>шёпот</K><P>: </P>
-              <span className="j-str j-multiline italic text-white/60">&quot;{intro}&quot;</span><P>,</P>
+              <ProseType
+                text={intro}
+                startDelay={tWhisper}
+                speed={TYPE_SPEED}
+                tail=","
+                className="j-str j-multiline italic"
+                style={{ color: 'rgba(236, 233, 246, 0.62)' }}
+              />
             </div>
           )}
 
-          {/* "ответ": short answer — the bright one */}
-          <div className="json-line" style={{ '--jl-delay': next() } as React.CSSProperties}>
+          {/* "ответ": short answer — яркая строка с мерцанием фосфора */}
+          <div className="json-line" style={{ '--jl-delay': `${tAnswer}ms` } as React.CSSProperties}>
             {'  '}<K glow>ответ</K><P>: </P>
-            <span className="j-str j-multiline text-[14px] font-medium text-white">&quot;{short_answer}&quot;</span>
-            {meanings.length > 0 || advice ? <P>,</P> : null}
+            <ProseType
+              text={short_answer}
+              startDelay={tAnswer}
+              speed={TYPE_SPEED}
+              tail={meanings.length > 0 || advice ? ',' : undefined}
+              shimmer
+              className="j-str j-multiline text-[14px] font-medium"
+              style={{ color: '#ffffff' }}
+            />
           </div>
 
           {/* "значения": [ ... ] */}
           {meanings.length > 0 && (
             <>
-              <div className="json-line" style={{ '--jl-delay': next() } as React.CSSProperties}>
+              <div className="json-line" style={{ '--jl-delay': `${tMeanings}ms` } as React.CSSProperties}>
                 {'  '}<K>значения</K><P>: [</P>
               </div>
               {meanings.map((m, i) => (
                 <div
                   key={i}
                   className="json-line"
-                  style={{ '--jl-delay': next() } as React.CSSProperties}
+                  style={{ '--jl-delay': `${tMeanings + 110 + i * 110}ms` } as React.CSSProperties}
                 >
                   {'    '}<span className="j-str j-multiline text-white/80">&quot;{m}&quot;</span>
                   <P>{i < meanings.length - 1 ? ',' : ''}</P>
                 </div>
               ))}
-              <div className="json-line" style={{ '--jl-delay': next() } as React.CSSProperties}>
+              <div className="json-line" style={{ '--jl-delay': `${tMeanings + 110 + meanings.length * 110}ms` } as React.CSSProperties}>
                 {'  '}<P>]{advice ? ',' : ''}</P>
               </div>
             </>
           )}
 
-          {/* "совет": advice — accent + glow */}
+          {/* "совет": advice — акцентный, печатается посимвольно */}
           {advice && (
-            <div className="json-line" style={{ '--jl-delay': next() } as React.CSSProperties}>
+            <div className="json-line" style={{ '--jl-delay': `${tAdvice}ms` } as React.CSSProperties}>
               {'  '}<K glow>совет</K><P>: </P>
-              <span
+              <ProseType
+                text={advice}
+                startDelay={tAdvice}
+                speed={TYPE_SPEED}
                 className="j-str j-multiline text-[14px] font-medium"
                 style={{ color: adviceColor, textShadow: adviceGlow }}
-              >
-                &quot;{advice}&quot;
-              </span>
+              />
             </div>
           )}
 
           {/* } */}
-          <div className="json-line" style={{ '--jl-delay': next() } as React.CSSProperties}>
+          <div className="json-line" style={{ '--jl-delay': `${tClose}ms` } as React.CSSProperties}>
             <P>{'}'}</P>
           </div>
         </div>
       </div>
 
       {/* exit status */}
-      <div className="term-exit mt-1.5 flex items-center justify-between">
+      <div
+        className="term-exit mt-1.5 flex items-center justify-between exit-flash"
+        style={{ animationDelay: `${tClose + 100}ms` }}
+      >
         <span><span className="te-ok">✓</span> расклад завершён</span>
         <span>exit 0</span>
       </div>
