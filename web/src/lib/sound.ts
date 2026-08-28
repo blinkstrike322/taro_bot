@@ -10,6 +10,7 @@ let master: GainNode | null = null;
 let noiseBuf: AudioBuffer | null = null;
 let enabled = true;
 let lastKeyAt = 0;
+let lastTypeAt = 0;
 
 function ensure(): boolean {
   if (typeof window === 'undefined') return false;
@@ -103,6 +104,27 @@ export function sKey() {
   bp.Q.value = 7;
   const g = c.createGain();
   env(c, g, t0, 0.001, 0.10, 0.045);
+  src.connect(bp).connect(g).connect(m);
+  src.start(t0);
+  src.stop(t0 + 0.09);
+}
+
+// ── печать вывода: мягкий тик телетайпа — тише и ниже клавиши ──
+export function sType() {
+  const a = ok();
+  if (!a) return;
+  const now = performance.now();
+  if (now - lastTypeAt < 64) return; // стрекота не будет — спокойный ритм
+  lastTypeAt = now;
+  const { c, m } = a;
+  const t0 = c.currentTime;
+  const src = noise(c);
+  const bp = c.createBiquadFilter();
+  bp.type = 'bandpass';
+  bp.frequency.value = 640 + Math.random() * 380;
+  bp.Q.value = 4.5;
+  const g = c.createGain();
+  env(c, g, t0, 0.002, 0.05, 0.05);
   src.connect(bp).connect(g).connect(m);
   src.start(t0);
   src.stop(t0 + 0.09);

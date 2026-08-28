@@ -30,6 +30,20 @@ export interface SpreadResponse {
   interpretation: Interpretation;
 }
 
+/** Phase 1 of the two-phase spread: cards at once, LLM whisper in background. */
+export interface SpreadBeginResponse {
+  cards: TarotCardData[];
+  token: string;
+  remaining?: number;
+  limit?: number;
+}
+
+export interface SpreadPollResponse {
+  ready: boolean;
+  interpretation?: Interpretation;
+  error?: string;
+}
+
 export interface ReadingEntry {
   id: number;
   type: string;
@@ -44,15 +58,20 @@ export interface ReadingsResponse {
   readings: ReadingEntry[];
 }
 
+function telegramInitData(): string {
+  try {
+    return (window as any).Telegram?.WebApp?.initData || '';
+  } catch {
+    return '';
+  }
+}
+
 export async function spread(
   spreadType: 1 | 3,
   question: string | null,
   characterId: string = 'shadow_walker',
 ): Promise<SpreadResponse> {
-  let initData = '';
-  try {
-    initData = (window as any).Telegram?.WebApp?.initData || '';
-  } catch {}
+  const initData = telegramInitData();
   const res = await fetch(`${API_BASE}/api/spread`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -72,6 +91,59 @@ export async function spread(
     throw new Error(msg);
   }
   return res.json();
+}
+
+/** Двухфазный расклад: карты сразу, толкование — фоновым шёпотом. */
+export async function spreadBegin(
+  spreadType: 1 | 3,
+  question: string | null,
+  characterId: string = 'shadow_walker',
+): Promise<SpreadBeginResponse> {
+  const initData = telegramInitData();
+  const res = await fetch(`${API_BASE}/api/spread/begin`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      init_data: initData,
+      spread_type: spreadType,
+      question,
+      character_id: characterId,
+    }),
+  });
+  if (!res.ok) {
+    let msg = 'Spread failed';
+    try {
+      const body = await res.json();
+      if (body?.error) msg = body.error;
+    } catch {}
+    throw new Error(msg);
+  }
+  return res.json();
+}
+
+export async function spreadPoll(token: string): Promise<SpreadPollResponse> {
+  const res = await fetch(`${API_BASE}/api/spread/poll?token=${encodeURIComponent(token)}`);
+  if (!res.ok) throw new Error('канал прерван');
+  return res.json();
+}
+
+/** Ждать шёпот: поллит до готовности, пока оператор вскрывает карты. */
+export async function pollInterpretation(
+  token: string,
+  timeoutMs = 180000,
+  intervalMs = 1500,
+): Promise<Interpretation> {
+  const t0 = Date.now();
+  for (;;) {
+    const res = await spreadPoll(token);
+    if (res.ready) {
+      if (res.error) throw new Error(res.error);
+      if (res.interpretation) return res.interpretation;
+      throw new Error('шёпот вернулся пустым');
+    }
+    if (Date.now() - t0 > timeoutMs) throw new Error('канал молчит слишком долго');
+    await new Promise((r) => setTimeout(r, intervalMs));
+  }
 }
 
 export async function getCharacter(): Promise<string> {

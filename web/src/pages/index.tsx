@@ -14,6 +14,7 @@ import * as SFX from '@/lib/sound';
 import {
   Entry, OutLine, HistoryRow, randomWhisper, randomHex, sleep,
 } from '@/lib/transcript';
+import type { Interpretation } from '@/lib/api';
 import { typeDuration } from '@/components/shell/Typewriter';
 
 type PendingQuestion = { cards: 1 | 3 } | null;
@@ -32,11 +33,15 @@ export default function Home() {
   const [sessionHex, setSessionHex] = useState('');
   const [scrollTick, setScrollTick] = useState(0);
   const [soundOn, setSoundOn] = useState(true);
+  /** сколько шёпотов сейчас формируется в канале (для индикатора статус-лайна) */
+  const [whispersActive, setWhispersActive] = useState(0);
 
   const nidRef = useRef(1);
   const busyRef = useRef(false);
   const pendingRef = useRef<PendingQuestion>(null);
   const typeParamRef = useRef<string | null>(null);
+  /** entryId → промис доставленного шёпота (параллельный канал) */
+  const whisperJobsRef = useRef<Map<number, Promise<Interpretation>>>(new Map());
 
   // ── инициализация ──
   useEffect(() => {
@@ -109,21 +114,67 @@ export default function Home() {
   const toTarotCards = (cards: API.TarotCardData[]): API.TarotCardData[] =>
     cards.map((c) => ({ ...c, image_url: `/cards/${c.id}.png` }));
 
+  // ── параллельный шёпот: ЛЛМ работает, пока оператор вскрывает карты ──
+  const startWhisper = useCallback((entryId: number, token: string) => {
+    setWhispersActive((n) => n + 1);
+    const job = API.pollInterpretation(token)
+      .then((interp) => {
+        updateEntry(entryId, { interpretation: interp, whisperReady: true });
+        SFX.sWhisper(); // тихий сигнал: шёпот доставлен
+        return interp;
+      })
+      .finally(() => setWhispersActive((n) => n - 1));
+    whisperJobsRef.current.set(entryId, job);
+    // если оператор так и не вскроет карты — ошибка не должна остаться необработанной
+    job.catch(() => {});
+  }, [updateEntry]);
+
+  // дождаться шёпота к моменту вскрытия: если канал ещё думает — рыщущий бар
+  const resolveWhisper = useCallback(async (
+    entryId: number,
+    cached: Interpretation | null,
+  ): Promise<Interpretation | null> => {
+    if (cached) {
+      whisperJobsRef.current.delete(entryId);
+      return cached;
+    }
+    const job = whisperJobsRef.current.get(entryId);
+    if (!job) return null;
+    const pendingId = push({ kind: 'pending', label: 'расшифровка шёпота' });
+    setMode('ЧТЕНИЕ');
+    try {
+      const interp = await job;
+      setEntries((prev) => prev.filter((e) => e.id !== pendingId));
+      setScrollTick((t) => t + 1);
+      whisperJobsRef.current.delete(entryId);
+      return interp;
+    } catch (err: any) {
+      setEntries((prev) => prev.filter((e) => e.id !== pendingId));
+      setScrollTick((t) => t + 1);
+      SFX.sError();
+      push({ kind: 'error', msg: err?.message || 'шёпот не вернулся' });
+      setMode('ОЖИДАНИЕ');
+      return null;
+    }
+  }, [push]);
+
   // ── флоу: карта дня ──
   const runDaily = useCallback(async () => {
     setBusy(true); busyRef.current = true;
     try {
-      const res = await progressWith('тасование колоды', 950, API.spread(1, null, characterId));
+      const res = await progressWith('тасование колоды', 950, API.spreadBegin(1, null, characterId));
       pushOut([
         { text: 'карта выбрана. коснись, чтобы вскрыть.', tone: 'dim' },
+        { text: 'шёпот канала формируется параллельно', tone: 'comment' },
       ]);
-      push({
+      const entryId = push({
         kind: 'daily',
         card: toTarotCards(res.cards)[0],
         flipped: false,
-        interpretation: res.interpretation,
+        interpretation: null,
       });
       setMode('РАСКЛАД');
+      startWhisper(entryId, res.token);
     } catch (err: any) {
       SFX.sError();
       push({ kind: 'error', msg: err?.message || 'канал недоступен' });
@@ -131,7 +182,7 @@ export default function Home() {
     } finally {
       setBusy(false); busyRef.current = false;
     }
-  }, [characterId, progressWith, push, pushOut]);
+  }, [characterId, progressWith, push, pushOut, startWhisper]);
 
   // ── флоу: расклад с вопросом ──
   const runAsk = useCallback(async (cards: 1 | 3, question: string | null) => {
@@ -144,7 +195,7 @@ export default function Home() {
       if (question) {
         pushOut([{ text: 'вопрос принят · канал стабилен', tone: 'info' }]);
       }
-      const res = await progressWith('тасование колоды', 1100, API.spread(cards, question, characterId));
+      const res = await progressWith('тасование колоды', 1100, API.spreadBegin(cards, question, characterId));
       pushOut([
         {
           text: cards === 3
@@ -152,18 +203,20 @@ export default function Home() {
             : 'раздача: 1 аркан',
           tone: 'dim',
         },
+        { text: 'шёпот канала формируется параллельно', tone: 'comment' },
       ]);
       const spreadCards = toTarotCards(res.cards);
-      push({
+      const entryId = push({
         kind: 'spread',
         cards: spreadCards,
         flipped: spreadCards.map(() => false),
         question,
-        interpretation: res.interpretation,
+        interpretation: null,
         spreadLabel: cards === 3 ? 'три карты' : 'одна карта',
         count: cards,
       });
       setMode('РАСКЛАД');
+      startWhisper(entryId, res.token);
     } catch (err: any) {
       SFX.sError();
       push({ kind: 'error', msg: err?.message || 'канал недоступен' });
@@ -171,7 +224,7 @@ export default function Home() {
     } finally {
       setBusy(false); busyRef.current = false;
     }
-  }, [characterId, echoCmd, progressWith, push, pushOut]);
+  }, [characterId, echoCmd, progressWith, push, pushOut, startWhisper]);
 
   // ── флоу: журнал сеансов ──
   const runHistory = useCallback(async () => {
@@ -365,6 +418,8 @@ export default function Home() {
 
         case 'clear':
           await echoCmd('clear');
+          whisperJobsRef.current.clear();
+          setWhispersActive(0);
           setEntries([]);
           nidRef.current = 1;
           pushOut([
@@ -430,11 +485,15 @@ export default function Home() {
       if (!entry) return prev;
 
       if (entry.kind === 'daily' && !entry.flipped) {
-        // переворот карты дня → печатаем чтение
+        // переворот карты дня → печатаем чтение (шёпот уже должен быть готов)
         setTimeout(() => {
-          push({ kind: 'json', interpretation: entry.interpretation, cards: [entry.card], question: null, spreadLabel: 'карта дня' });
-          pushOut([{ text: randomWhisper(), tone: 'comment' }]);
-          setMode('ОЖИДАНИЕ');
+          (async () => {
+            const interp = await resolveWhisper(entryId, entry.interpretation);
+            if (!interp) return;
+            push({ kind: 'json', interpretation: interp, cards: [entry.card], question: null, spreadLabel: 'карта дня' });
+            pushOut([{ text: randomWhisper(), tone: 'comment' }]);
+            setMode('ОЖИДАНИЕ');
+          })();
         }, 950);
         return prev.map((e) => (e.id === entryId ? ({ ...e, flipped: true } as Entry) : e));
       }
@@ -447,8 +506,10 @@ export default function Home() {
         if (allFlipped) {
           setTimeout(() => {
             (async () => {
+              const interp = await resolveWhisper(entryId, entry.interpretation);
+              if (!interp) return;
               await echoCmd('taro read --json');
-              push({ kind: 'json', interpretation: entry.interpretation, cards: entry.cards, question: entry.question, spreadLabel: entry.spreadLabel });
+              push({ kind: 'json', interpretation: interp, cards: entry.cards, question: entry.question, spreadLabel: entry.spreadLabel });
               pushOut([{ text: randomWhisper(), tone: 'comment' }]);
               setMode('ОЖИДАНИЕ');
             })();
@@ -460,7 +521,7 @@ export default function Home() {
       return prev;
     });
     setScrollTick((t) => t + 1);
-  }, [echoCmd, push, pushOut]);
+  }, [echoCmd, push, pushOut, resolveWhisper]);
 
   // ── выбор проводника из меню ──
   const handleGuideSelect = useCallback((id: string) => {
@@ -509,6 +570,7 @@ export default function Home() {
       bootDone={bootDone}
       soundOn={soundOn}
       onToggleSound={toggleSound}
+      channelBusy={whispersActive > 0}
       onBootDone={handleBootDone}
       onRunCmd={(cmd) => executeCommand(cmd)}
       onSubmitInput={handleSubmitInput}

@@ -28,13 +28,21 @@ export type Entry =
   | { id: number; kind: 'boot' }
   | { id: number; kind: 'motd' }
   | { id: number; kind: 'progress'; label: string; durMs: number }
-  | { id: number; kind: 'daily'; card: TarotCard; flipped: boolean; interpretation: Interpretation }
+  /** неопределённое ожидание шёпота — рыщущий бар, живёт пока канал думает */
+  | { id: number; kind: 'pending'; label: string }
+  | {
+      id: number; kind: 'daily'; card: TarotCard; flipped: boolean;
+      interpretation: Interpretation | null;
+      /** шёпот уже доставлен из канала — можно вскрывать без паузы */
+      whisperReady?: boolean;
+    }
   | {
       id: number; kind: 'spread';
       cards: TarotCard[]; flipped: boolean[];
       question: string | null;
-      interpretation: Interpretation;
+      interpretation: Interpretation | null;
       spreadLabel: string; count: 1 | 3;
+      whisperReady?: boolean;
     }
   | {
       id: number; kind: 'json';

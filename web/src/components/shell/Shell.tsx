@@ -17,6 +17,7 @@ import MotdBlock from './MotdBlock';
 import TuiMenu from './TuiMenu';
 import SpreadBlock from './SpreadBlock';
 import ProgressLine from './ProgressLine';
+import PendingLine from './PendingLine';
 import HistoryBlock from './HistoryBlock';
 import ReadingResult from '@/components/ReadingResult';
 import Typewriter from './Typewriter';
@@ -37,6 +38,8 @@ interface ShellProps {
   bootDone: boolean;
   soundOn: boolean;
   onToggleSound: () => void;
+  /** фоновый шёпот ЛЛМ формируется прямо сейчас */
+  channelBusy: boolean;
   onBootDone: () => void;
   onRunCmd: (cmd: string) => void;
   onSubmitInput: (value: string) => void;
@@ -61,6 +64,7 @@ export default function Shell({
   bootDone,
   soundOn,
   onToggleSound,
+  channelBusy,
   onBootDone,
   onRunCmd,
   onSubmitInput,
@@ -130,6 +134,9 @@ export default function Shell({
       case 'progress':
         return <ProgressLine key={entry.id} label={entry.label} durMs={entry.durMs} />;
 
+      case 'pending':
+        return <PendingLine key={entry.id} label={entry.label} />;
+
       case 'daily':
         return (
           <div key={entry.id} className="entry-pad">
@@ -138,6 +145,7 @@ export default function Shell({
               flipped={[entry.flipped]}
               count={1}
               singleLabel="карта дня"
+              whisperReady={entry.whisperReady}
               onFlip={(i) => onFlip(entry.id, i)}
             />
           </div>
@@ -150,6 +158,7 @@ export default function Shell({
               cards={entry.cards}
               flipped={entry.flipped}
               count={entry.count}
+              whisperReady={entry.whisperReady}
               onFlip={(i) => onFlip(entry.id, i)}
             />
           </div>
@@ -249,7 +258,12 @@ export default function Shell({
         {/* ── vim-статус-лайн ── */}
         <div className="statusline">
           <span className="sl-mode">-- {mode} --</span>
-          <span className="sl-mid">сеанс #{sessionHex} · {guide.tag}</span>
+          <span className="sl-mid">
+            сеанс #{sessionHex} · {guide.tag}
+            {channelBusy && (
+              <span className="sl-busy" aria-hidden="true"> ⌁ шепчет</span>
+            )}
+          </span>
           <button
             type="button"
             className={`sl-sound${soundOn ? '' : ' sl-sound--off'}`}
@@ -268,6 +282,7 @@ export default function Shell({
           busy={busy}
           pendingQuestion={pendingQuestion}
           pendingCards={pendingCards}
+          soundOn={soundOn}
           onSubmit={onSubmitInput}
           onCancelPending={onCancelPending}
         />

@@ -2399,6 +2399,18 @@ div[class*="boot-log"]::-webkit-scrollbar {
   margin-top: 8px;
 }
 
+/* шёпот доставлен — голос системы чуть светится акцентом */
+.spread-hint--ready {
+  color: var(--guide-accent, #c39dff);
+  text-shadow: 0 0 9px var(--guide-accent-dim, transparent);
+  animation: hint-ready-in 0.7s ease-out;
+}
+
+@keyframes hint-ready-in {
+  0%   { opacity: 0; letter-spacing: 0.12em; }
+  100% { opacity: 1; letter-spacing: normal; }
+}
+
 /* ── журнал ── */
 .history-block {
   margin: 4px 0;
@@ -2563,16 +2575,10 @@ div[class*="boot-log"]::-webkit-scrollbar {
 /* ── чипы команд ── */
 .chips-row {
   display: flex;
+  flex-wrap: wrap;
   gap: 6px;
   margin-top: 7px;
-  overflow-x: auto;
-  scrollbar-width: none;
-  -webkit-overflow-scrolling: touch;
   align-items: center;
-}
-
-.chips-row::-webkit-scrollbar {
-  display: none;
 }
 
 .chip {
@@ -2587,7 +2593,7 @@ div[class*="boot-log"]::-webkit-scrollbar {
   font-family: var(--font-pixel);
   font-size: 10.5px;
   letter-spacing: 0.03em;
-  padding: 4px 9px;
+  padding: 4px 8px;
   cursor: pointer;
   white-space: nowrap;
 }
@@ -2605,6 +2611,39 @@ div[class*="boot-log"]::-webkit-scrollbar {
   color: var(--guide-accent, #fff);
 }
 
+/* системные чипы (звук / очистка / справка) — тише и без стрелки,
+   чтобы не спорили с основными командами */
+.chip--sys {
+  color: rgba(255, 255, 255, 0.5);
+  border-color: rgba(255, 255, 255, 0.13);
+  background: transparent;
+}
+
+.chip-icon {
+  color: var(--guide-accent, #fff);
+  opacity: 0.85;
+  font-family: var(--font-mono-crt);
+  font-size: 11px;
+  text-shadow: 0 0 6px var(--guide-accent-dim, transparent);
+}
+
+.chip--muted {
+  color: rgba(255, 255, 255, 0.32);
+}
+
+.chip--muted .chip-icon {
+  color: rgba(255, 255, 255, 0.42);
+  text-shadow: none;
+}
+
+.chips-sep {
+  color: rgba(255, 255, 255, 0.16);
+  font-family: var(--font-pixel);
+  font-size: 10px;
+  margin: 0 1px;
+  user-select: none;
+}
+
 .chip--cancel {
   border-color: var(--t-err, #ff7a7a);
   color: var(--t-err, #ff7a7a);
@@ -2618,6 +2657,79 @@ div[class*="boot-log"]::-webkit-scrollbar {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* ── индикатор живого канала в статус-лайне ── */
+.sl-busy {
+  color: var(--guide-accent, #c39dff);
+  text-shadow: 0 0 6px var(--guide-accent-dim, transparent);
+  animation: sl-busy-pulse 1.6s ease-in-out infinite;
+  white-space: nowrap;
+}
+
+@keyframes sl-busy-pulse {
+  0%, 100% { opacity: 0.4; }
+  50%      { opacity: 1; }
+}
+
+/* ── неопределённое ожидание шёпота: спиннер + рыщущий фосфор ── */
+.pending-line {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 12px;
+  padding: 5px 2px 7px;
+}
+
+.pd-spin {
+  color: var(--guide-accent, #c39dff);
+  text-shadow: 0 0 6px var(--guide-accent-dim, transparent);
+  font-size: 13px;
+  min-width: 15px;
+}
+
+.pd-label {
+  white-space: nowrap;
+}
+
+.pd-track {
+  position: relative;
+  flex: 1;
+  min-width: 56px;
+  max-width: 150px;
+  height: 10px;
+  overflow: hidden;
+  border-radius: 1px;
+}
+
+.pd-track::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(90deg,
+    rgba(255, 255, 255, 0.09) 0 3px, transparent 3px 7px);
+}
+
+.pd-knight {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 36%;
+  border-radius: 1px;
+  background: linear-gradient(90deg,
+    transparent, var(--guide-accent, #c39dff), transparent);
+  box-shadow: 0 0 9px var(--guide-accent-dim, transparent);
+  animation: pd-knight-move 1.5s cubic-bezier(0.45, 0, 0.55, 1) infinite alternate;
+}
+
+@keyframes pd-knight-move {
+  0%   { left: -36%; }
+  100% { left: 100%; }
+}
+
+.pd-dots {
+  animation: blink 1.2s steps(1) infinite;
+  color: rgba(255, 255, 255, 0.4);
 }
 
 /* ── конец скроллбэка ── */
@@ -2676,8 +2788,21 @@ div[class*="boot-log"]::-webkit-scrollbar {
   .card-sheen::before,
   .crt-noise,
   .shell-root,
+  .pd-knight,
+  .pd-dots,
+  .sl-busy,
+  .spread-hint--ready,
   .flip.is-flipped ~ .shockwave {
     animation: none !important;
+  }
+
+  .pd-knight {
+    left: 8%;
+    opacity: 0.7;
+  }
+
+  .sl-busy {
+    opacity: 0.8;
   }
 
   .flip.is-flipped .flip-inner {

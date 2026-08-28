@@ -7,6 +7,7 @@
 // Когда допечатал — может включить мерцание фосфора (shimmer).
 // ─────────────────────────────────────────────────────────────
 import { useEffect, useRef, useState } from 'react';
+import { sType } from '@/lib/sound';
 
 interface ProseTypeProps {
   text: string;
@@ -21,6 +22,8 @@ interface ProseTypeProps {
   tail?: string;
   /** включить shimmer после печати (мерцание фосфора) */
   shimmer?: boolean;
+  /** тикать телетайпом при печати — звук вывода канала */
+  sound?: boolean;
   onDone?: () => void;
 }
 
@@ -46,6 +49,7 @@ export default function ProseType({
   style,
   tail,
   shimmer = false,
+  sound = true,
   onDone,
 }: ProseTypeProps) {
   const [n, setN] = useState(0);
@@ -63,6 +67,7 @@ export default function ProseType({
     const step = () => {
       i += 1;
       setN(i);
+      if (sound) sType();
       if (i >= text.length) {
         doneRef.current = true;
         onDone?.();
