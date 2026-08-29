@@ -12,21 +12,25 @@ interface ProgressLineProps {
 
 export default function ProgressLine({ label, durMs, width = 20 }: ProgressLineProps) {
   const [pct, setPct] = useState(0);
+  // защита от кривого durMs: отрицательное/нулевое/NaN значение не должно
+  // дать filled<0 и уронить '█'.repeat(-1) → RangeError (Android WebView)
+  const safeDur = Number.isFinite(durMs) && durMs > 0 ? durMs : 1500;
+  const w = Math.max(1, Math.floor(width));
 
   useEffect(() => {
     const t0 = performance.now();
     let raf = 0;
     const tick = (t: number) => {
-      const p = Math.min(100, ((t - t0) / durMs) * 100);
+      const p = Math.min(100, ((t - t0) / safeDur) * 100);
       setPct(p);
       if (p < 100) raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [durMs]);
+  }, [safeDur]);
 
-  const filled = Math.round((pct / 100) * width);
-  const bar = '█'.repeat(filled) + '░'.repeat(width - filled);
+  const filled = Math.max(0, Math.min(w, Math.round((pct / 100) * w)));
+  const bar = '█'.repeat(filled) + '░'.repeat(w - filled);
 
   return (
     <div className="pbar tl">

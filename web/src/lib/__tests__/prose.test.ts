@@ -54,4 +54,14 @@ describe('prose / splitParagraphs (Safari-15-безопасно, без lookbehi
     expect(j).toContain('\n\n');
     expect(j.split('\n\n').length).toBe(3);
   });
+
+  it('не падает на не-строковых значениях (LLM нарушает схему → коэрция)', () => {
+    const asText = (v: unknown): string => splitParagraphs(v as unknown as string);
+    const paras = asText({ трактовка: 'текст позиции', позиция: '1' });
+    expect(paras.length).toBeGreaterThan(0);
+    expect(asText(null)).toEqual([]);
+    expect(asText(undefined)).toEqual([]);
+    expect(asText(42)).toEqual(['42']);
+    expect(asText(['а', 'б'])).toContain('б');
+  });
 });
