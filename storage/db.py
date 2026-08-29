@@ -41,6 +41,7 @@ async def _migrate_schema(db: aiosqlite.Connection) -> None:
     migrations = [
         "ALTER TABLE users ADD COLUMN subscription_end TEXT",
         "ALTER TABLE users ADD COLUMN first_month_done INTEGER DEFAULT 0",
+        "ALTER TABLE users ADD COLUMN notifications_enabled INTEGER DEFAULT 1",
     ]
     for sql in migrations:
         try:
@@ -78,7 +79,27 @@ async def create_tables(db_path: str = "taro_bot.db") -> None:
     async with aiosqlite.connect(db_path) as db:
         await db.execute(_CREATE_USERS_TABLE)
         await db.execute(_CREATE_READINGS_TABLE)
+        await _migrate_schema(db)
         await db.commit()
+
+
+async def get_notifications_enabled(db: aiosqlite.Connection, tg_id: int) -> bool:
+    """Whether the user wants to receive reminders. Defaults to True."""
+    cursor = await db.execute(
+        "SELECT notifications_enabled FROM users WHERE tg_id = ?",
+        (tg_id,),
+    )
+    row = await cursor.fetchone()
+    return row is None or row[0] != 0
+
+
+async def set_notifications_enabled(db: aiosqlite.Connection, tg_id: int, enabled: bool) -> None:
+    """Set whether the user wants to receive reminders."""
+    await db.execute(
+        "UPDATE users SET notifications_enabled = ? WHERE tg_id = ?",
+        (1 if enabled else 0, tg_id),
+    )
+    await db.commit()
 
 
 async def get_or_create_user(db: aiosqlite.Connection, tg_id: int) -> User:

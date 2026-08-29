@@ -7,7 +7,7 @@ from aiogram import Bot
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 from config import settings
-from storage.db import get_inactive_users
+from storage.db import get_inactive_users, get_notifications_enabled
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +30,8 @@ async def check_and_send_reminders(bot: Bot) -> None:
 async def _send_inactive_reminders(db: aiosqlite.Connection, bot: Bot) -> None:
     inactive_users = await get_inactive_users(db, days=INACTIVE_DAYS)
     for user in inactive_users:
+        if not await get_notifications_enabled(db, user.tg_id):
+            continue
         last_reminder = user.last_reminder_sent_at
         if last_reminder:
             try:
@@ -67,6 +69,8 @@ async def _send_expiry_reminders(db: aiosqlite.Connection, bot: Bot) -> None:
 
     now = datetime.utcnow()
     for tg_id, sub_end in rows:
+        if not await get_notifications_enabled(db, tg_id):
+            continue
         # Only remind once per subscription_end value
         prev = _last_sub_reminder.get(tg_id)
         if prev == sub_end:
