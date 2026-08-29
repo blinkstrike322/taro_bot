@@ -1,13 +1,41 @@
 // Разбиение длинной прозы расклада на читаемые абзацы.
 // Если в тексте уже есть переносы строк — уважаем их.
 // Если сплошной текст длинный — группируем предложения в абзацы.
+import { reportClientError } from './reportError';
 
 const LONG_ENOUGH = 260; // символы, после которых сплошной текст разбиваем
 const SENTENCES_PER_PARA = 2; // предложений в абзаце при авто-разбиении
 const MAX_PARAS = 4; // максимум авто-абзацев, остаток доливаем в последний
 
+// LLM регулярно нарушает контракт схемы (prompts.py: «здесь строка»), возвращая
+// объекты/массивы. Клиент не должен ронять вью-вьюху из-за кривой формы данных —
+// приводим к строке и сообщаем о реальной форме для отладки.
+function toProseString(value: unknown): string {
+  if (typeof value === 'string') return value;
+  if (value == null) return '';
+
+  let sample = '';
+  try {
+    sample = typeof value === 'object' ? JSON.stringify(Array.isArray(value) ? value.slice(0, 2) : value) : String(value);
+  } catch {
+    sample = String(value);
+  }
+  reportClientError({ message: `LLM prose field is not a string: ${(sample || '').slice(0, 400)}` });
+
+  if (Array.isArray(value)) return value.map((v) => toProseString(v)).join('\n\n');
+  if (typeof value === 'object') {
+    try {
+      const s = JSON.stringify(value);
+      return s.length > 1500 ? `${s.slice(0, 1500)}…` : s;
+    } catch {
+      return String(value);
+    }
+  }
+  return String(value);
+}
+
 export function splitParagraphs(text: string): string[] {
-  const t = text.replace(/\r\n/g, '\n').trim();
+  const t = toProseString(text).replace(/\r\n/g, '\n').trim();
   if (!t) return [];
 
   if (/\n/.test(t)) {
