@@ -36,7 +36,7 @@ export default function SpreadBlock({ cards, flipped, count, singleLabel, whispe
         <div className="flex flex-col items-center w-full">
           {/* верхняя карта — настоящее */}
           <div
-            className="w-full max-w-[150px] mb-2"
+            className="w-full max-w-[158px] mb-2"
             style={{ transform: `translate(${OFFSETS[1].x}px, ${OFFSETS[1].y}px)` }}
           >
             <Card
@@ -52,7 +52,7 @@ export default function SpreadBlock({ cards, flipped, count, singleLabel, whispe
           {/* нижний ряд — прошлое + будущее */}
           <div className="flex items-start justify-center gap-3 w-full">
             <div
-              className="flex-1 min-w-0 max-w-[160px]"
+              className="flex-1 min-w-0 max-w-[168px]"
               style={{ transform: `translate(${OFFSETS[0].x}px, ${OFFSETS[0].y}px)` }}
             >
               <Card
@@ -65,7 +65,7 @@ export default function SpreadBlock({ cards, flipped, count, singleLabel, whispe
               />
             </div>
             <div
-              className="flex-1 min-w-0 max-w-[160px]"
+              className="flex-1 min-w-0 max-w-[168px]"
               style={{ transform: `translate(${OFFSETS[2].x}px, ${OFFSETS[2].y}px)` }}
             >
               <Card
@@ -97,7 +97,7 @@ export default function SpreadBlock({ cards, flipped, count, singleLabel, whispe
   const isFlipped = flipped[0];
   return (
     <div className="spread-wrap spread-wrap--single">
-      <div className="w-full max-w-[172px] mx-auto">
+      <div className="w-full max-w-[224px] mx-auto">
         <Card
           card={cards[0]}
           position={singleLabel}
