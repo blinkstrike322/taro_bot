@@ -165,7 +165,6 @@ export default function Home() {
       const res = await progressWith('тасование колоды', 950, API.spreadBegin(1, null, characterId));
       pushOut([
         { text: 'карта выбрана. коснись, чтобы вскрыть.', tone: 'dim' },
-        { text: 'шёпот канала формируется параллельно', tone: 'comment' },
       ]);
       const entryId = push({
         kind: 'daily',
@@ -203,7 +202,6 @@ export default function Home() {
             : 'раздача: 1 аркан',
           tone: 'dim',
         },
-        { text: 'шёпот канала формируется параллельно', tone: 'comment' },
       ]);
       const spreadCards = toTarotCards(res.cards);
       const entryId = push({
