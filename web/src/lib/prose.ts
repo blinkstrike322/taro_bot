@@ -19,7 +19,12 @@ export function splitParagraphs(text: string): string[] {
 
   if (t.length <= LONG_ENOUGH) return [t];
 
-  const sentences = t.split(/(?<=[.!?…])\s+/);
+  // ВАЖНО: lookbehind (?<=…) в split-регексе не используем — он не поддержан в
+  // Safari < 16.4 (macOS Catalina ставит максимум Safari 15.6) и бросает
+  // SyntaxError в рантайме при вскрытии чтения → «Application error».
+  // Эквивалент через захват знака + lookahead (lookahead поддержан везде):
+  // разбиваем на фрагменты, удерживая знак препинания рядом со своим предложением.
+  const sentences = splitSentencesNoLookbehind(t);
   const paras: string[] = [];
   for (let i = 0; i < sentences.length; i += SENTENCES_PER_PARA) {
     if (paras.length >= MAX_PARAS) {
@@ -33,4 +38,16 @@ export function splitParagraphs(text: string): string[] {
 
 export function joinedParagraphs(text: string): string {
   return splitParagraphs(text).join('\n\n');
+}
+
+function splitSentencesNoLookbehind(text: string): string[] {
+  // Держим знак препинания в фрагменте через захват (lookahead не потребляется,
+  // поэтому пробел остаётся в начале следующего фрагмента — срезаем trim'ом).
+  const parts = text.split(/([.!?…])(?=\s|$)/);
+  const sentences: string[] = [];
+  for (let i = 0; i < parts.length; i += 2) {
+    const s = (parts[i] ?? '').concat(parts[i + 1] ?? '').trim();
+    if (s) sentences.push(s);
+  }
+  return sentences;
 }
