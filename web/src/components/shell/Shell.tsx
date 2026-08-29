@@ -8,6 +8,9 @@
 import { ReactNode, useEffect, useRef, useState } from 'react';
 import CrtOverlay from '@/components/CrtOverlay';
 import CrtNoise from '@/components/CrtNoise';
+import AmbientSigil from '@/components/AmbientSigil';
+import ConstellationLayer from '@/components/ConstellationLayer';
+import LunarGlyphsLayer from '@/components/LunarGlyphsLayer';
 import { getGuide } from '@/lib/guides';
 import { shellUser } from '@/lib/commands';
 import type { Entry } from '@/lib/transcript';
@@ -230,6 +233,27 @@ export default function Shell({
           '--glow-center': guide.glowCenter,
         } as React.CSSProperties}
       >
+        {/* ── атмосферные слои — ВНУТРИ shell-root, ПОД vignette ── */}
+        {/* ритуальный дым — мягкие дрейфующие градиенты по краям */}
+        <div
+          className="ritual-smoke"
+          aria-hidden="true"
+          style={{ '--smoke': guide.accentDim } as React.CSSProperties}
+        >
+          <div className="ritual-smoke__cloud ritual-smoke__cloud--tl" />
+          <div className="ritual-smoke__cloud ritual-smoke__cloud--br" />
+          <div className="ritual-smoke__cloud ritual-smoke__cloud--mid" />
+        </div>
+
+        {/* ambient-сигил — анимированная пентаграмма справа сверху */}
+        <AmbientSigil accent={guide.accent} accentDim={guide.accentDim} />
+
+        {/* созвездие — мерцающие звёзды */}
+        <ConstellationLayer />
+
+        {/* лунные глифы — плавающие алхимические символы */}
+        <LunarGlyphsLayer accent={guide.accent} />
+
         {/* ── живое зерно катодной трубки ── */}
         <CrtNoise />
 

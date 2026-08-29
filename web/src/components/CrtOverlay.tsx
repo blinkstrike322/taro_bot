@@ -52,7 +52,7 @@ export default function CrtOverlay({ children }: CrtOverlayProps) {
       <div className="ambient-layer" aria-hidden="true">
         {ambientSymbols.map((sym, i) => (
           <span
-            key={i}
+            key={`amb-${i}`}
             className="ambient-symbol"
             style={{
               left: `${sym.x}%`,

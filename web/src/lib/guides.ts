@@ -1,6 +1,19 @@
 // Guide metadata — single source of truth for per-guide visual identity.
 // Front-only; backend character prompts live in data/characters.json.
 
+/* ============================================================
+   ПАЛИТРА · «Alchemical Manuscript»
+   Референсы:
+   - Классическая алхимическая стадия (nigredo → albedo → citrinitas → rubedo)
+   - Средневековые гримуары (Ключ Соломона, Гептамерон) — настоящий пигмент,
+     а не цифровой неон
+   - Art Nouveau / Mucha: dusty jewel tones, природные пигменты
+   - Discordian / Sacred geometry palettes (terra cotta, malachite, lapis)
+
+   Подход — три проводника = три алхимические стадии. Каждый цвет —
+   намеренно desaturated, как пигмент на пергаменте, не «цифровой» hex.
+   ============================================================ */
+
 export interface GuideMeta {
   id: string;
   name: string;
@@ -55,11 +68,16 @@ export const GUIDES: Record<string, GuideMeta> = {
     name: 'Странница Теней',
     description: 'Ведьма из тёмного леса. Говорит тенями и шёпотом луны.',
     greeting: 'Тихо. Карты уже смотрят на тебя.',
-    accent: '#c39dff',
-    accentDim: 'rgba(195, 157, 255, 0.16)',
-    accentGlow: 'rgba(195, 157, 255, 0.42)',
-    bgDeep: '#080611',
-    glowCenter: 'rgba(195, 157, 255, 0.055)',
+    // ALBEDO · серебряная лунная стадия
+    // accent: серебристо-лавандовый с холодным синим подтоном — как аметист
+    //   под лунным светом, не «розовая жвачка»
+    // bgDeep: глубокий indigo, почти чёрный, с холодным уклоном (не плоский #000)
+    //   ещё затемнён на ~10% для глубины фона
+    accent: '#b5a5e6',
+    accentDim: 'rgba(181, 165, 230, 0.22)',
+    accentGlow: 'rgba(181, 165, 230, 0.55)',
+    bgDeep: '#05040f',
+    glowCenter: 'rgba(181, 165, 230, 0.06)',
     portrait: '/guides/shadow_walker.png',
     cardBack: '/cards/backs/back_shadow_walker.png',
     cardBackVersion: 2,
@@ -80,11 +98,16 @@ export const GUIDES: Record<string, GuideMeta> = {
     name: 'Хранитель Руин',
     description: 'Древний страж разрушенного. Помнит то, что все забыли.',
     greeting: 'Камень помнит. Карты молчат. Спрашивай.',
-    accent: '#e8b568',
-    accentDim: 'rgba(232, 181, 104, 0.15)',
-    accentGlow: 'rgba(232, 181, 104, 0.40)',
-    bgDeep: '#0d0a05',
-    glowCenter: 'rgba(232, 181, 104, 0.05)',
+    // CITRINITAS · золотая солнечная стадия
+    // accent: antique brass — оксидированная латунь с зеленцой,
+    //   не ярко-жёлтый и не neon gold. Пигмент старого манускрипта.
+    // bgDeep: тёплый табач, как выцветший пергамент под пеплом,
+    //   затемнён ещё на ~10% для глубины
+    accent: '#c8a368',
+    accentDim: 'rgba(200, 163, 104, 0.22)',
+    accentGlow: 'rgba(200, 163, 104, 0.5)',
+    bgDeep: '#0a0704',
+    glowCenter: 'rgba(200, 163, 104, 0.06)',
     portrait: '/guides/ruin_keeper.png',
     cardBack: '/cards/backs/back_ruin_keeper.png',
     cardBackVersion: 2,
@@ -106,11 +129,16 @@ export const GUIDES: Record<string, GuideMeta> = {
     name: 'Искра Хаоса',
     description: 'Дерзкий дух-трикстер. За искрой — истина, за шуткой — правда.',
     greeting: 'Посмотрим, что шепнет хаос на этот раз.',
-    accent: '#ff7a8a',
-    accentDim: 'rgba(255, 122, 138, 0.15)',
-    accentGlow: 'rgba(255, 122, 138, 0.40)',
-    bgDeep: '#100609',
-    glowCenter: 'rgba(255, 122, 138, 0.05)',
+    // RUBEDO · красная стадия завершения
+    // accent: vintage carmine — глубокий старинный красный, как выцветшее
+    //   вино/кровь на пергаменте. НЕ neon pink и НЕ ярко-розовый.
+    // bgDeep: oxblood — красновато-чёрный, как остывшая лава,
+    //   затемнён ещё на ~10% для глубины
+    accent: '#d65a6e',
+    accentDim: 'rgba(214, 90, 110, 0.22)',
+    accentGlow: 'rgba(214, 90, 110, 0.55)',
+    bgDeep: '#0a0406',
+    glowCenter: 'rgba(214, 90, 110, 0.06)',
     portrait: '/guides/spark_of_chaos.png',
     cardBack: '/cards/backs/back_spark_of_chaos.png',
     cardBackVersion: 2,
