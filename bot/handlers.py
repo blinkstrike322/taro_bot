@@ -15,6 +15,7 @@ from storage.db import (
     get_monthly_non_daily_count,
     is_subscribed,
 )
+from storage.db import get_notifications_enabled, set_notifications_enabled
 
 _CHARACTERS_PATH = Path(__file__).resolve().parent.parent / "data" / "characters.json"
 
@@ -63,24 +64,21 @@ def _character_selection_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 
-def _main_menu_keyboard() -> InlineKeyboardMarkup:
+async def _main_menu_keyboard(db, tg_id: int) -> InlineKeyboardMarkup:
     url = settings.WEBAPP_URL
+    try:
+        enabled = await get_notifications_enabled(db, tg_id)
+    except Exception:
+        enabled = True
+    notif_text = "выключить уведомления" if enabled else "включить уведомления"
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(
-            text="РАСКЛАД 1 КАРТА",
-            web_app=WebAppInfo(url=f"{url}?type=1"),
+            text="НАЧАТЬ СЕАНС",
+            web_app=WebAppInfo(url=f"{url}"),
         )],
         [InlineKeyboardButton(
-            text="РАСКЛАД 3 КАРТЫ",
-            web_app=WebAppInfo(url=f"{url}?type=3"),
-        )],
-        [InlineKeyboardButton(
-            text="КАРТА ДНЯ",
-            web_app=WebAppInfo(url=f"{url}?type=daily"),
-        )],
-        [InlineKeyboardButton(
-            text="СМЕНИТЬ ПРОВОДНИКА",
-            callback_data="char:select",
+            text=notif_text,
+            callback_data="notif:toggle",
         )],
     ])
 
@@ -112,7 +110,7 @@ async def cmd_start(message: types.Message) -> None:
             )
             await message.answer(
                 greeting,
-                reply_markup=_main_menu_keyboard(),
+                reply_markup=await _main_menu_keyboard(db, message.from_user.id),
             )
     finally:
         await db.close()
@@ -144,8 +142,22 @@ async def set_character(callback: types.CallbackQuery) -> None:
     char = _CHARACTERS[character_id]
     await callback.message.edit_text(
         char["greeting"],
-        reply_markup=_main_menu_keyboard(),
+        reply_markup=await _main_menu_keyboard(db, callback.from_user.id),
     )
+    await callback.answer()
+
+
+@start_router.callback_query(F.data == "notif:toggle")
+async def toggle_notifications(callback: types.CallbackQuery) -> None:
+    db = await aiosqlite.connect(settings.DB_PATH)
+    try:
+        enabled = await get_notifications_enabled(db, callback.from_user.id)
+        await set_notifications_enabled(db, callback.from_user.id, not enabled)
+        await callback.message.edit_reply_markup(
+            reply_markup=await _main_menu_keyboard(db, callback.from_user.id),
+        )
+    finally:
+        await db.close()
     await callback.answer()
 
 
@@ -283,5 +295,5 @@ async def on_successful_payment(message: types.Message) -> None:
     await message.answer(
         "Подписка активна!\n"
         "100 раскладов в месяц — карты ждут.",
-        reply_markup=_main_menu_keyboard(),
+        reply_markup=await _main_menu_keyboard(db, message.from_user.id),
     )
