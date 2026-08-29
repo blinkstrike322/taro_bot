@@ -1,0 +1,26 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "bounce-easing",
+        "value": "crt-wobble",
+        "files": [
+          "web/src/styles/globals.css"
+        ],
+        "createdAt": "2026-08-29T17:28:47.820Z",
+        "reason": "Намеренный ультра-мягкий CRT-джиттер карт (0.3–0.5px), а не банс"
+      },
+      {
+        "rule": "bounce-easing",
+        "value": "cubic-bezier(.3, 1.32, .42, 1)",
+        "files": [
+          "web/src/styles/globals.css"
+        ],
+        "createdAt": "2026-08-29T17:28:48.630Z",
+        "reason": "Намеренный overshoot-«щелчок» при флипе карты"
+      }
+    ]
+  }
+}
