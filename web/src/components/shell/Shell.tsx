@@ -5,11 +5,12 @@
 //   ├ скроллбэк-транскрипт (весь флоу живёт здесь)
 //   ├ vim-статус-лайн (режим · сеанс · проводник · часы)
 //   └ командная строка с чипами
-import { ReactNode, useEffect, useMemo, useRef, useState } from 'react';
+import { ReactNode, useEffect, useMemo, useRef } from 'react';
 import CrtOverlay from '@/components/CrtOverlay';
 import CrtNoise from '@/components/CrtNoise';
 import AmbientSigil from '@/components/AmbientSigil';
 import { isLowEndDevice } from '@/lib/device';
+import { StatusClock, TitleUptime } from './StatusTime';
 import ConstellationLayer from '@/components/ConstellationLayer';
 import LunarGlyphsLayer from '@/components/LunarGlyphsLayer';
 import { getGuide } from '@/lib/guides';
@@ -52,10 +53,6 @@ interface ShellProps {
   onFlip: (entryId: number, index: number) => void;
 }
 
-function pad2(n: number): string {
-  return String(n).padStart(2, '0');
-}
-
 export default function Shell({
   characterId,
   mode,
@@ -84,28 +81,12 @@ export default function Shell({
   // там непропорционально высока и может ронять вью-вьюху телефона.
   const heavyMotion = useMemo(() => isLowEndDevice(), []);
 
-  // живые часы + uptime
-  const [now, setNow] = useState<Date | null>(null);
-  const [uptime, setUptime] = useState(0);
-  useEffect(() => {
-    const t = setInterval(() => {
-      setNow(new Date());
-      setUptime((u) => u + 1);
-    }, 1000);
-    return () => clearInterval(t);
-  }, []);
-
   // автоскролл как в настоящем терминале — вывод всегда виден
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
     el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
   }, [entries.length, scrollTick]);
-
-  const clock = now
-    ? `${pad2(now.getHours())}:${pad2(now.getMinutes())}:${pad2(now.getSeconds())}`
-    : '--:--:--';
-  const upStr = `${pad2(Math.floor(uptime / 60))}:${pad2(uptime % 60)}`;
 
   // ── рендер одной записи транскрипта ──
   const renderEntry = (entry: Entry): ReactNode => {
@@ -268,7 +249,7 @@ export default function Shell({
           <span className="st-tab">[ ARCANUM.ocv ]</span>
           <span className="st-right">
             <span className="st-rec"><span className="st-rec-dot" aria-hidden="true" />REC</span>
-            <span className="st-up">⏱ {upStr}</span>
+            <span className="st-up"><TitleUptime /></span>
           </span>
           <div className="st-shell tl" aria-hidden="true">
             <span className="cd-user">{shellUser(characterId)}</span>
@@ -305,7 +286,7 @@ export default function Shell({
           >
             ♪
           </button>
-          <span className="sl-right">utf-8 · ru · {clock}</span>
+          <span className="sl-right">utf-8 · ru · <StatusClock /></span>
         </div>
 
         {/* ── командная строка ── */}

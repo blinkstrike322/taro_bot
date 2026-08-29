@@ -1748,18 +1748,23 @@ body {
 .sigil-rotate-slow {
   transform-origin: 200px 200px;
   animation: sigil-rotate-cw 90s linear infinite;
+  /* промоутим в композитный слой: поворот ~6.8к узлов идёт на GPU,
+     без пересчёта SVG на каждom кадре */
+  will-change: transform;
 }
 
 /* Slow rotation — inner hexagram (counter-clockwise) */
 .sigil-rotate-slow-rev {
   transform-origin: 200px 200px;
   animation: sigil-rotate-ccw 70s linear infinite;
+  will-change: transform;
 }
 
 /* Pulsing — pentagram layer (breathing) */
 .sigil-pulse {
   transform-origin: 200px 200px;
   animation: sigil-pulse 4s ease-in-out infinite;
+  will-change: transform;
 }
 
 @keyframes sigil-rotate-cw {
