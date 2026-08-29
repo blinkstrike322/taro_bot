@@ -284,6 +284,26 @@ async def _spread_request_context(request):
     }
 
 
+async def handle_client_log(request):
+    """Пишем клиентские ошибки вебаппа в лог — ловим «Application error» с устройств,
+    где консоль недоступна (Telegram WebView). Содержимое обрезаем, секретов нет."""
+    try:
+        body = await request.json()
+    except Exception:
+        return web.Response(status=204)
+    message = str(body.get("message", "") or "")[:1000]
+    stack = str(body.get("stack", "") or "")[:3000]
+    source = str(body.get("source", "") or "")[:200]
+    url = str(body.get("url", "") or "")[:300]
+    ua = str(body.get("ua", "") or "")[:300]
+    logger.warning(
+        "CLIENT ERROR: %s (src=%s url=%s ua=%s)\n%s",
+        message or "(empty)",
+        source, url, ua, stack,
+    )
+    return web.Response(status=204)
+
+
 def create_webapp() -> web.Application:
     app = web.Application()
     app.router.add_get('/api/readings', handle_readings)
@@ -292,6 +312,7 @@ def create_webapp() -> web.Application:
     app.router.add_post('/api/spread', handle_spread)
     app.router.add_post('/api/spread/begin', handle_spread_begin)
     app.router.add_get('/api/spread/poll', handle_spread_poll)
+    app.router.add_post('/api/log', handle_client_log)
     webapp_dir = Path(__file__).parent / "static" / "webapp"
     if webapp_dir.is_dir():
         index = webapp_dir / "index.html"

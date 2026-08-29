@@ -5,10 +5,11 @@
 //   ├ скроллбэк-транскрипт (весь флоу живёт здесь)
 //   ├ vim-статус-лайн (режим · сеанс · проводник · часы)
 //   └ командная строка с чипами
-import { ReactNode, useEffect, useRef, useState } from 'react';
+import { ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import CrtOverlay from '@/components/CrtOverlay';
 import CrtNoise from '@/components/CrtNoise';
 import AmbientSigil from '@/components/AmbientSigil';
+import { isLowEndDevice } from '@/lib/device';
 import ConstellationLayer from '@/components/ConstellationLayer';
 import LunarGlyphsLayer from '@/components/LunarGlyphsLayer';
 import { getGuide } from '@/lib/guides';
@@ -77,6 +78,11 @@ export default function Shell({
 }: ShellProps) {
   const guide = getGuide(characterId);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Тяжёлые постоянно анимированные ambient-слои (~6.8к SVG-нод + full-screen зерно)
+  // вырубаем на слабых устройствах и при prefers-reduced-motion — цена рендера
+  // там непропорционально высока и может ронять вью-вьюху телефона.
+  const heavyMotion = useMemo(() => isLowEndDevice(), []);
 
   // живые часы + uptime
   const [now, setNow] = useState<Date | null>(null);
@@ -245,8 +251,8 @@ export default function Shell({
           <div className="ritual-smoke__cloud ritual-smoke__cloud--mid" />
         </div>
 
-        {/* ambient-сигил — анимированная пентаграмма справа сверху */}
-        <AmbientSigil accent={guide.accent} accentDim={guide.accentDim} />
+        {/* ambient-сигил — анимированная пентаграмма справа сверху (тяжёлый, только не на слабых) */}
+        {!heavyMotion && <AmbientSigil accent={guide.accent} accentDim={guide.accentDim} />}
 
         {/* созвездие — мерцающие звёзды */}
         <ConstellationLayer />
@@ -254,8 +260,8 @@ export default function Shell({
         {/* лунные глифы — плавающие алхимические символы */}
         <LunarGlyphsLayer accent={guide.accent} />
 
-        {/* ── живое зерно катодной трубки ── */}
-        <CrtNoise />
+        {/* ── живое зерно катодной трубки (full-screen фильтр — тоже тяжёлый) ── */}
+        {!heavyMotion && <CrtNoise />}
 
         {/* ── титл-бар терминала ── */}
         <div className="shell-title">
