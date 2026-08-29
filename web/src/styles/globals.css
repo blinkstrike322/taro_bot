@@ -988,6 +988,238 @@ body {
 }
 
 /* ================================================================
+   AMBIENT SIGIL — анимированная пентаграмма на фоне справа сверху
+   ================================================================ */
+.ambient-sigil {
+  position: absolute;
+  /* сдвинут за правый край так, чтобы ~70-75% сигила было видно */
+  top: 6%;
+  right: -22vw;
+  /* размер обратно крупный — как было */
+  width: min(720px, 92vw);
+  height: min(720px, 92vw);
+  pointer-events: none;
+  z-index: 1;
+  /* мягкая маска — края растворяются в темноте */
+  -webkit-mask-image: radial-gradient(ellipse at 82% 18%, #000 0%, #000 50%, transparent 90%);
+  mask-image: radial-gradient(ellipse at 82% 18%, #000 0%, #000 50%, transparent 90%);
+  /* пониженная непрозрачность (~50% от прежней) — не выделяется,
+     лежит на фоне как тень чернил на пергаменте */
+  opacity: 0.5;
+  mix-blend-mode: screen;
+  /* очень медленный дрейф как у парящего пламени */
+  animation: ambient-sigil-drift 38s ease-in-out infinite;
+}
+
+.ambient-sigil__halo {
+  position: absolute;
+  inset: -10%;
+  pointer-events: none;
+  /* halo тоже приглушен, чтобы не "орал" */
+  opacity: 0.42;
+  filter: blur(48px);
+}
+
+.ambient-sigil__svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  /* свечение тоньше и мягче */
+  filter: drop-shadow(0 0 14px var(--guide-accent, #b5a5e6));
+}
+
+/* дыхание-дрейф сигила: микро-наклон + дыхание масштаба,
+   БЕЗ изменения opacity — сигил всегда насыщенный */
+@keyframes ambient-sigil-drift {
+  0%, 100% {
+    transform: translate(0, 0) rotate(0deg) scale(1);
+  }
+  25%      {
+    transform: translate(-3px, 5px) rotate(0.5deg) scale(1.015);
+  }
+  50%      {
+    transform: translate(2px, -2px) rotate(-0.3deg) scale(1.005);
+  }
+  75%      {
+    transform: translate(3px, 3px) rotate(0.2deg) scale(1.01);
+  }
+}
+
+/* на уменьшенной анимации — кадр статичный */
+@media (prefers-reduced-motion: reduce) {
+  .ambient-sigil { animation: none; }
+}
+
+/* ================================================================
+   RITUAL SMOKE — мягкие дрейфующие радиальные градиенты по краям
+   ================================================================ */
+.ritual-smoke {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  overflow: hidden;
+  mix-blend-mode: screen;
+}
+
+.ritual-smoke__cloud {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(46px);
+  background: radial-gradient(
+    circle,
+    var(--smoke, rgba(195, 157, 255, 0.22)) 0%,
+    transparent 70%
+  );
+}
+
+/* левый верхний угловой облако — медленный вдох */
+.ritual-smoke__cloud--tl {
+  width: 60vw;
+  height: 60vw;
+  max-width: 720px;
+  max-height: 720px;
+  top: -22%;
+  left: -15%;
+  opacity: 0.72;
+  animation: smoke-drift-tl 26s ease-in-out infinite;
+}
+
+/* правый нижний — дыхание-выдох */
+.ritual-smoke__cloud--br {
+  width: 64vw;
+  height: 64vw;
+  max-width: 760px;
+  max-height: 760px;
+  bottom: -25%;
+  right: -18%;
+  opacity: 0.66;
+  animation: smoke-drift-br 31s ease-in-out infinite;
+}
+
+/* центральный мягкий ореол под всем */
+.ritual-smoke__cloud--mid {
+  width: 88vw;
+  height: 70vw;
+  max-width: 1100px;
+  max-height: 880px;
+  top: 25%;
+  left: 50%;
+  transform: translate(-50%, 0);
+  opacity: 0.42;
+  filter: blur(72px);
+  animation: smoke-pulse 18s ease-in-out infinite;
+}
+
+@keyframes smoke-drift-tl {
+  0%, 100% { transform: translate(0, 0) scale(1);    opacity: 0.58; }
+  50%      { transform: translate(40px, 28px) scale(1.10); opacity: 0.82; }
+}
+
+@keyframes smoke-drift-br {
+  0%, 100% { transform: translate(0, 0) scale(1);    opacity: 0.54; }
+  50%      { transform: translate(-32px, -22px) scale(1.08); opacity: 0.76; }
+}
+
+@keyframes smoke-pulse {
+  0%, 100% { opacity: 0.32; transform: translate(-50%, 0) scale(0.96); }
+  50%      { opacity: 0.50; transform: translate(-50%, -2px) scale(1.04); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ritual-smoke__cloud--tl,
+  .ritual-smoke__cloud--br,
+  .ritual-smoke__cloud--mid { animation: none; }
+}
+
+/* ================================================================
+   CONSTELLATION — мелкие мерцающие звёзды по фону
+   ================================================================ */
+.constellation-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  overflow: hidden;
+}
+
+.constellation-star {
+  position: absolute;
+  background: #fff;
+  border-radius: 50%;
+  opacity: 0;
+  box-shadow:
+    0 0 6px rgba(255, 255, 255, 0.85),
+    0 0 14px var(--guide-accent, #c39dff),
+    0 0 22px var(--guide-accent-dim, rgba(195, 157, 255, 0.22));
+  animation: star-twinkle var(--star-dur, 3s) ease-in-out infinite;
+  animation-delay: var(--star-delay, 0s);
+}
+
+@keyframes star-twinkle {
+  0%, 100% { opacity: 0; transform: scale(0.8); }
+  40%      { opacity: var(--star-op, 0.5); transform: scale(1.25); }
+  60%      { opacity: calc(var(--star-op, 0.5) * 0.8); transform: scale(1.1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .constellation-star { animation: none; opacity: var(--star-op, 0.5); }
+}
+
+/* ================================================================
+   LUNAR GLYPHS — мягкие плавающие лунные/алхимические глифы
+   (женственный вайб — больше кружков, полумесяцев, звёзд)
+   ================================================================ */
+.lunar-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  overflow: hidden;
+}
+
+.lunar-glyph {
+  position: absolute;
+  font-family: var(--font-pixel), monospace;
+  color: var(--guide-accent, #c39dff);
+  line-height: 1;
+  user-select: none;
+  pointer-events: none;
+  opacity: 0;
+  text-shadow:
+    0 0 6px currentColor,
+    0 0 16px var(--guide-accent-dim, rgba(195, 157, 255, 0.22));
+  animation: lunar-drift var(--lg-dur, 30s) ease-in-out infinite;
+  animation-delay: var(--lg-delay, 0s);
+}
+
+@keyframes lunar-drift {
+  0% {
+    opacity: 0;
+    transform: translateY(0) translateX(0) rotate(0deg) scale(0.85);
+  }
+  18% { opacity: var(--lg-op, 0.18); }
+  50% {
+    opacity: var(--lg-op, 0.18);
+    transform:
+      translateY(var(--lg-drift-y, -30px))
+      translateX(var(--lg-drift-x, 12px))
+      rotate(8deg)
+      scale(1);
+  }
+  82% { opacity: var(--lg-op, 0.18); }
+  100% {
+    opacity: 0;
+    transform: translateY(0) translateX(0) rotate(0deg) scale(0.85);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lunar-glyph { animation: none; opacity: var(--lg-op, 0.18); }
+}
+
+/* ================================================================
    CIRCUIT TRACE PATTERN — pseudo-circuit decorations
    ================================================================ */
 .circuit-trace {
@@ -1984,11 +2216,11 @@ div[class*="boot-log"]::-webkit-scrollbar {
   content: "";
   position: absolute;
   inset: 0;
-  z-index: 30;
+  z-index: 2;
   pointer-events: none;
   background:
     radial-gradient(ellipse at 50% 34%, var(--glow-center), transparent 65%),
-    radial-gradient(ellipse at 50% 50%, transparent 60%, rgba(0, 0, 0, 0.58) 100%);
+    radial-gradient(ellipse at 50% 50%, transparent 48%, rgba(0, 0, 0, 0.82) 100%);
 }
 
 @keyframes crt-on {
@@ -2000,6 +2232,7 @@ div[class*="boot-log"]::-webkit-scrollbar {
 /* ── титл-бар терминала ── */
 .shell-title {
   position: relative;
+  z-index: 3;
   margin: 10px 10px 0;
   border: 1px solid rgba(255, 255, 255, 0.22);
   border-radius: 2px;
@@ -2019,7 +2252,9 @@ div[class*="boot-log"]::-webkit-scrollbar {
   font-weight: 700;
   letter-spacing: 0.08em;
   color: var(--guide-accent, #c39dff);
-  text-shadow: 0 0 8px var(--guide-glow, transparent);
+  text-shadow:
+    0 0 10px var(--guide-glow, transparent),
+    0 0 22px var(--guide-accent-dim, transparent);
 }
 
 .st-right {
@@ -2075,6 +2310,8 @@ div[class*="boot-log"]::-webkit-scrollbar {
 
 /* ── скроллбэк ── */
 .shell-scroll {
+  position: relative;
+  z-index: 3;
   flex: 1;
   min-height: 0;
   overflow-y: auto;
@@ -2097,22 +2334,22 @@ div[class*="boot-log"]::-webkit-scrollbar {
   letter-spacing: 0.01em;
   white-space: pre-wrap;
   word-break: break-word;
-  color: rgba(236, 233, 246, 0.92);
-  text-shadow: 0 0 10px rgba(236, 233, 246, 0.05);
+  color: rgba(246, 244, 252, 0.96);
+  text-shadow: 0 0 10px rgba(236, 233, 246, 0.08);
   min-height: 1.62em;
 }
 
-.tl-dim    { color: rgba(213, 208, 230, 0.52); }
-.tl-faint  { color: rgba(196, 191, 216, 0.34); }
+.tl-dim    { color: rgba(216, 212, 232, 0.65); }
+.tl-faint  { color: rgba(196, 191, 216, 0.45); }
 .tl-ok     { color: var(--t-ok); }
 .tl-err    { color: var(--t-err); }
 .tl-warn   { color: var(--t-warn); }
 .tl-info   { color: var(--t-info); }
-.tl-accent { color: var(--guide-accent, #fff); }
-.tl-bright { color: #fff; }
+.tl-accent { color: var(--guide-accent, #fff); text-shadow: 0 0 10px var(--guide-accent-dim, transparent); }
+.tl-bright { color: #fff; text-shadow: 0 0 8px rgba(255, 255, 255, 0.18); }
 .tl-semibold { font-weight: 700; }
 .tl-comment {
-  color: rgba(255, 255, 255, 0.34);
+  color: rgba(255, 255, 255, 0.42);
   font-style: italic;
 }
 
@@ -2136,7 +2373,7 @@ div[class*="boot-log"]::-webkit-scrollbar {
 
 .cmd-echo {
   color: #fff;
-  text-shadow: 0 0 6px rgba(255, 255, 255, 0.24), 0 0 14px rgba(255, 255, 255, 0.10);
+  text-shadow: 0 0 6px rgba(255, 255, 255, 0.32), 0 0 18px rgba(255, 255, 255, 0.14);
 }
 
 .tw-cursor {
@@ -2205,7 +2442,10 @@ div[class*="boot-log"]::-webkit-scrollbar {
   line-height: 1.25;
   white-space: pre;
   color: var(--guide-accent, #c39dff);
-  text-shadow: 0 0 10px var(--guide-glow, transparent), 0 0 26px var(--guide-accent-dim, transparent);
+  text-shadow:
+    0 0 12px var(--guide-glow, transparent),
+    0 0 32px var(--guide-accent-dim, transparent),
+    0 0 56px var(--guide-accent-dim, transparent);
   margin-bottom: 6px;
 }
 
@@ -2427,6 +2667,8 @@ div[class*="boot-log"]::-webkit-scrollbar {
 
 /* ── vim-статус-лайн ── */
 .statusline {
+  position: relative;
+  z-index: 3;
   display: flex;
   align-items: stretch;
   height: 24px;
@@ -2492,6 +2734,8 @@ div[class*="boot-log"]::-webkit-scrollbar {
 
 /* ── командная строка ── */
 .cmdbar {
+  position: relative;
+  z-index: 3;
   flex-shrink: 0;
   border-top: 1px solid rgba(255, 255, 255, 0.22);
   padding: 8px 12px calc(10px + env(safe-area-inset-bottom, 0px));
