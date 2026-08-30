@@ -75,6 +75,21 @@ export default function Shell({
 }: ShellProps) {
   const guide = getGuide(characterId);
   const scrollRef = useRef<HTMLDivElement>(null);
+  /** entryId → DOM-узел записи (для скролла к началу расклада) */
+  const entryRefs = useRef<Record<number, HTMLElement | null>>({});
+  const setEntryRef = (id: number) => (node: HTMLElement | null) => {
+    entryRefs.current[id] = node;
+  };
+
+  // расклад уже допечатался — прыгаем к ЕГО началу, а не к самому низу
+  const scrollToReadingTop = (id: number) => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const node = entryRefs.current[id];
+    if (!node) return;
+    const relTop = node.getBoundingClientRect().top - el.getBoundingClientRect().top + el.scrollTop;
+    el.scrollTo({ top: Math.max(relTop - 24, 0), behavior: 'smooth' });
+  };
 
   // Тяжёлые постоянно анимированные ambient-слои (~6.8к SVG-нод + full-screen зерно)
   // вырубаем на слабых устройствах и при prefers-reduced-motion — цена рендера
@@ -158,13 +173,14 @@ export default function Shell({
 
       case 'json':
         return (
-          <div key={entry.id} className="entry-pad">
+          <div key={entry.id} ref={setEntryRef(entry.id)} className="entry-pad">
             <ReadingResult
               interpretation={entry.interpretation}
               characterId={characterId}
               cards={entry.cards}
               question={entry.question}
               spreadLabel={entry.spreadLabel}
+              onDone={() => scrollToReadingTop(entry.id)}
             />
           </div>
         );

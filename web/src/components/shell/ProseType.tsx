@@ -28,15 +28,15 @@ interface ProseTypeProps {
   onDone?: () => void;
 }
 
-// пауза после знака — пусть текст дышит
+// пауза после знака — пусть текст дышит (~2× быстрее прежнего)
 function charDelay(ch: string): number {
-  if ('.!?…'.includes(ch)) return 240;
-  if (',;:—'.includes(ch)) return 105;
+  if ('.!?…'.includes(ch)) return 120;
+  if (',;:—'.includes(ch)) return 50;
   return 0;
 }
 
 // сколько займёт печать строки (мс) — для оркестратора
-export function proseDuration(text: string, speed = 15): number {
+export function proseDuration(text: string, speed = 8): number {
   const target = joinedParagraphs(text);
   let ms = target.length * (speed + 4);
   for (const ch of target) ms += charDelay(ch);
@@ -46,7 +46,7 @@ export function proseDuration(text: string, speed = 15): number {
 export default function ProseType({
   text,
   startDelay = 0,
-  speed = 15,
+  speed = 8,
   className,
   style,
   tail,
@@ -76,7 +76,7 @@ export default function ProseType({
         onDone?.();
         return;
       }
-      t = setTimeout(step, speed + charDelay(target[i - 1]) + Math.random() * 8);
+      t = setTimeout(step, speed + charDelay(target[i - 1]) + Math.random() * 4);
     };
     t = setTimeout(step, startDelay);
     return () => clearTimeout(t);

@@ -6,6 +6,7 @@
 // шёпот → ответ/сигнал → тело (значения | позиции+связь | день) → совет.
 // Оркестрация через вычисленную временную шкалу.
 // ─────────────────────────────────────────────────────────────
+import { useEffect } from 'react';
 import { getGuide } from '@/lib/guides';
 import type { TarotCard } from './Card';
 import ProseType, { proseDuration } from './shell/ProseType';
@@ -40,6 +41,8 @@ interface ReadingResultProps {
   question?: string | null;
   /** spread label: "карта дня" | "одна карта" | "три карты" */
   spreadLabel?: string;
+  /** вызывается после полного появления расклада — Shell скроллит к его началу */
+  onDone?: () => void;
 }
 
 type BodyRow =
@@ -94,8 +97,8 @@ function hexToRgba(hex: string, alpha: number): string {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
-const TYPE_SPEED = 15; // мс/символ прозаических значений
-const LINE_STEP = 65;  // мс между строками структуры
+const TYPE_SPEED = 8;  // мс/символ прозаических значений (~2× быстрее)
+const LINE_STEP = 32;  // мс между строками структуры (~2× быстрее)
 
 /* ── tiny JSON token components ── */
 const P = ({ children }: { children: React.ReactNode }) => <span className="j-punct">{children}</span>;
@@ -109,6 +112,7 @@ export default function ReadingResult({
   cards,
   question,
   spreadLabel = 'три карты',
+  onDone,
 }: ReadingResultProps) {
   const { intro, short_answer, advice } = interpretation;
   const guide = getGuide(characterId);
@@ -128,12 +132,20 @@ export default function ReadingResult({
     1 + // проводник
     (cards && cards.length > 0 ? 2 + cards.length : 0); // карты: [ ... ]
 
-  const tHeader = headerLineCount * LINE_STEP + 90;
+  const tHeader = headerLineCount * LINE_STEP + 45;
   const tWhisper = tHeader;
   const tAnswer = tWhisper + (intro ? proseDuration(intro, TYPE_SPEED) : 0);
   const tBody = tAnswer + proseDuration(short_answer, TYPE_SPEED);
-  const tAdvice = tBody + bodyRows.length * 110 + 150;
-  const tClose = tAdvice + (advice ? proseDuration(advice, TYPE_SPEED) : 0) + 160;
+  const tAdvice = tBody + bodyRows.length * 55 + 75;
+  const tClose = tAdvice + (advice ? proseDuration(advice, TYPE_SPEED) : 0) + 80;
+
+  // когда расклад полностью появился — зовём Shell, чтобы он скроллил к началу
+  useEffect(() => {
+    if (!onDone) return;
+    const id = setTimeout(onDone, tClose + 80);
+    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tClose, onDone]);
 
   let delay = 0;
   const next = () => {
@@ -267,7 +279,7 @@ export default function ReadingResult({
                       ? ','
                       : ''
                     : ',';
-                  const delay = `${tBody + 110 + i * 110}ms`;
+                  const delay = `${tBody + 55 + i * 55}ms`;
                   return (
                     <div key={i} className="json-line" style={{ '--jl-delay': delay } as React.CSSProperties}>
                       {'  '}
@@ -278,7 +290,7 @@ export default function ReadingResult({
                   );
                 })}
               {bodyHeader && (
-                <div className="json-line" style={{ '--jl-delay': `${tBody + 110 * bodyRows.length}ms` } as React.CSSProperties}>
+                <div className="json-line" style={{ '--jl-delay': `${tBody + 55 * bodyRows.length}ms` } as React.CSSProperties}>
                   {'  '}<P>]{advice ? ',' : ''}</P>
                 </div>
               )}
@@ -309,7 +321,7 @@ export default function ReadingResult({
       {/* exit status */}
       <div
         className="term-exit mt-1.5 flex items-center justify-between exit-flash"
-        style={{ animationDelay: `${tClose + 100}ms` }}
+        style={{ animationDelay: `${tClose + 50}ms` }}
       >
         <span><span className="te-ok">✓</span> расклад завершён</span>
         <span>exit 0</span>
