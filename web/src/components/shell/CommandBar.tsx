@@ -55,6 +55,11 @@ export default function CommandBar({
     if (!busy) return;
   }, [busy]);
 
+  // вход в режим вопроса — сразу фокусим ввод, чтобы не кликать повторно
+  useEffect(() => {
+    if (pendingQuestion && !busy) inputRef.current?.focus();
+  }, [pendingQuestion, busy]);
+
   const handleSubmit = () => {
     const v = value;
     setValue('');
