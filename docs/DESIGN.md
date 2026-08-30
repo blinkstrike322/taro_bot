@@ -17,7 +17,7 @@ The single most distinctive move is **contrast at scale**. Typography runs from 
 - Serif for card names (the only typographic ornament)
 - Rectangular everything — no border-radius anywhere
 
-## 2. Color Palette
+## 2. Colors
 
 Strict. No exceptions.
 
