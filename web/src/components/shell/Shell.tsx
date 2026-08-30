@@ -5,7 +5,7 @@
 //   ├ скроллбэк-транскрипт (весь флоу живёт здесь)
 //   ├ vim-статус-лайн (режим · сеанс · проводник · часы)
 //   └ командная строка с чипами
-import { ReactNode, useEffect, useMemo, useRef } from 'react';
+import { ReactNode, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import CrtOverlay from '@/components/CrtOverlay';
 import CrtNoise from '@/components/CrtNoise';
 import AmbientSigil from '@/components/AmbientSigil';
@@ -76,20 +76,56 @@ export default function Shell({
   const guide = getGuide(characterId);
   const scrollRef = useRef<HTMLDivElement>(null);
   /** entryId → DOM-узел записи (для скролла к началу расклада) */
-  const entryRefs = useRef<Record<number, HTMLElement | null>>({});
-  const setEntryRef = (id: number) => (node: HTMLElement | null) => {
-    entryRefs.current[id] = node;
-  };
+  // auto-scroll: обычный терминал следует за выводом (вниз), но когда появляется
+  // НОВЫЙ расклад — мгновенно прыгаем к ЕГО началу, а не к низу транскрипта.
+  // Пока свежий расклад разворачивается на экране — не уводим вниз (нет дёрганий).
+  const handledReadingRef = useRef<number | null>(null);
+  const anchorIdRef = useRef<number | null>(null);
+  const anchorUntilRef = useRef(0);
+  const ANCHOR_MS = 2000; // окно «только что пришёл расклад» — не фоллоу-вниз
 
-  // расклад уже допечатался — прыгаем к ЕГО началу, а не к самому низу
-  const scrollToReadingTop = (id: number) => {
+  useLayoutEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
-    const node = entryRefs.current[id];
-    if (!node) return;
-    const relTop = node.getBoundingClientRect().top - el.getBoundingClientRect().top + el.scrollTop;
-    el.scrollTo({ top: Math.max(relTop - 24, 0), behavior: 'smooth' });
-  };
+
+    // clear сбросил журнал — сбрасываем анкоры, иначе id совпадёт и прыжка не будет
+    if (entries.length === 0) {
+      handledReadingRef.current = null;
+      anchorIdRef.current = null;
+      anchorUntilRef.current = 0;
+      return;
+    }
+
+    // новейший (последний) расклад в транскрипте
+    let readingId: number | null = null;
+    for (let i = entries.length - 1; i >= 0; i--) {
+      if (entries[i].kind === 'json') { readingId = entries[i].id; break; }
+    }
+
+    const now = Date.now();
+
+    // появился новый расклад → прыгаем к его началу сразу, как окно показалось
+    if (readingId != null && readingId !== handledReadingRef.current) {
+      handledReadingRef.current = readingId;
+      anchorIdRef.current = readingId;
+      anchorUntilRef.current = now + ANCHOR_MS;
+      const node = el.querySelector<HTMLElement>(`[data-eid="${readingId}"]`);
+      if (node) {
+        const relTop = node.getBoundingClientRect().top - el.getBoundingClientRect().top + el.scrollTop;
+        el.scrollTo({ top: Math.max(relTop - 12, 0), behavior: 'auto' });
+      }
+      return;
+    }
+
+    // свежий расклад ещё на экране — не дёргаем позицию (защита от гонки json+whisper)
+    if (anchorIdRef.current != null && now < anchorUntilRef.current && readingId === anchorIdRef.current) {
+      return;
+    }
+
+    // обычный терминал: следуем за выводом вниз (без плавности под prefers-reduced-motion)
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    el.scrollTo({ top: el.scrollHeight, behavior: reduced ? 'auto' : 'smooth' });
+  }, [entries, scrollTick]);
 
   // Тяжёлые постоянно анимированные ambient-слои (~6.8к SVG-нод + full-screen зерно)
   // вырубаем на слабых устройствах и при prefers-reduced-motion — цена рендера
@@ -173,14 +209,13 @@ export default function Shell({
 
       case 'json':
         return (
-          <div key={entry.id} ref={setEntryRef(entry.id)} className="entry-pad">
+          <div key={entry.id} data-eid={entry.id} className="entry-pad">
             <ReadingResult
               interpretation={entry.interpretation}
               characterId={characterId}
               cards={entry.cards}
               question={entry.question}
               spreadLabel={entry.spreadLabel}
-              onDone={() => scrollToReadingTop(entry.id)}
             />
           </div>
         );
