@@ -6,7 +6,6 @@
 // шёпот → ответ/сигнал → тело (значения | позиции+связь | день) → совет.
 // Оркестрация через вычисленную временную шкалу.
 // ─────────────────────────────────────────────────────────────
-import { useEffect } from 'react';
 import { getGuide } from '@/lib/guides';
 import type { TarotCard } from './Card';
 import ProseType, { proseDuration } from './shell/ProseType';
@@ -41,8 +40,6 @@ interface ReadingResultProps {
   question?: string | null;
   /** spread label: "карта дня" | "одна карта" | "три карты" */
   spreadLabel?: string;
-  /** вызывается после полного появления расклада — Shell скроллит к его началу */
-  onDone?: () => void;
 }
 
 type BodyRow =
@@ -112,7 +109,6 @@ export default function ReadingResult({
   cards,
   question,
   spreadLabel = 'три карты',
-  onDone,
 }: ReadingResultProps) {
   const { intro, short_answer, advice } = interpretation;
   const guide = getGuide(characterId);
@@ -138,14 +134,6 @@ export default function ReadingResult({
   const tBody = tAnswer + proseDuration(short_answer, TYPE_SPEED);
   const tAdvice = tBody + bodyRows.length * 55 + 75;
   const tClose = tAdvice + (advice ? proseDuration(advice, TYPE_SPEED) : 0) + 80;
-
-  // когда расклад полностью появился — зовём Shell, чтобы он скроллил к началу
-  useEffect(() => {
-    if (!onDone) return;
-    const id = setTimeout(onDone, tClose + 80);
-    return () => clearTimeout(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tClose, onDone]);
 
   let delay = 0;
   const next = () => {
