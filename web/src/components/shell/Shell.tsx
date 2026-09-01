@@ -5,7 +5,7 @@
 //   ├ скроллбэк-транскрипт (весь флоу живёт здесь)
 //   ├ vim-статус-лайн (режим · сеанс · проводник · часы)
 //   └ командная строка с чипами
-import { ReactNode, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
+import { ReactNode, useLayoutEffect, useMemo, useRef } from 'react';
 import CrtOverlay from '@/components/CrtOverlay';
 import CrtNoise from '@/components/CrtNoise';
 import AmbientSigil from '@/components/AmbientSigil';
@@ -131,13 +131,6 @@ export default function Shell({
   // вырубаем на слабых устройствах и при prefers-reduced-motion — цена рендера
   // там непропорционально высока и может ронять вью-вьюху телефона.
   const heavyMotion = useMemo(() => isLowEndDevice(), []);
-
-  // автоскролл как в настоящем терминале — вывод всегда виден
-  useEffect(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
-  }, [entries.length, scrollTick]);
 
   // ── рендер одной записи транскрипта ──
   const renderEntry = (entry: Entry): ReactNode => {
