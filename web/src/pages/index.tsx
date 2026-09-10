@@ -13,8 +13,10 @@ import { getGuide } from '@/lib/guides';
 import * as SFX from '@/lib/sound';
 import {
   Entry, OutLine, HistoryRow, randomWhisper, randomHex, sleep,
+  spreadLabelFromType,
 } from '@/lib/transcript';
 import type { Interpretation } from '@/lib/api';
+import type { TarotCard } from '@/components/Card';
 import { typeDuration } from '@/components/shell/Typewriter';
 
 type PendingQuestion = { cards: 1 | 3 } | null;
@@ -22,6 +24,31 @@ type PendingQuestion = { cards: 1 | 3 } | null;
 const MOON_PHASES = [
   'луна убывающая', 'луна растущая', 'новолуние близко', 'полнолуние вчера',
 ];
+
+/** Карты из записи журнала → формат рендера (два исторических формата). */
+function cardsFromHistory(cardsData: any): TarotCard[] {
+  const toCard = (c: any): TarotCard | null => {
+    if (!c || !c.id || !c.name) return null;
+    return {
+      id: c.id,
+      name: c.name,
+      image_url: `/cards/${c.id}.png`,
+      is_reversed: Boolean(c.is_reversed ?? (c.orientation === 'reversed')),
+    };
+  };
+  const raw: any[] = Array.isArray(cardsData?.cards)
+    ? cardsData.cards                      // новый формат: {cards: [...], spread_type}
+    : cardsData?.chosen_card               // легаси карты дня: {chosen_index, chosen_card}
+      ? [cardsData.chosen_card]
+      : [];
+  return raw.map(toCard).filter((c: TarotCard | null): c is TarotCard => c !== null);
+}
+
+/** Остаток квоты после расклада — тихая строка под exit-статусом. */
+function quotaLine(remaining: number | undefined | null, limit: number | undefined | null): OutLine | null {
+  if (remaining == null || limit == null || limit <= 1) return null; // daily — не показываем
+  return { text: `пелена: осталось ${remaining} из ${limit} призывов`, tone: 'faint' };
+}
 
 export default function Home() {
   const [entries, setEntries] = useState<Entry[]>([{ id: 0, kind: 'boot' }]);
@@ -42,6 +69,8 @@ export default function Home() {
   const typeParamRef = useRef<string | null>(null);
   /** entryId → промис доставленного шёпота (параллельный канал) */
   const whisperJobsRef = useRef<Map<number, Promise<Interpretation>>>(new Map());
+  /** последний остаток квоты — тихая строка под завершённым раскладом */
+  const quotaRef = useRef<{ remaining?: number; limit?: number }>({});
 
   // ── инициализация ──
   useEffect(() => {
@@ -158,6 +187,16 @@ export default function Home() {
     }
   }, [push]);
 
+  // ── ошибка канала: пелена → продуктовый paywall, остальное → обычный сбой ──
+  const handleChannelError = useCallback((err: any) => {
+    if (err?.needsSubscription) {
+      push({ kind: 'paywall', msg: err?.message || 'призывы иссякли' });
+    } else {
+      push({ kind: 'error', msg: err?.message || 'канал недоступен' });
+    }
+    setMode('ОЖИДАНИЕ');
+  }, [push]);
+
   // ── флоу: карта дня ──
   const runDaily = useCallback(async () => {
     setBusy(true); busyRef.current = true;
@@ -176,12 +215,11 @@ export default function Home() {
       startWhisper(entryId, res.token);
     } catch (err: any) {
       SFX.sError();
-      push({ kind: 'error', msg: err?.message || 'канал недоступен' });
-      setMode('ОЖИДАНИЕ');
+      handleChannelError(err);
     } finally {
       setBusy(false); busyRef.current = false;
     }
-  }, [characterId, progressWith, push, pushOut, startWhisper]);
+  }, [characterId, progressWith, push, pushOut, startWhisper, handleChannelError]);
 
   // ── флоу: расклад с вопросом ──
   const runAsk = useCallback(async (cards: 1 | 3, question: string | null) => {
@@ -195,14 +233,22 @@ export default function Home() {
         pushOut([{ text: 'вопрос принят · канал стабилен', tone: 'info' }]);
       }
       const res = await progressWith('тасование колоды', 1100, API.spreadBegin(cards, question, characterId));
-      pushOut([
-        {
-          text: cards === 3
-            ? 'раздача: 3 аркана · прошлое · настоящее · будущее'
-            : 'раздача: 1 аркан',
-          tone: 'dim',
-        },
-      ]);
+
+      // динамический расклад: позиции вычислены бэкендом по вопросу
+      const positions = res.positions;
+      const dealLines: OutLine[] = [{
+        text: cards === 3
+          ? 'раздача: 3 аркана · динамический расклад'
+          : 'раздача: 1 аркан',
+        tone: 'dim',
+      }];
+      if (positions) {
+        positions.forEach((p, i) => {
+          dealLines.push({ text: `0${i + 1} · ${p}`, tone: 'faint' });
+        });
+      }
+      pushOut(dealLines);
+
       const spreadCards = toTarotCards(res.cards);
       const entryId = push({
         kind: 'spread',
@@ -212,17 +258,18 @@ export default function Home() {
         interpretation: null,
         spreadLabel: cards === 3 ? 'три карты' : 'одна карта',
         count: cards,
+        positions,
       });
+      quotaRef.current = { remaining: res.remaining, limit: res.limit };
       setMode('РАСКЛАД');
       startWhisper(entryId, res.token);
     } catch (err: any) {
       SFX.sError();
-      push({ kind: 'error', msg: err?.message || 'канал недоступен' });
-      setMode('ОЖИДАНИЕ');
+      handleChannelError(err);
     } finally {
       setBusy(false); busyRef.current = false;
     }
-  }, [characterId, echoCmd, progressWith, push, pushOut, startWhisper]);
+  }, [characterId, echoCmd, progressWith, push, pushOut, startWhisper, handleChannelError]);
 
   // ── флоу: журнал сеансов ──
   const runHistory = useCallback(async () => {
@@ -232,11 +279,15 @@ export default function Home() {
       pushOut([{ text: 'чтение журнала ~/сеансы.log …', tone: 'dim' }]);
       const now = new Date();
       const res = await API.getReadings(now.getFullYear(), now.getMonth() + 1);
+      // журнал несёт полные данные чтений — тап разворачивает сеанс целиком
       const rows: HistoryRow[] = (res.readings || []).map((r) => ({
         id: r.id,
         type: r.type,
         question: r.question,
         created_at: r.created_at,
+        cards_data: r.cards_data,
+        interpretation: r.interpretation,
+        character_id: r.character_id,
       }));
       push({ kind: 'history', rows });
     } catch {
@@ -246,6 +297,37 @@ export default function Home() {
       setMode('ОЖИДАНИЕ');
     }
   }, [push, pushOut]);
+
+  // ── разворачивание старого сеанса: тот же рендер, мгновенно, без звука печати ─
+  const handleHistorySelect = useCallback(async (row: HistoryRow) => {
+    if (busyRef.current) return;
+    const cards = cardsFromHistory(row.cards_data);
+    if (!cards.length || !row.interpretation) {
+      pushOut([{ text: `cat: сеанс #${row.id}: запись без карт`, tone: 'err' }]);
+      return;
+    }
+    await echoCmd(`taro show ${row.id}`);
+    pushOut([
+      { text: `сеанс #${row.id} · ${spreadLabelFromType(row.type)}`, tone: 'dim' },
+    ]);
+    push({
+      kind: 'json',
+      interpretation: row.interpretation,
+      cards,
+      question: row.question,
+      spreadLabel: spreadLabelFromType(row.type),
+      instant: true,
+      characterId: row.character_id,
+    });
+    setMode('ОЖИДАНИЕ');
+  }, [echoCmd, push, pushOut]);
+
+  // ── закрыть WebApp (paywall → вернуться в чат бота) ──
+  const handleCloseApp = useCallback(() => {
+    try {
+      (window as any).Telegram?.WebApp?.close();
+    } catch {}
+  }, []);
 
   // ── смена проводника ──
   const runGuideSet = useCallback(async (id: string) => {
@@ -322,16 +404,18 @@ export default function Home() {
       { text: '' },
       { text: 'СИНТАКСИС', tone: 'accent' },
       { text: '  taro daily              карта дня без вопроса' },
-      { text: '  taro ask [вопрос]       три карты · прошлое-настоящее-будущее' },
+      { text: '  taro ask [вопрос]       три карты · расклад собирается под вопрос' },
       { text: '  taro ask1 [вопрос]      одна карта · точечный ответ' },
       { text: '  taro catalog            виды раскладов' },
       { text: '  taro guides             сменить проводника' },
-      { text: '  taro history            журнал сеансов' },
+      { text: '  taro history            журнал сеансов (тап — развернуть)' },
       { text: '  taro sound              звук терминала вкл/выкл' },
       { text: '  clear                   очистить экран' },
       { text: '' },
       { text: 'ОПИСАНИЕ', tone: 'accent' },
       { text: '  78 арканов. три проводника. один канал.' },
+      { text: '  позиции трёх карт подстраиваются под вопрос —' },
+      { text: '  не всегда «прошлое-настоящее-будущее».' },
       { text: '  каждая сессия шифруется шёпотом луны.' },
       { text: '' },
       { text: 'СОВЕТ', tone: 'accent' },
@@ -509,6 +593,9 @@ export default function Home() {
               await echoCmd('taro read --json');
               push({ kind: 'json', interpretation: interp, cards: entry.cards, question: entry.question, spreadLabel: entry.spreadLabel });
               pushOut([{ text: randomWhisper(), tone: 'comment' }]);
+              // тихий индикатор остатка квоты — без этого лимит не виден до отказа
+              const qline = quotaLine(quotaRef.current.remaining, quotaRef.current.limit);
+              if (qline) pushOut([qline]);
               setMode('ОЖИДАНИЕ');
             })();
           }, 950);
@@ -575,6 +662,8 @@ export default function Home() {
       onCancelPending={handleCancelPending}
       onGuideSelect={handleGuideSelect}
       onFlip={handleFlip}
+      onHistorySelect={handleHistorySelect}
+      onCloseApp={handleCloseApp}
     />
   );
 }

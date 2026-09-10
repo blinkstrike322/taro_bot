@@ -3,11 +3,13 @@
 // HistoryBlock — журнал сеансов в стиле tail:
 //   #1  день      10 авг · 12:00
 //   #2  1 карта   «стоит ли менять работу?»  11 авг · 09:14
+// Тап по строке разворачивает полный сеанс — тот же рендер, что был изначально.
 import type { HistoryRow } from '@/lib/transcript';
 import { formatDateTime } from '@/lib/transcript';
 
 interface HistoryBlockProps {
   rows: HistoryRow[];
+  onSelect: (row: HistoryRow) => void;
 }
 
 const TYPE_LABEL: Record<string, string> = {
@@ -16,7 +18,7 @@ const TYPE_LABEL: Record<string, string> = {
   '3': '3 карты',
 };
 
-export default function HistoryBlock({ rows }: HistoryBlockProps) {
+export default function HistoryBlock({ rows, onSelect }: HistoryBlockProps) {
   if (!rows.length) {
     return (
       <div className="history-block">
@@ -33,8 +35,15 @@ export default function HistoryBlock({ rows }: HistoryBlockProps) {
       {rows.map((r) => {
         const type = TYPE_LABEL[r.type] ?? r.type;
         const date = formatDateTime(r.created_at);
+        const expandable = Boolean(r.cards_data && r.interpretation);
         return (
-          <div key={r.id} className="tl history-row">
+          <button
+            key={r.id}
+            type="button"
+            className={`tl history-row${expandable ? ' history-row--open' : ''}`}
+            onClick={() => expandable && onSelect(r)}
+            title={expandable ? 'развернуть сеанс' : undefined}
+          >
             <span className="hr-id">#{r.id}</span>{' '}
             <span className="hr-type">{type.padEnd(9, '\u00A0')}</span>{' '}
             {r.question ? (
@@ -45,11 +54,12 @@ export default function HistoryBlock({ rows }: HistoryBlockProps) {
             ) : (
               <span className="hr-date">{date}</span>
             )}
-          </div>
+            {expandable && <span className="hr-arrow"> ⏎</span>}
+          </button>
         );
       })}
       <div className="tl tl-comment" style={{ marginTop: 6 }}>
-        {`tail: показано ${rows.length} записей`}
+        {`tail: показано ${rows.length} записей · тапни — сеанс развернётся`}
       </div>
     </div>
   );

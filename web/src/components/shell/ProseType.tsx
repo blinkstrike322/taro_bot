@@ -25,6 +25,8 @@ interface ProseTypeProps {
   shimmer?: boolean;
   /** тикать телетайпом при печати — звук вывода канала */
   sound?: boolean;
+  /** мгновенный вывод без посимвольной печати (повторный просмотр из журнала) */
+  instant?: boolean;
   onDone?: () => void;
 }
 
@@ -52,6 +54,7 @@ export default function ProseType({
   tail,
   shimmer = false,
   sound = true,
+  instant = false,
   onDone,
 }: ProseTypeProps) {
   const [n, setN] = useState(0);
@@ -61,7 +64,7 @@ export default function ProseType({
   useEffect(() => {
     setN(0);
     doneRef.current = false;
-    if (!target) {
+    if (!target || instant) {
       onDone?.();
       return;
     }
@@ -81,15 +84,17 @@ export default function ProseType({
     t = setTimeout(step, startDelay);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [target, startDelay, speed]);
+  }, [target, startDelay, speed, instant]);
 
-  const done = n >= target.length;
+  const done = instant || n >= target.length;
 
   return (
     <span className={`j-prose ${className ?? ''}`} style={style}>
       {'"'}
-      <span className={done && shimmer ? 'j-shimmer' : undefined}>{target.slice(0, n)}</span>
-      {!done && <span className="prose-cursor" aria-hidden="true">▊</span>}
+      <span className={done && shimmer ? 'j-shimmer' : undefined}>
+        {instant ? target : target.slice(0, n)}
+      </span>
+      {!done && !instant && <span className="prose-cursor" aria-hidden="true">▊</span>}
       {done && '"'}
       {done && tail && <span className="j-punct">{tail}</span>}
     </span>
