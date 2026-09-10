@@ -33,14 +33,14 @@ taro_bot/
 ├── requirements.txt          # Python зависимости
 ├── .gitignore
 ├── bot/
-│   ├── handlers.py           # /start, выбор персонажа, WebApp кнопки
-│   └── webapp_handler.py     # Обработка WEB_APP_DATA
+│   ├── handlers.py           # /start, выбор персонажа, подписки
 ├── core/
-│   ├── llm.py                # OpenRouter интеграция, парсинг ответов, fallback
-│   ├── prompts.py            # Сборка промптов (spread_type, позиции)
+│   ├── llm.py                # LLM-интеграция, валидация схемы, fallback
+│   ├── prompts.py            # Сборка промптов (spread_type, динамические позиции)
+│   ├── quota.py              # Лимиты + атомарный резерв слота квоты
 │   └── tarot.py              # Логика вытягивания карт
 ├── storage/
-│   ├── db.py                 # SQLite (users, readings)
+│   ├── db.py                 # SQLite (users, readings + резервы)
 │   └── models.py             # Pydantic модели
 ├── data/
 │   └── characters.json       # 3 персонажа с унифицированными промптами
@@ -188,26 +188,24 @@ web/.next/            # Next.js build cache
 
 | Метод | Путь | Описание |
 |---|---|---|
-| `POST` | `/api/spread` | Получить расклад (1 или 3 карты) |
-| `GET` | `/api/readings` | История раскладов |
+| `POST` | `/api/spread/begin` | Раздача карт + фоновый запуск толкования (возвращает `token`, квоту, динамические `positions`) |
+| `GET` | `/api/spread/poll?token=` | Готово ли толкование (`{"ready": false/true}`) |
+| `GET` | `/api/readings` | История раскладов за месяц |
+| `GET` | `/api/character` | Активный проводник пользователя |
+| `POST` | `/api/log` | Клиентские ошибки WebView → серверный лог |
+| `GET` | `/api/disk` | Статус диска/БД — только для `ADMIN_IDS` |
 | `GET` | `/` | WebApp (Next.js static) |
 
-### Пример curl
+Все эндпоинты требуют валидный `init_data` Telegram (HMAC-подпись,
+свежесть `auth_date` ≤ 24ч).
+
+### Смоук-тест API
 
 ```bash
-# 1 карта
-curl -X POST https://taro-bot-blinkstrike.waw0.amvera.tech/api/spread \
-  -H "Content-Type: application/json" \
-  -d '{"tg_id":1,"spread_type":1,"character_id":"shadow_walker"}'
-
-# 3 карты
-curl -X POST https://taro-bot-blinkstrike.waw0.amvera.tech/api/spread \
-  -H "Content-Type: application/json" \
-  -d '{"tg_id":1,"spread_type":3,"character_id":"spark_of_chaos","question":"Что ждёт?"}'
-
-# Проверка здоровья
-curl https://taro-bot-blinkstrike.waw0.amvera.tech/api/readings?tg_id=1
+BOT_TOKEN=<token> OPENROUTER_API_KEY=<key> python scripts/smoke_api.py
 ```
+Проверяет полный цикл: авторизация → begin/poll → позиции → квота →
+paywall-флаг → daily-лимит → админ-доступ — без реального Telegram.
 
 ---
 

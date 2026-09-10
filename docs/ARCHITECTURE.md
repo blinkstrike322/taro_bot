@@ -24,14 +24,14 @@ taro_bot/
 ├── DESIGN.md              # Дизайн-спецификация WebApp
 │
 ├── bot/                    # Telegram Bot Layer (aiogram 3.x)
-│   ├── handlers.py         #  CommandStart, выбор персонажа, меню
-│   ├── router.py           #  Маршрутизация хендлеров
-│   └── webapp_handler.py   #  Обработка WebApp данных из Telegram
+│   ├── handlers.py         #  CommandStart, выбор персонажа, меню, подписки
+│   └── router.py           #  Маршрутизация хендлеров
 │
 ├── core/                   # Бизнес-логика
 │   ├── tarot.py            #  Загрузка карт, выбор случайных, ориентация
-│   ├── llm.py              #  Интеграция с OpenRouter API, fallback
-│   ├── prompts.py          #  Системные промпты и сборка запросов
+│   ├── llm.py              #  Интеграция с LLM, fallback, валидация схемы
+│   ├── prompts.py          #  Системные промпты, динамические позиции
+│   ├── quota.py            #  Лимиты (check) + атомарный резерв слота
 │   └── reminder.py         #  Цикл напоминаний неактивным пользователям
 │
 ├── storage/                # Слой данных
@@ -113,15 +113,14 @@ await asyncio.gather(
 
 - Порт: 8080
 - Раздаёт статику WebApp (Next.js сборка из `static/webapp/`)
-- Раздаёт изображения карт из `static/pixel/`
-- Обрабатывает API-запросы от WebApp: `/api/spread`, `/api/card_pick`, `/api/readings`
+- Обрабатывает API-запросы от WebApp: `/api/spread/begin`, `/api/spread/poll`, `/api/readings`, `/api/character`, `/api/log`, `/api/disk` (только админам)
 
 ### aiogram (bot polling)
 
 - Получает обновления от Telegram через long polling
 - Обрабатывает команду `/start`
 - Обрабатывает callback-запросы выбора персонажа
-- Принимает WebApp данные через `message.web_app_data`
+- Подписки (Telegram Stars), напоминания
 
 ---
 
@@ -133,51 +132,50 @@ await asyncio.gather(
 
 ```python
 router = Router()
-router.include_router(start_router)    # /start, главное меню
+router.include_router(start_router)    # /start, главное меню, подписки
 router.include_router(character_router) # выбор персонажа
 ```
-
-В `app.py` также подключается `webapp_router` из `bot/webapp_handler.py`.
 
 ### Команды и callback-запросы
 
 1. **`/start`** -- проверяет, новый ли пользователь. Если новый -- предлагает выбрать персонажа. Если вернулся -- показывает приветствие выбранного персонажа и главное меню.
 
 2. **Главное меню** (InlineKeyboard):
-   - "1 карта" -- WebApp с type=1 (расклад на 1 карту)
-   - "3 карты" -- WebApp с type=3 (расклад на 3 карты)
-   - "Карта дня" -- WebApp с type=daily
-   - "Сменить проводника" -- открывает выбор персонажа
+   - "НАЧАТЬ СЕАНС" -- открывает WebApp
+   - вкл/выкл уведомлений
 
 3. **Выбор персонажа** -- callback-запросы вида `char:{id}`. Сохраняет выбор в БД.
 
-### Обработка WebApp данных
+### Обработка данных WebApp
 
-Когда пользователь взаимодействует с WebApp и отправляет результат в Telegram, срабатывает `handle_webapp_data` в `bot/webapp_handler.py`:
-
-- Принимает JSON-данные из `message.web_app_data.data`
-- Проверяет поле `action`: `card_picked` или `spread_done`
-- Для `card_picked`: проверяет, не было ли уже сегодня гадания (тип `daily`), выбирает карту, вызывает LLM, сохраняет результат, отправляет в Telegram
-- Для `spread_done`: отправляет толкование в Telegram
+Раньше существовал второй бизнес-путь через `WEB_APP_DATA`
+(`bot/webapp_handler.py` со своей реализацией карты дня). Он удалён:
+весь бизнес-флоу (квота, карты, толкование, сохранение) живёт
+только в API `/api/spread/begin` → `/api/spread/poll`. Один процесс —
+одна реализация.
 
 ---
 
 ## 6. Веб-сервер (aiohttp API)
 
-Три эндпоинта, объявленных в `app.py` и `run_web_only.py`:
+Эндпоинты, объявленные в `app.py` (аутентификация — валидный `initData`
+Telegram с проверкой подписи HMAC и свежести `auth_date` ≤ 24ч):
 
-### `POST /api/spread`
-- Принимает: `tg_id`, `spread_type` (1 или 3), `question` (опционально), `character_id`
-- Возвращает: массив карт с интерпретацией
-- Логика: `draw_cards(count)` -> `interpret_reading()` -> сохранение в БД
+### `POST /api/spread/begin`
+- Принимает: `init_data`, `spread_type` (1/3), `question` (опционально), `character_id` (UI-подсказка, игнорируется)
+- Проводник определяется сервером из БД пользователя (Telegram identity → user.character_id)
+- Атомарно резервирует слот квоты (INSERT с guard-подзапросом)
+- Возвращает сразу: карты, `token`, `remaining`, `limit` и `positions` (динамические позиции 3-карточного расклада)
+- В фоне: LLM-толкование (`_whisper_task`)
 
-### `POST /api/card_pick`
-- Принимает: `tg_id`, `card_index` (0-2)
-- Возвращает: выбранную карту с интерпретацией
-- Логика: `draw_cards(3)` -> выбор одной -> `interpret_reading()` -> сохранение
+### `GET /api/spread/poll`
+- Принимает: `token`
+- Пока шёпот формируется: `{"ready": false}`
+- Готово: `{"ready": true, "interpretation": {...}}`
+- Провал шёпота → слот квоты возвращается пользователю (`release_reading`)
 
 ### `GET /api/readings`
-- Принимает: `tg_id`, `year`, `month`
+- Принимает: `init_data`, `year`, `month`
 - Возвращает: список чтений за месяц
 - Используется календарём WebApp
 
