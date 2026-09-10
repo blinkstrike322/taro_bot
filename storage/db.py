@@ -35,6 +35,99 @@ CREATE TABLE IF NOT EXISTS readings (
 
 _db_connection: Optional[aiosqlite.Connection] = None
 
+# Маркер незавершённого резерва квоты: строка readings создана в момент
+# начала расклада, толкование допишет complete_reading(). Пока маркер стоит,
+# строка не попадает в историю и считается «оплаченным слотом» квоты.
+_PENDING_MARKER = "{}"
+
+
+async def reserve_reading(
+    db: aiosqlite.Connection,
+    user_id: int,
+    type: str,
+    question: Optional[str],
+    cards_data: dict,
+    character_id: str,
+    *,
+    unlimited: bool = False,
+    limit: int = 1,
+) -> Optional[int]:
+    """Атомарно занять слот квоты, создав чтение с маркером-заглушкой.
+
+    Толкование готовится секундами, а лимит должен списываться в момент
+    начала расклада — иначе два параллельных /begin одновременно пройдут
+    проверку. Резерв = INSERT с guard-подзапросом: одна SQL-команда,
+    SQLite сериализует запись, конкурентный запрос увидит уже занятый слот.
+
+    Возвращает id чтения (резерв занят) или None, если слоты исчерпаны.
+    Слот возвращается release_reading(), толкование дописывается
+    complete_reading().
+    """
+    cards_json = json.dumps(cards_data, ensure_ascii=False)
+
+    if unlimited:  # админ/тестер — без лимита, но запись всё равно создаём
+        cursor = await db.execute(
+            "INSERT INTO readings (user_id, type, question, cards_data, interpretation, character_id) VALUES (?, ?, ?, ?, ?, ?)",
+            (user_id, type, question, cards_json, _PENDING_MARKER, character_id),
+        )
+        await db.commit()
+        return cursor.lastrowid
+
+    if type == "daily":
+        guard = (
+            "SELECT COUNT(*) FROM readings WHERE user_id = ? AND date(created_at) = date('now') "
+            "AND (type = 'daily' OR (type = 'spread_1' AND question IS NULL))"
+        )
+    else:
+        guard = (
+            "SELECT COUNT(*) FROM readings WHERE user_id = ? AND type != 'daily' "
+            "AND strftime('%Y-%m', created_at) = strftime('%Y-%m', 'now')"
+        )
+
+    cursor = await db.execute(
+        "INSERT INTO readings (user_id, type, question, cards_data, interpretation, character_id) "
+        "SELECT ?, ?, ?, ?, ?, ? "
+        f"WHERE ({guard}) < ?",
+        (user_id, type, question, cards_json, _PENDING_MARKER, character_id, user_id, limit),
+    )
+    await db.commit()
+    if cursor.rowcount and cursor.rowcount > 0:
+        return cursor.lastrowid
+    return None
+
+
+async def complete_reading(
+    db: aiosqlite.Connection,
+    reading_id: int,
+    interpretation: dict,
+) -> None:
+    """Дописать толкование в зарезервированное чтение (шёпот вернулся)."""
+    await db.execute(
+        "UPDATE readings SET interpretation = ? WHERE id = ?",
+        (json.dumps(interpretation, ensure_ascii=False), reading_id),
+    )
+    await db.commit()
+
+
+async def release_reading(db: aiosqlite.Connection, reading_id: int) -> bool:
+    """Вернуть слот квоты: удалить резерв, если он так и не заполнился."""
+    cursor = await db.execute(
+        "DELETE FROM readings WHERE id = ? AND interpretation = ?",
+        (reading_id, _PENDING_MARKER),
+    )
+    await db.commit()
+    return bool(cursor.rowcount and cursor.rowcount > 0)
+
+
+async def sweep_stale_reservations(db: aiosqlite.Connection, older_than_minutes: int = 15) -> int:
+    """Удалить брошенные резервы (процесс перезапустился посреди шёпота)."""
+    cursor = await db.execute(
+        "DELETE FROM readings WHERE interpretation = ? AND created_at < datetime('now', ?)",
+        (_PENDING_MARKER, f"-{older_than_minutes} minutes"),
+    )
+    await db.commit()
+    return cursor.rowcount or 0
+
 
 async def _migrate_schema(db: aiosqlite.Connection) -> None:
     """Idiomatic SQLite migrations — try ALTER, ignore if exists."""
@@ -207,8 +300,9 @@ async def get_user_readings_by_month(
            WHERE u.tg_id = ?
              AND strftime('%Y', r.created_at) = ?
              AND strftime('%m', r.created_at) = ?
+             AND r.interpretation != ?
            ORDER BY r.created_at""",
-        (tg_id, year, month),
+        (tg_id, year, month, _PENDING_MARKER),
     )
     rows = await cursor.fetchall()
     result = []
