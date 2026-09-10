@@ -3,7 +3,10 @@ import logging
 
 import aiosqlite
 from config import settings
-from storage.db import is_subscribed, get_monthly_non_daily_count, get_daily_card_count_today
+from storage.db import (
+    is_subscribed, get_monthly_non_daily_count, get_daily_card_count_today,
+    reserve_reading,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -99,3 +102,64 @@ async def check_quota(
             "limit": MONTHLY_LIMIT_PAID,
         }
     return {"ok": True, "remaining": remaining, "limit": MONTHLY_LIMIT_PAID}
+
+
+async def reserve_quota(
+    db: aiosqlite.Connection,
+    user_id: int,
+    tg_id: int,
+    spread_type: str,
+    *,
+    question: str | None = None,
+    cards_data: dict | None = None,
+    character_id: str = "shadow_walker",
+    reading_type: str = "spread_1",
+) -> dict:
+    """Проверить квоту И атомарно занять слот (строка reading с маркером '{}').
+
+    Заменяет связку «check_quota → ...секунды LLM... → save_reading», в которой
+    два параллельных запроса успевали пройти одну и ту же проверку. На успехе
+    слот уже занят: толкование допишет complete_reading(), при провале шёпота
+    слот возвращается release_reading().
+
+    Возвращает:
+      {"ok": True, "reading_id": int, "remaining": N|None, "limit": N|None}
+      {"ok": False, "reason": str, "needs_subscription": bool, ...}
+    """
+    check = await check_quota(db, user_id, tg_id, spread_type)
+    if not check["ok"]:
+        return check  # reason / needs_subscription уже внутри
+
+    unlimited = bool(check.get("admin") or check.get("tester"))
+    limit = check.get("limit") or 1
+
+    reading_id = await reserve_reading(
+        db,
+        user_id=user_id,
+        type=reading_type,
+        question=question,
+        cards_data=cards_data or {},
+        character_id=character_id,
+        unlimited=unlimited,
+        limit=limit,
+    )
+
+    if reading_id is None:
+        # Параллельный запрос успел занять последний слот между проверкой
+        # и резервом — отдаём актуальный отказ.
+        logger.warning("Quota race: user_id=%s lost the last slot", user_id)
+        recheck = await check_quota(db, user_id, tg_id, spread_type)
+        recheck["ok"] = False
+        if not recheck.get("reason"):
+            recheck["reason"] = "Канал перегружен. Попробуй ещё раз."
+        return recheck
+
+    remaining = check.get("remaining")
+    if remaining is not None:
+        remaining = max(0, remaining - 1)
+    return {
+        "ok": True,
+        "reading_id": reading_id,
+        "remaining": remaining,
+        "limit": check.get("limit"),
+    }

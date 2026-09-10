@@ -105,6 +105,97 @@ def strip_emojis(text: str) -> str:
 LATIN_WORD = re.compile(r"\b[A-Za-z]{3,}\b")
 
 
+def _norm_name(value: object) -> str:
+    """Нормализация имени карты для сопоставления с ответом модели."""
+    return re.sub(r"\s+", " ", str(value or "").strip().lower())
+
+
+def validate_interpretation(
+    parsed: object,
+    cards: list[dict],
+    question: str | None,
+    spread_type: object = 1,
+) -> dict | None:
+    """Схемная + семантическая проверка ответа LLM о фактических картах.
+
+    LLM может вернуть красивый JSON, в котором перепутаны карты, реверсы или
+    порядок позиций. Проверяем и чиним:
+      • short_answer обязателен — без него ответ непригоден (None);
+      • позиции → пересобираем по фактическим картам: имя карты из ответа
+        находит реальную карту, её реверс и позиция берутся из бэкенда;
+      • интро/совет при отсутствии заменяются на «».
+
+    Возвращает починенный dict или None — тогда сработает фолбэк по БД карт.
+    """
+    if not isinstance(parsed, dict):
+        return None
+
+    short_answer = parsed.get("short_answer")
+    if not isinstance(short_answer, str) or not short_answer.strip():
+        return None
+
+    repaired = dict(parsed)
+    repaired.setdefault("intro", "")
+    repaired.setdefault("advice", "")
+
+    is_three = str(spread_type) == "3" and len(cards) == 3
+    if is_three:
+        positions_raw = repaired.get("позиции")
+        if not isinstance(positions_raw, list) or len(positions_raw) != len(cards):
+            return None
+
+        from core.prompts import _positions_for_question
+        backend_positions = _positions_for_question(question)
+
+        # карта по имени → индекс в фактической раздаче
+        actual_names = {_norm_name(c.get("name")): i for i, c in enumerate(cards)}
+        claimed: list[int | None] = []
+        for item in positions_raw:
+            if not isinstance(item, dict):
+                return None
+            idx = actual_names.get(_norm_name(item.get("карта")))
+            claimed.append(idx)
+
+        # дубликаты/промахи → позиционный фолбэк (карта i из промпта)
+        unique_claimed = {i for i in claimed if i is not None}
+        if len(unique_claimed) != len(cards):
+            claimed = list(range(len(cards)))
+
+        rebuilt = []
+        for slot, (item, claimed_idx) in enumerate(zip(positions_raw, claimed)):
+            card_idx = claimed_idx if claimed_idx is not None else slot
+            card = cards[card_idx]
+            item_text = item.get("трактовка")
+            if not isinstance(item_text, str) or not item_text.strip():
+                return None
+            rebuilt.append({
+                "_card_idx": card_idx,
+                "позиция": backend_positions[card_idx],
+                "карта": card.get("name"),
+                "реверс": bool(card.get("is_reversed")),
+                "трактовка": item_text.strip(),
+            })
+        # порядок позиций = порядок фактической раздачи (как карты лежат на столе);
+        # проза путешествует вместе с картой, которую описывает
+        rebuilt.sort(key=lambda p: p["_card_idx"])
+        for p in rebuilt:
+            del p["_card_idx"]
+        repaired["позиции"] = rebuilt
+
+    elif len(cards) == 1:
+        meaning = repaired.get("card_meaning")
+        if isinstance(meaning, str) and not meaning.strip():
+            repaired["card_meaning"] = []
+        elif isinstance(meaning, list):
+            repaired["card_meaning"] = [m for m in meaning if isinstance(m, str) and m.strip()]
+        elif meaning is None:
+            repaired["card_meaning"] = []
+        elif not isinstance(meaning, (str, list)):
+            repaired["card_meaning"] = []
+
+    return repaired
+
+
 def _iter_prose(value):
     """Yield every string leaf of the interpretation dict (prose, not keys)."""
     if isinstance(value, str):
@@ -254,8 +345,14 @@ async def interpret_reading(
         raw = cleaned
         parsed = parse_llm_response(raw)
         if parsed:
+            # схемная + семантическая проверка против фактических карт
+            parsed = validate_interpretation(parsed, cards, question, spread_type)
+        if parsed:
             _warn_latin_leak(" ".join(_iter_prose(parsed)))
             return parsed
+        logger.warning(
+            "LLM response failed validation — falling back to cards DB"
+        )
     except RuntimeError:
         logger.error("All LLM models failed, using fallback")
 

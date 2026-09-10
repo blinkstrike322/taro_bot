@@ -134,15 +134,18 @@ async def set_character(callback: types.CallbackQuery) -> None:
         return
 
     db = await aiosqlite.connect(settings.DB_PATH)
+    keyboard: InlineKeyboardMarkup
     try:
         await update_character(db, tg_id=callback.from_user.id, character_id=character_id)
+        # клавиатуру собираем при живом соединении — внутри читаем notifications_enabled
+        keyboard = await _main_menu_keyboard(db, callback.from_user.id)
     finally:
         await db.close()
 
     char = _CHARACTERS[character_id]
     await callback.message.edit_text(
         char["greeting"],
-        reply_markup=await _main_menu_keyboard(db, callback.from_user.id),
+        reply_markup=keyboard,
     )
     await callback.answer()
 
@@ -270,6 +273,7 @@ async def on_successful_payment(message: types.Message) -> None:
         return
 
     db = await aiosqlite.connect(settings.DB_PATH)
+    keyboard: InlineKeyboardMarkup
     try:
         user = await get_user_by_tg_id(db, tg_id)
         if sp.subscription_expiration_date:
@@ -289,11 +293,13 @@ async def on_successful_payment(message: types.Message) -> None:
         else:
             # One-time payment (first month 100 Stars)
             await activate_subscription(db, tg_id, first_month=True)
+        # клавиатуру собираем при живом соединении — внутри читаем notifications_enabled
+        keyboard = await _main_menu_keyboard(db, message.from_user.id)
     finally:
         await db.close()
 
     await message.answer(
         "Подписка активна!\n"
         "100 раскладов в месяц — карты ждут.",
-        reply_markup=await _main_menu_keyboard(db, message.from_user.id),
+        reply_markup=keyboard,
     )
