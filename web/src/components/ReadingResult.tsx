@@ -40,6 +40,8 @@ interface ReadingResultProps {
   question?: string | null;
   /** spread label: "карта дня" | "одна карта" | "три карты" */
   spreadLabel?: string;
+  /** мгновенный рендер без посимвольной печати (повторный просмотр из журнала) */
+  instant?: boolean;
 }
 
 type BodyRow =
@@ -109,6 +111,7 @@ export default function ReadingResult({
   cards,
   question,
   spreadLabel = 'три карты',
+  instant = false,
 }: ReadingResultProps) {
   const { intro, short_answer, advice } = interpretation;
   const guide = getGuide(characterId);
@@ -121,6 +124,7 @@ export default function ReadingResult({
   const bodyHeader = bodyRows[0]?.kind === 'header' ? bodyRows[0].text : null;
 
   // ── временная шкала: структура → шёпот → ответ → тело → совет ──
+  // в instant-режите всё появляется сразу (повторный просмотр из журнала)
   const headerLineCount =
     1 + // {
     1 + // сеанс
@@ -128,16 +132,16 @@ export default function ReadingResult({
     1 + // проводник
     (cards && cards.length > 0 ? 2 + cards.length : 0); // карты: [ ... ]
 
-  const tHeader = headerLineCount * LINE_STEP + 45;
+  const tHeader = instant ? 0 : headerLineCount * LINE_STEP + 45;
   const tWhisper = tHeader;
-  const tAnswer = tWhisper + (intro ? proseDuration(intro, TYPE_SPEED) : 0);
-  const tBody = tAnswer + proseDuration(short_answer, TYPE_SPEED);
-  const tAdvice = tBody + bodyRows.length * 55 + 75;
-  const tClose = tAdvice + (advice ? proseDuration(advice, TYPE_SPEED) : 0) + 80;
+  const tAnswer = instant ? 0 : tWhisper + (intro ? proseDuration(intro, TYPE_SPEED) : 0);
+  const tBody = instant ? 0 : tAnswer + proseDuration(short_answer, TYPE_SPEED);
+  const tAdvice = instant ? 0 : tBody + bodyRows.length * 55 + 75;
+  const tClose = instant ? 0 : tAdvice + (advice ? proseDuration(advice, TYPE_SPEED) : 0) + 80;
 
   let delay = 0;
   const next = () => {
-    delay += LINE_STEP;
+    delay += instant ? 0 : LINE_STEP;
     return `${delay}ms`;
   };
 
@@ -230,6 +234,7 @@ export default function ReadingResult({
                 text={intro}
                 startDelay={tWhisper}
                 speed={TYPE_SPEED}
+                instant={instant}
                 tail=","
                 className="j-str j-multiline italic"
                 style={{ color: 'rgba(236, 233, 246, 0.62)' }}
@@ -244,6 +249,7 @@ export default function ReadingResult({
               text={short_answer}
               startDelay={tAnswer}
               speed={TYPE_SPEED}
+              instant={instant}
               tail={bodyRows.length > 0 || advice ? ',' : undefined}
               shimmer
               className="j-str j-multiline text-[14px] font-medium"
@@ -293,6 +299,7 @@ export default function ReadingResult({
                 text={advice}
                 startDelay={tAdvice}
                 speed={TYPE_SPEED}
+                instant={instant}
                 className="j-str j-multiline text-[14px] font-medium"
                 style={{ color: adviceColor, textShadow: adviceGlow }}
               />
@@ -309,10 +316,10 @@ export default function ReadingResult({
       {/* exit status */}
       <div
         className="term-exit mt-1.5 flex items-center justify-between exit-flash"
-        style={{ animationDelay: `${tClose + 50}ms` }}
+        style={{ animationDelay: instant ? '0ms' : `${tClose + 50}ms` }}
       >
         <span><span className="te-ok">✓</span> расклад завершён</span>
-        <span>exit 0</span>
+        <span>{instant ? 'из журнала сеансов' : 'exit 0'}</span>
       </div>
     </div>
   );

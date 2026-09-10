@@ -15,11 +15,19 @@ export interface OutLine {
   tone?: OutTone;
 }
 
+/** Строка журнала — несёт полные данные чтения, чтобы тап
+ *  разворачивал сеанс в том же виде, каким он был изначально. */
 export interface HistoryRow {
   id: number;
   type: string;
   question: string | null;
   created_at: string;
+  /** полные карты расклада (вариант: {cards: [...], spread_type} | {chosen_card}) */
+  cards_data?: any;
+  /** сохранённое толкование */
+  interpretation?: Interpretation;
+  /** проводник сеанса — влияет на акцент повторного рендера */
+  character_id?: string;
 }
 
 export type Entry =
@@ -42,6 +50,8 @@ export type Entry =
       question: string | null;
       interpretation: Interpretation | null;
       spreadLabel: string; count: 1 | 3;
+      /** динамические позиции расклада от бэкенда (замена легаси П/Н/Б) */
+      positions?: string[];
       whisperReady?: boolean;
     }
   | {
@@ -50,11 +60,17 @@ export type Entry =
       cards: TarotCard[];
       question: string | null;
       spreadLabel: string;
+      /** мгновенный рендер без посимвольной печати (повторный просмотр из журнала) */
+      instant?: boolean;
+      /** проводник сеанса — для повторного рендера в цвете оригинала */
+      characterId?: string;
     }
   | { id: number; kind: 'menu'; menuId: 'catalog' | 'guides' }
   | { id: number; kind: 'history'; rows: HistoryRow[] }
   | { id: number; kind: 'error'; msg: string }
-  | { id: number; kind: 'ok'; msg: string };
+  | { id: number; kind: 'ok'; msg: string }
+  /** пелена сомкнулась — продуктовый paywall в стилистике ARCANUM */
+  | { id: number; kind: 'paywall'; msg: string };
 
 // ── шёпот системы — вкусовые реплики между делами ──
 export const WHISPERS: string[] = [
@@ -92,4 +108,12 @@ export function formatDateTime(iso: string): string {
   } catch {
     return iso;
   }
+}
+
+/** Метка расклада по типу записи журнала. */
+export function spreadLabelFromType(type: string): string {
+  if (type === 'daily') return 'карта дня';
+  if (type === 'spread_1') return 'одна карта';
+  if (type === 'spread_3') return 'три карты';
+  return type;
 }

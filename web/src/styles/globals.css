@@ -3064,3 +3064,103 @@ div[class*="boot-log"]::-webkit-scrollbar {
     -webkit-text-fill-color: currentColor;
   }
 }
+
+/* ================================================================
+   PAYWALL — «пелена сомкнулась»: продуктовый момент, не ошибка
+   ================================================================ */
+.paywall-block {
+  position: relative;
+  margin: 6px 0 2px;
+  border-left: 2px solid var(--guide-accent, #fff);
+  padding: 10px 12px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.paywall-veil {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 20% 0%, var(--glow-center, rgba(255,255,255,0.04)) 0%, transparent 60%);
+}
+
+.paywall-title {
+  font-family: var(--font-pixel);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  color: var(--guide-accent, #fff);
+  text-shadow: 0 0 10px var(--guide-accent-dim, transparent);
+  animation: paywall-in 0.6s ease-out;
+}
+
+.paywall-msg { margin-top: 4px; }
+
+@keyframes paywall-in {
+  0%   { opacity: 0; letter-spacing: 0.30em; }
+  100% { opacity: 1; letter-spacing: 0.14em; }
+}
+
+.paywall-cta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  margin-top: 10px;
+  padding: 7px 10px;
+  background: none;
+  border: 1px solid var(--guide-accent-dim, rgba(255,255,255,0.25));
+  cursor: pointer;
+  font-family: var(--font-mono-crt);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #fff;
+  text-align: left;
+}
+
+.paywall-cta:hover, .paywall-cta:active {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--guide-accent, #fff);
+}
+
+.pw-glyph { color: var(--guide-accent, #fff); margin-right: 6px; }
+
+.pw-hint {
+  font-size: 10px;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+/* ── журнал: строки-кнопки, тап разворачивает сеанс ── */
+button.history-row {
+  display: block;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 2px 4px 2px 0;
+  cursor: pointer;
+  text-align: left;
+  font-family: var(--font-mono-crt);
+  font-size: 12px;
+  border-left: 2px solid transparent;
+}
+
+button.history-row--open:hover,
+button.history-row--open:active {
+  background: rgba(255, 255, 255, 0.045);
+  border-left-color: var(--guide-accent, #fff);
+}
+
+.hr-arrow {
+  color: var(--guide-accent, #fff);
+  opacity: 0.55;
+  font-size: 11px;
+}
+
+/* ── длинные динамические позиции карт — мягкий перенос, без обрезки ── */
+.card-label {
+  max-width: 190px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}

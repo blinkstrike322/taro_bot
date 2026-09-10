@@ -15,7 +15,7 @@ import ConstellationLayer from '@/components/ConstellationLayer';
 import LunarGlyphsLayer from '@/components/LunarGlyphsLayer';
 import { getGuide } from '@/lib/guides';
 import { shellUser } from '@/lib/commands';
-import type { Entry } from '@/lib/transcript';
+import type { Entry, HistoryRow } from '@/lib/transcript';
 import CommandBar from './CommandBar';
 import BootSequence from './BootSequence';
 import MotdBlock from './MotdBlock';
@@ -24,6 +24,7 @@ import SpreadBlock from './SpreadBlock';
 import ProgressLine from './ProgressLine';
 import PendingLine from './PendingLine';
 import HistoryBlock from './HistoryBlock';
+import PaywallBlock from './PaywallBlock';
 import ReadingResult from '@/components/ReadingResult';
 import Typewriter from './Typewriter';
 
@@ -51,6 +52,10 @@ interface ShellProps {
   onCancelPending: () => void;
   onGuideSelect: (id: string) => void;
   onFlip: (entryId: number, index: number) => void;
+  /** тап по строке журнала → развернуть полный сеанс */
+  onHistorySelect: (row: HistoryRow) => void;
+  /** закрыть WebApp (paywall → вернуться в чат бота) */
+  onCloseApp: () => void;
 }
 
 export default function Shell({
@@ -72,6 +77,8 @@ export default function Shell({
   onCancelPending,
   onGuideSelect,
   onFlip,
+  onHistorySelect,
+  onCloseApp,
 }: ShellProps) {
   const guide = getGuide(characterId);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -193,6 +200,7 @@ export default function Shell({
               cards={entry.cards}
               flipped={entry.flipped}
               count={entry.count}
+              positions={entry.positions}
               whisperReady={entry.whisperReady}
               characterId={characterId}
               onFlip={(i) => onFlip(entry.id, i)}
@@ -205,10 +213,11 @@ export default function Shell({
           <div key={entry.id} data-eid={entry.id} className="entry-pad">
             <ReadingResult
               interpretation={entry.interpretation}
-              characterId={characterId}
+              characterId={entry.characterId ?? characterId}
               cards={entry.cards}
               question={entry.question}
               spreadLabel={entry.spreadLabel}
+              instant={entry.instant}
             />
           </div>
         );
@@ -228,7 +237,14 @@ export default function Shell({
       case 'history':
         return (
           <div key={entry.id} className="entry-pad">
-            <HistoryBlock rows={entry.rows} />
+            <HistoryBlock rows={entry.rows} onSelect={onHistorySelect} />
+          </div>
+        );
+
+      case 'paywall':
+        return (
+          <div key={entry.id} className="entry-pad">
+            <PaywallBlock msg={entry.msg} characterId={characterId} onClose={onCloseApp} />
           </div>
         );
 

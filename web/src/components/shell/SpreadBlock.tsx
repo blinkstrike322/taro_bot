@@ -6,7 +6,9 @@
 import Card from '@/components/Card';
 import type { TarotCard } from '@/components/Card';
 
-const POSITIONS3 = ['прошлое', 'настоящее', 'будущее'];
+// Фолбэк-позиции для старых записей без серверных позиций — нейтральные,
+// не навязывают модель «прошлое-настоящее-будущее».
+const FALLBACK_POSITIONS3 = ['нить первая', 'узор дня', 'вектор'];
 
 interface SpreadBlockProps {
   cards: TarotCard[];
@@ -14,6 +16,8 @@ interface SpreadBlockProps {
   count: 1 | 3;
   /** метка позиции для одиночной карты */
   singleLabel?: string;
+  /** динамические позиции от бэкенда — вычислены по вопросу пользователя */
+  positions?: string[];
   /** фоновый шёпот уже доставлен из канала */
   whisperReady?: boolean;
   /** проводник — определяет цвет ауры/уголков карт */
@@ -28,20 +32,22 @@ const OFFSETS = [
   { x: -3, y: -4 },
 ];
 
-export default function SpreadBlock({ cards, flipped, count, singleLabel, whisperReady, characterId, onFlip }: SpreadBlockProps) {
+export default function SpreadBlock({ cards, flipped, count, singleLabel, positions, whisperReady, characterId, onFlip }: SpreadBlockProps) {
   if (count === 3) {
     const allFlipped = flipped.every(Boolean);
+    const pos = (i: number) =>
+      positions && positions[i] ? positions[i] : FALLBACK_POSITIONS3[i];
     return (
       <div className="spread-wrap">
         <div className="flex flex-col items-center w-full">
-          {/* верхняя карта — настоящее */}
+          {/* верхняя карта — вторая позиция расклада */}
           <div
             className="w-full max-w-[158px] mb-2"
             style={{ transform: `translate(${OFFSETS[1].x}px, ${OFFSETS[1].y}px)` }}
           >
             <Card
               card={cards[1]}
-              position={POSITIONS3[1]}
+              position={pos(1)}
               raised
               flipped={flipped[1]}
               onFlip={() => onFlip(1)}
@@ -49,7 +55,7 @@ export default function SpreadBlock({ cards, flipped, count, singleLabel, whispe
               floatSeed={11}
             />
           </div>
-          {/* нижний ряд — прошлое + будущее */}
+          {/* нижний ряд — первая и третья позиции */}
           <div className="flex items-start justify-center gap-3 w-full">
             <div
               className="flex-1 min-w-0 max-w-[168px]"
@@ -57,7 +63,7 @@ export default function SpreadBlock({ cards, flipped, count, singleLabel, whispe
             >
               <Card
                 card={cards[0]}
-                position={POSITIONS3[0]}
+                position={pos(0)}
                 flipped={flipped[0]}
                 onFlip={() => onFlip(0)}
                 characterId={characterId}
@@ -70,7 +76,7 @@ export default function SpreadBlock({ cards, flipped, count, singleLabel, whispe
             >
               <Card
                 card={cards[2]}
-                position={POSITIONS3[2]}
+                position={pos(2)}
                 flipped={flipped[2]}
                 onFlip={() => onFlip(2)}
                 characterId={characterId}

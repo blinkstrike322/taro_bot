@@ -59,14 +59,14 @@ export function installMockApi() {
   window.fetch = async (input: any, init?: any) => {
     const url = typeof input === 'string' ? input : input?.url || '';
 
-    if (url.includes('/api/spread')) {
+    if (url.includes('/api/spread/begin')) {
       const body = JSON.parse(init?.body || '{}');
       const n = body.spread_type === 3 ? 3 : 1;
       const ids = pick(Date.now() % 100000, n);
-      const positions = n === 3 ? ['прошлое', 'настоящее', 'будущее'] : ['послание'];
-      const meanings = ids.map((id, i) =>
-        `${NAMES[id]}${i === 1 ? ' перевёрнута' : ''} — «${positions[i] || 'послание'}»: ${['то, что ушло, всё ещё держит тебя за рукав.', 'ты стоишь на перекрёстке, и это честнее, чем кажется.', 'будущее просит не скорости, а направления.'][i] || 'тише — и увидишь.'}`,
-      );
+      // динамические позиции — как настоящие, от типа вопроса
+      const positions = n === 3
+        ? ['Твоя позиция и энергия', 'Динамика между вами', 'Главный вектор развития']
+        : ['послание'];
       return new Response(JSON.stringify({
         cards: ids.map((id) => ({
           id,
@@ -74,6 +74,21 @@ export function installMockApi() {
           is_reversed: Math.random() > 0.7,
           orientation: 'upright',
         })),
+        token: `mock-${Math.random().toString(36).slice(2, 10)}`,
+        remaining: 9,
+        limit: 10,
+        ...(n === 3 ? { positions } : {}),
+      }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    }
+
+    if (url.includes('/api/spread/poll')) {
+      const n = 3;
+      const ids = pick(Date.now() % 100000, n);
+      const meanings = ids.map((id, i) =>
+        `${NAMES[id]}${i === 1 ? ' перевёрнута' : ''} — «${['нить', 'узор', 'вектор'][i] || 'послание'}»: ${['то, что ушло, всё ещё держит тебя за рукав.', 'ты стоишь на перекрёстке, и это честнее, чем кажется.', 'будущее просит не скорости, а направления.'][i] || 'тише — и увидишь.'}`,
+      );
+      return new Response(JSON.stringify({
+        ready: true,
         interpretation: {
           intro: INTROS[Date.now() % INTROS.length],
           short_answer: ANSWERS[Date.now() % ANSWERS.length],
@@ -93,11 +108,16 @@ export function installMockApi() {
       return new Response(JSON.stringify({
         readings: Array.from({ length: 6 }, (_, i) => ({
           id: i + 1,
-          type: ['daily', '1', '3'][i % 3],
+          type: ['daily', 'spread_1', 'spread_3'][i % 3],
           question: i % 2 ? 'стоит ли менять работу?' : null,
           created_at: `2026-08-${String(10 + i).padStart(2, '0')}T12:00:00`,
-          cards_data: [],
-          interpretation: {},
+          cards_data: { cards: pick(i + 3, i % 3 === 0 ? 1 : 3).map((id) => ({ id, name: NAMES[id], is_reversed: i === 1 })) },
+          interpretation: {
+            intro: INTROS[i % INTROS.length],
+            short_answer: ANSWERS[i % ANSWERS.length],
+            card_meaning: [NAMES[pick(i + 3, 1)[0]] + ' — тихий знак дня.'],
+            advice: ADVICES[i % ADVICES.length],
+          },
           character_id: 'shadow_walker',
         })),
       }), { status: 200, headers: { 'Content-Type': 'application/json' } });

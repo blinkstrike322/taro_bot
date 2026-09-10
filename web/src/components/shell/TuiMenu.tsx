@@ -26,7 +26,7 @@ function catalogRows(): Row[] {
   return [
     { key: 'daily', marker: '1', label: 'карта дня', desc: 'без вопроса', right: '1 аркан', cmd: 'taro daily' },
     { key: 'one', marker: '2', label: 'одна карта', desc: 'с вопросом', right: '1 аркан', cmd: 'taro ask1' },
-    { key: 'three', marker: '3', label: 'три карты', desc: 'прошлое · настоящее · будущее', right: '3 аркана', cmd: 'taro ask' },
+    { key: 'three', marker: '3', label: 'три карты', desc: 'динамический расклад по вопросу', right: '3 аркана', cmd: 'taro ask' },
   ];
 }
 
