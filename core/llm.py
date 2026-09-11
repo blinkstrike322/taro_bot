@@ -21,7 +21,8 @@ ZEN_URL = "https://opencode.ai/zen/v1/chat/completions"
 def _zen_key() -> str | None:
     return settings.OPENCODE_ZEN_KEY or None
 
-# Primary — Ling via OpenCode Zen (DeepSeek free was retired by provider)
+# Primary — Ling via OpenCode Zen. Free tier требует заголовок x-session-id
+# (см. call_llm), без него Zen возвращал 400 и тракт считался «мёртвым».
 PRIMARY_MODEL = "ling-3.0-flash-fin-free"
 
 # Zen free-tier fallbacks (in order)
@@ -35,8 +36,6 @@ OPENROUTER_FALLBACKS = [
     "nvidia/nemotron-3-super-120b-a12b:free",
     "google/gemma-4-31b-it:free",
     "google/gemma-4-26b-a4b-it:free",
-    "qwen/qwen3-next-80b-a3b-instruct:free",
-    "meta-llama/llama-3.3-70b-instruct:free",
     "openrouter/free",
 ]
 
@@ -231,12 +230,17 @@ async def call_llm(
     when the visible ``content`` field is empty.
     """
     async with httpx.AsyncClient(timeout=180.0) as client:
+        headers = {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+        }
+        # Zen free tier требует непустой заголовок x-session-id, иначе
+        # провайдер возвращает 400 MissingSessionID. OpenRouter его игнорирует.
+        if base_url == ZEN_URL:
+            headers["x-session-id"] = settings.OPENCODE_ZEN_SESSION or "taro-bot"
         response = await client.post(
             base_url,
-            headers={
-                "Authorization": f"Bearer {api_key}",
-                "Content-Type": "application/json",
-            },
+            headers=headers,
             json={
                 "model": model,
                 "messages": messages,
@@ -351,7 +355,8 @@ async def interpret_reading(
             _warn_latin_leak(" ".join(_iter_prose(parsed)))
             return parsed
         logger.warning(
-            "LLM response failed validation — falling back to cards DB"
+            "LLM response failed validation — falling back to cards DB. Raw head: %r",
+            raw[:300],
         )
     except RuntimeError:
         logger.error("All LLM models failed, using fallback")

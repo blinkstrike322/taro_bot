@@ -6,6 +6,7 @@ class Settings(BaseSettings):
     BOT_TOKEN: str
     OPENROUTER_API_KEY: str
     OPENCODE_ZEN_KEY: str = ""
+    OPENCODE_ZEN_SESSION: str = ""  # заголовок x-session-id для Zen free tier
     DB_PATH: str = "/data/taro_bot.db"
     WEBAPP_URL: str = "http://localhost:8080"
     OFFER_URL: str = "http://localhost:8080/offer/"
