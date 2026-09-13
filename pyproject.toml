@@ -1,0 +1,72 @@
+# Hybrid config for the tarot-bot backend.
+# - tool.ruff : repo-pinned lint config so CI is deterministic regardless of the
+#   ruff version's own changing default rule set.
+# - tool.mypy : scoped type check. The codebase is intentionally excluded from two
+#   modules (bot/handlers.py, core/llm.py) that carry genuine-but-unresolved typing
+#   debt in aiogram's over-optional API and LLM sort/call signatures. Re-enable them
+#   once those are the subject of their own typed-refactor PR; do NOT weaken the
+#   production code to satisfy the checker here (auth/payment glue + LLM code).
+
+[tool.ruff]
+target-version = "py312"
+line-length = 120
+# Only the CI-relevant backend code is linted. Generated / vendored / tool dirs
+# are excluded so a bare `ruff check .` locally mirrors the CI step.
+extend-exclude = [
+    ".venv", ".venv-img", "node_modules", "web", "static", "data", "temp",
+    "docs", "scripts", ".git", "__pycache__", ".pytest_cache",
+]
+
+[tool.ruff.lint]
+# E/W/F = pycodestyle + pyflakes (syntax / undefined / unused / real bugs)
+# B     = flake8-bugbear (dubious constructs)
+# I     = isort       (import ordering)
+# UP    = pyupgrade    (modern stdlib/typing idioms)
+# RUF   = ruff-specific (opinionated but actionable micro-rules)
+select = ["E", "W", "F", "B", "I", "UP", "RUF"]
+ignore = [
+    # Line length: the codebase intentionally has long lines (markdown blocks,
+    # URLs, long handler signatures). Cosmetic-only; wrapped line count is not a
+    # correctness signal and reformatting would churn unrelated lines.
+    "E501",
+    # Module-level imports not at top of file: several handlers import after early
+    # module-level setup (env/dotenv loading, sys.path). Intentional ordering.
+    "E402",
+    # Blind except: bot/handlers.py deliberately swallows broad exceptions for
+    # resilience (a rejected update must not crash the poller). Documented choice.
+    "BLE001",
+    # Ambiguous unicode characters C/C++... this is a Russian-language product:
+    # the Cyrillic strings in cards, prompts and tests are intentional content,
+    # so every RUF001/002/003 hit is a false positive here.
+    "RUF001", "RUF002", "RUF003",
+    # asyncio dangling task: app.py intentionally fires a background whisper task
+    # without keeping a handle (fire-and-forget; dropping the reference is the
+    # intended lifecycle). Storing a reference would alter cleanup behavior.
+    "RUF006",
+    # zip() without strict=: pairwise-iteration over codebase data is analyzed
+    # as length-safe at the call site; strict= is an opt-in invariant not needed.
+    "B905",
+]
+
+[tool.mypy]
+python_version = "3.12"
+# Repo .venv is local-only; in CI dependencies are installed so imports resolve,
+# but third-party libs with weak/no stubs (aiogram, aiosqlite, httpx, aiohttp,
+# Pillow) should not fail the build.
+ignore_missing_imports = true
+# Do not descend into imported modules — the backend is checked as a curated set
+# (its own modules), avoiding cross-module noise from files we do not own here.
+follow_imports = "skip"
+files = ["app.py", "bot", "core", "storage", "config.py", "tests"]
+
+# Exclusions by design:
+#   bot/handlers.py — aiogram `Message | InaccessibleMessage | None` and
+#     `User | None` produce union-attr / arg-type / assignment errors across the
+#     auth + payment + reply-markup glue. Truly optional-typed API; resolving them
+#     to no-error requires touching auth/payment behavior, which is off-limits here.
+#   core/llm.py — sort-key lambda and a `str | None` -> `str` call site are genuine
+#     typing gaps in LLM prompting code. Not trivial; excluded rather than weakened.
+exclude = [
+    "bot/handlers.py",
+    "core/llm.py",
+]

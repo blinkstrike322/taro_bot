@@ -1,5 +1,3 @@
-from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel
 
@@ -10,8 +8,8 @@ class User(BaseModel):
     character_id: str = "shadow_walker"
     created_at: str
     last_active_at: str
-    last_reminder_sent_at: Optional[str] = None
-    subscription_end: Optional[str] = None
+    last_reminder_sent_at: str | None = None
+    subscription_end: str | None = None
     first_month_done: int = 0
 
 
@@ -19,7 +17,7 @@ class Reading(BaseModel):
     id: int
     user_id: int
     type: str
-    question: Optional[str] = None
+    question: str | None = None
     cards_data: dict
     interpretation: dict
     character_id: str = "shadow_walker"

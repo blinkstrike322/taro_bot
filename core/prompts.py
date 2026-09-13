@@ -158,7 +158,7 @@ def build_reading_prompt(
     # ── Cards ──
     if mode == "three":
         positions = _positions_for_question(question)
-        lines.append(f"Расклад «3 карты». Позиции уже определены по типу вопроса:")
+        lines.append("Расклад «3 карты». Позиции уже определены по типу вопроса:")
         lines.extend(_format_cards(cards, positions))
     else:
         lines.append("Карта дня:" if mode == "daily" else "Карта:")

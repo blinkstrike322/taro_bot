@@ -1,7 +1,5 @@
 import json
 from datetime import datetime
-from pathlib import Path
-from typing import Optional
 
 import aiosqlite
 
@@ -37,7 +35,7 @@ CREATE TABLE IF NOT EXISTS readings (
 """
 
 
-_db_connection: Optional[aiosqlite.Connection] = None
+_db_connection: aiosqlite.Connection | None = None
 
 # Маркер незавершённого резерва квоты: строка readings создана в момент
 # начала расклада, толкование допишет complete_reading(). Пока маркер стоит,
@@ -65,14 +63,14 @@ async def reserve_reading(
     db: aiosqlite.Connection,
     user_id: int,
     type: str,
-    question: Optional[str],
+    question: str | None,
     cards_data: dict,
     character_id: str,
     *,
     unlimited: bool = False,
     limit: int = 1,
-    client_token: Optional[str] = None,
-) -> Optional[int]:
+    client_token: str | None = None,
+) -> int | None:
     """Атомарно занять слот квоты, создав чтение с маркером-заглушкой.
 
     Толкование готовится секундами, а лимит должен списываться в момент
@@ -185,7 +183,7 @@ async def sweep_stale_reservations(db: aiosqlite.Connection, older_than_minutes:
 async def get_reading_by_token(
     db: aiosqlite.Connection,
     token: str,
-) -> Optional[dict]:
+) -> dict | None:
     """Resolve a spread token to its reading row + owner tg_id, or None.
 
     Токен → чтение идёт через БД (client_token), а не через process-словарь:
@@ -321,7 +319,7 @@ async def save_reading(
     db: aiosqlite.Connection,
     user_id: int,
     type: str,
-    question: Optional[str],
+    question: str | None,
     cards_data: dict,
     interpretation: dict,
     character_id: str = "shadow_walker",
@@ -522,7 +520,7 @@ async def get_daily_card_count_today(db: aiosqlite.Connection, user_id: int) -> 
     return row[0]
 
 
-async def get_user_by_tg_id(db: aiosqlite.Connection, tg_id: int) -> Optional[User]:
+async def get_user_by_tg_id(db: aiosqlite.Connection, tg_id: int) -> User | None:
     """Get full user row by tg_id."""
     cursor = await db.execute(
         "SELECT id, tg_id, character_id, created_at, last_active_at, last_reminder_sent_at, subscription_end, first_month_done FROM users WHERE tg_id = ?",
@@ -562,7 +560,7 @@ class Database:
 
     def __init__(self, db_path: str = "taro_bot.db") -> None:
         self.db_path = db_path
-        self._connection: Optional[aiosqlite.Connection] = None
+        self._connection: aiosqlite.Connection | None = None
 
     async def connect(self) -> None:
         """Open a database connection and ensure tables exist."""
@@ -589,7 +587,7 @@ class Database:
         self,
         user_id: int,
         type: str,
-        question: Optional[str],
+        question: str | None,
         cards_data: dict,
         interpretation: dict,
         character_id: str = "shadow_walker",

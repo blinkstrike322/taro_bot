@@ -1,10 +1,10 @@
+import asyncio
 import logging
 from datetime import datetime, timedelta
-import asyncio
 
 import aiosqlite
 from aiogram import Bot
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 from config import settings
 from storage.db import get_inactive_users, get_notifications_enabled

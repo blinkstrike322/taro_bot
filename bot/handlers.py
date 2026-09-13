@@ -3,19 +3,36 @@ from datetime import datetime
 from pathlib import Path
 
 import aiosqlite
-from aiogram import Router, types, F
+from aiogram import F, Router, types
 from aiogram.filters import Command, CommandStart
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo, LabeledPrice, PreCheckoutQuery, SuccessfulPayment
+from aiogram.types import (
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    PreCheckoutQuery,
+    WebAppInfo,
+)
 
 from config import settings
-from core.payments import get_subscription_price, FIRST_MONTH_PRICE, REGULAR_PRICE, SUBSCRIPTION_TITLE, SUBSCRIPTION_DESCRIPTION_FIRST, SUBSCRIPTION_DESCRIPTION_REGULAR
-from storage.db import create_tables, get_or_create_user, update_character, update_last_active
-from storage.db import (
-    get_user_by_tg_id, activate_subscription,
-    get_monthly_non_daily_count,
-    is_subscribed,
+from core.payments import (
+    FIRST_MONTH_PRICE,
+    REGULAR_PRICE,
+    SUBSCRIPTION_DESCRIPTION_FIRST,
+    SUBSCRIPTION_DESCRIPTION_REGULAR,
+    SUBSCRIPTION_TITLE,
+    get_subscription_price,
 )
-from storage.db import get_notifications_enabled, set_notifications_enabled
+from storage.db import (
+    activate_subscription,
+    create_tables,
+    get_monthly_non_daily_count,
+    get_notifications_enabled,
+    get_or_create_user,
+    get_user_by_tg_id,
+    is_subscribed,
+    set_notifications_enabled,
+    update_character,
+    update_last_active,
+)
 
 _CHARACTERS_PATH = Path(__file__).resolve().parent.parent / "data" / "characters.json"
 
@@ -28,6 +45,7 @@ _BELOW = '\u0316\u0317\u0318\u0319\u031C\u031D\u031E\u031F\u0320\u0321\u0322\u03
 _CURSED_SYMS = ('†', '‡', '♰', '♱', '⚹', '☠', '○', '◇', '◎', '※', '⁂', 'Ξ', 'Ψ', 'Ж', 'ᛉ')
 
 import random
+
 
 def _zalgo(text: str, intensity: int = 2) -> str:
     result = []

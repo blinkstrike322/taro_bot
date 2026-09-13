@@ -1,24 +1,24 @@
 # core/tarot.py
-import random
 import json
 import logging
+import random
 from pathlib import Path
-from typing import List, Dict, Any
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 PROJECT_ROOT = Path(__file__).parent.parent
-_CARDS: List[Dict[str, Any]] = []
+_CARDS: list[dict[str, Any]] = []
 
-def load_cards() -> List[Dict[str, Any]]:
+def load_cards() -> list[dict[str, Any]]:
     global _CARDS
     if _CARDS:
         return _CARDS
     path = PROJECT_ROOT / "data" / "cards.json"
     try:
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path, encoding="utf-8") as f:
             _CARDS = json.load(f)
-    except Exception as e:
+    except Exception:
         logger.exception("Не удалось загрузить cards.json: %s", path)
         raise
     return _CARDS
@@ -40,7 +40,7 @@ def validate_cards() -> None:
         raise FileNotFoundError(msg)
     logger.info("All %d card images found", len(cards))
 
-def _card_payload(card: Dict[str, Any]) -> Dict[str, Any]:
+def _card_payload(card: dict[str, Any]) -> dict[str, Any]:
     is_reversed = random.choice([True, False])
     filename = card.get("filename", "")
     image_path = str(PROJECT_ROOT / "static" / "pixel" / filename)
@@ -54,7 +54,7 @@ def _card_payload(card: Dict[str, Any]) -> Dict[str, Any]:
         "orientation": "reversed" if is_reversed else "upright",
     }
 
-def draw_cards(n: int) -> List[Dict[str, Any]]:
+def draw_cards(n: int) -> list[dict[str, Any]]:
     cards = load_cards()
     if not cards:
         raise RuntimeError("No cards loaded")
