@@ -11,7 +11,7 @@ import type { TarotCard } from '@/components/Card';
 import type { TarotSession } from '@/hooks/useTarotSession';
 
 /** Карты из записи журнала → формат рендера (два исторических формата). */
-function cardsFromHistory(cardsData: any): TarotCard[] {
+export function cardsFromHistory(cardsData: any): TarotCard[] {
   const toCard = (c: any): TarotCard | null => {
     if (!c || !c.id || !c.name) return null;
     return {

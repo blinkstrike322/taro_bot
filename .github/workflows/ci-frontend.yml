@@ -46,6 +46,10 @@ jobs:
         working-directory: ./web
         run: npx tsc --noEmit
 
+      - name: Unit tests (vitest)
+        working-directory: ./web
+        run: npm test
+
       - name: Build static export
         working-directory: ./web
         run: npm run build

@@ -18,14 +18,15 @@
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"],
+  // NOTE (tests now typechecked): the old exclusions of `**/__tests__/` and
+  // `**/*.test.*` are removed. Those tests were orphaned because `vitest` was
+  // not a dependency here; the suite is now real (vitest + @testing-library
+  // installed as devDependencies), so `tsc --noEmit` MUST cover the test files
+  // to catch type regressions in them. `vitest` and `@testing-library/jest-dom`
+  // ship their types, so removing the exclusions is safe — test files resolve
+  // their imports and jest-dom matchers from devDependencies.
   "exclude": [
     "node_modules",
-    // `__tests__` files are dead/orphaned: they import `vitest`, which is not a
-    // dependency here (0 refs in package-lock.json), and one also imports a
-    // module that does not exist. They are not part of the app build and break a
-    // standalone `tsc --noEmit`. Excluded so the CI typecheck gate is green.
-    "**/__tests__/",
-    "**/*.test.ts",
-    "**/*.test.tsx"
+    ".next"
   ]
 }
