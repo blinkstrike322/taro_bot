@@ -104,7 +104,6 @@ export default function Card({
   onFlip,
   flipped = false,
   characterId,
-  comma = true,
   floatSeed = 0,
 }: CardProps) {
   const guide = getGuide(characterId);
@@ -144,9 +143,8 @@ export default function Card({
           className="card-label"
           style={{ color: raised ? guide.accent : 'rgba(255,255,255,0.55)' }}
         >
-          <span className="cl-punct">{'{'}</span>
-          <span className="cl-key">&quot;{position}&quot;</span>
-          <span className="cl-punct">:</span>
+          <span className="cl-punct">{'// '}</span>
+          <span className="cl-key">{position}</span>
         </div>
       )}
 
@@ -280,13 +278,10 @@ export default function Card({
       >
         {flipped ? (
           <>
-            <span className="cn-punct">&quot;</span>
             {card.name}
-            <span className="cn-punct">&quot;</span>
             {card.is_reversed && (
-              <span className="cn-rev" title="перевёрнута"> ⤓</span>
+              <span className="cn-rev" title="перевёрнута"> ↳ перевёрнутая</span>
             )}
-            {comma && <span className="cn-punct">,</span>}
           </>
         ) : ''}
       </div>

@@ -138,6 +138,8 @@ export default function Shell({
   // вырубаем на слабых устройствах и при prefers-reduced-motion — цена рендера
   // там непропорционально высока и может ронять вью-вьюху телефона.
   const heavyMotion = useMemo(() => isLowEndDevice(), []);
+  // чтение в транскрипте — сигил уходит в ambient-фон, не спорит с текстом
+  const hasReading = useMemo(() => entries.some((e) => e.kind === 'json'), [entries]);
 
   // ── рендер одной записи транскрипта ──
   const renderEntry = (entry: Entry): ReactNode => {
@@ -293,7 +295,11 @@ export default function Shell({
         </div>
 
         {/* ambient-сигил — анимированная пентаграмма справа сверху (тяжёлый, только не на слабых) */}
-        {!heavyMotion && <AmbientSigil accent={guide.accent} accentDim={guide.accentDim} />}
+        {!heavyMotion && (
+          <div className={hasReading ? 'sigil-dim' : undefined} style={{ display: 'contents' }}>
+            <AmbientSigil accent={guide.accent} accentDim={guide.accentDim} />
+          </div>
+        )}
 
         {/* созвездие — мерцающие звёзды */}
         <ConstellationLayer />

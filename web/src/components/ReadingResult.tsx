@@ -1,93 +1,106 @@
 'use client';
 
 // ─────────────────────────────────────────────────────────────
-// ReadingResult — JSON-вывод расклада как ответ живого канала.
-// Структура печатается построчно, а проза — посимвольно:
-// шёпот → ответ/сигнал → тело (значения | позиции+связь | день) → совет.
-// Оркестрация через вычисленную временную шкалу.
+// ReadingResult — семантическое терминальное чтение.
+// LLM отдаёт structured interpretation, React рендерит слои:
+// TRANSMISSION → CARDS → WHISPER → SIGNAL → BODY → ADVICE.
+// Никакого JSON в presentation layer: только terminal language.
 // ─────────────────────────────────────────────────────────────
 import { getGuide } from '@/lib/guides';
 import type { TarotCard } from './Card';
 import ProseType, { proseDuration } from './shell/ProseType';
 import { joinedParagraphs } from '@/lib/prose';
-
-interface ReadingPosition {
-  позиция?: string;
-  карта?: string;
-  реверс?: boolean;
-  трактовка?: string;
-}
-
-interface Interpretation {
-  intro: string;
-  short_answer: string;
-  card_meaning?: string[] | string;
-  advice?: string;
-  // новая схема этапа 2 (аддитивная, легаси-фолбэк на card_meaning)
-  позиции?: ReadingPosition[];
-  связь_карт?: string;
-  проявление?: string;
-  на_что_смотреть?: string;
-  траектория?: { утро?: string; день?: string; вечер?: string };
-}
+import type { Interpretation, ReadingPosition } from '@/lib/api';
 
 interface ReadingResultProps {
   interpretation: Interpretation;
   characterId?: string;
-  /** cards of the spread — rendered as the "карты" JSON array */
   cards?: TarotCard[];
-  /** question asked — rendered as "вопрос" (null → JSON null) */
   question?: string | null;
-  /** spread label: "карта дня" | "одна карта" | "три карты" */
   spreadLabel?: string;
-  /** мгновенный рендер без посимвольной печати (повторный просмотр из журнала) */
   instant?: boolean;
 }
 
-type BodyRow =
-  | { kind: 'prose'; label: string | null; prose: string }
-  | { kind: 'header'; text: string }
-  | { kind: 'close'; text: string };
+interface CardLine {
+  index: string;
+  position: string | null;
+  name: string;
+  reversed: boolean;
+}
 
-function buildBodyRows(interp: Interpretation): { header: string | null; rows: BodyRow[] } {
+interface BodySection {
+  label: string;
+  prose: string;
+}
+
+function buildCardLines(
+  interp: Interpretation,
+  cards?: TarotCard[],
+): CardLine[] {
   const positions = Array.isArray(interp.позиции) ? interp.позиции : null;
-  const dailyMeta = interp.проявление || interp.траектория;
-  const rows: BodyRow[] = [];
-  let header: string | null = null;
+  if (positions && positions.length > 0) {
+    return positions.map((p: ReadingPosition, i: number) => ({
+      index: String(i + 1).padStart(2, '0'),
+      position: p.позиция ?? null,
+      name: p.карта ?? cards?.[i]?.name ?? '',
+      reversed: Boolean(p.реверс ?? cards?.[i]?.is_reversed ?? false),
+    }));
+  }
+  const list = cards ?? [];
+  return list.map((c, i) => ({
+    index: String(i + 1).padStart(2, '0'),
+    position: null,
+    name: c.name,
+    reversed: Boolean(c.is_reversed),
+  }));
+}
 
-  if (positions) {
-    header = 'позиции';
-    positions.forEach((p, i) => {
-      const card = `${p.карта ?? ''}${p.реверс ? ' ⟲' : ''}`;
-      const label = `${String(i + 1).padStart(2, '0')} · ${p.позиция ?? ''}${card ? ` — ${card}` : ''}`;
-      rows.push({ kind: 'prose', label, prose: p.трактовка ?? '' });
+function buildBodySections(interp: Interpretation): BodySection[] {
+  const sections: BodySection[] = [];
+  const positions = Array.isArray(interp.позиции) ? interp.позиции : null;
+
+  if (positions && positions.length > 0) {
+    positions.forEach((p: ReadingPosition, i: number) => {
+      if (p.трактовка) {
+        sections.push({
+          label: `${String(i + 1).padStart(2, '0')} · ${p.позиция ?? ''}`,
+          prose: p.трактовка,
+        });
+      }
     });
-    if (interp.связь_карт) rows.push({ kind: 'prose', label: 'связь_карт', prose: interp.связь_карт });
-  } else if (dailyMeta) {
-    if (interp.проявление) rows.push({ kind: 'prose', label: 'проявление', prose: interp.проявление });
-    if (interp.на_что_смотреть) rows.push({ kind: 'prose', label: 'на что смотреть', prose: interp.на_что_смотреть });
+    if (interp.связь_карт) {
+      sections.push({ label: 'нить · связь карт', prose: interp.связь_карт });
+    }
+    return sections;
+  }
+
+  if (interp.проявление || interp.траектория || interp.на_что_смотреть) {
+    if (interp.проявление) {
+      sections.push({ label: 'проявление', prose: interp.проявление });
+    }
+    if (interp.на_что_смотреть) {
+      sections.push({ label: 'на что смотреть', prose: interp.на_что_смотреть });
+    }
     if (interp.траектория) {
       for (const t of ['утро', 'день', 'вечер'] as const) {
         const v = interp.траектория[t];
-        if (v) rows.push({ kind: 'prose', label: `траектория · ${t}`, prose: v });
+        if (v) sections.push({ label: `траектория · ${t}`, prose: v });
       }
     }
-  } else {
-    const meanings = Array.isArray(interp.card_meaning)
-      ? interp.card_meaning
-      : interp.card_meaning
-        ? [interp.card_meaning]
-        : [];
-    header = meanings.length ? 'значения' : null;
-    meanings.forEach((m) => rows.push({ kind: 'prose', label: null, prose: m }));
+    return sections;
   }
 
-  if (header) rows.unshift({ kind: 'header', text: header });
-  if (header) rows.push({ kind: 'close', text: '' });
-  return { header, rows };
+  const meanings = Array.isArray(interp.card_meaning)
+    ? interp.card_meaning
+    : interp.card_meaning
+      ? [interp.card_meaning]
+      : [];
+  meanings.forEach((m) => {
+    sections.push({ label: '', prose: m });
+  });
+  return sections;
 }
 
-// Convert hex color (#RRGGBB) to rgba string at given opacity
 function hexToRgba(hex: string, alpha: number): string {
   const h = hex.replace('#', '');
   const r = parseInt(h.substring(0, 2), 16);
@@ -96,14 +109,8 @@ function hexToRgba(hex: string, alpha: number): string {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
-const TYPE_SPEED = 8;  // мс/символ прозаических значений (~2× быстрее)
-const LINE_STEP = 32;  // мс между строками структуры (~2× быстрее)
-
-/* ── tiny JSON token components ── */
-const P = ({ children }: { children: React.ReactNode }) => <span className="j-punct">{children}</span>;
-const K = ({ children, glow }: { children: React.ReactNode; glow?: boolean }) => (
-  <span className={`j-key${glow ? ' j-key-glow' : ''}`}>&quot;{children}&quot;</span>
-);
+const TYPE_SPEED = 8;
+const LINE_STEP = 32;
 
 export default function ReadingResult({
   interpretation,
@@ -118,25 +125,20 @@ export default function ReadingResult({
   const adviceColor = hexToRgba(guide.accent, 0.78);
   const adviceGlow = `0 0 4px ${hexToRgba(guide.accent, 0.30)}, 0 0 8px ${hexToRgba(guide.accent, 0.15)}`;
 
-  const dailyMeta = interpretation.проявление || interpretation.траектория;
-  const answerKey = dailyMeta ? 'сигнал' : 'ответ';
-  const { rows: bodyRows } = buildBodyRows(interpretation);
-  const bodyHeader = bodyRows[0]?.kind === 'header' ? bodyRows[0].text : null;
+  const cardLines = buildCardLines(interpretation, cards);
+  const bodySections = buildBodySections(interpretation);
+  const isDaily = Boolean(interpretation.проявление || interpretation.траектория);
+  const transmissionKind = isDaily
+    ? 'DAILY TRANSMISSION'
+    : cardLines.length > 1
+      ? 'THREE-CARD TRANSMISSION'
+      : 'SINGLE TRANSMISSION';
 
-  // ── временная шкала: структура → шёпот → ответ → тело → совет ──
-  // в instant-режите всё появляется сразу (повторный просмотр из журнала)
-  const headerLineCount =
-    1 + // {
-    1 + // сеанс
-    (question != null ? 1 : 0) +
-    1 + // проводник
-    (cards && cards.length > 0 ? 2 + cards.length : 0); // карты: [ ... ]
-
-  const tHeader = instant ? 0 : headerLineCount * LINE_STEP + 45;
+  const tHeader = instant ? 0 : (2 + cardLines.length) * LINE_STEP + 45;
   const tWhisper = tHeader;
-  const tAnswer = instant ? 0 : tWhisper + (intro ? proseDuration(intro, TYPE_SPEED) : 0);
-  const tBody = instant ? 0 : tAnswer + proseDuration(short_answer, TYPE_SPEED);
-  const tAdvice = instant ? 0 : tBody + bodyRows.length * 55 + 75;
+  const tSignal = instant ? 0 : tWhisper + (intro ? proseDuration(intro, TYPE_SPEED) : 0);
+  const tBody = instant ? 0 : tSignal + proseDuration(short_answer, TYPE_SPEED);
+  const tAdvice = instant ? 0 : tBody + bodySections.length * 55 + 75;
   const tClose = instant ? 0 : tAdvice + (advice ? proseDuration(advice, TYPE_SPEED) : 0) + 80;
 
   let delay = 0;
@@ -148,13 +150,11 @@ export default function ReadingResult({
   return (
     <div className="px-1 py-2">
       <div className="relative frame-ritual noise-bg p-3 min-h-[120px]">
-        {/* asymmetrical corner ornaments */}
         <span className="corner-tl">╔</span>
         <span className="corner-tr">┐</span>
         <span className="corner-bl">└</span>
         <span className="corner-br">╝</span>
 
-        {/* circuit traces */}
         <div
           className="circuit-trace circuit-trace--v"
           style={{ left: '12%', top: 0, bottom: 0 }}
@@ -164,7 +164,6 @@ export default function ReadingResult({
           style={{ bottom: '20%', left: 0, right: 0 }}
         />
 
-        {/* square and dot ornaments along edges */}
         <span className="glyph-fragment" style={{ top: '8px', right: '20%' }}>■</span>
         <span className="glyph-fragment" style={{ top: '8px', right: '12%' }}>·</span>
         <span className="glyph-fragment" style={{ bottom: '8px', right: '20%' }}>·</span>
@@ -174,146 +173,115 @@ export default function ReadingResult({
         <span className="glyph-fragment" style={{ bottom: '8px', left: '20%' }}>■</span>
         <span className="glyph-fragment" style={{ bottom: '8px', left: '12%' }}>·</span>
 
-        <div className="json-readout relative z-10">
-          {/* { */}
-          <div className="json-line" style={{ '--jl-delay': next() } as React.CSSProperties}>
-            <P>{'{ '}</P>
+        <div className="reading relative z-10">
+          <div className="reading-line" style={{ '--jl-delay': next() } as React.CSSProperties}>
+            <span className="reading-transmission">[ {transmissionKind} ]</span>
           </div>
 
-          {/* "сеанс" / "вопрос" */}
-          <div className="json-line" style={{ '--jl-delay': next() } as React.CSSProperties}>
-            {'  '}<K>сеанс</K><P>: </P>
-            <span className="j-str">&quot;{spreadLabel}&quot;</span><P>,</P>
+          <div className="reading-line reading-meta" style={{ '--jl-delay': next() } as React.CSSProperties}>
+            <span className="reading-meta-key">сеанс</span>
+            <span className="reading-meta-sep"> // </span>
+            <span>{spreadLabel}</span>
+            <span className="reading-meta-sep"> · </span>
+            <span className="reading-meta-key">проводник</span>
+            <span className="reading-meta-sep"> // </span>
+            <span>{guide.name}</span>
           </div>
 
-          {question != null && (
-            <div className="json-line" style={{ '--jl-delay': next() } as React.CSSProperties}>
-              {'  '}<K>вопрос</K><P>: </P>
-              <span className="j-str">&quot;{question}&quot;</span><P>,</P>
+          {question != null && question !== '' && (
+            <div className="reading-line reading-question" style={{ '--jl-delay': next() } as React.CSSProperties}>
+              <span className="reading-meta-key">вопрос</span>
+              <span className="reading-meta-sep"> — </span>
+              <span>«{question}»</span>
             </div>
           )}
 
-          {/* "проводник" */}
-          <div className="json-line" style={{ '--jl-delay': next() } as React.CSSProperties}>
-            {'  '}<K>проводник</K><P>: </P>
-            <span className="j-str">&quot;{guide.name}&quot;</span><P>,</P>
-          </div>
-
-          {/* "карты": [ {...}, {...} ] */}
-          {cards && cards.length > 0 && (
-            <>
-              <div className="json-line" style={{ '--jl-delay': next() } as React.CSSProperties}>
-                {'  '}<K>карты</K><P>: [</P>
-              </div>
-              {cards.map((c, i) => (
+          {cardLines.length > 0 && (
+            <div className="reading-cards">
+              {cardLines.map((c) => (
                 <div
-                  key={c.id + i}
-                  className="json-line"
+                  key={c.index}
+                  className="reading-line reading-card"
                   style={{ '--jl-delay': next() } as React.CSSProperties}
                 >
-                  {'    '}
-                  <P>{'{ '}</P>
-                  <K>имя</K><P>: </P>
-                  <span className="j-str">&quot;{c.name}&quot;</span><P>, </P>
-                  <K>реверс</K><P>: </P>
-                  <span className="j-val">{String(c.is_reversed)}</span>
-                  <P> {'}'}{i < cards.length - 1 ? ',' : ''}</P>
+                  <span className="reading-card-index">{c.index}</span>
+                  <span className="reading-card-name">{c.name}</span>
+                  <span className={c.reversed ? 'reading-card-rev' : 'reading-card-upright'}>
+                    {c.reversed ? '↳ перевёрнутая' : '· прямая'}
+                  </span>
+                  {c.position && (
+                    <span className="reading-card-pos">{c.position}</span>
+                  )}
                 </div>
               ))}
-              <div className="json-line" style={{ '--jl-delay': next() } as React.CSSProperties}>
-                {'  '}<P>],</P>
-              </div>
-            </>
+            </div>
           )}
 
-          {/* "шёпот": intro — печатается посимвольно */}
           {intro && (
-            <div className="json-line" style={{ '--jl-delay': `${tWhisper}ms` } as React.CSSProperties}>
-              {'  '}<K glow>шёпот</K><P>: </P>
+            <div className="reading-line" style={{ '--jl-delay': `${tWhisper}ms` } as React.CSSProperties}>
+              <div className="reading-section-label">// шёпот</div>
               <ProseType
                 text={intro}
                 startDelay={tWhisper}
                 speed={TYPE_SPEED}
                 instant={instant}
-                tail=","
-                className="j-str j-multiline italic"
-                style={{ color: 'rgba(236, 233, 246, 0.62)' }}
+                className="reading-whisper italic"
               />
             </div>
           )}
 
-          {/* "ответ"/"сигнал": short answer — яркая строка с мерцанием фосфора */}
-          <div className="json-line" style={{ '--jl-delay': `${tAnswer}ms` } as React.CSSProperties}>
-            {'  '}<K glow>{answerKey}</K><P>: </P>
-            <ProseType
-              text={short_answer}
-              startDelay={tAnswer}
-              speed={TYPE_SPEED}
-              instant={instant}
-              tail={bodyRows.length > 0 || advice ? ',' : undefined}
-              shimmer
-              className="j-str j-multiline text-[14px] font-medium"
-              style={{ color: '#ffffff' }}
-            />
+          <div className="reading-line" style={{ '--jl-delay': `${tSignal}ms` } as React.CSSProperties}>
+            <div className="reading-section-label reading-section-label--signal">─ signal ─</div>
+            <div className="reading-signal" style={{ '--guide-accent': guide.accent } as React.CSSProperties}>
+              <ProseType
+                text={short_answer}
+                startDelay={tSignal}
+                speed={TYPE_SPEED}
+                instant={instant}
+                shimmer
+                className="reading-signal-text"
+              />
+            </div>
           </div>
 
-          {/* тело: значения (легаси) / позиции+связь_карт / карта дня */}
-          {bodyRows.length > 0 && (
-            <>
-              {bodyHeader && (
-                <div className="json-line" style={{ '--jl-delay': `${tBody}ms` } as React.CSSProperties}>
-                  {'  '}<K>{bodyHeader}</K><P>: </P><P>[</P>
+          {bodySections.length > 0 && (
+            <div className="reading-body">
+              {bodySections.map((s, i) => (
+                <div
+                  key={i}
+                  className="reading-line"
+                  style={{ '--jl-delay': `${tBody + 55 + i * 55}ms` } as React.CSSProperties}
+                >
+                  {s.label && <div className="reading-section-label">// {s.label}</div>}
+                  <div className="reading-body-text">{joinedParagraphs(s.prose)}</div>
                 </div>
-              )}
-              {bodyRows
-                .filter((r): r is Extract<BodyRow, { kind: 'prose' }> => r.kind === 'prose')
-                .map((r, i, arr) => {
-                  const comma = bodyHeader
-                    ? i < arr.length - 1 || advice
-                      ? ','
-                      : ''
-                    : ',';
-                  const delay = `${tBody + 55 + i * 55}ms`;
-                  return (
-                    <div key={i} className="json-line" style={{ '--jl-delay': delay } as React.CSSProperties}>
-                      {'  '}
-                      {r.label ? <><K>{r.label}</K><P>: </P></> : <P>  </P>}
-                      <span className="j-str j-multiline text-white/80">&quot;{joinedParagraphs(r.prose)}&quot;</span>
-                      <P>{comma}</P>
-                    </div>
-                  );
-                })}
-              {bodyHeader && (
-                <div className="json-line" style={{ '--jl-delay': `${tBody + 55 * bodyRows.length}ms` } as React.CSSProperties}>
-                  {'  '}<P>]{advice ? ',' : ''}</P>
-                </div>
-              )}
-            </>
+              ))}
+            </div>
           )}
 
-          {/* "совет": advice — акцентный, печатается посимвольно */}
           {advice && (
-            <div className="json-line" style={{ '--jl-delay': `${tAdvice}ms` } as React.CSSProperties}>
-              {'  '}<K glow>совет</K><P>: </P>
+            <div className="reading-line" style={{ '--jl-delay': `${tAdvice}ms` } as React.CSSProperties}>
+              <div className="reading-section-label reading-section-label--advice">[ advice ]</div>
               <ProseType
                 text={advice}
                 startDelay={tAdvice}
                 speed={TYPE_SPEED}
                 instant={instant}
-                className="j-str j-multiline text-[14px] font-medium"
+                className="reading-advice"
                 style={{ color: adviceColor, textShadow: adviceGlow }}
               />
             </div>
           )}
 
-          {/* } */}
-          <div className="json-line" style={{ '--jl-delay': `${tClose}ms` } as React.CSSProperties}>
-            <P>{'}'}</P>
+          <div
+            className="reading-line reading-complete"
+            style={{ '--jl-delay': `${tClose}ms` } as React.CSSProperties}
+          >
+            [ signal complete ] · {guide.tag}
           </div>
         </div>
       </div>
 
-      {/* exit status */}
       <div
         className="term-exit mt-1.5 flex items-center justify-between exit-flash"
         style={{ animationDelay: instant ? '0ms' : `${tClose + 50}ms` }}

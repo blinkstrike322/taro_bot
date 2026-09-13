@@ -18,11 +18,26 @@ export interface TarotCardData {
   image_url: string;
 }
 
+export interface ReadingPosition {
+  позиция?: string;
+  карта?: string;
+  реверс?: boolean;
+  трактовка?: string;
+}
+
 export interface Interpretation {
   intro: string;
   short_answer: string;
-  card_meaning: string[] | string;
-  advice: string;
+  card_meaning?: string[] | string;
+  advice?: string;
+  // новая схема этапа 2 (аддитивная, легаси-фолбэк на card_meaning):
+  // three-card
+  позиции?: ReadingPosition[];
+  связь_карт?: string;
+  // daily
+  проявление?: string;
+  на_что_смотреть?: string;
+  траектория?: { утро?: string; день?: string; вечер?: string };
 }
 
 /** Ошибка API с продуктовым флагом: пелена сомкнулась — нужен paywall. */
