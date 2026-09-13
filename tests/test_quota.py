@@ -27,6 +27,7 @@ async def db():
             type TEXT NOT NULL,
             question TEXT,
             created_at TEXT DEFAULT (datetime('now')),
+            status TEXT NOT NULL DEFAULT 'reserved',
             FOREIGN KEY (user_id) REFERENCES users(id)
         )
     """)

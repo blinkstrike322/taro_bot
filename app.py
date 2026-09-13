@@ -22,7 +22,9 @@ from bot.router import register_handlers
 from storage.db import (
     init_db, get_db, get_user_readings_by_month,
     get_or_create_user, get_user_by_tg_id,
-    complete_reading, release_reading, sweep_stale_reservations,
+    complete_reading, fail_reading, mark_reading_processing,
+    sweep_stale_reservations, get_reading_by_token,
+    STATUS_COMPLETED, STATUS_FAILED,
 )
 from core.tarot import draw_cards
 from core.llm import interpret_reading
@@ -169,33 +171,28 @@ async def handle_character(request):
 
 
 # ── Two-phase spread: cards first, interpretation while the user flips ──
-# Token → background job state. The LLM whisper runs as an asyncio task
-# while the operator reveals the cards; the client polls for the result.
-_pending_spreads: dict[str, dict] = {}
-_PENDING_TTL = 900  # sweep abandoned whispers after 15 minutes
-
-# Сериализация резерва квоты per-user: в одном процессе asyncio- конкурентные
-# /begin одного пользователя не должны interleav'иться между проверкой и INSERT.
-_user_locks: dict[int, asyncio.Lock] = {}
-
-
-def _user_lock(user_id: int) -> asyncio.Lock:
-    lock = _user_locks.get(user_id)
-    if lock is None:
-        lock = asyncio.Lock()
-        _user_locks[user_id] = lock
-    return lock
+# Источник правды — БД (readings.client_token → статус). Процессного словаря
+# _pending_spreads нет: поллинг и restart-recovery идут через DB-функции.
+#
+# _user_locks убран: квота резервируется атомарным INSERT...SELECT guard
+# (см. storage.db.reserve_reading) на единственном разделяемом aiosqlite-
+# соединении, поэтому межпроцессная (точнее, внутрипроцессная asyncio)
+# гонка между check_quota и INSERT невозможна — SQLite сериализует запись,
+# и проигравший конкурент получает отказ из guard'а (reserve_quota уже
+# делает повторную проверку и отдаёт корректный отказ). Проверено тестом
+# test_concurrent_begin_last_slot_single_winner.
 
 
-async def _whisper_task(token, ctx, cards):
+async def _whisper_task(token: str, ctx: dict, cards: list[dict]) -> None:
     """Background LLM interpretation + DB save for a two-phase spread.
 
-    Слот квоты уже зарезервирован в момент /begin: здесь мы только дописываем
-    толкование. Если шёпот сорвался — возвращаем слот (release_reading),
-    чтобы пользователь не платил за пустой расклад.
+    Слот квоты уже зарезервирован в момент /begin (reserve_quota): здесь
+    мы только дописываем толкование. Если шёпот сорвался — помечаем статус
+    failed (слот квоты освобождается, т.к. failed-строки не считаются в
+    лимите), а поллинг по токену отдаст причину вместо 404.
     """
-    state = _pending_spreads[token]
     try:
+        await mark_reading_processing(await get_db(), ctx["reading_id"])
         interpretation = await interpret_reading(
             question=ctx["question"],
             cards=cards,
@@ -207,35 +204,31 @@ async def _whisper_task(token, ctx, cards):
             reading_id=ctx["reading_id"],
             interpretation=interpretation,
         )
-        state["interpretation"] = interpretation
     except Exception as e:  # noqa: BLE001 — any failure must reach the poller
         try:
-            await release_reading(await get_db(), ctx["reading_id"])
+            await fail_reading(
+                await get_db(),
+                ctx["reading_id"],
+                str(e) or "interpretation failed",
+            )
         except Exception:
             logger.exception(
-                "Не удалось вернуть слот квоты reading_id=%s", ctx["reading_id"]
+                "Не удалось пометить сбой расклада reading_id=%s", ctx["reading_id"]
             )
-        state["error"] = str(e) or "interpretation failed"
-    finally:
-        state["done"] = True
 
 
 async def handle_spread_begin(request):
     """Phase 1: reserve quota, draw cards, spawn the LLM whisper, return at once."""
-    parsed = await _spread_request_context(request)
+    token = uuid.uuid4().hex[:20]
+    parsed = await _spread_request_context(request, client_token=token)
     if isinstance(parsed, web.Response):
         return parsed
     ctx = parsed
     cards = ctx["cards"]
 
-    # sweep stale whispers so the registry can not leak
-    now = time.time()
-    for stale in [k for k, v in _pending_spreads.items() if now - v["created"] > _PENDING_TTL]:
-        _pending_spreads.pop(stale, None)
-
-    token = uuid.uuid4().hex[:20]
-    _pending_spreads[token] = {"created": now, "done": False}
-    _pending_spreads[token]["task"] = asyncio.create_task(_whisper_task(token, ctx, cards))
+    # Токен сохраняется в строке readings (client_token) при резерве:
+    # маппинг переживает перезапуск. Фоновый шёпот пишет статус в ту же строку.
+    asyncio.create_task(_whisper_task(token, ctx, cards))
 
     response = {
         "cards": cards,
@@ -251,20 +244,36 @@ async def handle_spread_begin(request):
 
 
 async def handle_spread_poll(request):
-    """Phase 2: is the whisper ready?"""
+    """Phase 2: is the whisper ready? Requires valid initData + ownership."""
     token = request.query.get("token", "")
-    state = _pending_spreads.get(token)
-    if state is None:
+    init_data = request.query.get("init_data", "")
+    user = verify_telegram_init_data(init_data)
+    if not user:
+        return web.json_response({"error": "unauthorized"}, status=403)
+    tg_id = user.get("id") or 0
+    if not tg_id:
+        return web.json_response({"error": "unauthorized"}, status=403)
+
+    db = await get_db()
+    row = await get_reading_by_token(db, token)
+    if row is None:
         return web.json_response({"error": "unknown token"}, status=404)
-    if not state.get("done"):
-        return web.json_response({"ready": False})
-    _pending_spreads.pop(token, None)  # delivered — free the registry
-    if state.get("error"):
-        return web.json_response({"ready": True, "error": state["error"]})
-    return web.json_response({"ready": True, "interpretation": state.get("interpretation")})
+    if row["tg_id"] != tg_id:
+        return web.json_response({"error": "forbidden"}, status=403)
+
+    # Статусы — закрытый набор, но незнакомый/промежуточный статус безопасно
+    # трактовать как «ещё не готово»: поллинг просто продолжит ждать.
+    status = row["status"]
+    if status == STATUS_COMPLETED:
+        return web.json_response({"ready": True, "interpretation": row["interpretation"]})
+    if status == STATUS_FAILED:
+        return web.json_response(
+            {"ready": True, "error": row["error"] or "Толкование не удалось"}
+        )
+    return web.json_response({"ready": False})
 
 
-async def _spread_request_context(request):
+async def _spread_request_context(request, client_token: str):
     """Shared prelude for spread handlers: auth → reserve quota → draw.
 
     Returns a context dict or a ready-to-send error Response.
@@ -298,19 +307,20 @@ async def _spread_request_context(request):
     # Поле character_id из тела запроса — только UI-подсказка и не используется.
     character_id = user.character_id
 
-    # Резервируем слот квоты атомарно — до запуска LLM (см. reserve_quota)
+    # Резервируем слот квоты атомарно — до запуска LLM (см. reserve_quota).
+    # Без _user_lock: резерв атомарен на уровне SQL (см. комментарий выше).
     cards_data = {"cards": cards, "spread_type": spread_type}
-    async with _user_lock(user.id):
-        quota = await reserve_quota(
-            db,
-            user_id=user.id,
-            tg_id=tg_id,
-            spread_type=spread_type_str,
-            question=question,
-            cards_data=cards_data,
-            character_id=character_id,
-            reading_type=reading_type,
-        )
+    quota = await reserve_quota(
+        db,
+        user_id=user.id,
+        tg_id=tg_id,
+        spread_type=spread_type_str,
+        question=question,
+        cards_data=cards_data,
+        character_id=character_id,
+        reading_type=reading_type,
+        client_token=client_token,
+    )
     if not quota["ok"]:
         return web.json_response(
             {

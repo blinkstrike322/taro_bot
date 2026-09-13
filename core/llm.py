@@ -4,6 +4,9 @@ import asyncio
 import json
 import logging
 import re
+import time
+from dataclasses import dataclass
+from datetime import datetime, timezone
 from typing import Optional
 
 import httpx
@@ -38,6 +41,89 @@ OPENROUTER_FALLBACKS = [
     "google/gemma-4-26b-a4b-it:free",
     "openrouter/free",
 ]
+
+# ── Таймауты на один вызов провайдера ─────────────────────────────
+# Вместо одного 180с-хэнга: connect должен быстро падать при недоступном
+# хосте, read ограничивает тело ответа, общий потолок ~70с (connect+read)
+# гораздо ниже требуемых ~90с на попытку.
+LLM_TIMEOUT_CONNECT = 10.0
+LLM_TIMEOUT_READ = 60.0
+LLM_TIMEOUT_WRITE = 30.0
+LLM_TIMEOUT_POOL = 10.0
+
+
+def build_llm_timeout() -> httpx.Timeout:
+    """Split per-phase timeout for a single LLM attempt."""
+    return httpx.Timeout(
+        connect=LLM_TIMEOUT_CONNECT,
+        read=LLM_TIMEOUT_READ,
+        write=LLM_TIMEOUT_WRITE,
+        pool=LLM_TIMEOUT_POOL,
+    )
+
+
+# ── Circuit breaker per (label, model) ────────────────────────────
+BREAKER_FAILURE_THRESHOLD = 3
+BREAKER_COOLDOWN_BASE = 30.0   # секунд после 3-го подряд сбоя
+BREAKER_COOLDOWN_MAX = 300.0   # backoff ×2 потолок
+
+
+@dataclass(slots=True)
+class _Breaker:
+    consecutive_failures: int = 0
+    cooled_until: float = 0.0
+
+
+_breaker_state: dict[tuple[str, str], _Breaker] = {}
+
+
+def _breaker(label: str, model: str) -> _Breaker:
+    state = _breaker_state.get((label, model))
+    if state is None:
+        state = _Breaker()
+        _breaker_state[(label, model)] = state
+    return state
+
+
+def _cooldown_seconds(failures: int) -> float:
+    if failures < BREAKER_FAILURE_THRESHOLD:
+        return 0.0
+    return min(
+        BREAKER_COOLDOWN_BASE * (2 ** (failures - BREAKER_FAILURE_THRESHOLD)),
+        BREAKER_COOLDOWN_MAX,
+    )
+
+
+def _record_failure(label: str, model: str) -> None:
+    state = _breaker(label, model)
+    state.consecutive_failures += 1
+    if state.consecutive_failures >= BREAKER_FAILURE_THRESHOLD:
+        state.cooled_until = time.time() + _cooldown_seconds(state.consecutive_failures)
+
+
+def _record_success(label: str, model: str) -> None:
+    state = _breaker(label, model)
+    state.consecutive_failures = 0
+    state.cooled_until = 0.0
+
+
+def _is_cooled_down(label: str, model: str) -> bool:
+    state = _breaker_state.get((label, model))
+    if state is None:
+        return False
+    if state.consecutive_failures < BREAKER_FAILURE_THRESHOLD:
+        return False
+    return state.cooled_until > time.time()
+
+
+def _cooldown_end(label: str, model: str) -> float:
+    state = _breaker_state.get((label, model))
+    return state.cooled_until if state else 0.0
+
+
+def _reset_breakers() -> None:
+    """Clear all breaker state (админ-операция, используется тестами)."""
+    _breaker_state.clear()
 
 
 def _build_provider_list() -> list[tuple[str, str, str | None, str]]:
@@ -229,7 +315,7 @@ async def call_llm(
     Handles reasoning models that return content in ``reasoning_content``
     when the visible ``content`` field is empty.
     """
-    async with httpx.AsyncClient(timeout=180.0) as client:
+    async with httpx.AsyncClient(timeout=build_llm_timeout()) as client:
         headers = {
             "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
@@ -290,12 +376,21 @@ async def call_llm_with_fallback(
     )
 
     for model, base_url, api_key, label in provider_list:
+        if _is_cooled_down(label, model):
+            logger.warning(
+                "Skipping %s — %s: circuit breaker open until %s",
+                label, model,
+                datetime.fromtimestamp(_cooldown_end(label, model), timezone.utc).isoformat(),
+            )
+            continue
+
         for attempt in range(3):
             try:
                 result = await call_llm(
                     messages, model, base_url, api_key,
                     max_tokens=max_tokens,
                 )
+                _record_success(label, model)
                 logger.info(
                     "OK: %s — %s (%d chars)",
                     label, model, len(result),
@@ -310,10 +405,12 @@ async def call_llm_with_fallback(
                     )
                     await asyncio.sleep(delay)
                     continue
+                _record_failure(label, model)
                 last_error = e
                 logger.warning("%s — %s failed: %s", label, model, e)
                 break
             except Exception as e:
+                _record_failure(label, model)
                 last_error = e
                 logger.warning("%s — %s failed: %s", label, model, e)
                 break

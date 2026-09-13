@@ -21,6 +21,8 @@ interface ProseTypeProps {
   style?: React.CSSProperties;
   /** завершающий символ после закрывающей кавычки (запятая JSON) */
   tail?: string;
+  /** кавычки вокруг прозы — legacy JSON-стиль; semantic reading ставит false */
+  quotes?: boolean;
   /** включить shimmer после печати (мерцание фосфора) */
   shimmer?: boolean;
   /** тикать телетайпом при печати — звук вывода канала */
@@ -55,6 +57,7 @@ export default function ProseType({
   shimmer = false,
   sound = true,
   instant = false,
+  quotes = true,
   onDone,
 }: ProseTypeProps) {
   const [n, setN] = useState(0);
@@ -90,12 +93,12 @@ export default function ProseType({
 
   return (
     <span className={`j-prose ${className ?? ''}`} style={style}>
-      {'"'}
+      {quotes && '"'}
       <span className={done && shimmer ? 'j-shimmer' : undefined}>
         {instant ? target : target.slice(0, n)}
       </span>
       {!done && !instant && <span className="prose-cursor" aria-hidden="true">▊</span>}
-      {done && '"'}
+      {done && quotes && '"'}
       {done && tail && <span className="j-punct">{tail}</span>}
     </span>
   );

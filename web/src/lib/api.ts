@@ -127,7 +127,10 @@ export async function spreadBegin(
 }
 
 export async function spreadPoll(token: string): Promise<SpreadPollResponse> {
-  const res = await fetch(`${API_BASE}/api/spread/poll?token=${encodeURIComponent(token)}`);
+  const initData = telegramInitData();
+  const res = await fetch(
+    `${API_BASE}/api/spread/poll?token=${encodeURIComponent(token)}&init_data=${encodeURIComponent(initData)}`,
+  );
   if (!res.ok) throw new Error('канал прерван');
   return res.json();
 }

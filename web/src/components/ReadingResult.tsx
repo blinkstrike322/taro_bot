@@ -95,8 +95,11 @@ function buildBodySections(interp: Interpretation): BodySection[] {
     : interp.card_meaning
       ? [interp.card_meaning]
       : [];
-  meanings.forEach((m) => {
-    sections.push({ label: '', prose: m });
+  meanings.forEach((m, i) => {
+    sections.push({
+      label: meanings.length > 1 ? `значение · ${String(i + 1).padStart(2, '0')}` : 'значение',
+      prose: m,
+    });
   });
   return sections;
 }
@@ -225,6 +228,7 @@ export default function ReadingResult({
                 startDelay={tWhisper}
                 speed={TYPE_SPEED}
                 instant={instant}
+                quotes={false}
                 className="reading-whisper italic"
               />
             </div>
@@ -238,7 +242,7 @@ export default function ReadingResult({
                 startDelay={tSignal}
                 speed={TYPE_SPEED}
                 instant={instant}
-                shimmer
+                quotes={false}
                 className="reading-signal-text"
               />
             </div>
@@ -267,6 +271,7 @@ export default function ReadingResult({
                 startDelay={tAdvice}
                 speed={TYPE_SPEED}
                 instant={instant}
+                quotes={false}
                 className="reading-advice"
                 style={{ color: adviceColor, textShadow: adviceGlow }}
               />
