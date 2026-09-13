@@ -3,6 +3,7 @@ from datetime import datetime
 
 import aiosqlite
 
+from .events import _CREATE_EVENTS_TABLE
 from .models import Reading, User
 
 _CREATE_USERS_TABLE = """
@@ -251,6 +252,7 @@ async def init_db(db_path: str = "taro_bot.db") -> aiosqlite.Connection:
     await conn.execute("PRAGMA foreign_keys=ON")
     await conn.execute(_CREATE_USERS_TABLE)
     await conn.execute(_CREATE_READINGS_TABLE)
+    await conn.execute(_CREATE_EVENTS_TABLE)
     await _migrate_schema(conn)
     await conn.commit()
     _db_connection = conn
@@ -269,6 +271,7 @@ async def create_tables(db_path: str = "taro_bot.db") -> None:
     async with aiosqlite.connect(db_path) as db:
         await db.execute(_CREATE_USERS_TABLE)
         await db.execute(_CREATE_READINGS_TABLE)
+        await db.execute(_CREATE_EVENTS_TABLE)
         await _migrate_schema(db)
         await db.commit()
 

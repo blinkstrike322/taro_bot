@@ -7,6 +7,7 @@
 import { useCallback } from 'react';
 import * as API from '@/lib/api';
 import { spreadLabelFromType, type HistoryRow } from '@/lib/transcript';
+import { track } from '@/lib/analytics';
 import type { TarotCard } from '@/components/Card';
 import type { TarotSession } from '@/hooks/useTarotSession';
 
@@ -57,6 +58,7 @@ export function useHistory(session: TarotSession): TarotHistory {
         character_id: r.character_id,
       }));
       push({ kind: 'history', rows });
+      track('history_opened', {});
     } catch {
       push({ kind: 'history', rows: [] });
     } finally {

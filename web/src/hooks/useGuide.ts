@@ -8,6 +8,7 @@ import { useCallback } from 'react';
 import * as SFX from '@/lib/sound';
 import { getGuide } from '@/lib/guides';
 import { randomWhisper } from '@/lib/transcript';
+import { track } from '@/lib/analytics';
 import type { TarotSession } from '@/hooks/useTarotSession';
 
 export interface TarotGuide {
@@ -23,6 +24,7 @@ export function useGuide(session: TarotSession): TarotGuide {
     await echoCmd(`taro guide ${id}`);
     setCharacterId(id);
     try { localStorage.setItem('taro_character', id); } catch {}
+    track('guide_selected', { guide: id });
     SFX.sWhisper();
     push({ kind: 'ok', msg: `проводник сменён: ${guide.name} · ${guide.tag}` });
     pushOut([

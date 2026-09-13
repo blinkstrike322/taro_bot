@@ -9,6 +9,7 @@ import { useCallback } from 'react';
 import * as API from '@/lib/api';
 import * as SFX from '@/lib/sound';
 import { randomWhisper, sleep, type Entry, type OutLine } from '@/lib/transcript';
+import { track } from '@/lib/analytics';
 import type { TarotSession } from '@/hooks/useTarotSession';
 import type { TarotWhisper } from '@/hooks/useWhisper';
 
@@ -48,6 +49,7 @@ export function useSpread(session: TarotSession, whisper: TarotWhisper): TarotSp
   // ── ошибка канала: пелена → продуктовый paywall, остальное → обычный сбой ──
   const handleChannelError = useCallback((err: any) => {
     if (err?.needsSubscription) {
+      track('paywall_shown', {});
       push({ kind: 'paywall', msg: err?.message || 'призывы иссякли' });
     } else {
       push({ kind: 'error', msg: err?.message || 'канал недоступен' });
@@ -60,6 +62,7 @@ export function useSpread(session: TarotSession, whisper: TarotWhisper): TarotSp
     setBusy(true); busyRef.current = true;
     try {
       const res = await progressWith('тасование колоды', 950, API.spreadBegin(1, null, characterId));
+      track('daily_started', { guide: characterId, spread_type: 1 });
       pushOut([
         { text: 'карта выбрана. коснись, чтобы вскрыть.', tone: 'dim' },
       ]);
@@ -91,6 +94,7 @@ export function useSpread(session: TarotSession, whisper: TarotWhisper): TarotSp
         pushOut([{ text: 'вопрос принят · канал стабилен', tone: 'info' }]);
       }
       const res = await progressWith('тасование колоды', 1100, API.spreadBegin(cards, question, characterId));
+      track('spread_started', { guide: characterId, spread_type: cards, count: cards });
 
       // динамический расклад: позиции вычислены бэкендом по вопросу
       const positions = res.positions;
@@ -136,6 +140,7 @@ export function useSpread(session: TarotSession, whisper: TarotWhisper): TarotSp
       if (!entry) return prev;
 
       if (entry.kind === 'daily' && !entry.flipped) {
+        track('card_revealed', { spread_type: 1, count: 1 });
         // переворот карты дня → печатаем чтение (шёпот уже должен быть готов)
         setTimeout(() => {
           (async () => {
@@ -153,6 +158,7 @@ export function useSpread(session: TarotSession, whisper: TarotWhisper): TarotSp
         if (entry.flipped[index]) return prev;
         const flipped = [...entry.flipped];
         flipped[index] = true;
+        track('card_revealed', { spread_type: entry.count, count: flipped.filter(Boolean).length });
         const allFlipped = flipped.every(Boolean);
         if (allFlipped) {
           setTimeout(() => {

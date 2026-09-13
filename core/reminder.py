@@ -8,6 +8,7 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 from config import settings
 from storage.db import get_inactive_users, get_notifications_enabled
+from storage.events import safe_log_event
 
 logger = logging.getLogger(__name__)
 
@@ -94,6 +95,7 @@ async def _send_expiry_reminders(db: aiosqlite.Connection, bot: Bot) -> None:
                 reply_markup=keyboard,
             )
             logger.info(f"Subscription expiry reminder sent to {tg_id}")
+            await safe_log_event(db, tg_id, "subscription_expired", {"days_left": days_left})
         except Exception as e:
             logger.warning(f"Failed to send expiry reminder to {tg_id}: {e}")
 

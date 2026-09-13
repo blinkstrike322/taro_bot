@@ -33,6 +33,7 @@ from storage.db import (
     update_character,
     update_last_active,
 )
+from storage.events import safe_log_event
 
 _CHARACTERS_PATH = Path(__file__).resolve().parent.parent / "data" / "characters.json"
 
@@ -311,6 +312,14 @@ async def on_successful_payment(message: types.Message) -> None:
         else:
             # One-time payment (first month 100 Stars)
             await activate_subscription(db, tg_id, first_month=True)
+        # analytics: subscription activated — shape only, no PII
+        await safe_log_event(
+            db,
+            tg_id,
+            "subscription_activated",
+            {"first_month": bool(user and user.first_month_done == 0)},
+            user_id=user.id if user else None,
+        )
         # клавиатуру собираем при живом соединении — внутри читаем notifications_enabled
         keyboard = await _main_menu_keyboard(db, message.from_user.id)
     finally:

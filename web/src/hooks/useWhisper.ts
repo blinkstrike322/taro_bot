@@ -7,6 +7,7 @@
 import { useCallback, useRef, useState } from 'react';
 import * as SFX from '@/lib/sound';
 import * as API from '@/lib/api';
+import { track } from '@/lib/analytics';
 import type { Interpretation } from '@/lib/api';
 import type { TarotSession } from '@/hooks/useTarotSession';
 
@@ -62,11 +63,13 @@ export function useWhisper(session: TarotSession): TarotWhisper {
       setEntries((prev) => prev.filter((e) => e.id !== pendingId));
       setScrollTick((t) => t + 1);
       whisperJobsRef.current.delete(entryId);
+      track('interpretation_ready', {});
       return interp;
     } catch (err: any) {
       setEntries((prev) => prev.filter((e) => e.id !== pendingId));
       setScrollTick((t) => t + 1);
       SFX.sError();
+      track('interpretation_failed', { error_type: err?.name || 'Error' });
       push({ kind: 'error', msg: err?.message || 'шёпот не вернулся' });
       setMode('ОЖИДАНИЕ');
       return null;
