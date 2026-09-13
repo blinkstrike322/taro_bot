@@ -114,13 +114,17 @@ async def reserve_quota(
     cards_data: dict | None = None,
     character_id: str = "shadow_walker",
     reading_type: str = "spread_1",
+    client_token: str | None = None,
 ) -> dict:
     """Проверить квоту И атомарно занять слот (строка reading с маркером '{}').
 
     Заменяет связку «check_quota → ...секунды LLM... → save_reading», в которой
     два параллельных запроса успевали пройти одну и ту же проверку. На успехе
     слот уже занят: толкование допишет complete_reading(), при провале шёпота
-    слот возвращается release_reading().
+    слот возвращается release_reading()/fail_reading().
+
+    client_token — токен клиента, сохраняется в строке чтения: поллинг
+    идёт через БД и переживает рестарт.
 
     Возвращает:
       {"ok": True, "reading_id": int, "remaining": N|None, "limit": N|None}
@@ -142,6 +146,7 @@ async def reserve_quota(
         character_id=character_id,
         unlimited=unlimited,
         limit=limit,
+        client_token=client_token,
     )
 
     if reading_id is None:

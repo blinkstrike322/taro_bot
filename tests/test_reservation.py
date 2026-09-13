@@ -43,6 +43,10 @@ async def db():
             interpretation TEXT,
             character_id TEXT DEFAULT 'shadow_walker',
             created_at TEXT DEFAULT (datetime('now')),
+            status TEXT NOT NULL DEFAULT 'reserved',
+            completed_at TEXT,
+            error TEXT,
+            client_token TEXT,
             FOREIGN KEY (user_id) REFERENCES users(id)
         )
     """)

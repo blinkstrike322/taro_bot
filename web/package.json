@@ -15,10 +15,11 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.4",
-    "tailwindcss": "^4.1.4",
-    "typescript": "^5.8.3",
+    "@types/node": "^22.14.1",
     "@types/react": "^19.1.2",
     "@types/react-dom": "^19.1.2",
-    "@types/node": "^22.14.1"
+    "playwright": "^1.63.0",
+    "tailwindcss": "^4.1.4",
+    "typescript": "^5.8.3"
   }
 }

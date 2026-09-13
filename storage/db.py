@@ -28,6 +28,10 @@ CREATE TABLE IF NOT EXISTS readings (
     interpretation TEXT NOT NULL,
     character_id TEXT NOT NULL DEFAULT 'shadow_walker',
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    status TEXT NOT NULL DEFAULT 'reserved',
+    completed_at TEXT,
+    error TEXT,
+    client_token TEXT,
     FOREIGN KEY (user_id) REFERENCES users(id)
 )
 """
@@ -40,6 +44,22 @@ _db_connection: Optional[aiosqlite.Connection] = None
 # строка не попадает в историю и считается «оплаченным слотом» квоты.
 _PENDING_MARKER = "{}"
 
+# ── Жизненный цикл расклада (двухфазный spread) ─────────────────────
+# reserved → processing → completed | failed. Строка readings — единственный
+# источник правды: токен клиента (client_token) сохраняется в строке, поэтому
+# поллинг и restart-recovery переживают перезапуск процесса. Статус 'failed'
+# держит строку (для возврата ошибки в /poll), но НЕ тратит квоту: все
+# подсчёты квоты исключают failed-строки (см. reserve_reading guard и
+# get_*_count). Легаси-строки до миграции считаются 'completed', если у них
+# есть настоящее толкование, иначе — 'reserved' (in-flight на рестарт).
+STATUS_RESERVED = "reserved"
+STATUS_PROCESSING = "processing"
+STATUS_COMPLETED = "completed"
+STATUS_FAILED = "failed"
+
+# Ошибка проставляется sweep_stale_reservations для зависших раскладов.
+EXPIRED_ERROR = "Расклад истёк после перезапуска — начни его заново."
+
 
 async def reserve_reading(
     db: aiosqlite.Connection,
@@ -51,6 +71,7 @@ async def reserve_reading(
     *,
     unlimited: bool = False,
     limit: int = 1,
+    client_token: Optional[str] = None,
 ) -> Optional[int]:
     """Атомарно занять слот квоты, создав чтение с маркером-заглушкой.
 
@@ -60,35 +81,40 @@ async def reserve_reading(
     SQLite сериализует запись, конкурентный запрос увидит уже занятый слот.
 
     Возвращает id чтения (резерв занят) или None, если слоты исчерпаны.
-    Слот возвращается release_reading(), толкование дописывается
-    complete_reading().
+    Слот возвращается release_reading()/fail_reading(), толкование
+    дописывается complete_reading().
     """
     cards_json = json.dumps(cards_data, ensure_ascii=False)
 
     if unlimited:  # админ/тестер — без лимита, но запись всё равно создаём
         cursor = await db.execute(
-            "INSERT INTO readings (user_id, type, question, cards_data, interpretation, character_id) VALUES (?, ?, ?, ?, ?, ?)",
-            (user_id, type, question, cards_json, _PENDING_MARKER, character_id),
+            "INSERT INTO readings (user_id, type, question, cards_data, interpretation, character_id, status, client_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            (user_id, type, question, cards_json, _PENDING_MARKER, character_id, STATUS_RESERVED, client_token),
         )
         await db.commit()
         return cursor.lastrowid
 
+    # Статус 'failed' — вернённый слот: не считается против лимита.
     if type == "daily":
         guard = (
             "SELECT COUNT(*) FROM readings WHERE user_id = ? AND date(created_at) = date('now') "
+            "AND status != ? "
             "AND (type = 'daily' OR (type = 'spread_1' AND question IS NULL))"
         )
+        guard_args = (user_id, STATUS_FAILED)
     else:
         guard = (
             "SELECT COUNT(*) FROM readings WHERE user_id = ? AND type != 'daily' "
+            "AND status != ? "
             "AND strftime('%Y-%m', created_at) = strftime('%Y-%m', 'now')"
         )
+        guard_args = (user_id, STATUS_FAILED)
 
     cursor = await db.execute(
-        "INSERT INTO readings (user_id, type, question, cards_data, interpretation, character_id) "
-        "SELECT ?, ?, ?, ?, ?, ? "
+        "INSERT INTO readings (user_id, type, question, cards_data, interpretation, character_id, status, client_token) "
+        "SELECT ?, ?, ?, ?, ?, ?, ?, ? "
         f"WHERE ({guard}) < ?",
-        (user_id, type, question, cards_json, _PENDING_MARKER, character_id, user_id, limit),
+        (user_id, type, question, cards_json, _PENDING_MARKER, character_id, STATUS_RESERVED, client_token, *guard_args, limit),
     )
     await db.commit()
     if cursor.rowcount and cursor.rowcount > 0:
@@ -103,8 +129,29 @@ async def complete_reading(
 ) -> None:
     """Дописать толкование в зарезервированное чтение (шёпот вернулся)."""
     await db.execute(
-        "UPDATE readings SET interpretation = ? WHERE id = ?",
-        (json.dumps(interpretation, ensure_ascii=False), reading_id),
+        "UPDATE readings SET interpretation = ?, status = ?, completed_at = datetime('now'), error = NULL WHERE id = ?",
+        (json.dumps(interpretation, ensure_ascii=False), STATUS_COMPLETED, reading_id),
+    )
+    await db.commit()
+
+
+async def mark_reading_processing(db: aiosqlite.Connection, reading_id: int) -> None:
+    """Перевести расклад в processing в момент старта фонового шёпота."""
+    await db.execute(
+        "UPDATE readings SET status = ? WHERE id = ? AND status = ?",
+        (STATUS_PROCESSING, reading_id, STATUS_RESERVED),
+    )
+    await db.commit()
+
+
+async def fail_reading(db: aiosqlite.Connection, reading_id: int, error: str) -> None:
+    """Пометить расклад failed и вернуть слот квоты (failed-строки не считаются).
+
+    Строка сохраняется, чтобы /poll по токену отдал причину, а не 404.
+    """
+    await db.execute(
+        "UPDATE readings SET status = ?, error = ?, completed_at = datetime('now') WHERE id = ? AND status IN (?, ?)",
+        (STATUS_FAILED, error, reading_id, STATUS_RESERVED, STATUS_PROCESSING),
     )
     await db.commit()
 
@@ -120,13 +167,53 @@ async def release_reading(db: aiosqlite.Connection, reading_id: int) -> bool:
 
 
 async def sweep_stale_reservations(db: aiosqlite.Connection, older_than_minutes: int = 15) -> int:
-    """Удалить брошенные резервы (процесс перезапустился посреди шёпота)."""
+    """Пометить брошенные расклады (рестарт посреди шёпота) failed/expired.
+
+    Вместо удаления строка помечается failed с EXPIRED_ERROR — поллинг по
+    токену после рестарта отдаст «истёк», а не 404-unknown-token. Слот квоты
+    освобождается автоматически, т.к. failed-строки исключены из подсчётов.
+    """
     cursor = await db.execute(
-        "DELETE FROM readings WHERE interpretation = ? AND created_at < datetime('now', ?)",
-        (_PENDING_MARKER, f"-{older_than_minutes} minutes"),
+        "UPDATE readings SET status = ?, error = ?, completed_at = datetime('now') "
+        "WHERE status IN (?, ?) AND created_at < datetime('now', ?)",
+        (STATUS_FAILED, EXPIRED_ERROR, STATUS_RESERVED, STATUS_PROCESSING, f"-{older_than_minutes} minutes"),
     )
     await db.commit()
     return cursor.rowcount or 0
+
+
+async def get_reading_by_token(
+    db: aiosqlite.Connection,
+    token: str,
+) -> Optional[dict]:
+    """Resolve a spread token to its reading row + owner tg_id, or None.
+
+    Токен → чтение идёт через БД (client_token), а не через process-словарь:
+    mapping переживает перезапуск. Возвращает None, если токен неизвестен.
+    """
+    cursor = await db.execute(
+        """SELECT r.id, r.user_id, r.status, r.interpretation, r.error, u.tg_id
+           FROM readings r JOIN users u ON r.user_id = u.id
+           WHERE r.client_token = ?""",
+        (token,),
+    )
+    row = await cursor.fetchone()
+    if row is None:
+        return None
+    interpretation = row[3] if row[3] != _PENDING_MARKER else None
+    if interpretation is not None:
+        try:
+            interpretation = json.loads(interpretation)
+        except (json.JSONDecodeError, TypeError):
+            interpretation = None
+    return {
+        "reading_id": row[0],
+        "user_id": row[1],
+        "status": row[2],
+        "interpretation": interpretation,
+        "error": row[4],
+        "tg_id": row[5],
+    }
 
 
 async def _migrate_schema(db: aiosqlite.Connection) -> None:
@@ -135,6 +222,10 @@ async def _migrate_schema(db: aiosqlite.Connection) -> None:
         "ALTER TABLE users ADD COLUMN subscription_end TEXT",
         "ALTER TABLE users ADD COLUMN first_month_done INTEGER DEFAULT 0",
         "ALTER TABLE users ADD COLUMN notifications_enabled INTEGER DEFAULT 1",
+        "ALTER TABLE readings ADD COLUMN status TEXT NOT NULL DEFAULT 'reserved'",
+        "ALTER TABLE readings ADD COLUMN completed_at TEXT",
+        "ALTER TABLE readings ADD COLUMN error TEXT",
+        "ALTER TABLE readings ADD COLUMN client_token TEXT",
     ]
     for sql in migrations:
         try:
@@ -142,6 +233,14 @@ async def _migrate_schema(db: aiosqlite.Connection) -> None:
             await db.commit()
         except aiosqlite.OperationalError:
             pass  # column already exists
+
+    # Backfill: легаси-строки с реальным толкованием — completed, остальные
+    # остаются 'reserved' (in-flight на момент рестарта) — их добьёт sweep.
+    await db.execute(
+        "UPDATE readings SET status = ? WHERE (status = ? OR status IS NULL) AND interpretation != ?",
+        (STATUS_COMPLETED, STATUS_RESERVED, _PENDING_MARKER),
+    )
+    await db.commit()
 
 
 async def init_db(db_path: str = "taro_bot.db") -> aiosqlite.Connection:
@@ -392,8 +491,8 @@ async def is_subscribed(db: aiosqlite.Connection, tg_id: int) -> bool:
 async def get_daily_non_daily_count(db: aiosqlite.Connection, user_id: int) -> int:
     """Count non-daily readings today for a user."""
     cursor = await db.execute(
-        "SELECT COUNT(*) FROM readings WHERE user_id = ? AND type != 'daily' AND date(created_at) = date('now')",
-        (user_id,),
+        "SELECT COUNT(*) FROM readings WHERE user_id = ? AND type != 'daily' AND status != ? AND date(created_at) = date('now')",
+        (user_id, STATUS_FAILED),
     )
     row = await cursor.fetchone()
     return row[0]
@@ -402,8 +501,8 @@ async def get_daily_non_daily_count(db: aiosqlite.Connection, user_id: int) -> i
 async def get_monthly_non_daily_count(db: aiosqlite.Connection, user_id: int) -> int:
     """Count non-daily readings this month for a user."""
     cursor = await db.execute(
-        "SELECT COUNT(*) FROM readings WHERE user_id = ? AND type != 'daily' AND strftime('%Y-%m', created_at) = strftime('%Y-%m', 'now')",
-        (user_id,),
+        "SELECT COUNT(*) FROM readings WHERE user_id = ? AND type != 'daily' AND status != ? AND strftime('%Y-%m', created_at) = strftime('%Y-%m', 'now')",
+        (user_id, STATUS_FAILED),
     )
     row = await cursor.fetchone()
     return row[0]
@@ -416,8 +515,8 @@ async def get_daily_card_count_today(db: aiosqlite.Connection, user_id: int) -> 
     (type='spread_1' with no question).
     """
     cursor = await db.execute(
-        "SELECT COUNT(*) FROM readings WHERE user_id = ? AND date(created_at) = date('now') AND (type = 'daily' OR (type = 'spread_1' AND question IS NULL))",
-        (user_id,),
+        "SELECT COUNT(*) FROM readings WHERE user_id = ? AND status != ? AND date(created_at) = date('now') AND (type = 'daily' OR (type = 'spread_1' AND question IS NULL))",
+        (user_id, STATUS_FAILED),
     )
     row = await cursor.fetchone()
     return row[0]
