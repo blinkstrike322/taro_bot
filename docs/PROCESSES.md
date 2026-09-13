@@ -9,6 +9,7 @@
 - [Card Conversion](#card-conversion)
 - [WebApp Frontend (Next.js)](#webapp-frontend-nextjs)
 - [Production Deploy (start.sh)](#production-deploy-startsh)
+- [Git Flow & PR](#git-flow--pr)
 - [Project Structure](#project-structure)
 - [Troubleshooting](#troubleshooting)
 
@@ -471,3 +472,22 @@ If `scripts/convert_cards.py` fails:
 - Run from the project root directory (paths are relative to `taro_bot/`)
 - Input PNGs should be at least 256x384 pixels for good results
 - Use `--force` to overwrite existing output files
+
+## Git Flow & PR
+
+`main` is protected: PR + green CI required, no force-pushes, 0 required
+approvals (single maintainer). Direct pushes of code to `main` are blocked.
+
+```text
+feature/*  ->  PR  ->  CI (backend pytest/ruff/mypy + frontend tsc/test/build)
+        ->  merge  ->  Amvera webhook deploys main
+```
+
+- The static bundle `static/webapp/` (served by `app.py`, pulled by Amvera)
+  is committed **into the PR branch** automatically by the deploy workflow
+  (builds on PR, pushes bundle commit to the PR head). Merge brings a fresh
+  bundle to `main`. No CI pushes to `main` ever — nothing to bypass.
+- Always work through PRs, even for one-liners: an admin direct push with a
+  stale bundle ships a stale WebApp.
+- CI files: `.github/workflows/ci-backend.yml`, `ci-frontend.yml`
+  (checks only), `deploy.yml` (PR bundle commits only).
