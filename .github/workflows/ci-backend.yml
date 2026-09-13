@@ -1,0 +1,72 @@
+# Backend verification: pytest + ruff + mypy.
+# Triggers independently of the frontend (see ci-frontend.yml) via its own path
+# filter, so a backend-only push never builds the frontend and vice versa.
+#
+# Deploy is a SEPARATE workflow (deploy.yml) — this file never commits or deploys,
+# and never runs on pull_requests other than as read-only checks.
+name: CI - Backend
+
+on:
+  push:
+    # backend + CI self-files: re-verifies whenever backend code OR the pipeline
+    # itself changes. Frontend-only pushes do NOT touch these paths.
+    paths:
+      - 'app.py'
+      - 'bot/**'
+      - 'core/**'
+      - 'storage/**'
+      - 'config.py'
+      - 'requirements.txt'
+      - 'tests/**'
+      - 'pyproject.toml'
+      - '.github/workflows/ci-backend.yml'
+  pull_request:
+    paths:
+      - 'app.py'
+      - 'bot/**'
+      - 'core/**'
+      - 'storage/**'
+      - 'config.py'
+      - 'requirements.txt'
+      - 'tests/**'
+      - 'pyproject.toml'
+      - '.github/workflows/ci-backend.yml'
+  workflow_dispatch:
+
+# Separate concurrency group so this never collides with the deploy group.
+concurrency:
+  group: ci-backend-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend-checks:
+    runs-on: ubuntu-latest
+    name: backend (pytest · ruff · mypy)
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install runtime + test dependencies
+        run: pip install -r requirements.txt
+
+      - name: Install dev-only lint/type tooling
+        # These are NOT added to requirements.txt (they are CI-only). Versions are
+        # pinned to the exact releases this project's config was validated against.
+        run: pip install ruff==0.16.7 mypy==2.3.1
+
+      - name: Run test suite
+        run: python -m pytest tests/ -q
+
+      - name: Lint (ruff)
+        # Scoped to the CI-relevant backend packages; config+exclusions live in
+        # [tool.ruff] of pyproject.toml.
+        run: ruff check app.py bot core storage config.py tests
+
+      - name: Type-check (mypy)
+        # Reads files + exclusions from [tool.mypy] of pyproject.toml.
+        run: mypy

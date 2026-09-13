@@ -1,14 +1,11 @@
 # tests/test_tarot.py
-from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from core.tarot import draw_cards, load_cards, validate_cards, get_card_image
-
 # ── build_reading_prompt tests ──────────────────────────────────────────────
-
 from core.prompts import build_reading_prompt
+from core.tarot import draw_cards, get_card_image, load_cards
 
 
 def test_build_reading_prompt_single_card():
@@ -78,7 +75,7 @@ def test_build_reading_prompt_json_intro_field():
 
 # ── parse_llm_response tests ────────────────────────────────────────────────
 
-from core.llm import parse_llm_response, _parse_text_format, fallback_from_cards_db
+from core.llm import _parse_text_format, fallback_from_cards_db, parse_llm_response
 
 
 def test_parse_json_response():

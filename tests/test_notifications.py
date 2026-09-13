@@ -1,11 +1,12 @@
 # tests/test_notifications.py
-import pytest
-import pytest_asyncio
-import aiosqlite
 from unittest.mock import AsyncMock
 
-from storage.db import get_notifications_enabled, set_notifications_enabled
+import aiosqlite
+import pytest
+import pytest_asyncio
+
 from core.reminder import _send_inactive_reminders
+from storage.db import get_notifications_enabled, set_notifications_enabled
 
 
 @pytest_asyncio.fixture

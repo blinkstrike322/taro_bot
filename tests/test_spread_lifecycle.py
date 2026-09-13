@@ -7,7 +7,7 @@ import hashlib
 import hmac
 import json
 import time
-from urllib.parse import urlencode, quote
+from urllib.parse import quote, urlencode
 
 import pytest
 import pytest_asyncio
@@ -15,12 +15,15 @@ from aiohttp.test_utils import TestClient, TestServer
 
 import app as app_module
 import storage.db as sdb
+from core.quota import MONTHLY_LIMIT_FREE, reserve_quota
 from storage.db import (
-    init_db, get_reading_by_token, sweep_stale_reservations,
-    STATUS_COMPLETED, STATUS_FAILED, EXPIRED_ERROR,
+    EXPIRED_ERROR,
+    STATUS_COMPLETED,
+    STATUS_FAILED,
+    get_reading_by_token,
+    init_db,
+    sweep_stale_reservations,
 )
-from core.quota import reserve_quota, MONTHLY_LIMIT_FREE
-
 
 CARDS = [
     {"id": "the-moon", "name": "Луна", "is_reversed": False, "orientation": "upright"},

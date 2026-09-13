@@ -3,13 +3,12 @@
 # поэтому конкурентные /begin не проходят одну проверку дважды.
 import json
 
+import aiosqlite
 import pytest
 import pytest_asyncio
-import aiosqlite
 
-from storage.db import reserve_reading, complete_reading, release_reading, sweep_stale_reservations
-from core.quota import reserve_quota, MONTHLY_LIMIT_FREE, MONTHLY_LIMIT_PAID
-
+from core.quota import MONTHLY_LIMIT_FREE, MONTHLY_LIMIT_PAID, reserve_quota
+from storage.db import complete_reading, release_reading, reserve_reading, sweep_stale_reservations
 
 CARDS = [
     {"id": "the-moon", "name": "Луна", "is_reversed": False, "orientation": "upright"},

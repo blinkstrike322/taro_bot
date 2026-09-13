@@ -1,8 +1,9 @@
 # tests/test_quota.py
+import aiosqlite
 import pytest
 import pytest_asyncio
-import aiosqlite
-from core.quota import check_quota, MONTHLY_LIMIT_FREE, MONTHLY_LIMIT_PAID
+
+from core.quota import MONTHLY_LIMIT_FREE, MONTHLY_LIMIT_PAID, check_quota
 
 
 @pytest_asyncio.fixture

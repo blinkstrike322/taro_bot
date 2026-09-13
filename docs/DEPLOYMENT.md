@@ -245,7 +245,39 @@ paywall-флаг → daily-лимит → админ-доступ — без р�
 
 ---
 
-## 10. Диагностика
+## 10. CI Pipeline
+
+GitHub Actions проверяет каждый push и PR (`pull_request` — только read-only, без
+деплоя). Три независимых workflow по path-trigger:
+
+| Файл | Запускается при изменениях | Что делает |
+|---|---|---|
+| `.github/workflows/ci-backend.yml` | `app.py`, `bot/**`, `core/**`, `storage/**`, `config.py`, `requirements.txt`, `tests/**`, `pyproject.toml` | pytest + ruff + mypy |
+| `.github/workflows/ci-frontend.yml` | `web/**` | `npm ci` + `tsc --noEmit` + `npm run build` |
+| `.github/workflows/deploy.yml` | push в `main` + `web/**` | сборка static → auto-commit `static/webapp/` → деплой Amvera |
+
+- Backend и frontend **триггерятся независимо**: push только по бэкенду не
+  пересобирает фронтенд, и наоборот.
+- Конфиги lint/типов — в корневом `pyproject.toml` (`[tool.ruff]`, `[tool.mypy]`).
+- **Если CI красный — смотреть**: Actions → вкладка соответствующего workflow →
+  red x. Быстро понять, что упало:
+  - `backend-checks` → `Run test suite` (pytest), `Lint (ruff)` или `Type-check (mypy)`
+  - `frontend-checks` → `Type-check (tsc)` или `Build static export`
+  - Ключевые исключения документально описаны в `pyproject.toml` (excluded
+    модули для mypy, ignored-правила ruff) — не «ослаблять» прод-код, а читать
+    комментарии там.
+
+Локально те же команды:
+```bash
+python -m pytest tests/ -q
+ruff check app.py bot core storage config.py tests
+mypy
+cd web && npx tsc --noEmit && npm run build
+```
+
+---
+
+## 11. Диагностика
 
 ### Проверить что бот жив
 
@@ -280,7 +312,7 @@ curl -s "https://api.telegram.org/bot${BOT_TOKEN}/getUpdates?limit=1"
 
 ---
 
-## 11. История изменений
+## 12. История изменений
 
 | Дата | Коммит | Изменение |
 |---|---|---|

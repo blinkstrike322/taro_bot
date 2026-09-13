@@ -2,9 +2,12 @@
 import logging
 
 import aiosqlite
+
 from config import settings
 from storage.db import (
-    is_subscribed, get_monthly_non_daily_count, get_daily_card_count_today,
+    get_daily_card_count_today,
+    get_monthly_non_daily_count,
+    is_subscribed,
     reserve_reading,
 )
 

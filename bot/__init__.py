@@ -1,3 +1,3 @@
-from .router import router, register_handlers
+from .router import register_handlers, router
 
-__all__ = ["router", "register_handlers"]
+__all__ = ["register_handlers", "router"]

@@ -2,7 +2,6 @@ import asyncio
 import hashlib
 import hmac
 import json
-import logging
 import os
 import shutil
 import time
@@ -10,26 +9,32 @@ import uuid
 from pathlib import Path
 from urllib.parse import parse_qs
 
-from aiohttp import web
 from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.types import BotCommand
+from aiohttp import web
 
-from config import settings, logger
-from core.reminder import reminder_loop
 from bot.router import register_handlers
-
-from storage.db import (
-    init_db, get_db, get_user_readings_by_month,
-    get_or_create_user, get_user_by_tg_id,
-    complete_reading, fail_reading, mark_reading_processing,
-    sweep_stale_reservations, get_reading_by_token,
-    STATUS_COMPLETED, STATUS_FAILED,
-)
-from core.tarot import draw_cards
+from config import logger, settings
 from core.llm import interpret_reading
-from core.quota import reserve_quota
 from core.prompts import _positions_for_question
+from core.quota import reserve_quota
+from core.reminder import reminder_loop
+from core.tarot import draw_cards
+from storage.db import (
+    STATUS_COMPLETED,
+    STATUS_FAILED,
+    complete_reading,
+    fail_reading,
+    get_db,
+    get_or_create_user,
+    get_reading_by_token,
+    get_user_by_tg_id,
+    get_user_readings_by_month,
+    init_db,
+    mark_reading_processing,
+    sweep_stale_reservations,
+)
 
 # initData старше этого срока не принимается: подпись остаётся валидной
 # навсегда, а значит без проверки возраста старые данные можно переиспользовать.
@@ -204,7 +209,7 @@ async def _whisper_task(token: str, ctx: dict, cards: list[dict]) -> None:
             reading_id=ctx["reading_id"],
             interpretation=interpretation,
         )
-    except Exception as e:  # noqa: BLE001 — any failure must reach the poller
+    except Exception as e:
         try:
             await fail_reading(
                 await get_db(),

@@ -6,8 +6,7 @@ import logging
 import re
 import time
 from dataclasses import dataclass
-from datetime import datetime, timezone
-from typing import Optional
+from datetime import UTC, datetime
 
 import httpx
 
@@ -380,7 +379,7 @@ async def call_llm_with_fallback(
             logger.warning(
                 "Skipping %s — %s: circuit breaker open until %s",
                 label, model,
-                datetime.fromtimestamp(_cooldown_end(label, model), timezone.utc).isoformat(),
+                datetime.fromtimestamp(_cooldown_end(label, model), UTC).isoformat(),
             )
             continue
 
@@ -419,12 +418,12 @@ async def call_llm_with_fallback(
 
 
 async def interpret_reading(
-    question: Optional[str],
+    question: str | None,
     cards: list[dict],
     character_id: str = "shadow_walker",
     spread_type: int = 1,
 ) -> dict:
-    from core.prompts import get_system_prompt, build_reading_prompt
+    from core.prompts import build_reading_prompt, get_system_prompt
 
     system_prompt = get_system_prompt(character_id)
     user_prompt = build_reading_prompt(cards, question, character_id, spread_type)
@@ -461,7 +460,7 @@ async def interpret_reading(
     return fallback_from_cards_db(cards, question, character_id)
 
 
-def _parse_text_format(text: str) -> Optional[dict]:
+def _parse_text_format(text: str) -> dict | None:
     """Try to parse text-format LLM response in any field order."""
     result = {}
 
@@ -493,7 +492,7 @@ def _parse_text_format(text: str) -> Optional[dict]:
     return None
 
 
-def parse_llm_response(text: str) -> Optional[dict]:
+def parse_llm_response(text: str) -> dict | None:
     text = strip_emojis(text)
 
     # 1. Strip markdown code blocks if present
@@ -542,8 +541,8 @@ def fallback_from_cards_db(
     question: str | None = None,
     character_id: str = "shadow_walker",
 ) -> dict:
-    from core.tarot import load_cards
     from core.prompts import _positions_for_question
+    from core.tarot import load_cards
 
     all_cards = load_cards()
     cards_by_name = {c["name"]: c for c in all_cards}
