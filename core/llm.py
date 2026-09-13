@@ -76,6 +76,24 @@ class _Breaker:
 _breaker_state: dict[tuple[str, str], _Breaker] = {}
 
 
+# ── Analytics: last-successful LLM hop (observe-only) ────────────────
+# Records which provider/model won and whether a fallback was needed.
+# Does NOT change fallback order or circuit-breaker state; used only by
+# the analytics layer to attach provider/model/fallback to spread events.
+_last_used_provider: str | None = None
+_last_used_model: str | None = None
+_last_used_fallback: bool = False
+
+
+def get_last_llm_hop() -> dict[str, object]:
+    """Metadata of the most recent successful LLM hop (provider/model/fallback)."""
+    return {
+        "provider": _last_used_provider,
+        "model": _last_used_model,
+        "fallback_used": _last_used_fallback,
+    }
+
+
 def _breaker(label: str, model: str) -> _Breaker:
     state = _breaker_state.get((label, model))
     if state is None:
@@ -363,6 +381,7 @@ async def call_llm_with_fallback(
     messages: list[dict],
     max_tokens: int = 2000,
 ) -> str:
+    global _last_used_provider, _last_used_model, _last_used_fallback
     last_error: Exception | None = None
     provider_list = _build_provider_list()
 
@@ -390,6 +409,12 @@ async def call_llm_with_fallback(
                     max_tokens=max_tokens,
                 )
                 _record_success(label, model)
+                _last_used_provider = label
+                _last_used_model = model
+                _primary = _get_primary_provider()
+                _last_used_fallback = not (
+                    _primary is not None and model == _primary[0] and label == _primary[3]
+                )
                 logger.info(
                     "OK: %s — %s (%d chars)",
                     label, model, len(result),

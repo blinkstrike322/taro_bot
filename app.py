@@ -16,7 +16,7 @@ from aiohttp import web
 
 from bot.router import register_handlers
 from config import logger, settings
-from core.llm import interpret_reading
+from core.llm import get_last_llm_hop, interpret_reading
 from core.prompts import _positions_for_question
 from core.quota import reserve_quota
 from core.reminder import reminder_loop
@@ -35,6 +35,7 @@ from storage.db import (
     mark_reading_processing,
     sweep_stale_reservations,
 )
+from storage.events import _EVENT_NAMES, log_event, safe_log_event
 
 # initData старше этого срока не принимается: подпись остаётся валидной
 # навсегда, а значит без проверки возраста старые данные можно переиспользовать.
@@ -91,6 +92,26 @@ def _admin_tg_ids() -> set[int]:
     return {int(x.strip()) for x in raw.split(",") if x.strip().isdigit()}
 
 
+# ── Beacon rate limiting (per user) ──────────────────────────────
+# Аналитика observe-only: избыточные события (больше лимита в минуту)
+# молча отбрасываются — они не должны ни нагружать запись, ни ломать UI.
+EVENT_RATE_LIMIT = 120
+EVENT_RATE_WINDOW_S = 60
+_event_hits: dict[int, list[float]] = {}
+
+
+def _event_over_limit(tg_id: int) -> bool:
+    """Trimming sliding window: >N events/min per user is dropped silently."""
+    now = time.time()
+    hits = [t for t in _event_hits.get(tg_id, []) if now - t < EVENT_RATE_WINDOW_S]
+    if len(hits) >= EVENT_RATE_LIMIT:
+        _event_hits[tg_id] = hits
+        return True
+    hits.append(now)
+    _event_hits[tg_id] = hits
+    return False
+
+
 async def start_polling(bot: Bot, dp: Dispatcher) -> None:
     await dp.start_polling(bot)
 
@@ -107,6 +128,9 @@ async def handle_readings(request):
         return web.json_response({"readings": []})
     db = await get_db()
     rows = await get_user_readings_by_month(db, tg_id, year, month)
+    # Server-side "history open" — shape-only, no question/card content.
+    if tg_id:
+        await safe_log_event(db, tg_id, "history_open", {}, user_id=None)
     return web.json_response({"readings": rows})
 
 
@@ -196,6 +220,7 @@ async def _whisper_task(token: str, ctx: dict, cards: list[dict]) -> None:
     failed (слот квоты освобождается, т.к. failed-строки не считаются в
     лимите), а поллинг по токену отдаст причину вместо 404.
     """
+    started = time.monotonic()
     try:
         await mark_reading_processing(await get_db(), ctx["reading_id"])
         interpretation = await interpret_reading(
@@ -204,12 +229,44 @@ async def _whisper_task(token: str, ctx: dict, cards: list[dict]) -> None:
             character_id=ctx["character_id"],
             spread_type=ctx["spread_type"],
         )
+        latency_ms = int((time.monotonic() - started) * 1000)
+        hop = get_last_llm_hop()
+        await safe_log_event(
+            await get_db(),
+            ctx["tg_id"],
+            "spread_complete",
+            {
+                "guide": ctx["character_id"],
+                "spread_type": ctx["spread_type"],
+                "provider": hop["provider"],
+                "model": hop["model"],
+                "latency_ms": latency_ms,
+                "fallback_used": hop["fallback_used"],
+            },
+            user_id=ctx["user_id"],
+        )
         await complete_reading(
             db=await get_db(),
             reading_id=ctx["reading_id"],
             interpretation=interpretation,
         )
     except Exception as e:
+        hop = get_last_llm_hop()
+        await safe_log_event(
+            await get_db(),
+            ctx["tg_id"],
+            "spread_fail",
+            {
+                "guide": ctx["character_id"],
+                "spread_type": ctx["spread_type"],
+                "provider": hop["provider"],
+                "model": hop["model"],
+                "latency_ms": int((time.monotonic() - started) * 1000),
+                "fallback_used": hop["fallback_used"],
+                "error_type": type(e).__name__,
+            },
+            user_id=ctx["user_id"],
+        )
         try:
             await fail_reading(
                 await get_db(),
@@ -327,6 +384,17 @@ async def _spread_request_context(request, client_token: str):
         client_token=client_token,
     )
     if not quota["ok"]:
+        await safe_log_event(
+            db,
+            tg_id,
+            "quota_refused",
+            {
+                "guide": character_id,
+                "spread_type": spread_type,
+                "needs_subscription": bool(quota.get("needs_subscription")),
+            },
+            user_id=user.id,
+        )
         return web.json_response(
             {
                 "error": quota.get("reason", "Лимит исчерпан."),
@@ -335,9 +403,18 @@ async def _spread_request_context(request, client_token: str):
             status=429,
         )
 
+    await safe_log_event(
+        db,
+        tg_id,
+        "spread_begin",
+        {"guide": character_id, "spread_type": spread_type},
+        user_id=user.id,
+    )
+
     return {
         "db": db,
         "user_id": user.id,
+        "tg_id": tg_id,
         "cards": cards,
         "question": question,
         "character_id": character_id,
@@ -369,6 +446,39 @@ async def handle_client_log(request):
     return web.Response(status=204)
 
 
+async def handle_events(request):
+    """Beacon endpoint: validate, rate-limit per user, log, always 204.
+
+    Fire-and-forget: a malformed body, unknown event, invalid initData or a
+    rate-limit hit all silently return 204 — the beacon must NEVER surface an
+    error to the UI. Props carry only shapes (the frontend builds them from a
+    typed catalog); log_event additionally rejects non-JSON-serializable props.
+    """
+    try:
+        body = await request.json()
+    except Exception:
+        return web.Response(status=204)
+    event = body.get("event")
+    props = body.get("props") or {}
+    if not isinstance(event, str) or event not in _EVENT_NAMES:
+        return web.Response(status=204)
+    if not isinstance(props, dict):
+        return web.Response(status=204)
+    init_data = str(body.get("init_data", "") or "")
+    user = verify_telegram_init_data(init_data)
+    if not user:
+        return web.Response(status=204)
+    tg_id = user.get("id") or 0
+    if not tg_id or _event_over_limit(tg_id):
+        return web.Response(status=204)
+    db = await get_db()
+    try:
+        await log_event(db, tg_id, event, props)
+    except Exception:
+        logger.warning("analytics beacon dropped: event=%s", event)
+    return web.Response(status=204)
+
+
 def create_webapp() -> web.Application:
     app = web.Application()
     app.router.add_get('/api/readings', handle_readings)
@@ -377,6 +487,7 @@ def create_webapp() -> web.Application:
     app.router.add_post('/api/spread/begin', handle_spread_begin)
     app.router.add_get('/api/spread/poll', handle_spread_poll)
     app.router.add_post('/api/log', handle_client_log)
+    app.router.add_post('/api/events', handle_events)
     webapp_dir = Path(__file__).parent / "static" / "webapp"
     if webapp_dir.is_dir():
         index = webapp_dir / "index.html"
