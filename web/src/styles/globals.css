@@ -3164,3 +3164,192 @@ button.history-row--open:active {
   line-height: 1.35;
   overflow-wrap: anywhere;
 }
+
+/* ================================================================
+   READING — семантическое терминальное чтение (не JSON)
+   TRANSMISSION → CARDS → WHISPER → SIGNAL → BODY → ADVICE
+   ================================================================ */
+.reading {
+  font-size: 13px;
+  line-height: 1.62;
+  white-space: pre-wrap;
+  word-break: break-word;
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+.reading-line {
+  animation: json-line-in 0.22s ease-out both;
+  animation-delay: var(--jl-delay, 0s);
+}
+
+.reading-transmission {
+  display: inline-block;
+  font-weight: 800;
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  color: var(--guide-accent, #fff);
+  text-shadow: 0 0 8px var(--guide-accent-dim, transparent);
+  border: 1px solid var(--guide-accent-dim, rgba(255,255,255,0.25));
+  padding: 2px 8px;
+  margin-bottom: 8px;
+}
+
+.reading-meta {
+  color: rgba(255,255,255,0.55);
+  font-size: 11.5px;
+  letter-spacing: 0.04em;
+  margin-bottom: 2px;
+}
+
+.reading-meta-key {
+  color: var(--guide-accent, #fff);
+  font-weight: 700;
+}
+
+.reading-meta-sep {
+  color: rgba(255,255,255,0.30);
+}
+
+.reading-question {
+  color: rgba(255,255,255,0.75);
+  font-style: italic;
+  margin: 4px 0 2px;
+}
+
+.reading-cards {
+  margin: 10px 0 4px;
+  border-left: 2px solid var(--guide-accent-dim, rgba(255,255,255,0.2));
+  padding-left: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.reading-card {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.reading-card-index {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--guide-accent, #fff);
+  font-variant-numeric: tabular-nums;
+}
+
+.reading-card-name {
+  font-weight: 800;
+  font-size: 13.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #fff;
+  text-shadow: 0 0 8px rgba(255,255,255,0.14);
+}
+
+.reading-card-rev {
+  font-size: 11.5px;
+  color: var(--guide-accent, #fff);
+  font-weight: 700;
+}
+
+.reading-card-upright {
+  font-size: 11px;
+  color: rgba(255,255,255,0.40);
+}
+
+.reading-card-pos {
+  width: 100%;
+  font-size: 11px;
+  color: rgba(255,255,255,0.45);
+  font-style: italic;
+}
+
+.reading-section-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: rgba(255,255,255,0.38);
+  margin: 14px 0 4px;
+  text-transform: lowercase;
+}
+
+.reading-section-label--signal {
+  color: var(--guide-accent, #fff);
+  text-shadow: 0 0 8px var(--guide-accent-dim, transparent);
+  margin-top: 12px;
+}
+
+.reading-section-label--advice {
+  color: var(--guide-accent, #fff);
+  text-shadow: 0 0 8px var(--guide-accent-dim, transparent);
+}
+
+.reading-whisper {
+  display: inline-block;
+  vertical-align: baseline;
+  max-width: 100%;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: rgba(236, 233, 246, 0.62);
+  font-size: 12.5px;
+  line-height: 1.7;
+}
+
+.reading-signal {
+  border-left: 2px solid var(--guide-accent, #fff);
+  padding: 2px 0 2px 12px;
+  margin: 2px 0 4px;
+}
+
+.reading-signal-text {
+  display: inline-block;
+  vertical-align: baseline;
+  max-width: 100%;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.7;
+}
+
+.reading-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.reading-body-text {
+  color: rgba(255,255,255,0.80);
+  font-size: 13px;
+  line-height: 1.68;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.reading-advice {
+  display: inline-block;
+  vertical-align: baseline;
+  max-width: 100%;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.65;
+}
+
+.reading-complete {
+  margin-top: 14px;
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
+  color: rgba(255,255,255,0.35);
+}
+
+/* сигил уходит в фон, когда в транскрипте уже есть чтение */
+.sigil-dim .ambient-sigil {
+  opacity: 0.22;
+  transition: opacity 0.8s ease;
+}
