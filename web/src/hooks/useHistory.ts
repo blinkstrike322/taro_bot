@@ -58,7 +58,7 @@ export function useHistory(session: TarotSession): TarotHistory {
         character_id: r.character_id,
       }));
       push({ kind: 'history', rows });
-      track('history_opened', {});
+      track('history_open', {});
     } catch {
       push({ kind: 'history', rows: [] });
     } finally {
