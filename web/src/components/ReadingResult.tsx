@@ -33,11 +33,6 @@ interface BodySection {
   prose: string;
 }
 
-interface BodyDisclosure {
-  summary: string;
-  sections: BodySection[];
-}
-
 function buildCardLines(
   interp: Interpretation,
   cards?: TarotCard[],
@@ -60,55 +55,39 @@ function buildCardLines(
   }));
 }
 
-function buildBodyGroups(interp: Interpretation): { visible: BodySection[]; disclosures: BodyDisclosure[] } {
+function buildBodySections(interp: Interpretation): BodySection[] {
+  const sections: BodySection[] = [];
   const positions = Array.isArray(interp.позиции) ? interp.позиции : null;
 
   if (positions && positions.length > 0) {
-    const posSections: BodySection[] = [];
     positions.forEach((p: ReadingPosition, i: number) => {
       if (p.трактовка) {
-        posSections.push({
+        sections.push({
           label: `${String(i + 1).padStart(2, '0')} · ${p.позиция ?? ''}`,
           prose: p.трактовка,
         });
       }
     });
-    const disclosures: BodyDisclosure[] = [];
-    if (posSections.length > 0) {
-      disclosures.push({
-        summary: `позиции · ${String(posSections.length).padStart(2, '0')}`,
-        sections: posSections,
-      });
-    }
     if (interp.связь_карт) {
-      disclosures.push({
-        summary: 'нить · связь карт',
-        sections: [{ label: '', prose: interp.связь_карт }],
-      });
+      sections.push({ label: 'нить · связь карт', prose: interp.связь_карт });
     }
-    return { visible: [], disclosures };
+    return sections;
   }
 
   if (interp.проявление || interp.траектория || interp.на_что_смотреть) {
-    const visible: BodySection[] = [];
     if (interp.проявление) {
-      visible.push({ label: 'проявление', prose: interp.проявление });
+      sections.push({ label: 'проявление', prose: interp.проявление });
     }
     if (interp.на_что_смотреть) {
-      visible.push({ label: 'на что смотреть', prose: interp.на_что_смотреть });
+      sections.push({ label: 'на что смотреть', prose: interp.на_что_смотреть });
     }
-    const disclosures: BodyDisclosure[] = [];
     if (interp.траектория) {
-      const traj: BodySection[] = [];
       for (const t of ['утро', 'день', 'вечер'] as const) {
         const v = interp.траектория[t];
-        if (v) traj.push({ label: `траектория · ${t}`, prose: v });
-      }
-      if (traj.length > 0) {
-        disclosures.push({ summary: 'траектория дня', sections: traj });
+        if (v) sections.push({ label: `траектория · ${t}`, prose: v });
       }
     }
-    return { visible, disclosures };
+    return sections;
   }
 
   const meanings = Array.isArray(interp.card_meaning)
@@ -116,11 +95,21 @@ function buildBodyGroups(interp: Interpretation): { visible: BodySection[]; disc
     : interp.card_meaning
       ? [interp.card_meaning]
       : [];
-  const visible = meanings.map((m, i) => ({
-    label: meanings.length > 1 ? `значение · ${String(i + 1).padStart(2, '0')}` : 'значение',
-    prose: m,
-  }));
-  return { visible, disclosures: [] };
+  meanings.forEach((m, i) => {
+    sections.push({
+      label: meanings.length > 1 ? `значение · ${String(i + 1).padStart(2, '0')}` : 'значение',
+      prose: m,
+    });
+  });
+  return sections;
+}
+
+function hexToRgba(hex: string, alpha: number): string {
+  const h = hex.replace('#', '');
+  const r = parseInt(h.substring(0, 2), 16);
+  const g = parseInt(h.substring(2, 4), 16);
+  const b = parseInt(h.substring(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
 const TYPE_SPEED = 8;
@@ -136,10 +125,11 @@ export default function ReadingResult({
 }: ReadingResultProps) {
   const { intro, short_answer, advice } = interpretation;
   const guide = getGuide(characterId);
+  const adviceColor = hexToRgba(guide.accent, 0.78);
+  const adviceGlow = `0 0 4px ${hexToRgba(guide.accent, 0.30)}, 0 0 8px ${hexToRgba(guide.accent, 0.15)}`;
 
   const cardLines = buildCardLines(interpretation, cards);
-  const { visible: bodyVisible, disclosures: bodyDisclosures } = buildBodyGroups(interpretation);
-  const bodyCount = bodyVisible.length + bodyDisclosures.length;
+  const bodySections = buildBodySections(interpretation);
   const isDaily = Boolean(interpretation.проявление || interpretation.траектория);
   const transmissionKind = isDaily
     ? 'DAILY TRANSMISSION'
@@ -151,7 +141,7 @@ export default function ReadingResult({
   const tWhisper = tHeader;
   const tSignal = instant ? 0 : tWhisper + (intro ? proseDuration(intro, TYPE_SPEED) : 0);
   const tBody = instant ? 0 : tSignal + proseDuration(short_answer, TYPE_SPEED);
-  const tAdvice = instant ? 0 : tBody + bodyCount * 55 + 75;
+  const tAdvice = instant ? 0 : tBody + bodySections.length * 55 + 75;
   const tClose = instant ? 0 : tAdvice + (advice ? proseDuration(advice, TYPE_SPEED) : 0) + 80;
 
   let delay = 0;
@@ -258,9 +248,9 @@ export default function ReadingResult({
             </div>
           </div>
 
-          {bodyVisible.length > 0 && (
+          {bodySections.length > 0 && (
             <div className="reading-body">
-              {bodyVisible.map((s, i) => (
+              {bodySections.map((s, i) => (
                 <div
                   key={i}
                   className="reading-line"
@@ -273,42 +263,18 @@ export default function ReadingResult({
             </div>
           )}
 
-          {bodyDisclosures.map((d, i) => (
-            <details
-              key={i}
-              className="reading-line reading-det"
-              style={{ '--jl-delay': `${tBody + 55 + (bodyVisible.length + i) * 55}ms`, '--guide-accent': guide.accent } as React.CSSProperties}
-            >
-              <summary className="reading-det-summary">
-                <span className="reading-det-marker">[+]</span> {d.summary} <span className="reading-det-hint">— раскрой</span>
-              </summary>
-              <div className="reading-det-body">
-                {d.sections.map((s, j) => (
-                  <div key={j} className="reading-det-section">
-                    {s.label && <div className="reading-section-label">// {s.label}</div>}
-                    <div className="reading-body-text">{joinedParagraphs(s.prose)}</div>
-                  </div>
-                ))}
-              </div>
-            </details>
-          ))}
-
           {advice && (
             <div className="reading-line" style={{ '--jl-delay': `${tAdvice}ms` } as React.CSSProperties}>
               <div className="reading-section-label reading-section-label--advice">[ advice ]</div>
-              <div
-                className="reading-advice-box"
-                style={{ background: guide.accentDim } as React.CSSProperties}
-              >
-                <ProseType
-                  text={advice}
-                  startDelay={tAdvice}
-                  speed={TYPE_SPEED}
-                  instant={instant}
-                  quotes={false}
-                  className="reading-advice"
-                />
-              </div>
+              <ProseType
+                text={advice}
+                startDelay={tAdvice}
+                speed={TYPE_SPEED}
+                instant={instant}
+                quotes={false}
+                className="reading-advice"
+                style={{ color: adviceColor, textShadow: adviceGlow }}
+              />
             </div>
           )}
 
