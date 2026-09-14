@@ -42,6 +42,7 @@ EventName = Literal[
     "card_revealed",
     "interpretation_ready",
     "interpretation_failed",
+    # backward-compat alias of history_open (older clients/persisted rows)
     "history_opened",
     "paywall_shown",
 ]

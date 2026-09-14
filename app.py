@@ -97,12 +97,38 @@ def _admin_tg_ids() -> set[int]:
 # молча отбрасываются — они не должны ни нагружать запись, ни ломать UI.
 EVENT_RATE_LIMIT = 120
 EVENT_RATE_WINDOW_S = 60
+EVENT_HITS_MAX_ENTRIES = 10_000
 _event_hits: dict[int, list[float]] = {}
+
+
+def _prune_event_hits(now: float) -> None:
+    """Evict stale per-user buckets and cap the map size (observe-only safety valve).
+
+    Keeps `_event_hits` bounded regardless of how many users ever appear: buckets
+    older than the window are dropped and, beyond EVENT_HITS_MAX_ENTRIES users,
+    the least-recently-active buckets are evicted.
+    """
+    cutoff = now - EVENT_RATE_WINDOW_S
+    for uid in list(_event_hits):
+        kept = [t for t in _event_hits[uid] if t > cutoff]
+        if kept:
+            _event_hits[uid] = kept
+        else:
+            _event_hits.pop(uid, None)
+    if len(_event_hits) > EVENT_HITS_MAX_ENTRIES:
+        for uid in sorted(
+            _event_hits,
+            key=lambda u: _event_hits[u][-1] if _event_hits[u] else 0.0,
+        ):
+            if len(_event_hits) <= EVENT_HITS_MAX_ENTRIES:
+                break
+            _event_hits.pop(uid, None)
 
 
 def _event_over_limit(tg_id: int) -> bool:
     """Trimming sliding window: >N events/min per user is dropped silently."""
     now = time.time()
+    _prune_event_hits(now)
     hits = [t for t in _event_hits.get(tg_id, []) if now - t < EVENT_RATE_WINDOW_S]
     if len(hits) >= EVENT_RATE_LIMIT:
         _event_hits[tg_id] = hits
