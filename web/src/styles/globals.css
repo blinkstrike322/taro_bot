@@ -3223,6 +3223,13 @@ button.history-row--open:active {
   margin: 10px 0 4px;
 }
 
+/* одна карта (день / ask1): не растягивать на всю ширину */
+.reading-artifacts--single {
+  max-width: 224px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
 .reading-artifact {
   flex: 1;
   min-width: 0;
@@ -3335,13 +3342,6 @@ button.history-row--open:active {
 .reading-advice-box {
   padding: 10px 12px;
   margin: 2px 0 4px;
-}
-
-.reading-complete {
-  margin-top: 14px;
-  font-size: 10.5px;
-  letter-spacing: 0.12em;
-  color: rgba(255,255,255,0.35);
 }
 
 /* спойлеры деталей: [+] крупный + акцентный, иначе не считывается как кнопка */

@@ -212,7 +212,7 @@ export default function ReadingResult({
           )}
 
           {cardLines.length > 0 && (
-            <div className="reading-artifacts">
+            <div className={`reading-artifacts${cardLines.length === 1 ? ' reading-artifacts--single' : ''}`}>
               {cardLines.map((c) => (
                 <div
                   key={c.index}
@@ -318,12 +318,6 @@ export default function ReadingResult({
             </div>
           )}
 
-          <div
-            className="reading-line reading-complete"
-            style={{ '--jl-delay': `${tClose}ms` } as React.CSSProperties}
-          >
-            [ signal complete ] · {guide.tag}
-          </div>
         </div>
       </div>
 
@@ -331,7 +325,7 @@ export default function ReadingResult({
         className="term-exit mt-1.5 flex items-center justify-between exit-flash"
         style={{ animationDelay: instant ? '0ms' : `${tClose + 50}ms` }}
       >
-        <span><span className="te-ok">✓</span> расклад завершён</span>
+        <span><span className="te-ok">[ signal complete ]</span> · {guide.tag}</span>
         <span>{instant ? 'из журнала сеансов' : 'exit 0'}</span>
       </div>
     </div>
