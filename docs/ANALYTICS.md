@@ -54,7 +54,7 @@ Two emit paths land in the same table:
 | `quota_refused` | quota rejected | `guide`, `spread_type`, `needs_subscription` |
 | `subscription_activated` | payment activated | `first_month` |
 | `subscription_expired` | expiry/ renewal reminder sent | `days_left` |
-| `history_open` | server served readings | `{}` |
+| `history_open` | journal opened (server served readings) | `{}` |
 
 ### Client-side (beacon)
 
@@ -66,7 +66,7 @@ Two emit paths land in the same table:
 | `card_revealed` | a card was flipped | `spread_type`, `count` |
 | `interpretation_ready` | whisper delivered | `{}` |
 | `interpretation_failed` | whisper error | `error_type` |
-| `history_opened` | journal opened | `{}` |
+| `history_opened` | journal opened (backward-compat alias of `history_open`) | `{}` |
 | `paywall_shown` | paywall surfaced (subscription needed) | `{}` |
 
 Server and client events are complementary views: server = authoritative
