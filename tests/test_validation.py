@@ -108,3 +108,92 @@ def test_daily_minimal_passes():
     )
     assert parsed is not None
     assert parsed["intro"] == ""
+
+
+# ── ужесточение карты дня ────────────────────────────────────────────────
+
+
+def test_daily_without_daily_fields_rejected():
+    """Карта дня обязана нести хотя бы одно дневное поле, иначе None (не-стаб)."""
+    assert validate_interpretation(
+        {"short_answer": "сигнал", "advice": "совет"},
+        CARDS[:1], None, 1,
+    ) is None
+
+
+def test_daily_with_trajectory_passes():
+    """Карта дня с «траектория» — допустимое дневное поле."""
+    parsed = validate_interpretation(
+        {"short_answer": "сигнал",
+         "траектория": {"утро": "т", "день": "д", "вечер": "в"}},
+        CARDS[:1], None, 1,
+    )
+    assert parsed is not None
+
+
+def test_single_without_card_meaning_passes():
+    """Одиночный расклад: short_answer обязателен, card_meaning опционален."""
+    parsed = validate_interpretation(
+        {"short_answer": "прямой ответ", "advice": "совет"},
+        CARDS[:1], "вопрос?", 1,
+    )
+    assert parsed is not None
+    assert parsed["card_meaning"] == []
+
+
+# ── текстовый формат: кириллические ключи и русские алиасы ────────────────
+
+
+def test_parse_text_format_cyrillic_positions():
+    """text-формат: «позиции»/«связь_карт» распознаются как список и строка."""
+    from core.llm import _parse_text_format
+
+    parsed = _parse_text_format(
+        'позиции: [{"позиция": "a", "карта": "Луна", "реверс": false, "трактовка": "текст"}]\n'
+        "связь_карт: связь\n"
+        "short_answer: ответ\n"
+    )
+    assert parsed is not None
+    assert isinstance(parsed.get("позиции"), list) and parsed["позиции"]
+    assert isinstance(parsed.get("связь_карт"), str) and parsed["связь_карт"].strip()
+    assert isinstance(parsed.get("short_answer"), str) and parsed["short_answer"].strip()
+
+
+def test_parse_text_format_cyrillic_daily_fields():
+    """text-формат: дневные поля «проявление»/«на_что_смотреть»/«траектория»."""
+    from core.llm import _parse_text_format
+
+    parsed = _parse_text_format(
+        "проявление: форма\n"
+        "на_что_смотреть: зона\n"
+        "траектория: путь\n"
+        "short_answer: сигнал\n"
+    )
+    assert parsed is not None
+    for key in ("проявление", "на_что_смотреть", "траектория", "short_answer"):
+        assert parsed.get(key) not in (None, "")
+
+
+def test_parse_text_format_aliases():
+    """Русские алиасы ввод→intro, краткий_ответ→short_answer, совет→advice, значение→card_meaning."""
+    from core.llm import _parse_text_format
+
+    parsed = _parse_text_format(
+        "ввод: шёпот\n"
+        "краткий_ответ: ответ\n"
+        "совет: совет\n"
+        "значение: значение\n"
+    )
+    assert parsed is not None
+    for key in ("intro", "short_answer", "advice"):
+        assert isinstance(parsed.get(key), str) and parsed[key].strip()
+    assert isinstance(parsed.get("card_meaning"), list) and parsed["card_meaning"]
+
+
+def test_parse_text_format_short_answer_space_alias():
+    """Алиас с пробелом «краткий ответ» также ведёт в short_answer."""
+    from core.llm import _parse_text_format
+
+    parsed = _parse_text_format("краткий ответ: ответ\n")
+    assert parsed is not None
+    assert isinstance(parsed.get("short_answer"), str) and parsed["short_answer"].strip()

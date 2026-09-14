@@ -166,6 +166,34 @@ def test_fallback_from_cards_db_three_cards():
     assert len(result["card_meaning"]) == 3
 
 
+def test_fallback_from_cards_db_three_mode():
+    cards = [
+        {"name": "Шут", "orientation": "upright", "is_reversed": False},
+        {"name": "Маг", "orientation": "reversed", "is_reversed": True},
+        {"name": "Верховная Жрица", "orientation": "upright", "is_reversed": False},
+    ]
+    result = fallback_from_cards_db(cards, "Что ждёт меня?", "ruin_keeper", spread_type=3)
+    assert "позиции" in result
+    assert "связь_карт" in result
+    assert "card_meaning" not in result
+    assert len(result["позиции"]) == 3
+    item = result["позиции"][0]
+    assert {"позиция", "карта", "реверс", "трактовка"} <= set(item)
+    assert item["реверс"] is False
+    assert result["позиции"][1]["реверс"] is True
+    assert result["позиции"][1]["карта"] == "Маг"
+
+
+def test_fallback_from_cards_db_daily_mode():
+    cards = [{"name": "Шут", "orientation": "upright", "is_reversed": False}]
+    result = fallback_from_cards_db(cards, None, "spark_of_chaos", spread_type=1)
+    assert "проявление" in result
+    assert "на_что_смотреть" in result
+    assert "траектория" in result
+    assert {"утро", "день", "вечер"} <= set(result["траектория"])
+    assert "card_meaning" not in result
+
+
 # ── interpret_reading test with mock ────────────────────────────────────────
 
 
@@ -183,7 +211,7 @@ async def test_interpret_reading_mocked_llm():
     ]
 
     mock_json_response = (
-        '{"intro": "Тени...", "short_answer": "Ответ", '
+        '{"intro": "Тени...", "short_answer": "Ответ", "проявление": "форма", '
         '"card_meaning": ["Шут: новое"], "advice": "Совет"}'
     )
 

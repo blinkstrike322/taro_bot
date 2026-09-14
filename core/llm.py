@@ -5,6 +5,7 @@ import json
 import logging
 import re
 import time
+from contextvars import ContextVar
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
@@ -76,22 +77,28 @@ class _Breaker:
 _breaker_state: dict[tuple[str, str], _Breaker] = {}
 
 
-# ── Analytics: last-successful LLM hop (observe-only) ────────────────
-# Records which provider/model won and whether a fallback was needed.
-# Does NOT change fallback order or circuit-breaker state; used only by
-# the analytics layer to attach provider/model/fallback to spread events.
-_last_used_provider: str | None = None
-_last_used_model: str | None = None
-_last_used_fallback: bool = False
+# ── Analytics: LLM hop of the *current* request (observe-only) ────────
+# Per-request (task-local) snapshot of which provider/model won and whether a
+# fallback was needed. Lives in a ContextVar so concurrent background whisper
+# tasks each observe only their own request's outcome — a failed attempt
+# reports None rather than a stale provider/model left by a previous, unrelated
+# request. Does NOT change fallback order or circuit-breaker state; used only
+# by the analytics layer to attach provider/model/fallback to spread events.
+_EMPTY_HOP: dict[str, object] = {
+    "provider": None,
+    "model": None,
+    "fallback_used": False,
+}
+_llm_hop: ContextVar[dict[str, object]] = ContextVar("llm_hop", default=_EMPTY_HOP)
 
 
 def get_last_llm_hop() -> dict[str, object]:
-    """Metadata of the most recent successful LLM hop (provider/model/fallback)."""
-    return {
-        "provider": _last_used_provider,
-        "model": _last_used_model,
-        "fallback_used": _last_used_fallback,
-    }
+    """Metadata of the most recent LLM hop (provider/model/fallback) for this request.
+
+    Returns None provider/model when the current request never succeeded — it
+    never leaks a previous request's successful hop.
+    """
+    return _llm_hop.get()
 
 
 def _breaker(label: str, model: str) -> _Breaker:
@@ -212,6 +219,22 @@ def _norm_name(value: object) -> str:
     return re.sub(r"\s+", " ", str(value or "").strip().lower())
 
 
+_DAILY_FIELDS = ("проявление", "на_что_смотреть", "траектория")
+
+
+def _has_daily_field(repaired: dict) -> bool:
+    """Есть ли в карте дня хотя бы одно непустое дневное поле."""
+    for field in _DAILY_FIELDS:
+        value = repaired.get(field)
+        if isinstance(value, dict) and value:
+            return True
+        if isinstance(value, list) and len(value) > 0:
+            return True
+        if isinstance(value, str) and value.strip():
+            return True
+    return False
+
+
 def validate_interpretation(
     parsed: object,
     cards: list[dict],
@@ -223,6 +246,8 @@ def validate_interpretation(
     LLM может вернуть красивый JSON, в котором перепутаны карты, реверсы или
     порядок позиций. Проверяем и чиним:
       • short_answer обязателен — без него ответ непригоден (None);
+      • карта дня обязана нести хотя бы одно дневное поле
+        (проявление / на_что_смотреть / траектория) — иначе None;
       • позиции → пересобираем по фактическим картам: имя карты из ответа
         находит реальную карту, её реверс и позиция берутся из бэкенда;
       • интро/совет при отсутствии заменяются на «».
@@ -241,6 +266,10 @@ def validate_interpretation(
     repaired.setdefault("advice", "")
 
     is_three = str(spread_type) == "3" and len(cards) == 3
+    is_daily = (not is_three) and not (question and str(question).strip())
+    if is_daily and not _has_daily_field(repaired):
+        return None
+
     if is_three:
         positions_raw = repaired.get("позиции")
         if not isinstance(positions_raw, list) or len(positions_raw) != len(cards):
@@ -381,7 +410,9 @@ async def call_llm_with_fallback(
     messages: list[dict],
     max_tokens: int = 2000,
 ) -> str:
-    global _last_used_provider, _last_used_model, _last_used_fallback
+    # Fresh per-request snapshot: if this request never succeeds, get_last_llm_hop
+    # stays None instead of leaking a previous request's winning provider/model.
+    _llm_hop.set(dict(_EMPTY_HOP))
     last_error: Exception | None = None
     provider_list = _build_provider_list()
 
@@ -409,12 +440,14 @@ async def call_llm_with_fallback(
                     max_tokens=max_tokens,
                 )
                 _record_success(label, model)
-                _last_used_provider = label
-                _last_used_model = model
                 _primary = _get_primary_provider()
-                _last_used_fallback = not (
-                    _primary is not None and model == _primary[0] and label == _primary[3]
-                )
+                _llm_hop.set({
+                    "provider": label,
+                    "model": model,
+                    "fallback_used": not (
+                        _primary is not None and model == _primary[0] and label == _primary[3]
+                    ),
+                })
                 logger.info(
                     "OK: %s — %s (%d chars)",
                     label, model, len(result),
@@ -482,7 +515,23 @@ async def interpret_reading(
     except RuntimeError:
         logger.error("All LLM models failed, using fallback")
 
-    return fallback_from_cards_db(cards, question, character_id)
+    return fallback_from_cards_db(cards, question, character_id, spread_type)
+
+
+_TEXT_FIELD_ALIASES = {
+    "ввод": "intro",
+    "краткий_ответ": "short_answer",
+    "краткий ответ": "short_answer",
+    "совет": "advice",
+    "значение": "card_meaning",
+}
+
+# кириллические ключи схемы + латинские + русские алиасы; длинные — первыми
+_TEXT_FIELD_KEYS = (
+    "на_что_смотреть", "связь_карт", "проявление", "траектория", "позиции",
+    "краткий ответ", "краткий_ответ", "card_meaning", "short_answer",
+    "значение", "совет", "ввод", "intro", "advice",
+)
 
 
 def _parse_text_format(text: str) -> dict | None:
@@ -490,7 +539,9 @@ def _parse_text_format(text: str) -> dict | None:
     result = {}
 
     field_pat = re.compile(
-        r"^\s*(intro|short_answer|card_meaning|advice)\s*:\s*",
+        r"^\s*("
+        + "|".join(re.escape(k) for k in sorted(_TEXT_FIELD_KEYS, key=len, reverse=True))
+        + r")\s*:\s*",
         re.MULTILINE | re.IGNORECASE,
     )
 
@@ -499,16 +550,22 @@ def _parse_text_format(text: str) -> dict | None:
         return None
 
     for i, m in enumerate(parts):
-        field = m.group(1).lower()
+        raw = m.group(1).lower()
+        field = _TEXT_FIELD_ALIASES.get(raw, raw)
         val_start = m.end()
         val_end = parts[i + 1].start() if i + 1 < len(parts) else len(text)
         value = text[val_start:val_end].strip()
 
-        if field == "card_meaning":
+        if field in ("card_meaning",):
             try:
                 result[field] = json.loads(value)
             except (json.JSONDecodeError, ValueError):
                 result[field] = [value]
+        elif field in ("позиции", "траектория"):
+            try:
+                result[field] = json.loads(value)
+            except (json.JSONDecodeError, ValueError):
+                result[field] = value
         else:
             result[field] = value
 
@@ -565,8 +622,9 @@ def fallback_from_cards_db(
     cards: list[dict],
     question: str | None = None,
     character_id: str = "shadow_walker",
+    spread_type: object = 1,
 ) -> dict:
-    from core.prompts import _positions_for_question
+    from core.prompts import _positions_for_question, _spread_mode
     from core.tarot import load_cards
 
     all_cards = load_cards()
@@ -582,32 +640,6 @@ def fallback_from_cards_db(
         "ruin_keeper": "Хранитель Руин",
         "spark_of_chaos": "Искра Хаоса",
     }
-
-    meanings = []
-    positions = _positions_for_question(question) if len(cards) == 3 else None
-    for i, card in enumerate(cards):
-        name = card.get("name", "")
-        orientation = card.get("orientation", "upright")
-        card_data = cards_by_name.get(name, {})
-        meaning = card_data.get(orientation, card_data.get("upright", "—"))
-
-        prefix = ""
-        if positions:
-            prefix = f"[{positions[i]}] "
-
-        meanings.append(f"{prefix}{name}: {meaning}")
-
-    intro = character_intros.get(character_id, "Карты раскрывают свои тайны...")
-    voice = character_voices.get(character_id, "Проводник")
-
-    if question:
-        short_answer = (
-            f"{voice} отмечает: в контексте твоего вопроса — "
-            f"{question[:100]}... Карты указывают на скрытые связи."
-        )
-    else:
-        short_answer = f"{voice} видит в раскладе важный узор судьбы."
-
     advice_templates = {
         "shadow_walker": (
             "Прислушайся к шёпоту теней — они указывают путь, "
@@ -622,10 +654,112 @@ def fallback_from_cards_db(
             "что ты уже знаешь внутри себя."
         ),
     }
+
+    mode = _spread_mode(spread_type, question, len(cards))
+
+    intro = character_intros.get(character_id, "Карты раскрывают свои тайны...")
+    voice = character_voices.get(character_id, "Проводник")
     advice = advice_templates.get(
         character_id,
         "Обдумай значение карт в контексте своего вопроса.",
     )
+
+    def _meaning(card: dict) -> str:
+        name = card.get("name", "")
+        orientation = card.get("orientation", "upright")
+        card_data = cards_by_name.get(name, {})
+        return card_data.get(orientation, card_data.get("upright", "—"))
+
+    def _is_reversed(card: dict) -> bool:
+        return bool(
+            card.get("is_reversed", card.get("orientation") == "reversed")
+        )
+
+    if mode == "three":
+        positions = _positions_for_question(question)
+        position_items = []
+        for i, card in enumerate(cards):
+            name = card.get("name", "")
+            meaning = _meaning(card)
+            prefix = f"[{positions[i]}] "
+            position_items.append(
+                {
+                    "позиция": positions[i],
+                    "карта": name,
+                    "реверс": _is_reversed(card),
+                    "трактовка": f"{prefix}{name}: {meaning}",
+                }
+            )
+
+        card_names = [c.get("name", "…") for c in cards]
+        short_answer = (
+            f"{voice} читает три карты как одну историю: «{card_names[0]}» "
+            f"задаёт начало, «{card_names[1]}» раскрывает суть происходящего, "
+            f"а «{card_names[2]}» показывает, к чему всё движется."
+        )
+        связь_карт = (
+            f"{card_names[0]}, {card_names[1]} и {card_names[2]} образуют "
+            f"единую линию: «{positions[0]}» подталкивает к «{positions[1]}», "
+            f"и вместе они ведут к «{positions[2]}». Карты усиливают и "
+            f"продолжают одна другую, складываясь в последовательный сюжет."
+        )
+
+        return {
+            "intro": intro,
+            "short_answer": short_answer,
+            "позиции": position_items,
+            "связь_карт": связь_карт,
+            "advice": advice,
+        }
+
+    if mode == "daily":
+        card = cards[0] if cards else {}
+        name = card.get("name", "")
+        meaning = _meaning(card)
+        rev_note = "перевёрнутая" if _is_reversed(card) else "прямая"
+
+        return {
+            "intro": intro,
+            "short_answer": (
+                f"Карта дня — «{name}», {rev_note}. {meaning}"
+            ),
+            "проявление": (
+                f"Сегодня энергия «{name}» может проявиться через обычные "
+                f"вещи: разговор, сообщение, неожиданная мысль или сдвиг в "
+                f"настроении. Ключ — {meaning}"
+            ),
+            "на_что_смотреть": (
+                f"Обрати внимание на мелочи, связанные с «{name}»: "
+                f"{rev_note} энергия может прятаться за внешне "
+                f"незначительным событием. Не пропусти знак."
+            ),
+            "траектория": {
+                "утро": f"Утро задаёт тон энергией «{name}» — {meaning[:80]}.",
+                "день": (
+                    f"Днём «{name}» проявится сильнее всего, "
+                    f"особенно в {meaning[:80]}."
+                ),
+                "вечер": (
+                    "К вечеру станет понятнее, как использовать "
+                    "этот сигнал дня."
+                ),
+            },
+            "advice": advice,
+        }
+
+    meanings = []
+    for card in cards:
+        name = card.get("name", "")
+        meaning = _meaning(card)
+        meanings.append(f"{name}: {meaning}")
+
+    if question:
+        short_answer = (
+            f"{voice} отмечает: в контексте твоего вопроса — "
+            f"{question[:100]}... Карты указывают на скрытые связи."
+        )
+    else:
+        short_answer = f"{voice} видит в раскладе важный узор судьбы."
 
     return {
         "intro": intro,
