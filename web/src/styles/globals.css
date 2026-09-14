@@ -3223,9 +3223,9 @@ button.history-row--open:active {
   margin: 10px 0 4px;
 }
 
-/* одна карта (день / ask1): не растягивать на всю ширину */
+/* одна карта: тот же флекс, но не во весь экран */
 .reading-artifacts--single {
-  max-width: 224px;
+  max-width: 320px;
   margin-left: auto;
   margin-right: auto;
 }
