@@ -22,7 +22,8 @@ export type AnalyticsEvent =
   | 'card_revealed'
   | 'interpretation_ready'
   | 'interpretation_failed'
-  | 'history_opened'
+  | 'history_open'
+  | 'history_opened' // backward-compat alias of history_open
   | 'paywall_shown';
 
 /** Shape-only props: scalars only — no question text, cards, or prose. */
