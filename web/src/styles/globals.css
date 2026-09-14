@@ -3217,36 +3217,32 @@ button.history-row--open:active {
   margin: 4px 0 2px;
 }
 
-.reading-cards {
-  margin: 10px 0 4px;
-  border-left: 2px solid var(--guide-accent-dim, rgba(255,255,255,0.2));
-  padding-left: 10px;
+.reading-artifacts {
   display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-
-.reading-card {
-  display: flex;
-  align-items: baseline;
   gap: 8px;
-  flex-wrap: wrap;
+  margin: 10px 0 4px;
 }
 
-.reading-card-index {
-  font-size: 11px;
-  font-weight: 800;
-  color: var(--guide-accent, #fff);
-  font-variant-numeric: tabular-nums;
+.reading-artifact {
+  flex: 1;
+  min-width: 0;
+}
+
+.reading-artifact-img {
+  width: 100%;
+  aspect-ratio: 2/3;
+  object-fit: cover;
+  display: block;
+  filter: grayscale(1) contrast(1.5) brightness(1.02);
 }
 
 .reading-card-name {
   font-weight: 800;
-  font-size: 13.5px;
+  font-size: 12px;
   letter-spacing: 0.06em;
-  text-transform: uppercase;
   color: #fff;
   text-shadow: 0 0 8px rgba(255,255,255,0.14);
+  margin-top: 6px;
 }
 
 .reading-card-rev {
@@ -3258,13 +3254,6 @@ button.history-row--open:active {
 .reading-card-upright {
   font-size: 11px;
   color: rgba(255,255,255,0.40);
-}
-
-.reading-card-pos {
-  width: 100%;
-  font-size: 11px;
-  color: rgba(255,255,255,0.45);
-  font-style: italic;
 }
 
 .reading-section-label {
@@ -3337,8 +3326,15 @@ button.history-row--open:active {
   white-space: pre-wrap;
   word-break: break-word;
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 800;
   line-height: 1.65;
+  color: #ffffff;
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.12);
+}
+
+.reading-advice-box {
+  padding: 10px 12px;
+  margin: 2px 0 4px;
 }
 
 .reading-complete {
@@ -3346,6 +3342,45 @@ button.history-row--open:active {
   font-size: 10.5px;
   letter-spacing: 0.12em;
   color: rgba(255,255,255,0.35);
+}
+
+/* спойлеры деталей: [+] крупный + акцентный, иначе не считывается как кнопка */
+.reading-det {
+  border-top: 1px dashed rgba(255,255,255,0.2);
+  margin-top: 10px;
+  padding-top: 9px;
+}
+
+.reading-det-summary {
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: var(--guide-accent, #fff);
+  list-style: none;
+  user-select: none;
+}
+
+.reading-det-summary::-webkit-details-marker {
+  display: none;
+}
+
+.reading-det-marker {
+  font-weight: 800;
+}
+
+.reading-det-hint {
+  color: rgba(255,255,255,0.35);
+  font-weight: 400;
+  letter-spacing: 0.04em;
+}
+
+.reading-det-body {
+  padding-top: 4px;
+}
+
+.reading-det-section {
+  margin-top: 8px;
 }
 
 /* сигил уходит в фон, когда в транскрипте уже есть чтение */
