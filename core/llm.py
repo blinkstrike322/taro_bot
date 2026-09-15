@@ -51,6 +51,10 @@ LLM_TIMEOUT_READ = 60.0
 LLM_TIMEOUT_WRITE = 30.0
 LLM_TIMEOUT_POOL = 10.0
 
+# Температура по умолчанию (историческое поведение call_llm). Per-guide
+# значение задаётся из characters.json и пробрасывается только при отличии.
+DEFAULT_TEMPERATURE = 0.8
+
 
 def build_llm_timeout() -> httpx.Timeout:
     """Split per-phase timeout for a single LLM attempt."""
@@ -355,6 +359,7 @@ async def call_llm(
     base_url: str,
     api_key: str,
     max_tokens: int = 2000,
+    temperature: float = 0.8,
 ) -> str:
     """Call a single LLM endpoint and return the text content.
 
@@ -377,7 +382,7 @@ async def call_llm(
                 "model": model,
                 "messages": messages,
                 "max_tokens": max_tokens,
-                "temperature": 0.8,
+                "temperature": temperature,
             },
         )
         response.raise_for_status()
@@ -406,15 +411,29 @@ async def call_llm(
         raise ValueError(f"Model {model} returned no content or reasoning")
 
 
+def _order_providers(
+    providers: list[tuple[str, str, str | None, str]],
+    preferred: list[str] | None,
+) -> list[tuple[str, str, str | None, str]]:
+    """Предпочитаемые модели — первыми, остальные как фолбэк."""
+    if not preferred:
+        return providers
+    first = [p for p in providers if p[0] in preferred]
+    return first + [p for p in providers if p[0] not in preferred]
+
+
 async def call_llm_with_fallback(
     messages: list[dict],
     max_tokens: int = 2000,
+    temperature: float = 0.8,
+    preferred_models: list[str] | None = None,
 ) -> str:
     # Fresh per-request snapshot: if this request never succeeds, get_last_llm_hop
     # stays None instead of leaking a previous request's winning provider/model.
     _llm_hop.set(dict(_EMPTY_HOP))
     last_error: Exception | None = None
-    provider_list = _build_provider_list()
+    provider_list = _order_providers(_build_provider_list(),
+                                     preferred_models)
 
     if not provider_list:
         raise RuntimeError("No LLM providers configured — set OPENCODE_ZEN_KEY or OPENROUTER_API_KEY")
@@ -435,10 +454,17 @@ async def call_llm_with_fallback(
 
         for attempt in range(3):
             try:
-                result = await call_llm(
-                    messages, model, base_url, api_key,
-                    max_tokens=max_tokens,
-                )
+                if temperature == DEFAULT_TEMPERATURE:
+                    result = await call_llm(
+                        messages, model, base_url, api_key,
+                        max_tokens=max_tokens,
+                    )
+                else:
+                    result = await call_llm(
+                        messages, model, base_url, api_key,
+                        max_tokens=max_tokens,
+                        temperature=temperature,
+                    )
                 _record_success(label, model)
                 _primary = _get_primary_provider()
                 _llm_hop.set({
@@ -475,43 +501,81 @@ async def call_llm_with_fallback(
     raise RuntimeError("All LLM models failed") from last_error
 
 
+# Попыток генерации с учётом voice-гейта: первая + починки. Латентность
+# скрыта двухфазным шёпотом (карты уже на экране), поэтому отбор дешевле надежды.
+MAX_QUALITY_ATTEMPTS = 3
+
+
 async def interpret_reading(
     question: str | None,
     cards: list[dict],
     character_id: str = "shadow_walker",
     spread_type: int = 1,
+    avoid_texts: list[str] | None = None,
 ) -> dict:
-    from core.prompts import build_reading_prompt, get_system_prompt
+    from core.prompts import _load_characters, build_reading_prompt, get_system_prompt
+    from core.voice_gate import SCORE_PASS, build_repair_note, score_interpretation
 
-    system_prompt = get_system_prompt(character_id)
+    ch = _load_characters().get(character_id, {})
+    temperature = ch.get("temperature", DEFAULT_TEMPERATURE)
+    preferred_models = ch.get("prefer_models") or None
+    system_prompt = get_system_prompt(character_id, avoid_texts=avoid_texts)
     user_prompt = build_reading_prompt(cards, question, character_id, spread_type)
-
-    messages = [
-        {"role": "system", "content": system_prompt},
-        {"role": "user", "content": user_prompt},
-    ]
 
     # Reasoning models need extra token budget
     is_reasoning = _zen_key() is not None
     token_base = 6000 if is_reasoning else 4000
 
+    best: dict | None = None
+    best_score = -1
+
     try:
-        raw = await call_llm_with_fallback(messages, max_tokens=token_base)
-        cleaned = strip_emojis(raw)
-        if len(cleaned) != len(raw):
-            logger.warning("Emojis detected and removed from LLM response")
-        raw = cleaned
-        parsed = parse_llm_response(raw)
-        if parsed:
-            # схемная + семантическая проверка против фактических карт
-            parsed = validate_interpretation(parsed, cards, question, spread_type)
-        if parsed:
-            _warn_latin_leak(" ".join(_iter_prose(parsed)))
-            return parsed
-        logger.warning(
-            "LLM response failed validation — falling back to cards DB. Raw head: %r",
-            raw[:300],
-        )
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ]
+        for attempt in range(1, MAX_QUALITY_ATTEMPTS + 1):
+            raw = await call_llm_with_fallback(
+                messages, max_tokens=token_base,
+                temperature=temperature, preferred_models=preferred_models)
+            cleaned = strip_emojis(raw)
+            if len(cleaned) != len(raw):
+                logger.warning("Emojis detected and removed from LLM response")
+            raw = cleaned
+            parsed = parse_llm_response(raw)
+            if parsed:
+                # схемная + семантическая проверка против фактических карт
+                parsed = validate_interpretation(parsed, cards, question, spread_type)
+            if not parsed:
+                logger.warning(
+                    "LLM response failed validation (attempt %d) — raw head: %r",
+                    attempt, raw[:300],
+                )
+                continue
+            score, reasons = score_interpretation(parsed, character_id, avoid_texts)
+            hop = get_last_llm_hop()
+            logger.info(
+                "voice score=%d reasons=%s attempt=%d guide=%s model=%s",
+                score, reasons, attempt, character_id, hop.get("model"),
+            )
+            if score > best_score:
+                best, best_score = parsed, score
+            if score >= SCORE_PASS:
+                _warn_latin_leak(" ".join(_iter_prose(parsed)))
+                return parsed
+            if attempt < MAX_QUALITY_ATTEMPTS:
+                messages = [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt + "\n\n" + build_repair_note(reasons)},
+                ]
+        if best is not None:
+            logger.warning(
+                "voice gate never passed, returning best score=%d guide=%s",
+                best_score, character_id,
+            )
+            _warn_latin_leak(" ".join(_iter_prose(best)))
+            return best
+        logger.warning("LLM response failed validation — falling back to cards DB.")
     except RuntimeError:
         logger.error("All LLM models failed, using fallback")
 
@@ -630,39 +694,14 @@ def fallback_from_cards_db(
     all_cards = load_cards()
     cards_by_name = {c["name"]: c for c in all_cards}
 
-    character_intros = {
-        "shadow_walker": "Тени сгущаются над древними символами...",
-        "ruin_keeper": "Пыль веков оседает на камнях судьбы...",
-        "spark_of_chaos": "Искры истины пробиваются сквозь пустоту!",
-    }
-    character_voices = {
-        "shadow_walker": "Странница Теней",
-        "ruin_keeper": "Хранитель Руин",
-        "spark_of_chaos": "Искра Хаоса",
-    }
-    advice_templates = {
-        "shadow_walker": (
-            "Прислушайся к шёпоту теней — они указывают путь, "
-            "даже если ты его не видишь."
-        ),
-        "ruin_keeper": (
-            "Не торопись. Древние знаки требуют осмысления. "
-            "Вернись к раскладу на рассвете."
-        ),
-        "spark_of_chaos": (
-            "Действуй! Карты лишь подтверждают то, "
-            "что ты уже знаешь внутри себя."
-        ),
-    }
+    from core.prompts import _load_characters
+    characters = _load_characters()
+    ch = characters.get(character_id, characters.get("shadow_walker", {}))
+    intro = ch.get("fallback_intro", "Карты раскрывают свои тайны...")
+    voice = ch.get("name", "Проводник")
+    advice = ch.get("fallback_advice", "Обдумай значение карт в контексте своего вопроса.")
 
     mode = _spread_mode(spread_type, question, len(cards))
-
-    intro = character_intros.get(character_id, "Карты раскрывают свои тайны...")
-    voice = character_voices.get(character_id, "Проводник")
-    advice = advice_templates.get(
-        character_id,
-        "Обдумай значение карт в контексте своего вопроса.",
-    )
 
     def _meaning(card: dict) -> str:
         name = card.get("name", "")

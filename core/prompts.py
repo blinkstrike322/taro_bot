@@ -1,7 +1,11 @@
 from __future__ import annotations
 
 import json
+import random
+from collections import defaultdict, deque
 from pathlib import Path
+
+from core.voice_gate import PROMPT_SLOP_BAN, prompt_banned_words
 
 _CHARACTERS_PATH = Path(__file__).resolve().parent.parent / "data" / "characters.json"
 
@@ -17,7 +21,78 @@ def _load_characters() -> dict[str, dict]:
     return _characters_cache
 
 
-def get_system_prompt(character_id: str) -> str:
+# ── Ротация голосового пула (in-memory, per-guide) ──────────────────────
+# На запрос сэмплируем 2 примера из voice_pool, исключая использованные
+# в последних N запросах. Бот однопроцессный; после рестарта очередь пуста —
+# деградация к случайным двум, не поломка. random.sample против глобального
+# RNG: при random.seed(x) выбор детерминирован (на это опираются тесты).
+_VOICE_POOL_SIZE = 2
+_VOICE_RECENT_LIMIT = 3
+_recent_voice: dict[str, deque[int]] = defaultdict(deque)
+
+
+def sample_voice_pool(character_id: str, n: int = _VOICE_POOL_SIZE) -> list[dict]:
+    """Сэмплировать n примеров голоса из voice_pool, исключая недавние.
+
+    Indices последних использованных примеров помнятся в пер-guide deque:
+    они не выпадают повторно, пока не «вымыты» из окна. Возвращает список
+    примеров (dict с 'question'/'intro'/'advice').
+    """
+    characters = _load_characters()
+    pool = characters.get(character_id, {}).get("voice_pool", [])
+    if not pool:
+        return []
+
+    recent = _recent_voice[character_id]
+    recent_idx = set(recent)
+    candidates = [i for i in range(len(pool)) if i not in recent_idx]
+    if len(candidates) < n:
+        candidates = list(range(len(pool)))
+
+    chosen = random.sample(candidates, min(n, len(candidates)))
+    for i in chosen:
+        recent.append(i)
+    while len(recent) > _VOICE_RECENT_LIMIT:
+        recent.popleft()
+    return [pool[i] for i in chosen]
+
+
+def _format_voice_examples(examples: list[dict]) -> str:
+    """Отрендерить примеры голоса в блок для system prompt."""
+    if not examples:
+        return ""
+    lines = ["Примеры правильного голоса проводника (как ты говоришь):"]
+    for ex in examples:
+        question = ex.get("question", "")
+        intro = ex.get("intro", "")
+        advice = ex.get("advice", "")
+        lines.append(f"— Вопрос «{question}»: интро «{intro}», совет «{advice}»")
+    return "\n".join(lines)
+
+
+def _format_avoid_texts(avoid_texts: list[str] | None) -> str:
+    """Блок «НЕ повторяй того, что уже говорил» (память о прошлых чтениях)."""
+    if not avoid_texts:
+        return ""
+    capped = avoid_texts[:8]  # потолок вставляемых фрагментов, чтобы не раздуть токены
+    lines = [
+        "Ниже — фразы из твоих НЕДАВНИХ ответов этому человеку. "
+        "НЕ повторяй эти интро и советы дословно — скажи то же самое по-другому:"
+    ]
+    for frag in capped:
+        if frag and frag.strip():
+            lines.append(f"• {frag.strip()}")
+    return "\n".join(lines)
+
+
+_BLOCK_SEP = "\n\n"
+
+
+def get_system_prompt(
+    character_id: str,
+    avoid_texts: list[str] | None = None,
+    voice_examples: list[dict] | None = None,
+) -> str:
     """Return the system prompt for the given character.
 
     Args:
@@ -35,7 +110,8 @@ def get_system_prompt(character_id: str) -> str:
             f"Unknown character_id '{character_id}'. "
             f"Available: {', '.join(characters)}"
         )
-    base_prompt = characters[character_id]["system_prompt"]
+    ch = characters[character_id]
+    base_prompt = _build_voice_core(character_id, ch)
     no_emoji_rule = (
         "\n\nПОДТВЕРЖДЕНИЕ: Emoji СТРОГО ЗАПРЕЩЕНЫ в любом месте ответа. "
         "Ни одного эмодзи. Только обычный кириллический текст.\n"
@@ -56,7 +132,55 @@ def get_system_prompt(character_id: str) -> str:
         "Помни: ответ с любым латинским словом из 3+ букв в прозе будет отклонён. "
         "Это жёсткое правило без исключений."
     )
-    return base_prompt + no_emoji_rule + no_latin_rule
+    if voice_examples is None:
+        voice_examples = sample_voice_pool(character_id)
+    parts = [
+        base_prompt,
+        _format_avoid_texts(avoid_texts),
+        _format_voice_examples(voice_examples),
+        no_emoji_rule,
+        no_latin_rule,
+    ]
+    return _BLOCK_SEP.join(p for p in parts if p)
+
+
+def _build_voice_core(character_id: str, ch: dict) -> str:
+    """Голосовое ядро: persona + diction + rhythm + stance + lens + taboo + bans."""
+    parts = [ch.get("persona", "").strip()]
+
+    diction = ch.get("diction") or {}
+    if diction:
+        lines = ["Словарь твоих образов (используй их, но не штампуй):"]
+        imagery = diction.get("imagery") or []
+        if imagery:
+            lines.append(f"• образы: {', '.join(imagery)}")
+        anti = diction.get("anti") or []
+        if anti:
+            lines.append(f"• избегай: {', '.join(anti)}")
+        parts.append("\n".join(lines))
+
+    rhythm = ch.get("rhythm")
+    if rhythm:
+        parts.append(f"Ритм речи: {rhythm}")
+
+    stance = ch.get("stance")
+    if stance:
+        parts.append(f"Позиция: {stance}")
+
+    lens = ch.get("lens")
+    if lens:
+        parts.append(f"Линза: {lens}")
+
+    taboo = ch.get("taboo") or []
+    if taboo:
+        parts.append("Запрещённые ходы:\n" + "\n".join(f"• {t}" for t in taboo))
+
+    parts.append(PROMPT_SLOP_BAN)
+    alien = prompt_banned_words(character_id)
+    if alien:
+        parts.append(alien)
+
+    return "\n\n".join(p for p in parts if p)
 
 
 def _positions_for_question(question: str | None) -> list[str]:
@@ -128,11 +252,18 @@ def _format_cards(cards: list[dict], positions: list[str] | None = None) -> list
     return out
 
 
+def _character_reminder(character_id: str) -> str:
+    """Голос-напоминание проводника (поле 'reminder') для финала user prompt."""
+    characters = _load_characters()
+    return characters.get(character_id, {}).get("reminder", "").strip()
+
+
 def build_reading_prompt(
     cards: list[dict],
     question: str | None,
     character_id: str,
     spread_type: object = 1,
+    voice_reminder: str | None = None,
 ) -> str:
     """Construct the user-facing prompt for a tarot reading.
 
@@ -140,14 +271,14 @@ def build_reading_prompt(
         cards: List of card dicts, each with at least 'name' and
                'orientation' ('upright' or 'reversed').
         question: The user's question, or None if no question was asked.
-        character_id: The character reading the cards (not used directly).
+        character_id: The character reading the cards (per-guide voice reminder).
         spread_type: 'daily', 1, or 3 (also accepts their string forms).
+        voice_reminder: Optional override for the trailing voice reminder;
+                        defaults to the character's 'reminder' field.
 
     Returns:
         A formatted user prompt string tailored to the spread mode.
     """
-    del character_id  # параметр сохранён для совместимости вызова
-
     mode = _spread_mode(spread_type, question, len(cards))
     lines: list[str] = []
 
@@ -221,6 +352,12 @@ def build_reading_prompt(
 
     lines.append("")
 
+    # ── Голос полей: схема говорит регистром проводника, а не учебника ──
+    field_voice = _load_characters().get(character_id, {}).get("field_voice", "")
+    if field_voice:
+        lines.append(field_voice)
+        lines.append("")
+
     # ── JSON format ──
     if mode == "three":
         lines.append(
@@ -275,10 +412,16 @@ def build_reading_prompt(
             'шёпот оракула",\n'
             '  "short_answer": "2-4 предложения — ПРЯМОЙ ответ на вопрос пользователя, '
             'связанный с его ситуацией",\n'
-            '  "card_meaning": ["Почему именно эта карта: развёрнутая трактовка в КОНТЕКСТЕ '
-            'вопроса — что эта карта означает в ЕГО ситуации, а не в общем"],\n'
+            '  "card_meaning": ["Трактовка: что карта говорит именно ЕГО ситуации. '
+            'Живыми словами, как человек человеку. ЗАПРЕЩЕНЫ обороты «означает», '
+            '«в контексте», «карта показывает/фиксирует»"],\n'
             '  "advice": "конкретный практический совет (1 предложение)"\n'
             '}'
         )
+
+    reminder = voice_reminder if voice_reminder is not None else _character_reminder(character_id)
+    if reminder:
+        lines.append("")
+        lines.append(reminder)
 
     return "\n".join(lines)
