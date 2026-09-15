@@ -355,6 +355,42 @@ async def save_reading(
     )
 
 
+async def get_recent_texts(
+    db: aiosqlite.Connection,
+    user_id: int,
+    character_id: str,
+    limit: int = 4,
+) -> list[str]:
+    """Вернуть intro+advice из последних завершённых чтений пользователя.
+
+    Память о том, что проводник уже говорил: эти фрагменты уходят в avoid_texts,
+    чтобы модель не повторялась дословно. До limit чтений (up to 2 фрагментов
+    на чтение), новые первыми.
+    """
+    cursor = await db.execute(
+        "SELECT interpretation FROM readings "
+        "WHERE user_id = ? AND character_id = ? AND status = ? AND interpretation != ? "
+        "ORDER BY created_at DESC LIMIT ?",
+        (user_id, character_id, STATUS_COMPLETED, _PENDING_MARKER, limit),
+    )
+    rows = await cursor.fetchall()
+    texts: list[str] = []
+    for (interp,) in rows:
+        if not interp:
+            continue
+        try:
+            parsed = json.loads(interp)
+        except (json.JSONDecodeError, TypeError):
+            continue
+        if not isinstance(parsed, dict):
+            continue
+        for key in ("intro", "advice"):
+            value = parsed.get(key)
+            if isinstance(value, str) and value.strip():
+                texts.append(value.strip())
+    return texts
+
+
 async def get_user_readings(
     db: aiosqlite.Connection,
     user_id: int,

@@ -7,6 +7,7 @@ from aiogram import Bot
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 from config import settings
+from core.prompts import _load_characters
 from storage.db import get_inactive_users, get_notifications_enabled
 from storage.events import safe_log_event
 
@@ -17,6 +18,16 @@ INACTIVE_DAYS = 3
 MIN_REMINDER_GAP_DAYS = 7
 SUB_EXPIRY_WINDOW_DAYS = 3
 REGULAR_PRICE = 600
+
+# Неактивное напоминание — в голосе проводника пользователя (поле reminder_text).
+# Неизвестный/дефолтный проводник → Странница Теней.
+_DEFAULT_REMINDER_TEXT = "Лес давно тебя не видел. Карты лежат в темноте и ждут твоего вопроса."
+
+
+def _reminder_text(character_id: str) -> str:
+    characters = _load_characters()
+    ch = characters.get(character_id) or characters.get("shadow_walker", {})
+    return ch.get("reminder_text") or _DEFAULT_REMINDER_TEXT
 
 # Avoid re-sending same expiry reminder
 _last_sub_reminder: dict[int, str] = {}
@@ -45,7 +56,7 @@ async def _send_inactive_reminders(db: aiosqlite.Connection, bot: Bot) -> None:
         try:
             await bot.send_message(
                 chat_id=user.tg_id,
-                text="Карты ждут тебя. Загляни — возможно, сегодня они раскроют что-то важное.",
+                text=_reminder_text(user.character_id),
             )
             await db.execute(
                 "UPDATE users SET last_reminder_sent_at = datetime('now') WHERE tg_id = ?",
