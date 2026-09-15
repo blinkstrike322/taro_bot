@@ -60,6 +60,11 @@ jobs:
         run: pip install ruff==0.16.7 mypy==2.3.1
 
       - name: Run test suite
+        # config.py builds Settings() at import: tests need dummy secrets
+        # (no network calls — LLM/Telegram are mocked). Never real keys here.
+        env:
+          BOT_TOKEN: ci-test-token
+          OPENROUTER_API_KEY: ci-test-key
         run: python -m pytest tests/ -q
 
       - name: Lint (ruff)
