@@ -29,6 +29,7 @@ from storage.db import (
     get_db,
     get_or_create_user,
     get_reading_by_token,
+    get_recent_texts,
     get_user_by_tg_id,
     get_user_readings_by_month,
     init_db,
@@ -249,11 +250,15 @@ async def _whisper_task(token: str, ctx: dict, cards: list[dict]) -> None:
     started = time.monotonic()
     try:
         await mark_reading_processing(await get_db(), ctx["reading_id"])
+        avoid_texts = await get_recent_texts(
+            await get_db(), ctx["user_id"], ctx["character_id"],
+        )
         interpretation = await interpret_reading(
             question=ctx["question"],
             cards=cards,
             character_id=ctx["character_id"],
             spread_type=ctx["spread_type"],
+            avoid_texts=avoid_texts,
         )
         latency_ms = int((time.monotonic() - started) * 1000)
         hop = get_last_llm_hop()

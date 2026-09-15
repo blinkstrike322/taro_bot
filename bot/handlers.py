@@ -72,6 +72,13 @@ def _load_characters() -> dict[str, dict]:
 _CHARACTERS = _load_characters()
 
 
+def _pick_greeting(character_id: str) -> str:
+    """Случайное приветствие из пула проводника (живость вместо одного текста)."""
+    char = _CHARACTERS.get(character_id, {})
+    pool = char.get("greetings") or [char.get("greeting", "Добро пожаловать.")]
+    return random.choice(pool)
+
+
 def _character_selection_keyboard() -> InlineKeyboardMarkup:
     buttons = [
         [InlineKeyboardButton(
@@ -124,11 +131,8 @@ async def cmd_start(message: types.Message) -> None:
                 reply_markup=_character_selection_keyboard(),
             )
         else:
-            greeting = _CHARACTERS.get(user.character_id, {}).get(
-                "greeting", "Добро пожаловать.",
-            )
             await message.answer(
-                greeting,
+                _pick_greeting(user.character_id),
                 reply_markup=await _main_menu_keyboard(db, message.from_user.id),
             )
     finally:
@@ -161,9 +165,8 @@ async def set_character(callback: types.CallbackQuery) -> None:
     finally:
         await db.close()
 
-    char = _CHARACTERS[character_id]
     await callback.message.edit_text(
-        char["greeting"],
+        _pick_greeting(character_id),
         reply_markup=keyboard,
     )
     await callback.answer()
