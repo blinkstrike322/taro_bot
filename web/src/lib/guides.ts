@@ -19,6 +19,9 @@ export interface GuideMeta {
   name: string;
   description: string;
   greeting: string;
+  // Пул приветствий (зеркало backend data/characters.json → greetings):
+  // смена проводника звучит живо, а не одним текстом.
+  greetings: string[];
 
   // Visual identity — палитра «Cathode Séance»:
   //   accent     — фосфорный акцент (яркий, контраст ≥7:1 на тьме)
@@ -60,6 +63,11 @@ export interface GuideMeta {
 
   // Per-guide "type" indicator (CRT-style tag)
   tag: string;
+
+  // Per-guide interface whispers (5 phrases, in the guide's voice).
+  // NOTE: duplicated here because the frontend cannot read data/characters.json
+  // at runtime — that backend file is the SOURCE OF TRUTH for these texts.
+  whispers: string[];
 }
 
 export const GUIDES: Record<string, GuideMeta> = {
@@ -68,6 +76,12 @@ export const GUIDES: Record<string, GuideMeta> = {
     name: 'Странница Теней',
     description: 'Ведьма из тёмного леса. Говорит тенями и шёпотом луны.',
     greeting: 'Тихо. Карты уже смотрят на тебя.',
+    greetings: [
+      'Тихо. Карты уже смотрят на тебя.',
+      'Тс-с. Я уже слышу твой вопрос.',
+      'Проходи. Вода в чаше ещё не остыла.',
+      'Ночь длинная, а вопрос у тебя один. Давай его сюда.'
+    ],
     // ALBEDO · серебряная лунная стадия
     // accent: серебристо-лавандовый с холодным синим подтоном — как аметист
     //   под лунным светом, не «розовая жвачка»
@@ -91,6 +105,13 @@ export const GUIDES: Record<string, GuideMeta> = {
     subtitle: 'ТЕНЬ · ЛУНА · ШЁПОТ',
     loadingPhrase: 'ТЕНИ СГУЩАЮТСЯ...',
     tag: 'SHADOW.WLK',
+    whispers: [
+      'тени перешёптываются',
+      'где-то далеко скрипнула ветка',
+      'луна скользнула за кроны',
+      'мох помнит твои шаги',
+      'тишина сгущается — слушай',
+    ],
   },
 
   ruin_keeper: {
@@ -98,6 +119,12 @@ export const GUIDES: Record<string, GuideMeta> = {
     name: 'Хранитель Руин',
     description: 'Древний страж разрушенного. Помнит то, что все забыли.',
     greeting: 'Камень помнит. Карты молчат. Спрашивай.',
+    greetings: [
+      'Камень помнит. Карты молчат. Спрашивай.',
+      'Садись ближе. Говори, что стряслось.',
+      'Я слушаю. Коротко и по делу.',
+      'Пришёл — значит, вопрос созрел. Выкладывай.'
+    ],
     // CITRINITAS · золотая солнечная стадия
     // accent: antique brass — оксидированная латунь с зеленцой,
     //   не ярко-жёлтый и не neon gold. Пигмент старого манускрипта.
@@ -122,6 +149,13 @@ export const GUIDES: Record<string, GuideMeta> = {
     subtitle: 'КАМЕНЬ · ПЕПЕЛ · ВЕК',
     loadingPhrase: 'ПЫЛЬ ОСЕДАЕТ...',
     tag: 'RUIN.KPR',
+    whispers: [
+      'пыль оседает',
+      'камень держит тишину',
+      'где-то осыпалась стена',
+      'тихо. так и должно быть',
+      'фундамент не врёт',
+    ],
   },
 
   spark_of_chaos: {
@@ -129,6 +163,12 @@ export const GUIDES: Record<string, GuideMeta> = {
     name: 'Искра Хаоса',
     description: 'Дерзкий дух-трикстер. За искрой — истина, за шуткой — правда.',
     greeting: 'Посмотрим, что шепнет хаос на этот раз.',
+    greetings: [
+      'Посмотрим, что шепнет хаос на этот раз.',
+      'О, наконец-то. Скучно было до жути.',
+      'Ну-с. Садись. Только чур не обижаться на правду.',
+      'Ты вовремя. Рассказывай, во что вляпалась.'
+    ],
     // RUBEDO · красная стадия завершения
     // accent: vintage carmine — глубокий старинный красный, как выцветшее
     //   вино/кровь на пергаменте. НЕ neon pink и НЕ ярко-розовый.
@@ -153,6 +193,13 @@ export const GUIDES: Record<string, GuideMeta> = {
     subtitle: 'ИСКРА · ДЫМ · ШЁПОТ',
     loadingPhrase: 'ИСКРЫ ПОЛЕТЕЛИ...',
     tag: 'SPARK.CHS',
+    whispers: [
+      'искры потянулись к фитилю',
+      'хаос зевает от скуки',
+      'где-то лопнул стакан',
+      'тихо слишком тихо. подозрительно',
+      'колода сама тасуется. к чему бы',
+    ],
   },
 };
 

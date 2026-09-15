@@ -108,7 +108,7 @@ export default function Home() {
             { text: 'восьмое правило: не спрашивай одно и то же дважды за луну.', tone: 'comment' },
           ]);
         } else if (t.includes('шёпот')) {
-          pushOut([{ text: randomWhisper(), tone: 'comment' }]);
+          pushOut([{ text: randomWhisper(characterId), tone: 'comment' }]);
         } else if (t.includes('сеансы') || t.includes('log')) {
           pushOut([{ text: 'подсказка: taro history — живой журнал сеансов', tone: 'dim' }]);
         } else {
@@ -117,7 +117,7 @@ export default function Home() {
         break;
       }
     }
-  }, [pushOut]);
+  }, [pushOut, characterId]);
 
   // ── справка (man) ──
   const runHelp = useCallback(async () => {
