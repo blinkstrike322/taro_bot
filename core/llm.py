@@ -12,6 +12,7 @@ from datetime import UTC, datetime
 import httpx
 
 from config import settings
+from core.voice_gate import SCORE_PASS
 
 logger = logging.getLogger(__name__)
 
@@ -503,7 +504,19 @@ async def call_llm_with_fallback(
 
 # Попыток генерации с учётом voice-гейта: первая + починки. Латентность
 # скрыта двухфазным шёпотом (карты уже на экране), поэтому отбор дешевле надежды.
+# Но фронт ждёт шёпот не дольше ~180с (E1): общий бюджет попыток — 90с,
+# дальше отдаём лучшее из готового, а не идеальное из никогда.
 MAX_QUALITY_ATTEMPTS = 3
+QUALITY_TIME_BUDGET_S = 90.0
+
+
+def should_retry(attempt: int, score: int, elapsed_s: float) -> bool:
+    """Можно ли идти на следующую попытку починки (счётчик + порог + бюджет)."""
+    return (
+        attempt < MAX_QUALITY_ATTEMPTS
+        and score < SCORE_PASS
+        and elapsed_s < QUALITY_TIME_BUDGET_S
+    )
 
 
 async def interpret_reading(
@@ -528,6 +541,7 @@ async def interpret_reading(
 
     best: dict | None = None
     best_score = -1
+    started = time.monotonic()
 
     try:
         messages = [
@@ -563,11 +577,18 @@ async def interpret_reading(
             if score >= SCORE_PASS:
                 _warn_latin_leak(" ".join(_iter_prose(parsed)))
                 return parsed
-            if attempt < MAX_QUALITY_ATTEMPTS:
-                messages = [
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt + "\n\n" + build_repair_note(reasons)},
-                ]
+            elapsed = time.monotonic() - started
+            if not should_retry(attempt, score, elapsed):
+                if elapsed >= QUALITY_TIME_BUDGET_S:
+                    logger.warning(
+                        "voice quality budget (%.0fs) exhausted, returning best score=%d",
+                        elapsed, best_score,
+                    )
+                break
+            messages = [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt + "\n\n" + build_repair_note(reasons)},
+            ]
         if best is not None:
             logger.warning(
                 "voice gate never passed, returning best score=%d guide=%s",

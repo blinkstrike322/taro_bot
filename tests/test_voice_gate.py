@@ -298,3 +298,20 @@ def test_latin_leak_caught():
         {"intro": "Тихо.", "short_answer": "Течёт к reunion.",
          "advice": "Жди."}, "shadow_walker")
     assert "latin-leak" in reasons, reasons
+
+
+# ── v8: бюджет времени починок (E1 в проде) ───────────────────────────
+
+
+def test_should_retry_matrix():
+    from core.llm import (
+        MAX_QUALITY_ATTEMPTS,
+        QUALITY_TIME_BUDGET_S,
+        SCORE_PASS,
+        should_retry,
+    )
+    assert QUALITY_TIME_BUDGET_S < 180  # фронт E1 на 180с — бюджет строго меньше
+    assert should_retry(1, SCORE_PASS - 1, 10.0) is True
+    assert should_retry(1, SCORE_PASS, 10.0) is False
+    assert should_retry(MAX_QUALITY_ATTEMPTS, 0, 10.0) is False
+    assert should_retry(1, 0, QUALITY_TIME_BUDGET_S + 1) is False
