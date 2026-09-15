@@ -147,7 +147,7 @@ export function useSpread(session: TarotSession, whisper: TarotWhisper): TarotSp
             const interp = await resolveWhisper(entryId, entry.interpretation);
             if (!interp) return;
             push({ kind: 'json', interpretation: interp, cards: [entry.card], question: null, spreadLabel: 'карта дня' });
-            pushOut([{ text: randomWhisper(), tone: 'comment' }]);
+            pushOut([{ text: randomWhisper(characterId), tone: 'comment' }]);
             setMode('ОЖИДАНИЕ');
           })();
         }, 950);
@@ -167,7 +167,7 @@ export function useSpread(session: TarotSession, whisper: TarotWhisper): TarotSp
               if (!interp) return;
               await echoCmd('taro read --json');
               push({ kind: 'json', interpretation: interp, cards: entry.cards, question: entry.question, spreadLabel: entry.spreadLabel });
-              pushOut([{ text: randomWhisper(), tone: 'comment' }]);
+              pushOut([{ text: randomWhisper(characterId), tone: 'comment' }]);
               // тихий индикатор остатка квоты — без этого лимит не виден до отказа
               const qline = quotaLine(quotaRef.current.remaining, quotaRef.current.limit);
               if (qline) pushOut([qline]);
@@ -181,7 +181,7 @@ export function useSpread(session: TarotSession, whisper: TarotWhisper): TarotSp
       return prev;
     });
     setScrollTick((t) => t + 1);
-  }, [echoCmd, push, pushOut, resolveWhisper, setEntries, setScrollTick, quotaRef, setMode]);
+  }, [echoCmd, push, pushOut, resolveWhisper, setEntries, setScrollTick, quotaRef, setMode, characterId]);
 
   return { runDaily, runAsk, handleFlip };
 }

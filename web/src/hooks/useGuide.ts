@@ -28,8 +28,11 @@ export function useGuide(session: TarotSession): TarotGuide {
     SFX.sWhisper();
     push({ kind: 'ok', msg: `проводник сменён: ${guide.name} · ${guide.tag}` });
     pushOut([
-      { text: `«${guide.greeting}»`, tone: 'comment' },
-      { text: randomWhisper(), tone: 'comment' },
+      {
+        text: `«${guide.greetings[Math.floor(Math.random() * guide.greetings.length)] ?? guide.greeting}»`,
+        tone: 'comment',
+      },
+      { text: randomWhisper(id), tone: 'comment' },
     ]);
   }, [echoCmd, push, pushOut, setCharacterId]);
 

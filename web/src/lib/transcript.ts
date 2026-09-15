@@ -5,6 +5,7 @@
 // ─────────────────────────────────────────────────────────────
 import type { TarotCard } from '@/components/Card';
 import type { Interpretation } from '@/lib/api';
+import { GUIDES } from '@/lib/guides';
 
 export type OutTone =
   | 'plain' | 'dim' | 'faint' | 'ok' | 'err' | 'warn'
@@ -83,8 +84,10 @@ export const WHISPERS: string[] = [
   'связь с продавцом тумана восстановлена',
 ];
 
-export function randomWhisper(): string {
-  return WHISPERS[Math.floor(Math.random() * WHISPERS.length)];
+export function randomWhisper(guideId?: string | null): string {
+  const pool = guideId ? GUIDES[guideId]?.whispers : undefined;
+  const source = pool && pool.length ? pool : WHISPERS;
+  return source[Math.floor(Math.random() * source.length)];
 }
 
 export function randomHex(len: number): string {
