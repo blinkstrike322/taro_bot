@@ -32,5 +32,7 @@ describe('guides / getGuide metadata', () => {
     expect(new Set(backs).size).toBe(3);
     const tags = GUIDE_IDS.map((id) => GUIDES[id].tag);
     expect(new Set(tags).size).toBe(3);
+    expect(GUIDE_IDS.every((id) => GUIDES[id].whispers.length >= 5)).toBe(true);
+    expect(GUIDE_IDS.every((id) => GUIDES[id].greetings.length >= 3)).toBe(true);
   });
 });
