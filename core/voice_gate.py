@@ -40,7 +40,8 @@ _SLOP_PATTERNS: list[tuple[str, re.Pattern, int, str]] = [
         re.compile(
             r"дело в том, что|стоит отметить|на самом деле|правда в том, что|"
             r"как известно|в конце концов|важно понимать|следует отметить|"
-            r"скорость [а-яё]+ (высок|низк)|согласно [а-яё]+",
+            r"скорость [а-яё]+ (высок|низк)|согласно [а-яё]+|"
+            r"система (заметила|видит|подсказывает)",
             re.IGNORECASE,
         ),
         8,
@@ -222,6 +223,11 @@ def check_fingerprint(interp: dict, guide_id: str) -> list[tuple[str, int, str]]
                             "Совет — максимум два коротких предложения."))
     elif guide_id == "spark_of_chaos":
         head = f"{intro} {short}"
+        game_hits = len(re.findall(r"\bигр\w*", head, re.IGNORECASE))
+        if game_hits >= 3:
+            missing.append(("spark-game-spam", 10,
+                            f"Слово «игра» повторено {game_hits} раза — "
+                            "одного называния за ответ достаточно."))
         if not any(_word_count(s) <= 8 for s in _sentences(head)):
             missing.append(("spark-no-staccato", 10,
                             "Добавь хоть одну короткую хлёсткую фразу."))
@@ -346,6 +352,7 @@ _REPAIR_BY_CODE.update({
     "spark-no-fire": "Где огонь? Хотя бы один вопрос в лоб или восклицание.",
     "shadow-no-sense": "Добавь хоть один чувственный образ (свет, туман, лес, ночь).",
     "shadow-image-spam": "Один образ заспамлен — замени повторы другими из словаря.",
+    "spark-game-spam": "Слово «игра» заспамлено — одного называния за ответ достаточно.",
 })
 
 
