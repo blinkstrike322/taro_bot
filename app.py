@@ -211,6 +211,32 @@ async def handle_disk_usage(request):
     return web.json_response(usage)
 
 
+CHARACTER_IDS = ("shadow_walker", "ruin_keeper", "spark_of_chaos")
+
+
+async def handle_character_set(request):
+    """Sync the UI-selected guide into the DB (single source of truth).
+
+    The webapp guide switch used to live only in localStorage, while
+    /api/spread/begin reads user.character_id from the DB — readings came
+    out in the old guide's voice. The frontend must POST here on switch.
+    """
+    try:
+        body = await request.json()
+    except Exception:
+        return web.json_response({"error": "invalid json"}, status=400)
+    character_id = body.get("character_id", "")
+    if character_id not in CHARACTER_IDS:
+        return web.json_response({"error": "unknown character"}, status=400)
+    user_data = verify_telegram_init_data(body.get("init_data", ""))
+    if not user_data or not user_data.get("id"):
+        return web.json_response({"error": "unauthorized"}, status=403)
+    db = await get_db()
+    from storage.db import update_character
+    await update_character(db, user_data["id"], character_id)
+    return web.json_response({"character_id": character_id})
+
+
 async def handle_character(request):
     """Return the user's active character/guide."""
     init_data = request.query.get('init_data', '')
@@ -515,6 +541,7 @@ def create_webapp() -> web.Application:
     app.router.add_get('/api/readings', handle_readings)
     app.router.add_get('/api/disk', handle_disk_usage)
     app.router.add_get('/api/character', handle_character)
+    app.router.add_post('/api/character', handle_character_set)
     app.router.add_post('/api/spread/begin', handle_spread_begin)
     app.router.add_get('/api/spread/poll', handle_spread_poll)
     app.router.add_post('/api/log', handle_client_log)

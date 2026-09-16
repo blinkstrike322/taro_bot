@@ -166,6 +166,18 @@ export async function getCharacter(): Promise<string> {
   }
 }
 
+/** Синхронизация проводника с сервером (иначе шёпот придёт голосом старого). */
+export async function setCharacter(id: string): Promise<string> {
+  const res = await fetch(`${API_BASE}/api/character`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ init_data: getInitData(), character_id: id }),
+  });
+  if (!res.ok) throw await readErrorBody(res);
+  const data = await res.json();
+  return data.character_id || id;
+}
+
 export async function getReadings(
   year: number,
   month: number,
