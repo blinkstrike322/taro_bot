@@ -209,3 +209,44 @@ async def test_concurrent_begin_last_slot_single_winner(db):
                       cards_data={"cards": CARDS}, reading_type="spread_3"),
     )
     assert sum(1 for r in (r1, r2) if r["ok"]) == 1
+
+
+@pytest.mark.asyncio
+async def test_double_begin_returns_running_whisper(db, monkeypatch):
+    """Двойной /begin (прод 2026-09-17): второй запрос получает токен бегущего
+    шёпота — второй круг по провайдерам не стартует, квота не жжётся."""
+    started = asyncio.Event()
+    release = asyncio.Event()
+    calls = 0
+
+    async def slow_interpret(*a, **kw):
+        nonlocal calls
+        calls += 1
+        started.set()
+        await release.wait()
+        return _canned_interpretation()
+    monkeypatch.setattr(app_module, "interpret_reading", slow_interpret)
+
+    init_data = _make_init_data(555)
+    async with TestClient(TestServer(app_module.create_webapp())) as client:
+        r1 = await client.post(
+            "/api/spread/begin",
+            json={"init_data": init_data, "spread_type": 1, "question": "вопрос?"},
+        )
+        assert r1.status == 200
+        token1 = (await r1.json())["token"]
+        await asyncio.wait_for(started.wait(), timeout=5)
+
+        r2 = await client.post(
+            "/api/spread/begin",
+            json={"init_data": init_data, "spread_type": 1, "question": "вопрос?"},
+        )
+        assert r2.status == 200
+        body2 = await r2.json()
+        assert body2["token"] == token1
+        assert body2["cards"]
+
+        release.set()
+        row = await _wait_completed(db, token1)
+        assert row["status"] == STATUS_COMPLETED
+        assert calls == 1

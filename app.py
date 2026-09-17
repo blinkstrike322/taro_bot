@@ -18,7 +18,7 @@ from bot.router import register_handlers
 from config import logger, settings
 from core.llm import get_last_llm_hop, interpret_reading
 from core.prompts import _positions_for_question
-from core.quota import reserve_quota
+from core.quota import check_quota, reserve_quota
 from core.reminder import reminder_loop
 from core.tarot import draw_cards
 from storage.db import (
@@ -26,6 +26,7 @@ from storage.db import (
     STATUS_FAILED,
     complete_reading,
     fail_reading,
+    get_active_reading,
     get_db,
     get_or_create_user,
     get_reading_by_token,
@@ -343,6 +344,16 @@ async def handle_spread_begin(request):
     if isinstance(parsed, web.Response):
         return parsed
     ctx = parsed
+    if ctx.get("deduped"):
+        response = {
+            "cards": ctx["cards"],
+            "token": ctx["token"],
+            "remaining": ctx["quota"].get("remaining"),
+            "limit": ctx["quota"].get("limit"),
+        }
+        if ctx.get("positions"):
+            response["positions"] = ctx["positions"]
+        return web.json_response(response)
     cards = ctx["cards"]
 
     # Токен сохраняется в строке readings (client_token) при резерве:
@@ -425,6 +436,21 @@ async def _spread_request_context(request, client_token: str):
     # Проводника определяет сервер: Telegram identity → пользователь БД.
     # Поле character_id из тела запроса — только UI-подсказка и не используется.
     character_id = user.character_id
+
+    # Двойной /begin (двойной тап, повторный маунт): шёпот уже бежит —
+    # отдаём его токен и карты, не жжём слот квоты и круг по провайдерам.
+    active = await get_active_reading(db, user.id)
+    if active and active["client_token"]:
+        active_cards = (active["cards_data"] or {}).get("cards") or []
+        if active_cards:
+            quota_view = await check_quota(db, user.id, tg_id, spread_type_str)
+            return {
+                "deduped": True,
+                "token": active["client_token"],
+                "cards": active_cards,
+                "positions": _positions_for_question(active["question"]) if len(active_cards) == 3 else None,
+                "quota": {"remaining": quota_view.get("remaining"), "limit": quota_view.get("limit")},
+            }
 
     # Резервируем слот квоты атомарно — до запуска LLM (см. reserve_quota).
     # Без _user_lock: резерв атомарен на уровне SQL (см. комментарий выше).

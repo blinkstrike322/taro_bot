@@ -36,10 +36,15 @@ ZEN_FALLBACKS = [
 ]
 
 # OpenRouter fallbacks (kept as last resort)
+# Порядок по бенчу free-tier 2026-09-17: ling-fin — основной (5-19с,
+# score 68-90, стабильный JSON), laguna-s — второй (хорошее качество,
+# но строгий 429), nemotron-super — в хвосте (40-78с + reasoning-дамп
+# в ~50% вызовов), auto — напоследок. Gemma убрана: стабильный 429.
 OPENROUTER_FALLBACKS = [
+    "inclusionai/ling-3.0-flash-fin:free",
+    "poolside/laguna-s-2.1:free",
+    "deepseek/deepseek-v4-flash",
     "nvidia/nemotron-3-super-120b-a12b:free",
-    "google/gemma-4-31b-it:free",
-    "google/gemma-4-26b-a4b-it:free",
     "openrouter/free",
 ]
 
@@ -262,13 +267,29 @@ def validate_interpretation(
     if not isinstance(parsed, dict):
         return None
 
-    short_answer = parsed.get("short_answer")
-    if not isinstance(short_answer, str) or not short_answer.strip():
-        return None
-
     repaired = dict(parsed)
     repaired.setdefault("intro", "")
     repaired.setdefault("advice", "")
+    # Модель иногда отдаёт прозу списком вместо строки — фронт падает
+    # (CLIENT ERROR 2026-09-17). Склеиваем до схемных проверок.
+    for _field in ("intro", "short_answer", "advice", "проявление",
+                   "на_что_смотреть", "связь_карт"):
+        _value = repaired.get(_field)
+        if isinstance(_value, list):
+            repaired[_field] = "\n".join(
+                str(v) for v in _value if str(v).strip()
+            )
+    _traj = repaired.get("траектория")
+    if isinstance(_traj, dict):
+        repaired["траектория"] = {
+            k: ("\n".join(str(x) for x in v if str(x).strip())
+                if isinstance(v, list) else v)
+            for k, v in _traj.items()
+        }
+
+    short_answer = repaired.get("short_answer")
+    if not isinstance(short_answer, str) or not short_answer.strip():
+        return None
 
     is_three = str(spread_type) == "3" and len(cards) == 3
     is_daily = (not is_three) and not (question and str(question).strip())
@@ -388,7 +409,16 @@ async def call_llm(
         )
         response.raise_for_status()
         data = response.json()
-        choice = data["choices"][0]
+        # Провайдер может вернуть 200 с error-конвертом вместо choices
+        # (напр. upstream 502 от Nvidia): ловим явно, а не KeyError.
+        err = data.get("error")
+        if err:
+            detail = err.get("message") if isinstance(err, dict) else str(err)
+            raise ValueError(f"Provider error for {model}: {detail}")
+        choices = data.get("choices") or []
+        if not choices:
+            raise ValueError(f"Model {model} returned no choices")
+        choice = choices[0]
         msg = choice["message"]
 
         # DeepSeek-style reasoning: content may be in reasoning_content

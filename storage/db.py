@@ -181,6 +181,43 @@ async def sweep_stale_reservations(db: aiosqlite.Connection, older_than_minutes:
     return cursor.rowcount or 0
 
 
+async def get_active_reading(
+    db: aiosqlite.Connection,
+    user_id: int,
+    within_minutes: int = 5,
+) -> dict | None:
+    """Свежайший незавершённый расклад юзера (reserved/processing) или None.
+
+    Дедуп двойного /begin (двойной тап): второй запрос поллит уже бегущий
+    шёпот вместо параллельного круга по провайдерам (прод 2026-09-17).
+    """
+    cursor = await db.execute(
+        """SELECT id, type, question, cards_data, character_id, client_token
+           FROM readings
+           WHERE user_id = ? AND status IN (?, ?)
+           AND created_at >= datetime('now', ?)
+           ORDER BY id DESC LIMIT 1""",
+        (user_id, STATUS_RESERVED, STATUS_PROCESSING, f"-{within_minutes} minutes"),
+    )
+    row = await cursor.fetchone()
+    if row is None:
+        return None
+    try:
+        cards_data = json.loads(row[3]) if row[3] else {}
+    except (json.JSONDecodeError, TypeError):
+        cards_data = {}
+    if not isinstance(cards_data, dict):
+        cards_data = {}
+    return {
+        "reading_id": row[0],
+        "type": row[1],
+        "question": row[2],
+        "cards_data": cards_data,
+        "character_id": row[4],
+        "client_token": row[5],
+    }
+
+
 async def get_reading_by_token(
     db: aiosqlite.Connection,
     token: str,
