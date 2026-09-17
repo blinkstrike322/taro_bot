@@ -217,6 +217,37 @@ def test_list_prose_joined_to_string():
     assert parsed["advice"] == "совет"
 
 
+def test_only_checklist_prose_rejected():
+    """Само-проверка модели («— only шёпот») в прозе — ответ непригоден."""
+    assert validate_interpretation(
+        {"intro": "Утро хранит шёпот — only шёпот",
+         "short_answer": "сигнал дня",
+         "проявление": "форма",
+         "advice": "совет"},
+        CARDS[:1], None, 1,
+    ) is None
+
+
+def test_english_thinking_rejected():
+    """Английский chain-of-thought в ответе — непригоден."""
+    assert validate_interpretation(
+        {"intro": "шёпот",
+         "short_answer": "Let me carefully analyze this task",
+         "проявление": "форма",
+         "advice": "совет"},
+        CARDS[:1], None, 1,
+    ) is None
+
+
+def test_has_reasoning_leak_helper():
+    from core.llm import _has_reasoning_leak
+
+    assert _has_reasoning_leak("Зеркала — only зеркала")
+    assert _has_reasoning_leak('(no "вода", "окна")')
+    assert _has_reasoning_leak("We need to produce JSON")
+    assert not _has_reasoning_leak("Тихий шёпот над водой без латиницы")
+
+
 def test_list_trajectory_values_joined():
     """Значения «траектории» списком — склеиваются, расклад валиден."""
     parsed = validate_interpretation(

@@ -224,6 +224,19 @@ def strip_emojis(text: str) -> str:
 LATIN_WORD = re.compile(r"\b[A-Za-z]{3,}\b")
 
 
+# Маркеры утёкшего chain-of-thought: модель пишет само-проверку
+# («— only шёпот», «(no "вода"», «Let me carefully…») прямо в ответ.
+_LEAK_RE = re.compile(
+    r"(—\s*only\s|\(\s*no\s|\blet me\s|\bwe need\b|\bi need to\b|key constraints)",
+    re.IGNORECASE,
+)
+
+
+def _has_reasoning_leak(text: object) -> bool:
+    """Есть ли в тексте куски англоязычного рассуждения модели."""
+    return bool(text) and bool(_LEAK_RE.search(str(text)))
+
+
 def _norm_name(value: object) -> str:
     """Нормализация имени карты для сопоставления с ответом модели."""
     return re.sub(r"\s+", " ", str(value or "").strip().lower())
@@ -289,6 +302,9 @@ def validate_interpretation(
 
     short_answer = repaired.get("short_answer")
     if not isinstance(short_answer, str) or not short_answer.strip():
+        return None
+
+    if _has_reasoning_leak(" ".join(_iter_prose(repaired))):
         return None
 
     is_three = str(spread_type) == "3" and len(cards) == 3
@@ -538,6 +554,9 @@ async def call_llm_with_fallback(
 # дальше отдаём лучшее из готового, а не идеальное из никогда.
 MAX_QUALITY_ATTEMPTS = 3
 QUALITY_TIME_BUDGET_S = 90.0
+# Пол возврата: ниже — не чинить, а отдавать детерминированный фолбэк
+# по базе карт (проходной порог гейта 85, живой текст обычно 65+).
+MIN_RETURN_SCORE = 50
 
 
 def should_retry(attempt: int, score: int, elapsed_s: float) -> bool:
@@ -586,6 +605,12 @@ async def interpret_reading(
             if len(cleaned) != len(raw):
                 logger.warning("Emojis detected and removed from LLM response")
             raw = cleaned
+            if _has_reasoning_leak(raw):
+                logger.warning(
+                    "reasoning leak in raw response (attempt %d) — raw head: %r",
+                    attempt, raw[:300],
+                )
+                continue
             parsed = parse_llm_response(raw)
             if parsed:
                 # схемная + семантическая проверка против фактических карт
@@ -619,14 +644,17 @@ async def interpret_reading(
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt + "\n\n" + build_repair_note(reasons)},
             ]
-        if best is not None:
+        if best is not None and best_score >= MIN_RETURN_SCORE:
             logger.warning(
                 "voice gate never passed, returning best score=%d guide=%s",
                 best_score, character_id,
             )
             _warn_latin_leak(" ".join(_iter_prose(best)))
             return best
-        logger.warning("LLM response failed validation — falling back to cards DB.")
+        logger.warning(
+            "best score=%d below floor=%d — falling back to cards DB",
+            best_score, MIN_RETURN_SCORE,
+        )
     except RuntimeError:
         logger.error("All LLM models failed, using fallback")
 

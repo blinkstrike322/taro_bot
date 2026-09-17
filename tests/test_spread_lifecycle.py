@@ -250,3 +250,24 @@ async def test_double_begin_returns_running_whisper(db, monkeypatch):
         row = await _wait_completed(db, token1)
         assert row["status"] == STATUS_COMPLETED
         assert calls == 1
+
+
+@pytest.mark.asyncio
+async def test_garbage_llm_falls_back_to_cards_db(db, monkeypatch):
+    """Трижды мусор ниже пола — пользователю едет детерминированный фолбэк
+    по базе карт (с реальным именем карты), а не chain-of-thought (прод 2026-09-17)."""
+    import core.llm as llm_module
+
+    async def garbage_llm(*a, **kw):
+        return "We need to produce JSON with fields — only thinking, no answer " * 20
+    monkeypatch.setattr(llm_module, "call_llm_with_fallback", garbage_llm)
+
+    result = await llm_module.interpret_reading(
+        question="вопрос?",
+        cards=[{"name": "Башня", "orientation": "reversed"}],
+        character_id="shadow_walker",
+        spread_type=1,
+    )
+    blob = json.dumps(result, ensure_ascii=False)
+    assert "Башня" in blob
+    assert "We need" not in blob
