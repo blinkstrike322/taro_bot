@@ -77,7 +77,9 @@ def _format_avoid_texts(avoid_texts: list[str] | None) -> str:
     capped = avoid_texts[:8]  # потолок вставляемых фрагментов, чтобы не раздуть токены
     lines = [
         "Ниже — фразы из твоих НЕДАВНИХ ответов этому человеку. "
-        "НЕ повторяй эти интро и советы дословно — скажи то же самое по-другому:"
+        "Не повторяй их и не возвращайся к тем же образам: один и тот же образ "
+        "дважды подряд — признак того, что ты застряла. Выбери образ, к которому "
+        "давно не тянулась рука, и скажи то же самое по-другому:"
     ]
     for frag in capped:
         if frag and frag.strip():
@@ -150,13 +152,13 @@ def _build_voice_core(character_id: str, ch: dict) -> str:
 
     diction = ch.get("diction") or {}
     if diction:
-        lines = ["Словарь твоих образов (используй их, но не штампуй):"]
+        lines = ["Твой словарь образов — бери экономно, по одному-два на повод, не набивая ими текст:"]
         imagery = diction.get("imagery") or []
         if imagery:
-            lines.append(f"• образы: {', '.join(imagery)}")
+            lines.append(f"• образы, из которых ты выбираешь: {', '.join(imagery)}")
         anti = diction.get("anti") or []
         if anti:
-            lines.append(f"• избегай: {', '.join(anti)}")
+            lines.append(f"• не твой звук: {', '.join(anti)}")
         parts.append("\n".join(lines))
 
     rhythm = ch.get("rhythm")

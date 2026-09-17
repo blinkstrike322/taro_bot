@@ -238,13 +238,13 @@ def check_fingerprint(interp: dict, guide_id: str) -> list[tuple[str, int, str]]
         head = f"{intro} {short}"
         if not _stem_hits(head, _SHADOW_SENSORY):
             missing.append(("shadow-no-sense", 10,
-                            "Добавь хоть один чувственный образ (свет, туман, лес, ночь)."))
+                            "Дай вещи живой образ — видимый или слышимый, а не объяснение."))
         for stem in ("лун", "туман"):
             count = len(re.findall(r"\b" + stem + r"\w*", head, re.IGNORECASE))
             if count >= 3:
                 missing.append(("shadow-image-spam", 10,
                                 f"Образ с корнем «{stem}» повторён {count} раза — "
-                                "возьми соль, зеркало или окно вместо него."))
+                                "отступи, дай место другому."))
                 break
     return missing
 
@@ -350,8 +350,8 @@ _REPAIR_BY_CODE.update({
     "keeper-long-advice": "Совет — максимум два коротких предложения.",
     "spark-no-staccato": "Добавь хоть одну короткую хлёсткую фразу.",
     "spark-no-fire": "Где огонь? Хотя бы один вопрос в лоб или восклицание.",
-    "shadow-no-sense": "Добавь хоть один чувственный образ (свет, туман, лес, ночь).",
-    "shadow-image-spam": "Один образ заспамлен — замени повторы другими из словаря.",
+    "shadow-no-sense": "Суховато. Дай вещи живой образ — видимый или слышимый, а не объяснение.",
+    "shadow-image-spam": "Любимый образ зачастил — отступи, дай место другому.",
     "spark-game-spam": "Слово «игра» заспамлено — одного называния за ответ достаточно.",
 })
 
