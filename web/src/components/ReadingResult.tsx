@@ -152,8 +152,24 @@ export default function ReadingResult({
   const tHeader = instant ? 0 : (2 + cardLines.length) * LINE_STEP + 45;
   const tWhisper = tHeader;
   const tSignal = instant ? 0 : tWhisper + (intro ? proseDuration(intro, TYPE_SPEED) : 0);
-  const tBody = instant ? 0 : tSignal + proseDuration(short_answer, TYPE_SPEED);
-  const tAdvice = instant ? 0 : tBody + (bodyVisible.length + bodyDisclosures.length) * 55 + 75;
+  const tBodyStart = instant ? 0 : tSignal + proseDuration(short_answer, TYPE_SPEED);
+  const bodyDelays: number[] = instant
+    ? bodyVisible.map(() => 0)
+    : (() => {
+        const out: number[] = [];
+        let cursor = tBodyStart;
+        for (const s of bodyVisible) {
+          out.push(cursor);
+          cursor += proseDuration(s.prose, TYPE_SPEED);
+        }
+        return out;
+      })();
+  const tBodyEnd = instant
+    ? 0
+    : bodyDelays.length > 0
+      ? bodyDelays[bodyDelays.length - 1] + proseDuration(bodyVisible[bodyVisible.length - 1].prose, TYPE_SPEED)
+      : tBodyStart;
+  const tAdvice = instant ? 0 : tBodyEnd + bodyDisclosures.length * 55 + 75;
   const tClose = instant ? 0 : tAdvice + (advice ? proseDuration(advice, TYPE_SPEED) : 0) + 80;
 
   let delay = 0;
@@ -270,10 +286,17 @@ export default function ReadingResult({
                 <div
                   key={i}
                   className="reading-line"
-                  style={{ '--jl-delay': `${tBody + 55 + i * 55}ms` } as React.CSSProperties}
+                  style={{ '--jl-delay': `${bodyDelays[i]}ms` } as React.CSSProperties}
                 >
                   {s.label && <div className="reading-section-label">// {s.label}</div>}
-                  <div className="reading-body-text">{joinedParagraphs(s.prose)}</div>
+                  <ProseType
+                    text={s.prose}
+                    startDelay={bodyDelays[i]}
+                    speed={TYPE_SPEED}
+                    instant={instant}
+                    quotes={false}
+                    className="reading-body-text"
+                  />
                 </div>
               ))}
             </div>
@@ -283,7 +306,7 @@ export default function ReadingResult({
             <details
               key={i}
               className="reading-line reading-det"
-              style={{ '--jl-delay': `${tBody + 55 + (bodyVisible.length + i) * 55}ms`, '--guide-accent': guide.accent } as React.CSSProperties}
+              style={{ '--jl-delay': `${tBodyEnd + 55 + i * 55}ms`, '--guide-accent': guide.accent } as React.CSSProperties}
             >
               <summary className="reading-det-summary">
                 <span className="reading-det-marker">[+]</span> {d.summary} <span className="reading-det-hint">— раскрой</span>
