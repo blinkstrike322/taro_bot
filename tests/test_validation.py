@@ -197,3 +197,33 @@ def test_parse_text_format_short_answer_space_alias():
     parsed = _parse_text_format("краткий ответ: ответ\n")
     assert parsed is not None
     assert isinstance(parsed.get("short_answer"), str) and parsed["short_answer"].strip()
+
+
+# ── проза списком: склейка до схемных проверок (прод 2026-09-17) ──────────
+
+
+def test_list_prose_joined_to_string():
+    """Модель отдала short_answer/advice списком — склеивается в строку."""
+    parsed = validate_interpretation(
+        {"intro": "шёпот",
+         "short_answer": ["первая мысль", "вторая мысль"],
+         "проявление": ["форма один", "форма два"],
+         "advice": ["совет"]},
+        CARDS[:1], None, 1,
+    )
+    assert parsed is not None
+    assert parsed["short_answer"] == "первая мысль\nвторая мысль"
+    assert parsed["проявление"] == "форма один\nформа два"
+    assert parsed["advice"] == "совет"
+
+
+def test_list_trajectory_values_joined():
+    """Значения «траектории» списком — склеиваются, расклад валиден."""
+    parsed = validate_interpretation(
+        {"short_answer": "сигнал",
+         "траектория": {"утро": ["тон"], "день": "д", "вечер": ["в1", "в2"]}},
+        CARDS[:1], None, 1,
+    )
+    assert parsed is not None
+    assert parsed["траектория"]["утро"] == "тон"
+    assert parsed["траектория"]["вечер"] == "в1\nв2"
