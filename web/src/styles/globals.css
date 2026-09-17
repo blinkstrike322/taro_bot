@@ -66,22 +66,24 @@ body {
   opacity: .55;
 }
 
-/* rolling scanline */
+/* rolling scanline — GPU-friendly: только transform, без layout-thrash */
 .crt::after {
   content: "";
   position: absolute;
   left: 0;
   right: 0;
+  top: 0;
   height: 60px;
   z-index: 41;
   background: linear-gradient(to bottom, transparent, rgba(255,255,255,0.06), transparent);
   pointer-events: none;
+  will-change: transform;
   animation: roll 6s linear infinite;
 }
 
 @keyframes roll {
-  0%   { top: -60px; }
-  100% { top: 100%; }
+  0%   { transform: translateY(-60px); }
+  100% { transform: translateY(100vh); }
 }
 
 /* ================================================================
@@ -247,6 +249,16 @@ body {
   opacity: .62;
   mix-blend-mode: overlay;
   image-rendering: pixelated;
+  contain: strict;
+}
+
+/* Тяжёлые фоновые слои не перерисовываются при скролле */
+.ritual-smoke,
+.constellation-layer,
+.lunar-layer,
+.ambient-sigil {
+  contain: strict;
+  will-change: transform;
 }
 
 /* ================================================================
@@ -2213,6 +2225,7 @@ div[class*="boot-log"]::-webkit-scrollbar {
   height: var(--app-height, 100dvh);
   background: var(--t-bg);
   overflow: hidden;
+  isolation: isolate;
   animation: crt-on 1.1s cubic-bezier(0.23, 1, 0.32, 1);
 }
 
@@ -2324,7 +2337,11 @@ div[class*="boot-log"]::-webkit-scrollbar {
   padding: 12px 14px 20px;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
-  overscroll-behavior: contain;
+  overscroll-behavior-y: none;
+  background: var(--t-bg, #080611);
+  transform: translate3d(0, 0, 0);
+  -webkit-transform: translateZ(0);
+  will-change: scroll-position;
 }
 
 .shell-scroll::-webkit-scrollbar {

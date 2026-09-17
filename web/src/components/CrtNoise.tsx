@@ -29,9 +29,23 @@ export default function CrtNoise() {
     let nextGlitchAt = performance.now() + 5000 + Math.random() * 7000;
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+    // Во время скролла пропускаем putImageData — освобождаем главный поток,
+    // иначе momentum-скролл показывает пустые края (checkerboarding).
+    let scrolling = false;
+    let scrollTimer: ReturnType<typeof setTimeout> | undefined;
+    const scroller = document.querySelector('.shell-scroll');
+    const onScroll = () => {
+      scrolling = true;
+      if (scrollTimer) clearTimeout(scrollTimer);
+      scrollTimer = setTimeout(() => { scrolling = false; }, 160);
+    };
+    scroller?.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('touchmove', onScroll, { passive: true });
+
     const draw = (t: number) => {
       if (reduced) return; // один статичный кадр
       raf = requestAnimationFrame(draw);
+      if (scrolling) return;
       if (t - last < 68) return; // ~14 fps — глазу достаточно
       last = t;
 
@@ -71,7 +85,12 @@ export default function CrtNoise() {
     c2.putImageData(img, 0, 0);
 
     raf = requestAnimationFrame(draw);
-    return () => cancelAnimationFrame(raf);
+    return () => {
+      cancelAnimationFrame(raf);
+      scroller?.removeEventListener('scroll', onScroll);
+      window.removeEventListener('touchmove', onScroll);
+      if (scrollTimer) clearTimeout(scrollTimer);
+    };
   }, []);
 
   return <canvas ref={ref} className="crt-noise" aria-hidden="true" />;
