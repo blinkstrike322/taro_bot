@@ -35,12 +35,13 @@ ZEN_FALLBACKS = [
     "hy3-free",
 ]
 
-# OpenRouter fallbacks (kept as last resort)
-# Порядок по бенчу free-tier 2026-09-17: ling-fin — основной (5-19с,
-# score 68-90, стабильный JSON), laguna-s — второй (хорошее качество,
-# но строгий 429), nemotron-super — в хвосте (40-78с + reasoning-дамп
-# в ~50% вызовов), auto — напоследок. Gemma убрана: стабильный 429.
+# OpenRouter fallbacks: платное ядро впереди (бенч 2026-09-18:
+# mercury-2.5 — 5с/score 80-88, ling-flash — 10-20с/score 100),
+# дальше free (ling-fin, laguna-s), затем страховка (deepseek,
+# nemotron, auto). Gemma убрана: стабильный 429.
 OPENROUTER_FALLBACKS = [
+    "inception/mercury-2.5",
+    "inclusionai/ling-3.0-flash",
     "inclusionai/ling-3.0-flash-fin:free",
     "poolside/laguna-s-2.1:free",
     "deepseek/deepseek-v4-flash",
