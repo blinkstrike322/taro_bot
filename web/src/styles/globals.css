@@ -249,16 +249,29 @@ body {
   opacity: .62;
   mix-blend-mode: overlay;
   image-rendering: pixelated;
-  contain: strict;
 }
 
-/* Тяжёлые фоновые слои не перерисовываются при скролле */
+/* Фоновые слои изолированы от скролла без обрезки (paint/size containment
+   прячет сигил и режет halo — только layout+style) */
 .ritual-smoke,
 .constellation-layer,
 .lunar-layer,
 .ambient-sigil {
-  contain: strict;
-  will-change: transform;
+  contain: layout style;
+}
+
+/* Пока идёт скролл — фон замирает, весь бюджет композита уходит контенту */
+.crt[data-scrolling="1"]::after,
+.crt[data-scrolling="1"] .ritual-smoke__cloud,
+.crt[data-scrolling="1"] .ambient-sigil,
+.crt[data-scrolling="1"] .sigil-rotate-slow,
+.crt[data-scrolling="1"] .sigil-rotate-slow-rev,
+.crt[data-scrolling="1"] .sigil-pulse,
+.crt[data-scrolling="1"] .sigil-dot,
+.crt[data-scrolling="1"] .constellation-star,
+.crt[data-scrolling="1"] .lunar-glyph,
+.crt[data-scrolling="1"] .ambient-symbol {
+  animation-play-state: paused;
 }
 
 /* ================================================================
@@ -2338,7 +2351,6 @@ div[class*="boot-log"]::-webkit-scrollbar {
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-y: none;
-  background: var(--t-bg, #080611);
   transform: translate3d(0, 0, 0);
   -webkit-transform: translateZ(0);
   will-change: scroll-position;

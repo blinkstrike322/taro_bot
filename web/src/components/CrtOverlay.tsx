@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactNode, useMemo } from 'react';
+import { ReactNode, useEffect, useMemo, useState } from 'react';
 
 interface CrtOverlayProps {
   children: ReactNode;
@@ -45,12 +45,17 @@ function makeAmbientSymbols(): Array<{
 
 export default function CrtOverlay({ children }: CrtOverlayProps) {
   const ambientSymbols = useMemo(() => makeAmbientSymbols(), []);
+  // Позиции считаются через Math.sin — движки считают его по-разному,
+  // поэтому SSR-разметка не совпадает с клиентской (hydration mismatch).
+  // Рисуем символы только после маунта.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
 
   return (
     <div className="crt flex flex-col items-center w-full relative">
       {/* ambient floating artifacts — very subtle background occult symbols */}
       <div className="ambient-layer" aria-hidden="true">
-        {ambientSymbols.map((sym, i) => (
+        {mounted && ambientSymbols.map((sym, i) => (
           <span
             key={`amb-${i}`}
             className="ambient-symbol"

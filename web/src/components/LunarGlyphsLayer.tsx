@@ -5,7 +5,7 @@
 // Вайб: оккультный терминал для женской аудитории — больше
 // полумесяцев, звёзд, кружков.
 // ─────────────────────────────────────────────────────────────
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 const LUNAR_SYMBOLS = [
   '☾', '☽', '✦', '✧', '⋆', '✶', '✺', '❂',
@@ -52,6 +52,10 @@ interface Props {
 
 export default function LunarGlyphsLayer({ accent }: Props) {
   const glyphs = useMemo(() => makeLunarGlyphs(), []);
+  // Тот же Math.sin-hydration mismatch, что в ConstellationLayer.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+  if (!mounted) return <div className="lunar-layer" aria-hidden="true" />;
 
   return (
     <div className="lunar-layer" aria-hidden="true">
