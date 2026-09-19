@@ -5,7 +5,7 @@
 //   ├ скроллбэк-транскрипт (весь флоу живёт здесь)
 //   ├ vim-статус-лайн (режим · сеанс · проводник · часы)
 //   └ командная строка с чипами
-import { ReactNode, useLayoutEffect, useMemo, useRef } from 'react';
+import { ReactNode, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import CrtOverlay from '@/components/CrtOverlay';
 import CrtNoise from '@/components/CrtNoise';
 import AmbientSigil from '@/components/AmbientSigil';
@@ -82,6 +82,27 @@ export default function Shell({
 }: ShellProps) {
   const guide = getGuide(characterId);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  // Флаг активного скролла для CSS: фон замирает (animation-play-state),
+  // контент получает весь бюджет композита. Снимается через 160мс тишины.
+  useEffect(() => {
+    const scroller = scrollRef.current;
+    const host = rootRef.current?.closest('.crt') ?? rootRef.current;
+    if (!scroller || !host) return;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const onScroll = () => {
+      host.setAttribute('data-scrolling', '1');
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => host.removeAttribute('data-scrolling'), 160);
+    };
+    scroller.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      scroller.removeEventListener('scroll', onScroll);
+      if (timer) clearTimeout(timer);
+      host.removeAttribute('data-scrolling');
+    };
+  }, []);
   /** entryId → DOM-узел записи (для скролла к началу расклада) */
   // auto-scroll: обычный терминал следует за выводом (вниз), но когда появляется
   // НОВЫЙ расклад — мгновенно прыгаем к ЕГО началу, а не к низу транскрипта.
@@ -90,6 +111,18 @@ export default function Shell({
   const anchorIdRef = useRef<number | null>(null);
   const anchorUntilRef = useRef(0);
   const ANCHOR_MS = 2000; // окно «только что пришёл расклад» — не фоллоу-вниз
+  // Пользователь ушёл читать наверх — новые строки не уводят вниз насильно.
+  const stickRef = useRef(true);
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const track = () => {
+      stickRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 140;
+    };
+    track();
+    el.addEventListener('scroll', track, { passive: true });
+    return () => el.removeEventListener('scroll', track);
+  }, []);
 
   useLayoutEffect(() => {
     const el = scrollRef.current;
@@ -129,7 +162,10 @@ export default function Shell({
       return;
     }
 
-    // обычный терминал: следуем за выводом вниз (без плавности под prefers-reduced-motion)
+    // обычный терминал: следуем за выводом вниз, только если пользователь
+    // и так внизу (иначе плавный скролл вырывает чтение из-под пальцев).
+    // Без плавности под prefers-reduced-motion.
+    if (!stickRef.current) return;
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     el.scrollTo({ top: el.scrollHeight, behavior: reduced ? 'auto' : 'smooth' });
   }, [entries, scrollTick]);
@@ -274,6 +310,7 @@ export default function Shell({
     <CrtOverlay>
       <div
         className="shell-root"
+        ref={rootRef}
         style={{
           '--guide-accent': guide.accent,
           '--guide-accent-dim': guide.accentDim,

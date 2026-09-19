@@ -3,7 +3,7 @@
 // ─────────────────────────────────────────────────────────────
 // ConstellationLayer — мерцающие звёзды по фону.
 // ─────────────────────────────────────────────────────────────
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 function seededRand(seed: number): number {
   return Math.abs((Math.sin(seed * 12.9898 + 78.233) * 43758.5453) % 1);
@@ -34,6 +34,11 @@ function makeConstellation(): Star[] {
 
 export default function ConstellationLayer() {
   const stars = useMemo(() => makeConstellation(), []);
+  // Math.sin на сервере и клиенте даёт разные младшие биты (hydration mismatch) —
+  // звёзды рисуем только после маунта.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+  if (!mounted) return <div className="constellation-layer" aria-hidden="true" />;
 
   return (
     <div className="constellation-layer" aria-hidden="true">
