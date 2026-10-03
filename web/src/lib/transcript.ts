@@ -103,6 +103,9 @@ export function sleep(ms: number): Promise<void> {
 export function formatDateTime(iso: string): string {
   try {
     const d = new Date(iso);
+    // Safari строг к не-ISO строкам: new Date('2026-01-01 10:00') не бросает,
+    // а возвращает Invalid Date → getDate() = NaN без этой проверки.
+    if (Number.isNaN(d.getTime())) return iso;
     const months = ['янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
     const dd = String(d.getDate()).padStart(2, '0');
     const hh = String(d.getHours()).padStart(2, '0');

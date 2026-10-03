@@ -6,9 +6,8 @@ import aiosqlite
 from aiogram import Bot
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
-from config import settings
 from core.prompts import _load_characters
-from storage.db import get_inactive_users, get_notifications_enabled
+from storage.db import get_db, get_inactive_users, get_notifications_enabled
 from storage.events import safe_log_event
 
 logger = logging.getLogger(__name__)
@@ -31,12 +30,19 @@ def _reminder_text(character_id: str) -> str:
 
 # Avoid re-sending same expiry reminder
 _last_sub_reminder: dict[int, str] = {}
+_LAST_SUB_REMINDER_CAP = 5000
+
+
+def _remember_sub_reminder(tg_id: int, sub_end: str) -> None:
+    if len(_last_sub_reminder) >= _LAST_SUB_REMINDER_CAP:
+        _last_sub_reminder.pop(next(iter(_last_sub_reminder)))
+    _last_sub_reminder[tg_id] = sub_end
 
 
 async def check_and_send_reminders(bot: Bot) -> None:
-    async with aiosqlite.connect(settings.DB_PATH) as db:
-        await _send_inactive_reminders(db, bot)
-        await _send_expiry_reminders(db, bot)
+    db = await get_db()
+    await _send_inactive_reminders(db, bot)
+    await _send_expiry_reminders(db, bot)
 
 
 async def _send_inactive_reminders(db: aiosqlite.Connection, bot: Bot) -> None:
@@ -81,34 +87,42 @@ async def _send_expiry_reminders(db: aiosqlite.Connection, bot: Bot) -> None:
 
     now = datetime.utcnow()
     for tg_id, sub_end in rows:
-        if not await get_notifications_enabled(db, tg_id):
-            continue
-        # Only remind once per subscription_end value
-        prev = _last_sub_reminder.get(tg_id)
-        if prev == sub_end:
-            continue
-        _last_sub_reminder[tg_id] = sub_end
-
-        days_left = (datetime.fromisoformat(sub_end) - now).days
-
-        keyboard = InlineKeyboardMarkup(inline_keyboard=[
-            [InlineKeyboardButton(text="Продлить подписку", callback_data="renew_subscription")],
-        ])
-
         try:
-            await bot.send_message(
-                chat_id=tg_id,
-                text=(
-                    f"Подписка заканчивается через {days_left} дн.\n"
-                    f"Продли сейчас, чтобы не потерять доступ к 100 раскладам в месяц.\n"
-                    f"Следующее списание: {REGULAR_PRICE} \u2605."
-                ),
-                reply_markup=keyboard,
-            )
-            logger.info(f"Subscription expiry reminder sent to {tg_id}")
-            await safe_log_event(db, tg_id, "subscription_expired", {"days_left": days_left})
+            await _send_one_expiry_reminder(db, bot, tg_id, sub_end, now)
         except Exception as e:
-            logger.warning(f"Failed to send expiry reminder to {tg_id}: {e}")
+            # один битый ряд не должен обрывать напоминания всем остальным
+            logger.warning("Expiry reminder failed for %s: %s", tg_id, e)
+
+
+async def _send_one_expiry_reminder(
+    db: aiosqlite.Connection, bot: Bot, tg_id: int, sub_end: str, now: datetime
+) -> None:
+    if not await get_notifications_enabled(db, tg_id):
+        return
+    # Only remind once per subscription_end value
+    prev = _last_sub_reminder.get(tg_id)
+    if prev == sub_end:
+        return
+    _remember_sub_reminder(tg_id, sub_end)
+
+    sub_end_dt = datetime.fromisoformat(str(sub_end).replace(" ", "T"))
+    days_left = (sub_end_dt - now).days
+
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="Продлить подписку", callback_data="renew_subscription")],
+    ])
+
+    await bot.send_message(
+        chat_id=tg_id,
+        text=(
+            f"Подписка заканчивается через {days_left} дн.\n"
+            f"Продли сейчас, чтобы не потерять доступ к 100 раскладам в месяц.\n"
+            f"Следующее списание: {REGULAR_PRICE} \u2605."
+        ),
+        reply_markup=keyboard,
+    )
+    logger.info(f"Subscription expiry reminder sent to {tg_id}")
+    await safe_log_event(db, tg_id, "subscription_expired", {"days_left": days_left})
 
 
 async def reminder_loop(bot: Bot) -> None:

@@ -331,8 +331,10 @@ export default function Shell({
           <div className="ritual-smoke__cloud ritual-smoke__cloud--mid" />
         </div>
 
-        {/* ambient-сигил — анимированная пентаграмма справа сверху (тяжёлый, только не на слабых) */}
-        {!heavyMotion && (
+        {/* ambient-сигил — анимированная пентаграмма справа сверху (тяжёлый, только не на слабых).
+            Маунтим после бута: ~6.8к SVG-нод + зерно на первом фрейме фризят WebView
+            средних айфонов, что выглядит как «не запустилось». */}
+        {!heavyMotion && bootDone && (
           <div className={hasReading ? 'sigil-dim' : undefined} style={{ display: 'contents' }}>
             <AmbientSigil accent={guide.accent} accentDim={guide.accentDim} />
           </div>
@@ -345,7 +347,7 @@ export default function Shell({
         <LunarGlyphsLayer accent={guide.accent} />
 
         {/* ── живое зерно катодной трубки (full-screen фильтр — тоже тяжёлый) ── */}
-        {!heavyMotion && <CrtNoise />}
+        {!heavyMotion && bootDone && <CrtNoise />}
 
         {/* ── титл-бар терминала ── */}
         <div className="shell-title">

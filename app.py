@@ -3,11 +3,12 @@ import hashlib
 import hmac
 import json
 import os
+import re
 import shutil
 import time
 import uuid
 from pathlib import Path
-from urllib.parse import parse_qs
+from urllib.parse import parse_qs, urlsplit, urlunsplit
 
 from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
@@ -70,7 +71,7 @@ def verify_telegram_init_data(init_data: str) -> dict | None:
             hashlib.sha256
         ).hexdigest()
 
-        if signature != hash_value:
+        if not hmac.compare_digest(signature, hash_value):
             return None
 
         # свежесть initData: валидная подпись бессрочна, доверяем только недавним
@@ -148,7 +149,8 @@ async def handle_readings(request):
     init_data = request.query.get('init_data', '')
     user = verify_telegram_init_data(init_data)
     if not user:
-        return web.json_response({"readings": []})
+        # Явный 401: фронт отличает «нет авторизации» от «нет данных за месяц»
+        return web.json_response({"error": "unauthorized"}, status=401)
     tg_id = user.get('id', 0)
     year = request.query.get('year', '')
     month = request.query.get('month', '')
@@ -265,6 +267,10 @@ async def handle_character(request):
 # делает повторную проверку и отдаёт корректный отказ). Проверено тестом
 # test_concurrent_begin_last_slot_single_winner.
 
+# Сильные ссылки на фоновые шёпоты: create_task без сохранения может быть
+# собран GC до завершения.
+_whisper_tasks: set[asyncio.Task] = set()
+
 
 async def _whisper_task(token: str, ctx: dict, cards: list[dict]) -> None:
     """Background LLM interpretation + DB save for a two-phase spread.
@@ -358,7 +364,9 @@ async def handle_spread_begin(request):
 
     # Токен сохраняется в строке readings (client_token) при резерве:
     # маппинг переживает перезапуск. Фоновый шёпот пишет статус в ту же строку.
-    asyncio.create_task(_whisper_task(token, ctx, cards))
+    whisper = asyncio.create_task(_whisper_task(token, ctx, cards))
+    _whisper_tasks.add(whisper)
+    whisper.add_done_callback(_whisper_tasks.discard)
 
     response = {
         "cards": cards,
@@ -439,8 +447,10 @@ async def _spread_request_context(request, client_token: str):
 
     # Двойной /begin (двойной тап, повторный маунт): шёпот уже бежит —
     # отдаём его токен и карты, не жжём слот квоты и круг по провайдерам.
+    # Дедуп только при совпадении типа: активный 3-карточный расклад не
+    # должен «отвечать» на запрос карты дня (и наоборот).
     active = await get_active_reading(db, user.id)
-    if active and active["client_token"]:
+    if active and active["client_token"] and active["type"] == reading_type:
         active_cards = (active["cards_data"] or {}).get("cards") or []
         if active_cards:
             quota_view = await check_quota(db, user.id, tg_id, spread_type_str)
@@ -509,6 +519,20 @@ async def _spread_request_context(request, client_token: str):
     }
 
 
+_BOT_TOKEN_RE = re.compile(r"\b\d{6,12}:[A-Za-z0-9_-]{30,}\b")
+_API_KEY_RE = re.compile(r"\bsk-(?:or-)?[A-Za-z0-9_-]{20,}\b")
+
+
+def _redact_secrets(text: str) -> str:
+    text = _BOT_TOKEN_RE.sub("<redacted-token>", text)
+    return _API_KEY_RE.sub("<redacted-key>", text)
+
+
+def _safe_url(url: str) -> str:
+    # query вебаппа несёт tgWebAppData (включая hash initData) — в лог идёт только путь
+    return urlunsplit(urlsplit(url)[:2])
+
+
 async def handle_client_log(request):
     """Пишем клиентские ошибки вебаппа в лог — ловим «Application error» с устройств,
     где консоль недоступна (Telegram WebView). Содержимое обрезаем, секретов нет."""
@@ -516,10 +540,10 @@ async def handle_client_log(request):
         body = await request.json()
     except Exception:
         return web.Response(status=204)
-    message = str(body.get("message", "") or "")[:1000]
-    stack = str(body.get("stack", "") or "")[:3000]
+    message = _redact_secrets(str(body.get("message", "") or ""))[:1000]
+    stack = _redact_secrets(str(body.get("stack", "") or ""))[:3000]
     source = str(body.get("source", "") or "")[:200]
-    url = str(body.get("url", "") or "")[:300]
+    url = _safe_url(str(body.get("url", "") or ""))[:300]
     ua = str(body.get("ua", "") or "")[:300]
     logger.warning(
         "CLIENT ERROR: %s (src=%s url=%s ua=%s)\n%s",
@@ -562,8 +586,40 @@ async def handle_events(request):
     return web.Response(status=204)
 
 
+# ── Gzip + cache-заголовки для статики и API ─────────────────────
+# aiohttp не жмёт и не кэширует сам: JS/CSS/JSON уходили сырыми (~0.5 МБ по
+# мобильной сети), а index.html кэшировался WebView эвристически — после
+# деплоя stale index ссылался на удалённые чанки → пустой экран (iOS).
+COMPRESSIBLE_TYPES = (
+    "application/javascript", "application/json", "text/css",
+    "text/html", "text/plain", "image/svg+xml",
+)
+
+
+@web.middleware
+async def gzip_cache_middleware(request, handler):
+    resp = await handler(request)
+    if not isinstance(resp, (web.Response, web.FileResponse)):
+        return resp
+    if request.path.startswith("/_next/static/"):
+        # хэшированные ассеты Next.js — вечный кэш
+        resp.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+    else:
+        resp.headers["Cache-Control"] = "no-cache"
+    if (
+        request.method == "GET"
+        and resp.status == 200
+        and "gzip" in request.headers.get("Accept-Encoding", "").lower()
+        and resp.content_type in COMPRESSIBLE_TYPES
+    ):
+        resp.headers["Vary"] = "Accept-Encoding"
+        resp.enable_compression(web.ContentCoding.gzip)
+    return resp
+
+
 def create_webapp() -> web.Application:
     app = web.Application()
+    app.middlewares.append(gzip_cache_middleware)
     app.router.add_get('/api/readings', handle_readings)
     app.router.add_get('/api/disk', handle_disk_usage)
     app.router.add_get('/api/character', handle_character)

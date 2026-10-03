@@ -130,8 +130,8 @@ run:
 
 | Имя | Значение | Тип |
 |---|---|---|
-| `BOT_TOKEN` | `***REMOVED***` | 🔒 Секрет |
-| `OPENROUTER_API_KEY` | `***REMOVED***` | 🔒 Секрет |
+| `BOT_TOKEN` | *(секрет — задаётся в дашборде Amvera, в git не хранится)* | 🔒 Секрет |
+| `OPENROUTER_API_KEY` | *(секрет — задаётся в дашборде Amvera, в git не хранится)* | 🔒 Секрет |
 | `DB_PATH` | `/data/taro_bot.db` | Обычная |
 | `WEBAPP_URL` | `https://taro-bot-blinkstrike.waw0.amvera.tech` | Обычная |
 

@@ -1,5 +1,5 @@
 import json
-from datetime import datetime
+from datetime import UTC, datetime
 
 import aiosqlite
 
@@ -32,6 +32,16 @@ CREATE TABLE IF NOT EXISTS readings (
     error TEXT,
     client_token TEXT,
     FOREIGN KEY (user_id) REFERENCES users(id)
+)
+"""
+
+_CREATE_PAYMENTS_TABLE = """
+CREATE TABLE IF NOT EXISTS payments (
+    charge_id TEXT PRIMARY KEY,
+    tg_id INTEGER NOT NULL,
+    total_amount INTEGER NOT NULL,
+    currency TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
 )
 """
 
@@ -278,6 +288,15 @@ async def _migrate_schema(db: aiosqlite.Connection) -> None:
     )
     await db.commit()
 
+    # Нормализация subscription_end: рекуррентные платежи писали isoformat с
+    # 'T', одноразовые — SQLite-формат с пробелом. Строковые сравнения в
+    # is_subscribed/reminder на смешанных форматах врут в день границы.
+    await db.execute(
+        "UPDATE users SET subscription_end = replace(subscription_end, 'T', ' ') "
+        "WHERE subscription_end LIKE '____-__-__T%'",
+    )
+    await db.commit()
+
 
 async def init_db(db_path: str = "taro_bot.db") -> aiosqlite.Connection:
     """Create persistent connection, enable WAL mode, create tables."""
@@ -290,6 +309,7 @@ async def init_db(db_path: str = "taro_bot.db") -> aiosqlite.Connection:
     await conn.execute(_CREATE_USERS_TABLE)
     await conn.execute(_CREATE_READINGS_TABLE)
     await conn.execute(_CREATE_EVENTS_TABLE)
+    await conn.execute(_CREATE_PAYMENTS_TABLE)
     await _migrate_schema(conn)
     await conn.commit()
     _db_connection = conn
@@ -309,6 +329,7 @@ async def create_tables(db_path: str = "taro_bot.db") -> None:
         await db.execute(_CREATE_USERS_TABLE)
         await db.execute(_CREATE_READINGS_TABLE)
         await db.execute(_CREATE_EVENTS_TABLE)
+        await db.execute(_CREATE_PAYMENTS_TABLE)
         await _migrate_schema(db)
         await db.commit()
 
@@ -550,6 +571,16 @@ async def update_reminder_sent(db: aiosqlite.Connection, tg_id: int) -> None:
     await db.commit()
 
 
+def _parse_db_dt(value: str) -> datetime | None:
+    """Парсить таймштампы БД в обоих исторических форматах ('T' и пробел)."""
+    if not value:
+        return None
+    try:
+        return datetime.fromisoformat(str(value).replace(" ", "T"))
+    except ValueError:
+        return None
+
+
 async def is_subscribed(db: aiosqlite.Connection, tg_id: int) -> bool:
     """Check if user has active subscription (not expired)."""
     cursor = await db.execute(
@@ -559,7 +590,10 @@ async def is_subscribed(db: aiosqlite.Connection, tg_id: int) -> bool:
     row = await cursor.fetchone()
     if row is None or row[0] is None:
         return False
-    return row[0] > datetime.utcnow().isoformat()[:19]
+    end = _parse_db_dt(row[0])
+    if end is None:
+        return False
+    return end > datetime.now(UTC).replace(tzinfo=None)
 
 
 async def get_daily_non_daily_count(db: aiosqlite.Connection, user_id: int) -> int:
@@ -616,8 +650,33 @@ async def get_user_by_tg_id(db: aiosqlite.Connection, tg_id: int) -> User | None
 async def activate_subscription(db: aiosqlite.Connection, tg_id: int, first_month: bool = False) -> None:
     """Set subscription_end to 30 days from now."""
     await db.execute(
-        "UPDATE users SET subscription_end = datetime('now', '+30 days'), first_month_done = ? WHERE tg_id = ?",
+        "UPDATE users SET subscription_end = max(COALESCE(subscription_end, ''), datetime('now', '+30 days')), "
+        "first_month_done = ? WHERE tg_id = ?",
         (1 if first_month else 0, tg_id),
+    )
+    await db.commit()
+
+
+async def payment_seen(db: aiosqlite.Connection, charge_id: str) -> bool:
+    """True, если успешный платёж с этим charge_id уже обработан (идемпотентность)."""
+    cursor = await db.execute(
+        "SELECT 1 FROM payments WHERE charge_id = ?",
+        (charge_id,),
+    )
+    return await cursor.fetchone() is not None
+
+
+async def record_payment(
+    db: aiosqlite.Connection,
+    charge_id: str,
+    tg_id: int,
+    total_amount: int,
+    currency: str,
+) -> None:
+    """Зафиксировать обработанный платёж (первая запись выигрывает)."""
+    await db.execute(
+        "INSERT OR IGNORE INTO payments (charge_id, tg_id, total_amount, currency) VALUES (?, ?, ?, ?)",
+        (charge_id, tg_id, total_amount, currency),
     )
     await db.commit()
 

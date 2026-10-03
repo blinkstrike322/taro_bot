@@ -1,8 +1,8 @@
 import json
-from datetime import datetime
+import logging
+from datetime import UTC, datetime
 from pathlib import Path
 
-import aiosqlite
 from aiogram import F, Router, types
 from aiogram.filters import Command, CommandStart
 from aiogram.types import (
@@ -23,17 +23,21 @@ from core.payments import (
 )
 from storage.db import (
     activate_subscription,
-    create_tables,
+    get_db,
     get_monthly_non_daily_count,
     get_notifications_enabled,
     get_or_create_user,
     get_user_by_tg_id,
     is_subscribed,
+    payment_seen,
+    record_payment,
     set_notifications_enabled,
     update_character,
     update_last_active,
 )
 from storage.events import safe_log_event
+
+logger = logging.getLogger(__name__)
 
 _CHARACTERS_PATH = Path(__file__).resolve().parent.parent / "data" / "characters.json"
 
@@ -90,11 +94,21 @@ def _character_selection_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 
+def _sub_end_dt(sub_end: str | None) -> datetime | None:
+    if not sub_end:
+        return None
+    try:
+        return datetime.fromisoformat(str(sub_end).replace(" ", "T"))
+    except ValueError:
+        return None
+
+
 async def _main_menu_keyboard(db, tg_id: int) -> InlineKeyboardMarkup:
     url = settings.WEBAPP_URL
     try:
         enabled = await get_notifications_enabled(db, tg_id)
     except Exception:
+        logger.warning("notifications_enabled lookup failed for %s, defaulting on", tg_id, exc_info=True)
         enabled = True
     notif_text = "выключить уведомления" if enabled else "включить уведомления"
     return InlineKeyboardMarkup(inline_keyboard=[
@@ -115,28 +129,24 @@ character_router = Router()
 
 @start_router.message(CommandStart())
 async def cmd_start(message: types.Message) -> None:
-    db = await aiosqlite.connect(settings.DB_PATH)
-    try:
-        await create_tables(settings.DB_PATH)
-        user = await get_or_create_user(db, tg_id=message.from_user.id)
-        await update_last_active(db, tg_id=message.from_user.id)
+    db = await get_db()
+    user = await get_or_create_user(db, tg_id=message.from_user.id)
+    await update_last_active(db, tg_id=message.from_user.id)
 
-        first_start = (
-            user.character_id == _DEFAULT_CHARACTER_ID
-            and user.created_at == user.last_active_at
+    first_start = (
+        user.character_id == _DEFAULT_CHARACTER_ID
+        and user.created_at == user.last_active_at
+    )
+    if first_start:
+        await message.answer(
+            "Выбери своего проводника:",
+            reply_markup=_character_selection_keyboard(),
         )
-        if first_start:
-            await message.answer(
-                "Выбери своего проводника:",
-                reply_markup=_character_selection_keyboard(),
-            )
-        else:
-            await message.answer(
-                _pick_greeting(user.character_id),
-                reply_markup=await _main_menu_keyboard(db, message.from_user.id),
-            )
-    finally:
-        await db.close()
+    else:
+        await message.answer(
+            _pick_greeting(user.character_id),
+            reply_markup=await _main_menu_keyboard(db, message.from_user.id),
+        )
 
 
 @character_router.callback_query(F.data == "char:select")
@@ -156,14 +166,9 @@ async def set_character(callback: types.CallbackQuery) -> None:
         await callback.answer("Неизвестный проводник.", show_alert=True)
         return
 
-    db = await aiosqlite.connect(settings.DB_PATH)
-    keyboard: InlineKeyboardMarkup
-    try:
-        await update_character(db, tg_id=callback.from_user.id, character_id=character_id)
-        # клавиатуру собираем при живом соединении — внутри читаем notifications_enabled
-        keyboard = await _main_menu_keyboard(db, callback.from_user.id)
-    finally:
-        await db.close()
+    db = await get_db()
+    await update_character(db, tg_id=callback.from_user.id, character_id=character_id)
+    keyboard = await _main_menu_keyboard(db, callback.from_user.id)
 
     await callback.message.edit_text(
         _pick_greeting(character_id),
@@ -174,15 +179,12 @@ async def set_character(callback: types.CallbackQuery) -> None:
 
 @start_router.callback_query(F.data == "notif:toggle")
 async def toggle_notifications(callback: types.CallbackQuery) -> None:
-    db = await aiosqlite.connect(settings.DB_PATH)
-    try:
-        enabled = await get_notifications_enabled(db, callback.from_user.id)
-        await set_notifications_enabled(db, callback.from_user.id, not enabled)
-        await callback.message.edit_reply_markup(
-            reply_markup=await _main_menu_keyboard(db, callback.from_user.id),
-        )
-    finally:
-        await db.close()
+    db = await get_db()
+    enabled = await get_notifications_enabled(db, callback.from_user.id)
+    await set_notifications_enabled(db, callback.from_user.id, not enabled)
+    await callback.message.edit_reply_markup(
+        reply_markup=await _main_menu_keyboard(db, callback.from_user.id),
+    )
     await callback.answer()
 
 
@@ -191,75 +193,72 @@ async def toggle_notifications(callback: types.CallbackQuery) -> None:
 
 @start_router.message(Command("subscribe"))
 async def cmd_subscribe(message: types.Message) -> None:
-    db = await aiosqlite.connect(settings.DB_PATH)
-    try:
-        user = await get_user_by_tg_id(db, message.from_user.id)
-        subscribed = user and user.subscription_end and user.subscription_end > datetime.utcnow().isoformat()[:19]
+    db = await get_db()
+    user = await get_user_by_tg_id(db, message.from_user.id)
+    sub_end_dt = _sub_end_dt(user.subscription_end) if user else None
+    now_utc = datetime.now(UTC).replace(tzinfo=None)
 
-        if subscribed:
-            days_left = (datetime.fromisoformat(user.subscription_end) - datetime.utcnow()).days
-            await message.answer(
-                f"Подписка активна ещё {days_left} дн. "
-                f"Следующее списание — 600 \u2605."
-            )
-            return
-
-        is_first = user is not None and user.first_month_done == 0
-        prices = get_subscription_price(first_month=is_first)
-        desc = SUBSCRIPTION_DESCRIPTION_FIRST if is_first else SUBSCRIPTION_DESCRIPTION_REGULAR
-
-        kwargs = dict(
-            title=SUBSCRIPTION_TITLE,
-            description=desc,
-            payload=f"sub:{message.from_user.id}",
-            currency="XTR",
-            prices=prices,
-            start_parameter="subscribe",
+    if sub_end_dt is not None and sub_end_dt > now_utc:
+        days_left = (sub_end_dt - now_utc).days
+        await message.answer(
+            f"Подписка активна ещё {days_left} дн. "
+            f"Следующее списание — 600 \u2605."
         )
-        # Auto-renewal for return buyers
-        if not is_first:
-            kwargs["subscription_period"] = 2_592_000  # 30 days
+        return
 
-        await message.answer_invoice(**kwargs)
-    finally:
-        await db.close()
+    is_first = user is not None and user.first_month_done == 0
+    prices = get_subscription_price(first_month=is_first)
+    desc = SUBSCRIPTION_DESCRIPTION_FIRST if is_first else SUBSCRIPTION_DESCRIPTION_REGULAR
+
+    kwargs = dict(
+        title=SUBSCRIPTION_TITLE,
+        description=desc,
+        payload=f"sub:{message.from_user.id}",
+        currency="XTR",
+        prices=prices,
+        start_parameter="subscribe",
+    )
+    # Auto-renewal for return buyers
+    if not is_first:
+        kwargs["subscription_period"] = 2_592_000  # 30 days
+
+    await message.answer_invoice(**kwargs)
 
 
 @start_router.message(Command("my"))
 async def cmd_my_status(message: types.Message) -> None:
-    db = await aiosqlite.connect(settings.DB_PATH)
-    try:
-        user = await get_user_by_tg_id(db, message.from_user.id)
-        if user is None:
-            await message.answer("Ты ещё не начал. Напиши /start")
-            return
+    db = await get_db()
+    user = await get_user_by_tg_id(db, message.from_user.id)
+    if user is None:
+        await message.answer("Ты ещё не начал. Напиши /start")
+        return
 
-        subscribed = await is_subscribed(db, message.from_user.id)
+    subscribed = await is_subscribed(db, message.from_user.id)
 
-        if subscribed:
-            monthly = await get_monthly_non_daily_count(db, user.id)
-            remaining = max(0, 100 - monthly)
-            sub_end = user.subscription_end or "?"
-            days_left = (datetime.fromisoformat(sub_end) - datetime.utcnow()).days
-            await message.answer(
-                f"Подписка активна до {sub_end[:10]} (осталось {days_left} дн.)\n"
-                f"Осталось призывов: {remaining} из 100\n"
-                f"Следующее списание: 600 \u2605 — авто",
-            )
-        else:
-            monthly = await get_monthly_non_daily_count(db, user.id)
-            remaining = max(0, 10 - monthly)
-            is_first = user is not None and user.first_month_done == 0
-            price = FIRST_MONTH_PRICE if is_first else REGULAR_PRICE
-            msg = (
-                f"Пелена приоткрыта. Осталось {remaining} призывов из 10 в этом месяце."
-                if remaining > 0
-                else "Пелена сомкнулась. Призывы иссякли до следующего месяца."
-            )
-            msg += f"\n\nПодписка — 100 призывов в месяц. Напиши /subscribe — {price} \u2605."
-            await message.answer(msg)
-    finally:
-        await db.close()
+    if subscribed:
+        monthly = await get_monthly_non_daily_count(db, user.id)
+        remaining = max(0, 100 - monthly)
+        sub_end = user.subscription_end or "?"
+        sub_end_dt = _sub_end_dt(sub_end)
+        now = datetime.now(UTC).replace(tzinfo=None)
+        days_left = (sub_end_dt - now).days if sub_end_dt else "?"
+        await message.answer(
+            f"Подписка активна до {sub_end[:10]} (осталось {days_left} дн.)\n"
+            f"Осталось призывов: {remaining} из 100\n"
+            f"Следующее списание: 600 \u2605 — авто",
+        )
+    else:
+        monthly = await get_monthly_non_daily_count(db, user.id)
+        remaining = max(0, 10 - monthly)
+        is_first = user is not None and user.first_month_done == 0
+        price = FIRST_MONTH_PRICE if is_first else REGULAR_PRICE
+        msg = (
+            f"Пелена приоткрыта. Осталось {remaining} призывов из 10 в этом месяце."
+            if remaining > 0
+            else "Пелена сомкнулась. Призывы иссякли до следующего месяца."
+        )
+        msg += f"\n\nПодписка — 100 призывов в месяц. Напиши /subscribe — {price} \u2605."
+        await message.answer(msg)
 
 
 @start_router.callback_query(F.data == "renew_subscription")
@@ -281,6 +280,9 @@ async def renew_subscription(callback: types.CallbackQuery) -> None:
 
 @start_router.pre_checkout_query()
 async def on_pre_checkout(pre_checkout: PreCheckoutQuery) -> None:
+    if pre_checkout.currency != "XTR":
+        await pre_checkout.answer(ok=False, error_message="Неподдерживаемая валюта платежа.")
+        return
     await pre_checkout.answer(ok=True)
 
 
@@ -294,16 +296,34 @@ async def on_successful_payment(message: types.Message) -> None:
     if tg_id != message.from_user.id:
         return
 
-    db = await aiosqlite.connect(settings.DB_PATH)
+    if sp.currency != "XTR":
+        logger.warning("successful_payment with unexpected currency %s from tg_id=%s", sp.currency, tg_id)
+
+    db = await get_db()
     keyboard: InlineKeyboardMarkup
-    try:
+
+    # Идемпотентность: повторная доставка successful_payment (рестарт посреди
+    # обработки) не должна продлевать подписку второй раз.
+    charge_id = sp.telegram_payment_charge_id or sp.provider_payment_charge_id or ""
+    already_applied = bool(charge_id) and await payment_seen(db, charge_id)
+
+    if already_applied:
+        keyboard = await _main_menu_keyboard(db, message.from_user.id)
+    else:
+        if charge_id:
+            await record_payment(db, charge_id, tg_id, sp.total_amount, sp.currency)
+
         user = await get_user_by_tg_id(db, tg_id)
         if sp.subscription_expiration_date:
-            # Telegram subscription (with auto-renewal)
-            end_iso = datetime.fromtimestamp(sp.subscription_expiration_date).isoformat()[:19]
+            # Telegram subscription (with auto-renewal) — canonical SQLite-формат,
+            # продлеваем только если новый конец позже текущего.
+            end_iso = datetime.fromtimestamp(
+                sp.subscription_expiration_date, tz=UTC
+            ).strftime("%Y-%m-%d %H:%M:%S")
             await db.execute(
-                "UPDATE users SET subscription_end = ? WHERE tg_id = ?",
-                (end_iso, tg_id),
+                "UPDATE users SET subscription_end = ? "
+                "WHERE tg_id = ? AND (subscription_end IS NULL OR subscription_end < ?)",
+                (end_iso, tg_id, end_iso),
             )
             # Mark first_month_done if this is the first recurring
             if sp.is_first_recurring and user and not user.first_month_done:
@@ -323,10 +343,7 @@ async def on_successful_payment(message: types.Message) -> None:
             {"first_month": bool(user and user.first_month_done == 0)},
             user_id=user.id if user else None,
         )
-        # клавиатуру собираем при живом соединении — внутри читаем notifications_enabled
         keyboard = await _main_menu_keyboard(db, message.from_user.id)
-    finally:
-        await db.close()
 
     await message.answer(
         "Подписка активна!\n"

@@ -475,6 +475,7 @@ async def call_llm_with_fallback(
     max_tokens: int = 2000,
     temperature: float = 0.8,
     preferred_models: list[str] | None = None,
+    deadline_s: float | None = None,
 ) -> str:
     # Fresh per-request snapshot: if this request never succeeds, get_last_llm_hop
     # stays None instead of leaking a previous request's winning provider/model.
@@ -491,7 +492,17 @@ async def call_llm_with_fallback(
         len(provider_list),
     )
 
+    started = time.monotonic()
     for model, base_url, api_key, label in provider_list:
+        if deadline_s is not None and time.monotonic() - started > deadline_s:
+            # Сворп провайдеров без общего потолка мог длиться минуты
+            # (10 провайдеров × 3 попытки × 70с), пока фронт ждёт ~180с.
+            logger.warning(
+                "LLM sweep deadline %.0fs exhausted before %s — %s",
+                deadline_s, label, model,
+            )
+            break
+
         if _is_cooled_down(label, model):
             logger.warning(
                 "Skipping %s — %s: circuit breaker open until %s",
@@ -599,9 +610,11 @@ async def interpret_reading(
             {"role": "user", "content": user_prompt},
         ]
         for attempt in range(1, MAX_QUALITY_ATTEMPTS + 1):
+            elapsed_s = time.monotonic() - started
             raw = await call_llm_with_fallback(
                 messages, max_tokens=token_base,
-                temperature=temperature, preferred_models=preferred_models)
+                temperature=temperature, preferred_models=preferred_models,
+                deadline_s=max(0.0, QUALITY_TIME_BUDGET_S - elapsed_s))
             cleaned = strip_emojis(raw)
             if len(cleaned) != len(raw):
                 logger.warning("Emojis detected and removed from LLM response")

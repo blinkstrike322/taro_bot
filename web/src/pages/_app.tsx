@@ -13,6 +13,18 @@ function setAppHeight() {
   document.documentElement.style.setProperty('--app-height', `${h}px`);
 }
 
+function initTelegram(): boolean {
+  const tg = (window as any).Telegram?.WebApp;
+  if (!tg) return false;
+  try {
+    // ready() обязателен по контракту Mini App: без него Telegram держит
+    // свой сплэш-лоадер и приложение выглядит «не запустившимся».
+    tg.ready?.();
+    tg.expand();
+  } catch {}
+  return true;
+}
+
 // Лёгкий boundary: цепляет ошибку рендера, шлёт её на /api/log и вместо
 // глухого «Application error» показывает понятный fallback с перезагрузкой.
 class ReportBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
@@ -51,12 +63,17 @@ class ReportBoundary extends Component<{ children: ReactNode }, { failed: boolea
 
 export default function App({ Component, pageProps }: AppProps) {
   useEffect(() => {
-    try {
-      const tg = (window as any).Telegram?.WebApp;
-      if (tg) {
-        tg.expand();
-      }
-    } catch {}
+    // SDK телеграма едет с telegram.org с defer и может исполниться позже
+    // гидрации: гонка → window.Telegram undefined → ready()/expand()
+    // молча пропущены. Опрашиваем до 2с, пока SDK не появится.
+    let tgWait: ReturnType<typeof setInterval> | undefined;
+    if (!initTelegram()) {
+      let tries = 0;
+      tgWait = setInterval(() => {
+        tries += 1;
+        if (initTelegram() || tries > 40) clearInterval(tgWait);
+      }, 50);
+    }
 
     setAppHeight();
     window.addEventListener('resize', setAppHeight);
@@ -80,6 +97,7 @@ export default function App({ Component, pageProps }: AppProps) {
     window.addEventListener('error', onError);
     window.addEventListener('unhandledrejection', onRejection);
     return () => {
+      if (tgWait) clearInterval(tgWait);
       window.removeEventListener('resize', setAppHeight);
       window.removeEventListener('error', onError);
       window.removeEventListener('unhandledrejection', onRejection);
