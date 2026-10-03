@@ -124,16 +124,6 @@ run:
   command: python app.py
   containerPort: 8080
   persistenceMount: /data    # для SQLite
-```
-
-### Переменные окружения (дашборд Amvera → «Переменные»)
-
-| Имя | Значение | Тип |
-|---|---|---|
-| `BOT_TOKEN` | `8435052557:AAFymH7akwoB6sEm_mLzRiHmxARovqW0PGw` | 🔒 Секрет |
-| `OPENROUTER_API_KEY` | `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` | 🔒 Секрет |
-| `DB_PATH` | `/data/taro_bot.db` | Обычная |
-| `WEBAPP_URL` | `https://taro-bot-blinkstrike.waw0.amvera.tech` | Обычная |
 
 > Переменные применяются на этапе **запуска** (run), не сборки (build).
 > Секреты хранятся в отдельном хранилище, не в БД.
