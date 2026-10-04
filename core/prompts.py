@@ -226,20 +226,6 @@ def _positions_for_question(question: str | None) -> list[str]:
     return ["Что приходит", "Что удивит", "Что останется после"]
 
 
-def _spread_mode(spread_type: object, question: str | None, n_cards: int) -> str:
-    """Режим расклада: 'three' | 'single' | 'daily'.
-
-    App.py присылает spread_type = 'daily'/1/3, для карты дня вопрос всегда
-    None. Три карты распознаём по количеству, карту дня — по отсутствию
-    вопроса, остальное — одна карта с вопросом.
-    """
-    if str(spread_type) == "3" and n_cards == 3:
-        return "three"
-    if question and question.strip():
-        return "single"
-    return "daily"
-
-
 def _orientation(card: dict) -> str:
     return "прямое" if card.get("orientation") == "upright" else "перевернутое"
 
@@ -260,11 +246,15 @@ def _character_reminder(character_id: str) -> str:
     return characters.get(character_id, {}).get("reminder", "").strip()
 
 
+_MULTI_CARD_MODES = {"three", "yesno", "mfd", "shadow", "pentagram", "horseshoe"}
+
+
 def build_reading_prompt(
     cards: list[dict],
     question: str | None,
     character_id: str,
-    spread_type: object = 1,
+    spread: dict,
+    positions: list[str],
     voice_reminder: str | None = None,
 ) -> str:
     """Construct the user-facing prompt for a tarot reading.
@@ -274,14 +264,19 @@ def build_reading_prompt(
                'orientation' ('upright' or 'reversed').
         question: The user's question, or None if no question was asked.
         character_id: The character reading the cards (per-guide voice reminder).
-        spread_type: 'daily', 1, or 3 (also accepts their string forms).
+        spread: Catalog dict for the spread (data/spreads.json) with at least
+                'mode' and 'name'; used for per-spread prompt rules and synthesis.
+        positions: Final position names for the spread. For 'three' they are
+                   computed externally via _positions_for_question.
         voice_reminder: Optional override for the trailing voice reminder;
                         defaults to the character's 'reminder' field.
 
     Returns:
         A formatted user prompt string tailored to the spread mode.
     """
-    mode = _spread_mode(spread_type, question, len(cards))
+    mode = spread["mode"]
+    spread_name = spread["name"]
+    multi_card = mode in _MULTI_CARD_MODES
     lines: list[str] = []
 
     # ── Question ──
@@ -293,9 +288,8 @@ def build_reading_prompt(
     lines.append("")
 
     # ── Cards ──
-    if mode == "three":
-        positions = _positions_for_question(question)
-        lines.append("Расклад «3 карты». Позиции уже определены по типу вопроса:")
+    if multi_card:
+        lines.append(f"Расклад «{spread_name}». Позиции:")
         lines.extend(_format_cards(cards, positions))
     else:
         lines.append("Карта дня:" if mode == "daily" else "Карта:")
@@ -325,6 +319,53 @@ def build_reading_prompt(
             "а «позиции» с «трактовками» и «связь_карт» — детальная структура\n"
             "• НЕ ставь префиксы позиций в квадратных скобках в прочем тексте\n"
             "• Называй карты по имени органично внутри повествования"
+        )
+    elif mode == "yesno":
+        lines.append(
+            "Расклад «да / нет»: три карты — аргументы «за», «против» и совет.\n"
+            "Первая фраза short_answer — ВЕРДИКТ, дословно один из четырех: "
+            "«Да.», «Скорее да.», «Скорее нет.», «Нет.»\n"
+            "Дальше — 2-3 предложения обоснования. Вердикт обязан следовать из карт, "
+            "а не из вежливости: если аргументы расходятся, честно говори «скорее…».\n"
+            "НЕ подменяй вердикт «все зависит от тебя»."
+        )
+    elif mode == "mfd":
+        lines.append(
+            "Расклад о другом человеке: что он ДУМАЕТ, что ЧУВСТВУЕТ, что будет ДЕЛАТЬ.\n"
+            "Говори о нём в третьем лице, без диагнозов и всезнайства: "
+            "карты — зеркало вероятного, не рентген.\n"
+            "НЕ выдумывай факты (сообщения, разговоры), которых не было в вопросе.\n"
+            "Синтез: где мысль расходится с чувством и что из этого дойдет до действий."
+        )
+    elif mode == "shadow":
+        lines.append(
+            "Расклад «тень» — работа с тем, что прячется. Позиции 1-4 — диагностика, "
+            "5-6 — выход в действие.\n"
+            "Тон: бережный спуск, без надрыва и эзотерического пафоса. Скрывать — "
+            "нормально: сначала это было защитой, и это стоит признать.\n"
+            "Позиция 6 — ОБЯЗАТЕЛЬНО одно конкретное маленькое действие на неделю "
+            "(не «поразмысли», а наблюдаемое действие).\n"
+            "НЕ ставь диагнозы и НЕ отправляй к специалисту без повода из карт."
+        )
+    elif mode == "pentagram":
+        lines.append(
+            "Расклад «пентаграмма»: пять элементов вокруг сигнификатора.\n"
+            "Сигнификатор (центр) — суть ситуации и кто в ней спрашивающий; вскрывается "
+            "последней и читается как рамка, а не как событие.\n"
+            "Дух — НЕ предсказание: сквозная линия, объединяющая элементы.\n"
+            "Элементы — текущее состояние, не приговор: земля (тело, деньги, опора), "
+            "воздух (мысли и слова), вода (чувства и интуиция), огонь (воля и импульс).\n"
+            "Синтез обязателен: какой элемент доминирует, какой голодает, "
+            "какие два в диалоге (усиливают или грызутся)."
+        )
+    elif mode == "horseshoe":
+        lines.append(
+            "Расклад «подкова» — семь карт по дуге от ситуации к исходу.\n"
+            "Читай как маршрут: где линия ровная, где гнется, что подталкивает извне.\n"
+            "Исход (позиция 7) — при текущей линии, НЕ приговор: если совет меняет "
+            "траекторию, скажи об этом в advice.\n"
+            "НЕ дублируй «скрытое» и «препятствие»: скрытое не видно изнутри, "
+            "препятствие стоит на пути."
         )
     elif mode == "daily":
         lines.append(
@@ -361,29 +402,8 @@ def build_reading_prompt(
         lines.append("")
 
     # ── JSON format ──
-    if mode == "three":
-        lines.append(
-            'ОТВЕЧАЙ ТОЛЬКО ЭТИМ JSON-объектом (без markdown, без пояснений):\n'
-            '{\n'
-            '  "intro": "1-2 предложения. Шёпот-предчувствие: коротко обозначь ТРАЕКТОРИЮ '
-            'между картами (как одна перетекает в другую), не описывая одну карту",\n'
-            '  "short_answer": "связное повествование из 5-7 предложений — вся история из трёх карт '
-            'как единый сюжет, в конце — синтез: как карты влияют друг на друга '
-            '(усиление / конфликт / переход). Никаких списков. Без префиксов позиций",\n'
-            '  "позиции": [\n'
-            '    {"позиция": "<первая позиция ДОСЛОВНО, как в раскладе>", "карта": "<имя карты>", '
-            '"реверс": true/false, "трактовка": "3-4 предложения: трактовка карты в этой позиции '
-            '+ её связь с соседней картой + что значит для вопроса пользователя"},\n'
-            '    {"позиция": "<вторая позиция ДОСЛОВНО>", "карта": "<имя карты>", '
-            '"реверс": true/false, "трактовка": "..."},\n'
-            '    {"позиция": "<третья позиция ДОСЛОВНО>", "карта": "<имя карты>", '
-            '"реверс": true/false, "трактовка": "..."}\n'
-            '  ],\n'
-            '  "связь_карт": "синтез 2-3 предложения: как карты усиливают / сталкиваются / '
-            'переходят друг в друга — единая механика расклада",\n'
-            '  "advice": "конкретный совет на основе всей ситуации (1-2 предложения)"\n'
-            '}'
-        )
+    if multi_card:
+        lines.append(_multi_card_json_schema(spread, positions))
     elif mode == "daily":
         daily_voice = _load_characters().get(character_id, {}).get("daily_voice", "")
         if daily_voice:
@@ -431,3 +451,47 @@ def build_reading_prompt(
         lines.append(reminder)
 
     return "\n".join(lines)
+
+
+def _multi_card_json_schema(spread: dict, positions: list[str]) -> str:
+    """JSON-схема для всех multi-card раскладов (позиции[] + связь_карт).
+
+    Используется режимами three/yesno/mfd/shadow/pentagram/horseshoe: единая
+    схема, но текст инструкции для «связь_карт» подтягивает synthesis каталога,
+    а количество строк в «позиции» соответствует числу позиций расклада.
+    """
+    synthesis = spread.get("synthesis")
+    if synthesis:
+        link_instruction = (
+            f"синтез — {synthesis}. Как карты усиливают / сталкиваются / "
+            f"переходят друг в друга — единая механика расклада"
+        )
+    else:
+        link_instruction = (
+            "синтез 2-3 предложения: как карты усиливают / сталкиваются / "
+            "переходят друг в друга — единая механика расклада"
+        )
+
+    pos_entries = []
+    for i in range(1, len(positions) + 1):
+        entry = (
+            '    {"позиция": "<имя позиции ДОСЛОВНО, как задано выше>", '
+            '"карта": "<имя карты>", "реверс": true/false, "трактовка": '
+            '"3-4 предложения: трактовка карты в этой позиции + её связь с '
+            'соседней картой + что значит для вопроса пользователя"}'
+        )
+        pos_entries.append(entry + ("," if i < len(positions) else ""))
+    pos_block = "[\n" + "\n".join(pos_entries) + "\n  ]"
+
+    return (
+        'ОТВЕЧАЙ ТОЛЬКО ЭТИМ JSON-объектом (без markdown, без пояснений):\n'
+        '{\n'
+        '  "intro": "1-2 предложения. Шёпот-предчувствие: коротко обозначь ТРАЕКТОРИЮ '
+        'между картами (как одна перетекает в другую), не описывая одну карту",\n'
+        '  "short_answer": "связный ответ на вопрос целиком (5-7 предложений). '
+        'Никаких списков. Без префиксов позиций",\n'
+        '  "позиции": ' + pos_block + ',\n'
+        '  "связь_карт": "' + link_instruction + '",\n'
+        '  "advice": "конкретный совет на основе всей ситуации (1-2 предложения)"\n'
+        '}'
+    )

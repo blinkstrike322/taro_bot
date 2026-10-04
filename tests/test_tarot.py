@@ -4,17 +4,24 @@ from unittest.mock import AsyncMock, patch
 import pytest
 
 # ── build_reading_prompt tests ──────────────────────────────────────────────
-from core.prompts import build_reading_prompt
+from core.prompts import build_reading_prompt, _positions_for_question
+from core.spreads import resolve_spread
 from core.tarot import draw_cards, get_card_image, load_cards
+
+
+def _spread(spread_raw, question):
+    s = resolve_spread(spread_raw, question)
+    return s, [p["name"] for p in s["positions"]]
 
 
 def test_build_reading_prompt_single_card():
     cards = [{"name": "Шут", "orientation": "upright"}]
-    prompt = build_reading_prompt(cards, "Что ждет меня?", "shadow_walker", spread_type=1)
+    spread, positions = _spread(1, "Что ждет меня?")
+    prompt = build_reading_prompt(cards, "Что ждет меня?", "shadow_walker", spread, positions)
     assert "Шут" in prompt
     assert "Что ждет меня?" in prompt
     assert "JSON" in prompt
-    assert "Расклад 3 карты" not in prompt
+    assert "Расклад «три карты»" not in prompt
     assert "позиция" not in prompt
 
 
@@ -24,8 +31,10 @@ def test_build_reading_prompt_three_cards():
         {"name": "Маг", "orientation": "reversed"},
         {"name": "Верховная Жрица", "orientation": "upright"},
     ]
-    prompt = build_reading_prompt(cards, None, "shadow_walker", spread_type=3)
-    assert "Расклад «3 карты»" in prompt
+    spread, _ = _spread(3, None)
+    positions = _positions_for_question(None)
+    prompt = build_reading_prompt(cards, None, "shadow_walker", spread, positions)
+    assert "Расклад «три карты»" in prompt
     assert "Что запускает ситуацию" in prompt
     assert "Ядро ситуации" in prompt
     assert "Куда ведёт текущая динамика" in prompt
@@ -39,8 +48,10 @@ def test_build_reading_prompt_three_cards_future_positions():
         {"name": "Маг", "orientation": "reversed"},
         {"name": "Верховная Жрица", "orientation": "upright"},
     ]
+    question = "что будет интересного со мной в этом месяце"
+    spread, _ = _spread(3, question)
     prompt = build_reading_prompt(
-        cards, "что будет интересного со мной в этом месяце", "shadow_walker", spread_type=3
+        cards, question, "shadow_walker", spread, _positions_for_question(question)
     )
     assert "Что входит в период" in prompt
     assert "Главная динамика периода" in prompt
@@ -51,7 +62,8 @@ def test_build_reading_prompt_three_cards_future_positions():
 
 def test_build_reading_prompt_daily_schema():
     cards = [{"name": "Паж Пентаклей", "orientation": "upright"}]
-    prompt = build_reading_prompt(cards, None, "spark_of_chaos", spread_type="daily")
+    spread, positions = _spread("daily", None)
+    prompt = build_reading_prompt(cards, None, "spark_of_chaos", spread, positions)
     assert "Карта дня" in prompt
     assert "проявление" in prompt
     assert "на_что_смотреть" in prompt
@@ -60,7 +72,8 @@ def test_build_reading_prompt_daily_schema():
 
 def test_build_reading_prompt_no_question():
     cards = [{"name": "Шут", "orientation": "upright"}]
-    prompt = build_reading_prompt(cards, None, "ruin_keeper", spread_type=1)
+    spread, positions = _spread(1, None)  # single без вопроса разрешается в daily
+    prompt = build_reading_prompt(cards, None, "ruin_keeper", spread, positions)
     # 1 карта без вопроса в приложении всегда маршрутизируется как карта дня.
     assert "?" not in prompt
     assert "Карта дня" in prompt
@@ -69,7 +82,8 @@ def test_build_reading_prompt_no_question():
 
 def test_build_reading_prompt_json_intro_field():
     cards = [{"name": "Шут", "orientation": "upright"}]
-    prompt = build_reading_prompt(cards, None, "shadow_walker", spread_type=1)
+    spread, positions = _spread(1, None)
+    prompt = build_reading_prompt(cards, None, "shadow_walker", spread, positions)
     assert "intro" in prompt
 
 
