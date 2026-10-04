@@ -1,103 +1,103 @@
 'use client';
 
-// ─────────────────────────────────────────────────────────────
-// ProseType — печатает прозаическое значение посимвольно,
-// как настоящий вывод канала: паузы на знаках препинания,
-// мигающий блок-курсор, открывающая кавычка ждёт текст.
-// Когда допечатал — может включить мерцание фосфора (shimmer).
-// ─────────────────────────────────────────────────────────────
-import { useEffect, useMemo, useRef, useState } from 'react';
+// ProseType v2 — проза печатается движком typeFlow (rAF + DOM-инжект):
+// ноль React-ререндеров на символ, паузы на знаках, тонкий курсор.
+import { useEffect, useRef, useState } from 'react';
 import { sType } from '@/lib/sound';
 import { joinedParagraphs } from '@/lib/prose';
+import { typeInto, type TypeFlowHandle } from '@/lib/typeFlow';
 
 interface ProseTypeProps {
   text: string;
   /** мс до первого символа — оркестрация последовательности */
   startDelay?: number;
-  /** базовая скорость мс/символ */
+  /** скорость печати, символов в секунду (бывшие ~8мс/символ ≈ 110cps; 72 — спокойнее) */
+  cps?: number;
+  /** устаревшее имя скорости — мс/символ, конвертируется в cps (1000/speed) */
   speed?: number;
   className?: string;
-  /** инлайн-стиль внешнего спана (цвет, свечение) */
   style?: React.CSSProperties;
-  /** завершающий символ после закрывающей кавычки (запятая JSON) */
   tail?: string;
-  /** кавычки вокруг прозы — legacy JSON-стиль; semantic reading ставит false */
   quotes?: boolean;
-  /** включить shimmer после печати (мерцание фосфора) */
   shimmer?: boolean;
-  /** тикать телетайпом при печати — звук вывода канала */
   sound?: boolean;
-  /** мгновенный вывод без посимвольной печати (повторный просмотр из журнала) */
+  /** мгновенный вывод без посимвольной печати (журнал) */
   instant?: boolean;
   onDone?: () => void;
 }
 
-// пауза после знака — пусть текст дышит (~2× быстрее прежнего)
-function charDelay(ch: string): number {
-  if ('.!?…'.includes(ch)) return 120;
-  if (',;:—'.includes(ch)) return 50;
-  return 0;
-}
-
-// сколько займёт печать строки (мс) — для оркестратора
-export function proseDuration(text: string, speed = 8): number {
+// сколько займёт печать строки (мс) — оценка для внешних оркестраторов
+export function proseDuration(text: string, cps = 72): number {
   const target = joinedParagraphs(text);
-  let ms = target.length * (speed + 4);
-  for (const ch of target) ms += charDelay(ch);
+  let ms = (target.length * 1000) / cps;
+  for (const ch of target) ms += ('.!?…'.includes(ch) ? 120 : ',;:—'.includes(ch) ? 50 : 0);
   return ms + 90;
 }
 
 export default function ProseType({
-  text,
-  startDelay = 0,
-  speed = 8,
-  className,
-  style,
-  tail,
-  shimmer = false,
-  sound = true,
-  instant = false,
-  quotes = true,
-  onDone,
+  text, startDelay = 0, cps = 72, speed, className, style, tail,
+  shimmer = false, sound = true, instant = false, quotes = true, onDone,
 }: ProseTypeProps) {
-  const [n, setN] = useState(0);
-  const doneRef = useRef(false);
-  const target = useMemo(() => joinedParagraphs(text), [text]);
+  const hostRef = useRef<HTMLSpanElement>(null);
+  const flowRef = useRef<TypeFlowHandle | null>(null);
+  const [done, setDone] = useState(Boolean(instant || !text));
+  // onDone в ref — эффект не должен перезапускаться от смены коллбэка
+  const onDoneRef = useRef(onDone);
+  onDoneRef.current = onDone;
+
+  // legacy speed (мс/символ) → cps: 1000/speed
+  const effCps = speed != null ? Math.max(1, Math.round(1000 / speed)) : cps;
 
   useEffect(() => {
-    setN(0);
-    doneRef.current = false;
-    if (!target || instant) {
-      onDone?.();
+    const host = hostRef.current;
+    if (!host) return;
+    flowRef.current?.cancel();
+    flowRef.current = null;
+    const reduced = typeof window !== 'undefined' &&
+      typeof window.matchMedia === 'function' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (instant || reduced || !text) {
+      host.textContent = joinedParagraphs(text);
+      setDone(true);
+      onDoneRef.current?.();
       return;
     }
-    let i = 0;
-    let t: ReturnType<typeof setTimeout>;
-    const step = () => {
-      i += 1;
-      setN(i);
-      if (sound) sType();
-      if (i >= target.length) {
-        doneRef.current = true;
-        onDone?.();
-        return;
-      }
-      t = setTimeout(step, speed + charDelay(target[i - 1]) + Math.random() * 4);
-    };
-    t = setTimeout(step, startDelay);
-    return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [target, startDelay, speed, instant]);
+    setDone(false);
+    host.textContent = '';
+    const node = document.createTextNode('');
+    host.appendChild(node);
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
 
-  const done = instant || n >= target.length;
+    const start = () => {
+      if (cancelled) return;
+      flowRef.current = typeInto(node, joinedParagraphs(text), {
+        cps: effCps,
+        onTick: sound ? sType : undefined,
+      });
+      flowRef.current.finished.then(() => {
+        if (cancelled) return;
+        setDone(true);
+        onDoneRef.current?.();
+      });
+    };
+    timer = startDelay > 0 ? setTimeout(start, startDelay) : (start(), undefined);
+
+    return () => {
+      cancelled = true;
+      if (timer) clearTimeout(timer);
+      flowRef.current?.cancel();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [text, instant, effCps]);
 
   return (
     <span className={`j-prose ${className ?? ''}`} style={style}>
       {quotes && '"'}
       <span className={done && shimmer ? 'j-shimmer' : undefined}>
-        {instant ? target : target.slice(0, n)}
+        <span ref={hostRef} />
+        {!done && !instant && <span className="prose-cursor" aria-hidden="true">│</span>}
       </span>
-      {!done && !instant && <span className="prose-cursor" aria-hidden="true">▊</span>}
       {done && quotes && '"'}
       {done && tail && <span className="j-punct">{tail}</span>}
     </span>

@@ -110,7 +110,8 @@ export function sKey() {
 }
 
 // ── печать вывода: мягкий тик телетайпа — тише и ниже клавиши ──
-export function sType() {
+// pitch 0.9–1.1 — лёгкая вариация тона (синхронна с пульсом скорости).
+export function sType(pitch = 1) {
   const a = ok();
   if (!a) return;
   const now = performance.now();
@@ -121,7 +122,7 @@ export function sType() {
   const src = noise(c);
   const bp = c.createBiquadFilter();
   bp.type = 'bandpass';
-  bp.frequency.value = 640 + Math.random() * 380;
+  bp.frequency.value = (640 + Math.random() * 380) * pitch;
   bp.Q.value = 4.5;
   const g = c.createGain();
   env(c, g, t0, 0.002, 0.05, 0.05);
