@@ -68,6 +68,10 @@ export interface GuideMeta {
   // NOTE: duplicated here because the frontend cannot read data/characters.json
   // at runtime — that backend file is the SOURCE OF TRUTH for these texts.
   whispers: string[];
+
+  // Per-guide ritual closings — подпись в конце чтения (reading-close-phrase).
+  // ВРЕМЕННЫЕ тексты: задачи 12-14 финализируют это поле.
+  closings: string[];
 }
 
 export const GUIDES: Record<string, GuideMeta> = {
@@ -111,6 +115,11 @@ export const GUIDES: Record<string, GuideMeta> = {
       'луна скользнула за кроны',
       'мох помнит твои шаги',
       'тишина сгущается — слушай',
+    ],
+    closings: [
+      'свиток запечатан тенью',
+      'луна унесла слова за кроны',
+      'тишина закрывает сеанс',
     ],
   },
 
@@ -156,6 +165,11 @@ export const GUIDES: Record<string, GuideMeta> = {
       'тихо. так и должно быть',
       'фундамент не врёт',
     ],
+    closings: [
+      'пыль легла на свиток',
+      'камень принял ответ',
+      'врата руин закрылись',
+    ],
   },
 
   spark_of_chaos: {
@@ -199,6 +213,11 @@ export const GUIDES: Record<string, GuideMeta> = {
       'где-то лопнул стакан',
       'тихо слишком тихо. подозрительно',
       'колода сама тасуется. к чему бы',
+    ],
+    closings: [
+      'искра погасла — хаос доволен',
+      'дым рассеялся, знак остался',
+      'пламя подписало свиток',
     ],
   },
 };

@@ -1,14 +1,16 @@
 'use client';
 
 // ─────────────────────────────────────────────────────────────
-// ReadingResult — семантическое терминальное чтение.
-// LLM отдаёт structured interpretation, React рендерит слои:
-// TRANSMISSION → CARDS → WHISPER → SIGNAL → BODY → ADVICE.
-// Никакого JSON в presentation layer: только terminal language.
+// ReadingResult — семантическое терминальное чтение (v2).
+// Секции рендерятся последовательно: стадия i маунтится, когда
+// предыдущая отчиталась (ProseType onDone / autoAdvance-таймер).
+// Никаких pre-computed задержек для прозы — только события.
+// instant (журнал) — всё сразу, без таймеров.
 // ─────────────────────────────────────────────────────────────
+import { useEffect, useMemo, useState } from 'react';
 import { getGuide } from '@/lib/guides';
 import type { TarotCard } from './Card';
-import ProseType, { proseDuration } from './shell/ProseType';
+import ProseType from './shell/ProseType';
 import { joinedParagraphs } from '@/lib/prose';
 import type { Interpretation, ReadingPosition } from '@/lib/api';
 
@@ -32,11 +34,19 @@ interface CardLine {
 interface BodySection {
   label: string;
   prose: string;
+  card?: string;
+  reversed?: boolean;
 }
 
 interface BodyDisclosure {
   summary: string;
   sections: BodySection[];
+}
+
+// порядок секций; ProseType-стадии двигаются по onDone, остальные — по таймеру
+interface StageSpec {
+  id: 'header' | 'intro' | 'signal' | 'body' | 'synthesis' | 'disclosure' | 'advice' | 'close';
+  autoMs?: number;
 }
 
 function buildCardLines(
@@ -63,33 +73,28 @@ function buildCardLines(
   }));
 }
 
-function buildBodyGroups(interp: Interpretation): { visible: BodySection[]; disclosures: BodyDisclosure[] } {
+// позиции — всегда visible-секции (карта инлайном); disclosures — только
+// траектория дня (daily); связь_карт — отдельная «нить» перед советом
+function buildBodyGroups(
+  interp: Interpretation,
+  cards?: TarotCard[],
+): { visible: BodySection[]; synthesis: string | null; disclosures: BodyDisclosure[] } {
   const positions = Array.isArray(interp.позиции) ? interp.позиции : null;
 
   if (positions && positions.length > 0) {
-    const posSections: BodySection[] = [];
+    const visible: BodySection[] = [];
     positions.forEach((p: ReadingPosition, i: number) => {
       if (p.трактовка) {
-        posSections.push({
-          label: `${String(i + 1).padStart(2, '0')} · ${p.позиция ?? ''}`,
+        const num = String(i + 1).padStart(2, '0');
+        visible.push({
+          label: p.позиция ? `${num} · ${p.позиция}` : num,
           prose: p.трактовка,
+          card: p.карта ?? cards?.[i]?.name,
+          reversed: Boolean(p.реверс ?? cards?.[i]?.is_reversed ?? false),
         });
       }
     });
-    const disclosures: BodyDisclosure[] = [];
-    if (posSections.length > 0) {
-      disclosures.push({
-        summary: `позиции · ${String(posSections.length).padStart(2, '0')}`,
-        sections: posSections,
-      });
-    }
-    if (interp.связь_карт) {
-      disclosures.push({
-        summary: 'нить · связь карт',
-        sections: [{ label: '', prose: interp.связь_карт }],
-      });
-    }
-    return { visible: [], disclosures };
+    return { visible, synthesis: interp.связь_карт ?? null, disclosures: [] };
   }
 
   if (interp.проявление || interp.траектория || interp.на_что_смотреть) {
@@ -111,7 +116,7 @@ function buildBodyGroups(interp: Interpretation): { visible: BodySection[]; disc
         disclosures.push({ summary: 'траектория дня', sections: traj });
       }
     }
-    return { visible, disclosures };
+    return { visible, synthesis: null, disclosures };
   }
 
   const meanings = Array.isArray(interp.card_meaning)
@@ -123,11 +128,12 @@ function buildBodyGroups(interp: Interpretation): { visible: BodySection[]; disc
     label: meanings.length > 1 ? `значение · ${String(i + 1).padStart(2, '0')}` : 'значение',
     prose: m,
   }));
-  return { visible, disclosures: [] };
+  return { visible, synthesis: null, disclosures: [] };
 }
 
-const TYPE_SPEED = 8;
-const LINE_STEP = 32;
+const HEADER_BASE_MS = 350;
+const HEADER_PER_CARD_MS = 45;
+const DISCLOSURE_MS = 200;
 
 export default function ReadingResult({
   interpretation,
@@ -140,42 +146,60 @@ export default function ReadingResult({
   const { intro, short_answer, advice } = interpretation;
   const guide = getGuide(characterId);
 
-  const cardLines = buildCardLines(interpretation, cards);
-  const { visible: bodyVisible, disclosures: bodyDisclosures } = buildBodyGroups(interpretation);
-  const isDaily = Boolean(interpretation.проявление || interpretation.траектория);
-  const transmissionKind = isDaily
-    ? 'DAILY TRANSMISSION'
-    : cardLines.length > 1
-      ? 'THREE-CARD TRANSMISSION'
-      : 'SINGLE TRANSMISSION';
+  const cardLines = useMemo(() => buildCardLines(interpretation, cards), [interpretation, cards]);
+  const { visible: bodyVisible, synthesis, disclosures: bodyDisclosures } = useMemo(
+    () => buildBodyGroups(interpretation, cards),
+    [interpretation, cards],
+  );
 
-  const tHeader = instant ? 0 : (2 + cardLines.length) * LINE_STEP + 45;
-  const tWhisper = tHeader;
-  const tSignal = instant ? 0 : tWhisper + (intro ? proseDuration(intro, TYPE_SPEED) : 0);
-  const tBodyStart = instant ? 0 : tSignal + proseDuration(short_answer, TYPE_SPEED);
-  const bodyDelays: number[] = instant
-    ? bodyVisible.map(() => 0)
-    : (() => {
-        const out: number[] = [];
-        let cursor = tBodyStart;
-        for (const s of bodyVisible) {
-          out.push(cursor);
-          cursor += proseDuration(s.prose, TYPE_SPEED);
-        }
-        return out;
-      })();
-  const tBodyEnd = instant
-    ? 0
-    : bodyDelays.length > 0
-      ? bodyDelays[bodyDelays.length - 1] + proseDuration(bodyVisible[bodyVisible.length - 1].prose, TYPE_SPEED)
-      : tBodyStart;
-  const tAdvice = instant ? 0 : tBodyEnd + bodyDisclosures.length * 55 + 75;
-  const tClose = instant ? 0 : tAdvice + (advice ? proseDuration(advice, TYPE_SPEED) : 0) + 80;
+  const closing = useMemo(
+    () =>
+      instant
+        ? 'из журнала сеансов'
+        : guide.closings?.[Math.floor(Math.random() * guide.closings.length)] ?? 'свиток запечатан',
+    [instant, guide],
+  );
 
-  let delay = 0;
+  const stages = useMemo<StageSpec[]>(() => {
+    const list: StageSpec[] = [
+      { id: 'header', autoMs: HEADER_BASE_MS + HEADER_PER_CARD_MS * cardLines.length },
+    ];
+    if (intro) list.push({ id: 'intro' });
+    if (short_answer) list.push({ id: 'signal' });
+    bodyVisible.forEach(() => list.push({ id: 'body' }));
+    if (synthesis) list.push({ id: 'synthesis' });
+    if (bodyDisclosures.length > 0) list.push({ id: 'disclosure', autoMs: DISCLOSURE_MS });
+    if (advice) list.push({ id: 'advice' });
+    list.push({ id: 'close' });
+    return list;
+  }, [intro, short_answer, bodyVisible, synthesis, bodyDisclosures, advice, cardLines.length]);
+
+  const [stage, setStage] = useState(() => (instant ? stages.length : 0));
+
+  const advanceTo = (next: number) => setStage((v) => Math.max(v, next));
+
+  // autoAdvance-стадии (header, disclosure): таймер вместо onDone
+  const autoMs = instant ? undefined : stages[stage]?.autoMs;
+  useEffect(() => {
+    if (autoMs == null) return;
+    const t = setTimeout(() => setStage((v) => v + 1), autoMs);
+    return () => clearTimeout(t);
+  }, [stage, autoMs]);
+
+  // индексы стадий (порядок фиксирован сборкой stages)
+  let cursor = 0;
+  const introIdx = intro ? cursor++ : -1;
+  const signalIdx = short_answer ? cursor++ : -1;
+  const bodyIdxs = bodyVisible.map(() => cursor++);
+  const synthesisIdx = synthesis ? cursor++ : -1;
+  const disclosureIdx = bodyDisclosures.length > 0 ? cursor++ : -1;
+  const adviceIdx = advice ? cursor++ : -1;
+  const closeIdx = cursor++;
+
+  let headerDelay = 0;
   const next = () => {
-    delay += instant ? 0 : LINE_STEP;
-    return `${delay}ms`;
+    headerDelay += instant ? 0 : 32;
+    return `${headerDelay}ms`;
   };
 
   return (
@@ -206,7 +230,7 @@ export default function ReadingResult({
 
         <div className="reading relative z-10">
           <div className="reading-line" style={{ '--jl-delay': next() } as React.CSSProperties}>
-            <span className="reading-transmission">[ {transmissionKind} ]</span>
+            <span className="reading-title">✦ {spreadLabel.toUpperCase()} ✦</span>
           </div>
 
           <div className="reading-line reading-meta" style={{ '--jl-delay': next() } as React.CSSProperties}>
@@ -252,67 +276,82 @@ export default function ReadingResult({
             </div>
           )}
 
-          {intro && (
-            <div className="reading-line" style={{ '--jl-delay': `${tWhisper}ms` } as React.CSSProperties}>
+          {intro && stage >= introIdx && (
+            <div className="reading-line">
               <div className="reading-section-label">// шёпот</div>
               <ProseType
                 text={intro}
-                startDelay={tWhisper}
-                speed={TYPE_SPEED}
                 instant={instant}
                 quotes={false}
                 className="reading-whisper italic"
+                onDone={() => advanceTo(introIdx + 1)}
               />
             </div>
           )}
 
-          <div className="reading-line" style={{ '--jl-delay': `${tSignal}ms` } as React.CSSProperties}>
-            <div className="reading-section-label reading-section-label--signal">─ signal ─</div>
-            <div className="reading-signal" style={{ '--guide-accent': guide.accent } as React.CSSProperties}>
+          {short_answer && stage >= signalIdx && (
+            <div className="reading-line">
+              <div className="reading-section-label reading-section-label--signal">─ signal ─</div>
+              <div className="reading-signal" style={{ '--guide-accent': guide.accent } as React.CSSProperties}>
+                <ProseType
+                  text={short_answer}
+                  instant={instant}
+                  quotes={false}
+                  className="reading-signal-text"
+                  onDone={() => advanceTo(signalIdx + 1)}
+                />
+              </div>
+            </div>
+          )}
+
+          {bodyVisible.map((s, i) => {
+            const idx = bodyIdxs[i];
+            if (stage < idx) return null;
+            return (
+              <div key={i} className="reading-line">
+                {s.label && <div className="reading-section-label">// {s.label}</div>}
+                {s.card && (
+                  <>
+                    <div className="reading-position-name">{s.card}</div>
+                    <div className={s.reversed ? 'reading-card-rev' : 'reading-card-upright'}>
+                      {s.reversed ? 'перевёрнутая' : 'прямая'}
+                    </div>
+                  </>
+                )}
+                <ProseType
+                  text={s.prose}
+                  instant={instant}
+                  quotes={false}
+                  className="reading-body-text"
+                  onDone={() => advanceTo(idx + 1)}
+                />
+              </div>
+            );
+          })}
+
+          {synthesis && stage >= synthesisIdx && (
+            <div className="reading-line">
+              <div className="reading-section-label">// нить</div>
               <ProseType
-                text={short_answer}
-                startDelay={tSignal}
-                speed={TYPE_SPEED}
+                text={synthesis}
                 instant={instant}
                 quotes={false}
-                className="reading-signal-text"
+                className="reading-body-text"
+                onDone={() => advanceTo(synthesisIdx + 1)}
               />
-            </div>
-          </div>
-
-          {bodyVisible.length > 0 && (
-            <div className="reading-body">
-              {bodyVisible.map((s, i) => (
-                <div
-                  key={i}
-                  className="reading-line"
-                  style={{ '--jl-delay': `${bodyDelays[i]}ms` } as React.CSSProperties}
-                >
-                  {s.label && <div className="reading-section-label">// {s.label}</div>}
-                  <ProseType
-                    text={s.prose}
-                    startDelay={bodyDelays[i]}
-                    speed={TYPE_SPEED}
-                    instant={instant}
-                    quotes={false}
-                    className="reading-body-text"
-                  />
-                </div>
-              ))}
             </div>
           )}
 
-          {bodyDisclosures.map((d, i) => (
+          {bodyDisclosures.length > 0 && stage >= disclosureIdx && (
             <details
-              key={i}
               className="reading-line reading-det"
-              style={{ '--jl-delay': `${tBodyEnd + 55 + i * 55}ms`, '--guide-accent': guide.accent } as React.CSSProperties}
+              style={{ '--guide-accent': guide.accent } as React.CSSProperties}
             >
               <summary className="reading-det-summary">
-                <span className="reading-det-marker">[+]</span> {d.summary} <span className="reading-det-hint">— раскрой</span>
+                <span className="reading-det-marker">[+]</span> {bodyDisclosures[0].summary} <span className="reading-det-hint">— раскрой</span>
               </summary>
               <div className="reading-det-body">
-                {d.sections.map((s, j) => (
+                {bodyDisclosures[0].sections.map((s, j) => (
                   <div key={j} className="reading-det-section">
                     {s.label && <div className="reading-section-label">// {s.label}</div>}
                     <div className="reading-body-text">{joinedParagraphs(s.prose)}</div>
@@ -320,22 +359,25 @@ export default function ReadingResult({
                 ))}
               </div>
             </details>
-          ))}
+          )}
 
-          {advice && (
-            <div className="reading-line" style={{ '--jl-delay': `${tAdvice}ms` } as React.CSSProperties}>
-              <div className="reading-section-label reading-section-label--advice">[ advice ]</div>
+          {advice && stage >= adviceIdx && (
+            <div className="reading-line">
+              <div className="reading-section-label">// совет</div>
               <div
                 className="reading-advice-box"
                 style={{ background: guide.accentDim } as React.CSSProperties}
               >
+                <span className="corner-tl">╔</span>
+                <span className="corner-tr">┐</span>
+                <span className="corner-bl">└</span>
+                <span className="corner-br">╝</span>
                 <ProseType
                   text={advice}
-                  startDelay={tAdvice}
-                  speed={TYPE_SPEED}
                   instant={instant}
                   quotes={false}
                   className="reading-advice"
+                  onDone={() => advanceTo(adviceIdx + 1)}
                 />
               </div>
             </div>
@@ -344,13 +386,12 @@ export default function ReadingResult({
         </div>
       </div>
 
-      <div
-        className="term-exit mt-1.5 flex items-center justify-between exit-flash"
-        style={{ animationDelay: instant ? '0ms' : `${tClose + 50}ms` }}
-      >
-        <span><span className="te-ok">[ signal complete ]</span> · {guide.tag}</span>
-        <span>{instant ? 'из журнала сеансов' : 'exit 0'}</span>
-      </div>
+      {stage >= closeIdx && (
+        <div className="term-exit reading-close reading-line mt-1.5 flex items-center justify-between">
+          <span className="reading-close-phrase">— {closing} —</span>
+          <span className="reading-close-tag te-ok">{guide.tag}</span>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,7 +1,7 @@
 // ReadingResult semantic rendering — locks the presentation contract: the LLM's
 // structured `Interpretation` renders as terminal language, NEVER as raw JSON.
 // Three interpretation schemas are covered: daily (проявление/траектория),
-// single/legacy (card_meaning), three-card (позиции + связь_карт).
+// single/legacy (card_meaning), three-card (позиции инлайном + нить).
 //
 // `instant` is passed so no typing timers run — the tests assert finished state.
 
@@ -68,8 +68,8 @@ describe('ReadingResult / daily schema (проявление · на_что_см
     expect(screen.getByText(/траектория\ ·\ утро/)).toBeInTheDocument();
     expect(screen.getByText(/траектория\ ·\ день/)).toBeInTheDocument();
     expect(screen.getByText(/траектория\ ·\ вечер/)).toBeInTheDocument();
-    // Daily transmission header.
-    expect(container.textContent).toContain('DAILY TRANSMISSION');
+    // v2 header: serif title from spreadLabel, not the old transmission kind.
+    expect(container.textContent).toContain('✦ КАРТА ДНЯ ✦');
     // Per-отдел prose is rendered.
     expect(screen.getByText('День требует внимания к деталям.')).toBeInTheDocument();
     // No stray JSON in a fully-rendered daily reading.
@@ -84,6 +84,14 @@ describe('ReadingResult / daily schema (проявление · на_что_см
     expect(screen.getByText('Звезда')).toBeInTheDocument();
     expect(container.textContent).toContain('· прямая'); // none reversed here
     expect(screen.getByText('Странница Теней')).toBeInTheDocument(); // guide meta
+  });
+
+  it('renders the ritual closing footer (journal variant)', () => {
+    const { container } = render(
+      <ReadingResult interpretation={daily} cards={cards} instant={true} spreadLabel="карта дня" />,
+    );
+    expect(container.textContent).toContain('— из журнала сеансов —');
+    expect(container.textContent).toContain('SHADOW.WLK');
   });
 });
 
@@ -101,7 +109,7 @@ describe('ReadingResult / single-legacy schema (card_meaning)', () => {
     );
     expect(screen.getByText(/значение/)).toBeInTheDocument();
     expect(screen.getByText('Карта говорит о внутреннем голосе.')).toBeInTheDocument();
-    expect(container.textContent).toContain('SINGLE TRANSMISSION');
+    expect(container.textContent).toContain('✦ ОДНА КАРТА ✦');
     // Legacy single-card reading must NEVER leak JSON keys.
     expect(container.textContent).not.toContain('"сеанс"');
     expect(container.textContent).not.toContain('"ответ"');
@@ -113,7 +121,7 @@ describe('ReadingResult / single-legacy schema (card_meaning)', () => {
       <ReadingResult interpretation={single} cards={[makeCard('luna', 'Луна')]} instant={true} spreadLabel="одна карта" />,
     );
     expect(screen.getByText('Прислушайся к себе.')).toBeInTheDocument();
-    expect(container.textContent).toContain('[ advice ]');
+    expect(container.textContent).toContain('// совет');
     expect(container.textContent).toContain('─ signal ─');
   });
 
@@ -145,30 +153,59 @@ describe('ReadingResult / three-card schema (позиции + связь_кар�
     связь_карт: 'Карты связаны выбором.',
   };
 
-  it('renders position-label sections and the connection thread', () => {
+  it('renders inline position sections and the connection thread', () => {
     const { container } = render(
       <ReadingResult interpretation={three} instant={true} spreadLabel="три карты" />,
     );
     expect(screen.getByText(/01\ ·\ прошлое/)).toBeInTheDocument();
     expect(screen.getByText(/02\ ·\ настоящее/)).toBeInTheDocument();
     expect(screen.getByText(/03\ ·\ будущее/)).toBeInTheDocument();
-    expect(screen.getByText(/нить\ ·\ связь\ карт/)).toBeInTheDocument();
+    // связь_карт is a visible «нить» section before advice, not a disclosure.
+    expect(container.textContent).toContain('// нить');
     expect(screen.getByText('Прошлое держит ключ.')).toBeInTheDocument();
     expect(screen.getByText('Карты связаны выбором.')).toBeInTheDocument();
-    expect(container.textContent).toContain('THREE-CARD TRANSMISSION');
+    expect(container.textContent).toContain('✦ ТРИ КАРТЫ ✦');
     expectNoJsonLiterals(container.textContent ?? '');
   });
 
-  it('marks reversed cards in the card line', () => {
+  it('marks reversed cards in the card line and inline positions', () => {
     const { container } = render(
       <ReadingResult interpretation={three} instant={true} spreadLabel="три карты" />,
     );
-    // Card names come from Интерпретация.карта, not prop.cards.
-    expect(screen.getByText('Первый')).toBeInTheDocument();
-    expect(screen.getByText('Второй')).toBeInTheDocument();
-    expect(screen.getByText('Третий')).toBeInTheDocument();
-    // Only the reversed position shows the reversal marker.
+    // Card names appear in the header artifacts AND inline position blocks.
+    for (const name of ['Первый', 'Второй', 'Третий']) {
+      expect(screen.getAllByText(name).length).toBeGreaterThanOrEqual(1);
+    }
+    // Header shows the ↳ marker once; inline position shows plain orientation.
     expect(screen.getAllByText('↳ перевёрнутая').length).toBe(1);
     expect(container.textContent).toContain('· прямая');
+    expect(container.textContent).toContain('перевёрнутая');
+  });
+
+  it('skips the нить section gracefully when связь_карт is absent', () => {
+    const noLink: Interpretation = { ...three, связь_карт: undefined };
+    const { container } = render(
+      <ReadingResult interpretation={noLink} instant={true} spreadLabel="три карты" />,
+    );
+    expect(container.textContent).not.toContain('// нить');
+    expect(screen.getByText('Прошлое держит ключ.')).toBeInTheDocument();
+  });
+
+  it('renders off-schema positions without позиция label (legacy robustness)', () => {
+    const bare: Interpretation = {
+      intro: '',
+      short_answer: 'Ответ есть.',
+      позиции: [
+        { карта: 'Первый', трактовка: 'Прошлое держит ключ.' },
+        { карта: 'Второй', трактовка: 'Настоящее искрит.' },
+      ],
+    };
+    const { container } = render(
+      <ReadingResult interpretation={bare} instant={true} spreadLabel="три карты" />,
+    );
+    expect(container.textContent).toContain('01');
+    expect(container.textContent).toContain('02');
+    expect(screen.getByText('Прошлое держит ключ.')).toBeInTheDocument();
+    expectNoJsonLiterals(container.textContent ?? '');
   });
 });

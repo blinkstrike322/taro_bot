@@ -12,6 +12,8 @@
   --font-pixel: 'JetBrains Mono', ui-monospace, monospace;      /* UI labels */
   --font-mono-crt: 'JetBrains Mono', ui-monospace, monospace;   /* terminal body */
   --font-system: 'JetBrains Mono', ui-monospace, monospace;
+  /* Cormorant Garamond — серифные акценты чтения (reading-title, имена карт) */
+  --font-serif: 'Cormorant Garamond', 'Times New Roman', serif;
 }
 
 /* ---------- Base resets ---------- */
@@ -759,11 +761,15 @@ body {
   pointer-events: none;
 }
 
-/* scattered corner ornaments for ritual frame */
+/* scattered corner ornaments for ritual frame / advice box */
 .frame-ritual .corner-tl,
 .frame-ritual .corner-tr,
 .frame-ritual .corner-bl,
-.frame-ritual .corner-br {
+.frame-ritual .corner-br,
+.reading-advice-box .corner-tl,
+.reading-advice-box .corner-tr,
+.reading-advice-box .corner-bl,
+.reading-advice-box .corner-br {
   position: absolute;
   font-family: var(--font-pixel);
   font-size: 10px;
@@ -772,10 +778,10 @@ body {
   pointer-events: none;
   z-index: 2;
 }
-.frame-ritual .corner-tl { top: -6px;   left: 4px; }
-.frame-ritual .corner-tr { top: -6px;   right: 4px; }
-.frame-ritual .corner-bl { bottom: -6px; left: 4px; }
-.frame-ritual .corner-br { bottom: -6px; right: 4px; }
+.frame-ritual .corner-tl, .reading-advice-box .corner-tl { top: -6px;   left: 4px; }
+.frame-ritual .corner-tr, .reading-advice-box .corner-tr { top: -6px;   right: 4px; }
+.frame-ritual .corner-bl, .reading-advice-box .corner-bl { bottom: -6px; left: 4px; }
+.frame-ritual .corner-br, .reading-advice-box .corner-br { bottom: -6px; right: 4px; }
 
 /* ================================================================
    TERMINAL FRAME — window chrome with border tab [ ARCANUM.ocv ]
@@ -3025,7 +3031,9 @@ div[class*="boot-log"]::-webkit-scrollbar {
 .prose-cursor {
   display: inline-block;
   color: var(--guide-accent, #c39dff);
-  animation: blink 0.82s steps(1) infinite;
+  /* v2: тонкий курсор */
+  animation: blink 1s steps(2) infinite;
+  font-weight: 300;
   margin-left: 1px;
   text-shadow: 0 0 6px var(--guide-accent-dim, transparent);
 }
@@ -3272,33 +3280,36 @@ button.history-row--open:active {
   aspect-ratio: 2/3;
   object-fit: cover;
   display: block;
-  filter: grayscale(1) contrast(1.5) brightness(1.02);
+  /* v2: без grayscale — цветные миниатюры с акцентной рамкой */
+  filter: none;
+  border: 1px solid var(--guide-accent-dim, rgba(195, 157, 255, 0.2));
 }
 
 .reading-card-name {
-  font-weight: 800;
-  font-size: 12px;
-  letter-spacing: 0.06em;
+  /* v2: серифное имя карты */
+  font-family: var(--font-serif);
+  font-weight: 600;
+  font-size: 20px;
+  line-height: 1.15;
   color: #fff;
-  text-shadow: 0 0 8px rgba(255,255,255,0.14);
   margin-top: 6px;
 }
 
 .reading-card-rev {
-  font-size: 11.5px;
+  font-size: 12px;
   color: var(--guide-accent, #fff);
   font-weight: 700;
 }
 
 .reading-card-upright {
-  font-size: 11px;
-  color: rgba(255,255,255,0.40);
+  font-size: 12px;
+  color: rgba(255,255,255,0.45);
 }
 
 .reading-section-label {
-  font-size: 10.5px;
+  font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.14em;
   color: rgba(255,255,255,0.38);
   margin: 14px 0 4px;
   text-transform: lowercase;
@@ -3352,8 +3363,9 @@ button.history-row--open:active {
 
 .reading-body-text {
   color: rgba(255,255,255,0.80);
-  font-size: 13px;
-  line-height: 1.68;
+  /* v2: проза чтения 15px / 1.65 */
+  font-size: 15px;
+  line-height: 1.65;
   white-space: pre-wrap;
   word-break: break-word;
 }
@@ -3372,6 +3384,9 @@ button.history-row--open:active {
 }
 
 .reading-advice-box {
+  /* v2: ритуальная рамка совета */
+  position: relative;
+  border: 1px solid var(--guide-accent-dim, rgba(195, 157, 255, 0.2));
   padding: 10px 12px;
   margin: 2px 0 4px;
 }
@@ -3419,4 +3434,29 @@ button.history-row--open:active {
 .sigil-dim .ambient-sigil {
   opacity: 0.22;
   transition: opacity 0.8s ease;
+}
+
+/* ── ReadingResult v2 ──
+   (правила, конфликтующие со старыми — .reading-artifact-img, .reading-card-name,
+   .reading-body-text, .reading-section-label, .prose-cursor, .reading-advice-box —
+   отредактированы на месте выше; здесь только новые селекторы) */
+.reading-title {
+  font-family: var(--font-serif);
+  font-weight: 600;
+  font-size: 18px;
+  letter-spacing: .08em;
+  color: var(--guide-accent, #fff);
+  text-shadow: 0 0 18px var(--guide-accent-dim, transparent);
+}
+
+.reading-position-name {
+  font-family: var(--font-serif);
+  font-weight: 600;
+  font-size: 20px;
+}
+
+.reading-close-phrase {
+  font-style: italic;
+  color: var(--guide-accent, #fff);
+  font-size: 12.5px;
 }
