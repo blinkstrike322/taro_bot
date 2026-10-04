@@ -75,7 +75,7 @@ export function useTarotSession(): TarotSession {
   // ── эхо команды с печатью посимвольно ──
   const echoCmd = useCallback(async (text: string) => {
     pushCmd(text);
-    await sleep(typeDuration(text, 18));
+    await sleep(typeDuration(text, 55));
   }, [pushCmd]);
 
   return {

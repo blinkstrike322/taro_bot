@@ -4,8 +4,10 @@
  * Typing-движок ARCANUM v2: печать через requestAnimationFrame
  * прямой инжекцией в Text-нод. Никаких React-ререндеров на символ,
  * никакого случайного джиттера — микро-вариация скорости плавная.
- * После залипания кадра догоняем максимум 2 символами за кадр,
- * чтобы текст не «выстреливал» блоком.
+ * Расписание символов копится относительно предыдущей задержки
+ * (nextAt += delay), а не пересчитывается от текущего кадра: средний
+ * cps держится выше частоты кадров. После залипания кадра догоняем
+ * максимум 2 символами за кадр — текст не «выстреливает» блоком.
  */
 
 export interface TypeFlowHandle {
@@ -16,7 +18,7 @@ export interface TypeFlowHandle {
 export interface TypeFlowOptions {
   /** базовая скорость, символов в секунду */
   cps?: number;
-  /** звук на тик (движок сам троттлит); pitch 0.9–1.1 — тон тика */
+  /** звук на тик (движок сам троттлит); pitch 0.7–1.1 — тон тика */
   onTick?: (pitch: number) => void;
   minSoundIntervalMs?: number;
 }
@@ -39,7 +41,9 @@ export function typeInto(
   let lastSound = 0;
   let raf = 0;
   let cancelled = false;
-  let nextAt = 0;
+  // первый символ печатается сразу — расписание от старта потока
+  const flowStart = performance.now();
+  let nextAt = flowStart;
   let resolveDone: (() => void) | undefined;
 
   const finished = new Promise<void>((resolve) => { resolveDone = resolve; });
@@ -66,7 +70,7 @@ export function typeInto(
           opts.onTick(0.9 + 0.2 * Math.sin(i * 0.35));
         }
       }
-      nextAt = now + baseDelay() + punctDelay(text[i - 1]);
+      nextAt += baseDelay() + punctDelay(text[i - 1]);
     }
     if (i >= text.length) { finish(); return; }
     raf = requestAnimationFrame(step);

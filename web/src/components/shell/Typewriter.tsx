@@ -2,12 +2,16 @@
 
 // Typewriter — печатает строку посимвольно, как будто её вводят.
 // Используется для эха команд: терминал должен чувствоваться живым.
-import { useEffect, useState } from 'react';
+// Движок — typeFlow (rAF + DOM-инжект), как у прозы: ноль ререндеров
+// на символ, микро-вариация скорости плавная.
+import { useEffect, useRef, useState } from 'react';
 import { sKey } from '@/lib/sound';
+import { typeInto, type TypeFlowHandle } from '@/lib/typeFlow';
 
 interface TypewriterProps {
   text: string;
-  speedMs?: number;      // задержка между символами
+  /** задержка между символами (мс) — legacy, конвертируется в cps */
+  speedMs?: number;
   className?: string;
   /** щёлкать клавишами при печати */
   sound?: boolean;
@@ -15,37 +19,62 @@ interface TypewriterProps {
 }
 
 export default function Typewriter({ text, speedMs = 22, className, sound = false, onDone }: TypewriterProps) {
-  const [n, setN] = useState(0);
+  const hostRef = useRef<HTMLSpanElement>(null);
+  const flowRef = useRef<TypeFlowHandle | null>(null);
+  const [done, setDone] = useState(!text);
+  // onDone в ref — эффект не должен перезапускаться от смены коллбэка
+  const onDoneRef = useRef(onDone);
+  onDoneRef.current = onDone;
+
+  // legacy мс/символ → cps (обратная совместимость: Shell шлёт speedMs=18)
+  const cps = Math.max(1, Math.round(1000 / speedMs));
 
   useEffect(() => {
-    setN(0);
-    if (!text) {
-      onDone?.();
+    const host = hostRef.current;
+    if (!host) return;
+    flowRef.current?.cancel();
+    flowRef.current = null;
+    const reduced = typeof window !== 'undefined' &&
+      typeof window.matchMedia === 'function' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!text || reduced) {
+      host.textContent = text;
+      setDone(true);
+      onDoneRef.current?.();
       return;
     }
-    let i = 0;
-    const t = setInterval(() => {
-      i += 1;
-      setN(i);
-      if (sound) sKey();
-      if (i >= text.length) {
-        clearInterval(t);
-        onDone?.();
-      }
-    }, speedMs);
-    return () => clearInterval(t);
+    setDone(false);
+    host.textContent = '';
+    const node = document.createTextNode('');
+    host.appendChild(node);
+    let cancelled = false;
+
+    flowRef.current = typeInto(node, text, {
+      cps,
+      onTick: sound ? sKey : undefined,
+    });
+    flowRef.current.finished.then(() => {
+      if (cancelled) return;
+      setDone(true);
+      onDoneRef.current?.();
+    });
+
+    return () => {
+      cancelled = true;
+      flowRef.current?.cancel();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [text]);
+  }, [text, cps]);
 
   return (
     <span className={className}>
-      {text.slice(0, n)}
-      {n < text.length && <span className="tw-cursor" aria-hidden="true">▊</span>}
+      <span ref={hostRef} />
+      {!done && <span className="tw-cursor" aria-hidden="true">▊</span>}
     </span>
   );
 }
 
-// Сколько времени займёт печать строки (мс) — чтобы оркестратор ждал
-export function typeDuration(text: string, speedMs = 22): number {
-  return text.length * speedMs + 60;
+// Сколько времени займёт печать строки (мс) — оценка для внешних оркестраторов
+export function typeDuration(text: string, cps = 55): number {
+  return Math.round((text.length * 1000) / cps) + 60;
 }
