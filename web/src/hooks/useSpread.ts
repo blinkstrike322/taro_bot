@@ -22,6 +22,28 @@ function quotaLine(remaining: number | undefined | null, limit: number | undefin
   return { text: `пелена: осталось ${remaining} из ${limit} призывов`, tone: 'faint' };
 }
 
+/**
+ * Готовность шёпота к моменту вскрытия: если канал уже доставил
+ * толкование — короткая пауза 750мс; если нет — resolveWhisper сам
+ * ставит pending «расшифровка шёпота» и держит его до готовности,
+ * после чего минимум 600мс тишины перед чтением. Никаких мёртвых
+ * пауз под хардкод. Шёпот резолвится ровно один раз: джоба удаляется
+ * из канала после первого вызова resolveWhisper.
+ */
+async function waitWhisperReady(
+  entryId: number,
+  entry: { interpretation: API.Interpretation | null; whisperReady?: boolean },
+  resolveWhisper: (id: number, cached: API.Interpretation | null) => Promise<API.Interpretation | null>,
+): Promise<API.Interpretation | null> {
+  if (entry.whisperReady) {
+    await sleep(750);
+    return resolveWhisper(entryId, entry.interpretation);
+  }
+  const interp = await resolveWhisper(entryId, entry.interpretation);
+  await sleep(600);
+  return interp;
+}
+
 export interface TarotSpread {
   /** флоу: карта дня */
   runDaily: () => Promise<void>;
@@ -141,16 +163,16 @@ export function useSpread(session: TarotSession, whisper: TarotWhisper): TarotSp
 
       if (entry.kind === 'daily' && !entry.flipped) {
         track('card_revealed', { spread_type: 1, count: 1 });
-        // переворот карты дня → печатаем чтение (шёпот уже должен быть готов)
-        setTimeout(() => {
-          (async () => {
-            const interp = await resolveWhisper(entryId, entry.interpretation);
-            if (!interp) return;
-            push({ kind: 'json', interpretation: interp, cards: [entry.card], question: null, spreadLabel: 'карта дня' });
-            pushOut([{ text: randomWhisper(characterId), tone: 'comment' }]);
-            setMode('ОЖИДАНИЕ');
-          })();
-        }, 950);
+        // чтение стартует после готовности шёпота, не по мёртвому таймеру
+        const reveal = async () => {
+          const interp = await waitWhisperReady(entryId, entry, resolveWhisper);
+          if (!interp) return;
+          push({ kind: 'json', interpretation: interp, cards: [entry.card], question: null, spreadLabel: 'карта дня' });
+          pushOut([{ text: randomWhisper(characterId), tone: 'comment' }]);
+          setMode('ОЖИДАНИЕ');
+        };
+        // 250мс — дать анимации флипа начаться до цепочки чтения
+        setTimeout(() => { void reveal(); }, 250);
         return prev.map((e) => (e.id === entryId ? ({ ...e, flipped: true } as Entry) : e));
       }
 
@@ -161,19 +183,19 @@ export function useSpread(session: TarotSession, whisper: TarotWhisper): TarotSp
         track('card_revealed', { spread_type: entry.count, count: flipped.filter(Boolean).length });
         const allFlipped = flipped.every(Boolean);
         if (allFlipped) {
-          setTimeout(() => {
-            (async () => {
-              const interp = await resolveWhisper(entryId, entry.interpretation);
-              if (!interp) return;
-              await echoCmd('taro read --json');
-              push({ kind: 'json', interpretation: interp, cards: entry.cards, question: entry.question, spreadLabel: entry.spreadLabel });
-              pushOut([{ text: randomWhisper(characterId), tone: 'comment' }]);
-              // тихий индикатор остатка квоты — без этого лимит не виден до отказа
-              const qline = quotaLine(quotaRef.current.remaining, quotaRef.current.limit);
-              if (qline) pushOut([qline]);
-              setMode('ОЖИДАНИЕ');
-            })();
-          }, 950);
+          const reveal = async () => {
+            const interp = await waitWhisperReady(entryId, entry, resolveWhisper);
+            if (!interp) return;
+            await echoCmd('taro read --json');
+            push({ kind: 'json', interpretation: interp, cards: entry.cards, question: entry.question, spreadLabel: entry.spreadLabel });
+            pushOut([{ text: randomWhisper(characterId), tone: 'comment' }]);
+            // тихий индикатор остатка квоты — без этого лимит не виден до отказа
+            const qline = quotaLine(quotaRef.current.remaining, quotaRef.current.limit);
+            if (qline) pushOut([qline]);
+            setMode('ОЖИДАНИЕ');
+          };
+          // 250мс — дать анимации флипа начаться до цепочки чтения
+          setTimeout(() => { void reveal(); }, 250);
         }
         return prev.map((e) => (e.id === entryId ? ({ ...e, flipped } as Entry) : e));
       }
