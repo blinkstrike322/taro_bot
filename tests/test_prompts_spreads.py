@@ -39,3 +39,23 @@ def test_single_daily_unchanged():
     assert "card_meaning" in p
     d = build_reading_prompt([CARDS[0]], None, "shadow_walker", get_spread("daily"), _pos("daily"))
     assert "проявление" in d and "траектория" in d
+
+def test_mfd_third_person_and_position_records():
+    cards = CARDS[:3]
+    p = build_reading_prompt(cards, "он ко мне остыл?", "shadow_walker",
+                             get_spread("mfd"), _pos("mfd"))
+    assert "Говори о нем в третьем лице" in p
+    assert p.count('{"позиция":') == 3
+    for name in _pos("mfd"):
+        assert name in p
+
+def test_horseshoe_seven_position_records():
+    cards = CARDS + [
+        {"name": "Звезда", "orientation": "upright"},
+        {"name": "Колесо", "orientation": "upright"},
+        {"name": "Император", "orientation": "reversed"},
+        {"name": "Жрица", "orientation": "upright"},
+    ]
+    p = build_reading_prompt(cards[:7], "куда это приведет?", "shadow_walker",
+                             get_spread("horseshoe"), _pos("horseshoe"))
+    assert p.count('{"позиция":') == 7
