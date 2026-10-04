@@ -121,24 +121,38 @@ export default function Home() {
   }, [pushOut, characterId]);
 
   // ── справка (man) ──
+  // команды стеком (описание под командой, desc-тоном): двух колонок не хватает на 390px
   const runHelp = useCallback(async () => {
     pushOut([
       { text: 'ARCANUM(1)                 справка оккультного терминала', tone: 'bright' },
       { text: '' },
       { text: 'СИНТАКСИС', tone: 'accent' },
-      { text: '  taro daily              карта дня без вопроса' },
-      { text: '  taro ask [вопрос]       три карты · расклад собирается под вопрос' },
-      { text: '  taro ask1 [вопрос]      одна карта · точечный ответ' },
-      { text: '  taro mfd [вопрос]       мысли · чувства · действия' },
-      { text: '  taro yesno [вопрос]     да / нет · вердикт' },
-      { text: '  taro shadow [тема]      работа с тенью · 6 карт' },
-      { text: '  taro pentagram [вопрос] пентаграмма · элементы и суть' },
-      { text: '  taro horseshoe [вопрос] подкова · от ситуации к исходу' },
-      { text: '  taro catalog            виды раскладов' },
-      { text: '  taro guides             сменить проводника' },
-      { text: '  taro history            журнал сеансов (тап — развернуть)' },
-      { text: '  taro sound              звук терминала вкл/выкл' },
-      { text: '  clear                   очистить экран' },
+      { text: '  taro daily' },
+      { text: '      карта дня без вопроса', tone: 'dim' },
+      { text: '  taro ask [вопрос]' },
+      { text: '      три карты · расклад собирается под вопрос', tone: 'dim' },
+      { text: '  taro ask1 [вопрос]' },
+      { text: '      одна карта · точечный ответ', tone: 'dim' },
+      { text: '  taro mfd [вопрос]' },
+      { text: '      мысли · чувства · действия', tone: 'dim' },
+      { text: '  taro yesno [вопрос]' },
+      { text: '      да / нет · вердикт', tone: 'dim' },
+      { text: '  taro shadow [тема]' },
+      { text: '      работа с тенью · 6 карт', tone: 'dim' },
+      { text: '  taro pentagram [вопрос]' },
+      { text: '      пентаграмма · элементы и суть', tone: 'dim' },
+      { text: '  taro horseshoe [вопрос]' },
+      { text: '      подкова · от ситуации к исходу', tone: 'dim' },
+      { text: '  taro catalog' },
+      { text: '      виды раскладов', tone: 'dim' },
+      { text: '  taro guides' },
+      { text: '      сменить проводника', tone: 'dim' },
+      { text: '  taro history' },
+      { text: '      журнал сеансов (тап — развернуть)', tone: 'dim' },
+      { text: '  taro sound' },
+      { text: '      звук терминала вкл/выкл', tone: 'dim' },
+      { text: '  clear' },
+      { text: '      очистить экран', tone: 'dim' },
       { text: '' },
       { text: 'ОПИСАНИЕ', tone: 'accent' },
       { text: '  восемь раскладов: от карты дня до пентаграммы.' },
@@ -153,8 +167,10 @@ export default function Home() {
       { text: '' },
       { text: 'ФАЙЛЫ', tone: 'accent' },
       { text: '  README.оккульт · .шёпот · сеансы.log', tone: 'faint' },
+      { text: '' },
+      { text: '# тени слушают · ' + randomWhisper(characterId), tone: 'faint' },
     ], true);
-  }, [pushOut]);
+  }, [pushOut, characterId]);
 
   // ── диспетчер команд ──
   const executeCommand = useCallback(async (rawInput: string) => {

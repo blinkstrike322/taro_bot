@@ -770,7 +770,10 @@ body {
 .frame-ritual {
   position: relative;
   border: 3px solid #fff;
-  background: #0a0a0a;
+  /* матовое стекло, как у menu-box — сигил не спорит с содержимым */
+  background: rgba(5, 4, 15, 0.85);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
 }
 
 .frame-ritual::before {
@@ -812,7 +815,10 @@ body {
   border: 2px solid rgba(255, 255, 255, 0.55);
   padding: 5px 10px 4px;
   box-sizing: border-box;
-  background: #000;
+  /* матовое стекло, как у menu-box — сигил не спорит с содержимым */
+  background: rgba(5, 4, 15, 0.85);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
   text-align: center;
 }
 
@@ -1045,9 +1051,10 @@ body {
    ================================================================ */
 .ambient-sigil {
   position: absolute;
-  /* сдвинут за правый край так, чтобы ~70-75% сигила было видно */
-  top: 6%;
-  right: -22vw;
+  /* сдвинут выше/левее: ядро маски уходит в верхний правый угол,
+     текст читают матовые боксы (menu-box / frame-ritual / term-frame) */
+  top: -6%;
+  right: -10%;
   /* размер обратно крупный — как было */
   width: min(720px, 92vw);
   height: min(720px, 92vw);
@@ -1056,9 +1063,7 @@ body {
   /* мягкая маска — края растворяются в темноте */
   -webkit-mask-image: radial-gradient(ellipse at 82% 18%, #000 0%, #000 50%, transparent 90%);
   mask-image: radial-gradient(ellipse at 82% 18%, #000 0%, #000 50%, transparent 90%);
-  /* пониженная непрозрачность (~50% от прежней) — не выделяется,
-     лежит на фоне как тень чернил на пергаменте */
-  opacity: 0.5;
+  opacity: 0.8;
   mix-blend-mode: screen;
   /* очень медленный дрейф как у парящего пламени */
   animation: ambient-sigil-drift 38s ease-in-out infinite;
@@ -2528,7 +2533,7 @@ div[class*="boot-log"]::-webkit-scrollbar {
 
 .motd-cmd {
   display: flex;
-  align-items: baseline;
+  align-items: flex-start;
   gap: 8px;
   background: none;
   border: none;
@@ -2556,11 +2561,17 @@ div[class*="boot-log"]::-webkit-scrollbar {
   text-shadow: 0 0 8px rgba(255, 255, 255, 0.12);
 }
 
+/* описание ПОД командой — стек: на 390px правая колонка рвётся */
+.mc-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
 .mc-desc {
-  color: rgba(255, 255, 255, 0.38);
-  font-size: 11.5px;
-  margin-left: auto;
-  white-space: nowrap;
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 12px;
 }
 
 /* ── TUI-меню ── */
@@ -2577,9 +2588,12 @@ div[class*="boot-log"]::-webkit-scrollbar {
 }
 
 .menu-box {
-  border: 1px solid rgba(255, 255, 255, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.10);
   border-radius: 2px;
-  background: rgba(255, 255, 255, 0.012);
+  /* матовое стекло: перекрывает сигил, текст остаётся читаемым */
+  background: rgba(5, 4, 15, 0.85);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
   overflow: hidden;
 }
 
@@ -2596,6 +2610,7 @@ div[class*="boot-log"]::-webkit-scrollbar {
   cursor: pointer;
   text-align: left;
   font-family: var(--font-mono-crt);
+  transition: background .25s ease, border-color .25s ease;
 }
 
 .menu-row:last-child {
@@ -2608,7 +2623,8 @@ div[class*="boot-log"]::-webkit-scrollbar {
 }
 
 .menu-row--active {
-  background: rgba(255, 255, 255, 0.03);
+  border-left: 2px solid var(--guide-accent, #fff);
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .mr-marker {
@@ -2640,11 +2656,13 @@ div[class*="boot-log"]::-webkit-scrollbar {
 }
 
 .mr-desc {
-  color: rgba(255, 255, 255, 0.38);
+  color: rgba(255, 255, 255, 0.45);
   font-size: 11px;
-  white-space: nowrap;
+  /* до двух строк — длинные описания гайдов не режутся в одну */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
   overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .mr-right {
@@ -2652,6 +2670,11 @@ div[class*="boot-log"]::-webkit-scrollbar {
   font-size: 10px;
   letter-spacing: 0.08em;
   white-space: nowrap;
+}
+
+.mr-chev {
+  color: var(--guide-accent, #fff);
+  opacity: 0.6;
 }
 
 /* ── прогресс-бар ── */
@@ -2967,6 +2990,11 @@ div[class*="boot-log"]::-webkit-scrollbar {
   align-items: center;
 }
 
+/* второй ряд чипов — компактнее отступа от командной строки */
+.chips-row + .chips-row {
+  margin-top: 5px;
+}
+
 .chip {
   flex-shrink: 0;
   display: inline-flex;
@@ -2979,7 +3007,7 @@ div[class*="boot-log"]::-webkit-scrollbar {
   font-family: var(--font-pixel);
   font-size: 10.5px;
   letter-spacing: 0.03em;
-  padding: 4px 8px;
+  padding: 3px 7px;
   cursor: pointer;
   white-space: nowrap;
 }
@@ -3509,7 +3537,7 @@ button.history-row--open:active {
 
 /* сигил уходит в фон, когда в транскрипте уже есть чтение */
 .sigil-dim .ambient-sigil {
-  opacity: 0.22;
+  opacity: 0.45;
   transition: opacity 0.8s ease;
 }
 

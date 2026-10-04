@@ -3,6 +3,7 @@
 // TuiMenu — ncurses-стиль выбора: каталог раскладов и проводники.
 // Выбор пункта = выполнение команды (эхо + запуск), как в жизни.
 import { GUIDES } from '@/lib/guides';
+import { SPREADS, type FrontSpread } from '@/lib/spreads';
 
 interface TuiMenuProps {
   menuId: 'catalog' | 'guides';
@@ -22,12 +23,35 @@ interface Row {
   active?: boolean;
 }
 
+// порядок строк каталога — как в data/spreads.json (Task 9)
+const CATALOG_ORDER = [
+  'daily', 'single', 'yesno', 'three', 'mfd', 'shadow', 'pentagram', 'horseshoe',
+];
+
+/** русский плюрал: 1 аркан / 2-4 аркана / 5+ арканов */
+function arcansLabel(count: number): string {
+  const m10 = count % 10;
+  const m100 = count % 100;
+  if (m10 === 1 && m100 !== 11) return `${count} аркан`;
+  if (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) return `${count} аркана`;
+  return `${count} арканов`;
+}
+
 function catalogRows(): Row[] {
-  return [
-    { key: 'daily', marker: '1', label: 'карта дня', desc: 'без вопроса', right: '1 аркан', cmd: 'taro daily' },
-    { key: 'one', marker: '2', label: 'одна карта', desc: 'с вопросом', right: '1 аркан', cmd: 'taro ask1' },
-    { key: 'three', marker: '3', label: 'три карты', desc: 'динамический расклад по вопросу', right: '3 аркана', cmd: 'taro ask' },
-  ];
+  const spreads = CATALOG_ORDER
+    .map((id) => SPREADS[id])
+    .filter((s): s is FrontSpread => Boolean(s));
+  return spreads.map((s, i) => ({
+    key: s.id,
+    marker: String(i + 1),
+    label: s.name,
+    // у «трёх карт» позиции вычисляет бэкенд по вопросу — в меню фикс-строка
+    desc: s.id === 'three'
+      ? 'динамический расклад по вопросу'
+      : s.positions.map((p) => p.name).join(' · '),
+    right: arcansLabel(s.count),
+    cmd: s.cmd,
+  }));
 }
 
 function guideRows(activeGuideId: string): Row[] {
@@ -78,7 +102,9 @@ export default function TuiMenu({ menuId, activeGuideId, onRunCmd, onGuideSelect
               <span className="mr-label">{row.label}</span>
               <span className="mr-desc">{row.desc}</span>
             </span>
-            <span className="mr-right">{row.right}</span>
+            <span className="mr-right">
+              <span className="mr-chev">▸</span> {row.right}
+            </span>
           </button>
         ))}
       </div>

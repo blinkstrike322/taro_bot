@@ -18,7 +18,7 @@ interface CommandBarProps {
   onCancelPending: () => void;
 }
 
-/** основные команды терминала */
+/** основные команды терминала: ряд 1 — daily/ask/catalog, ряд 2 — guides/history */
 const QUICK_CHIPS = [
   'taro daily',
   'taro ask',
@@ -28,7 +28,7 @@ const QUICK_CHIPS = [
 ];
 
 /** системные — глушше, без стрелки, с пиктограммами */
-const SYS_CHIPS = ['taro sound', 'clear', 'help'] as const;
+const SYS_CHIPS = ['taro sound'] as const;
 
 /** пиктограмма для системного чипа (звук — живая, зависит от состояния) */
 function sysIcon(chip: string, soundOn: boolean): string {
@@ -131,32 +131,41 @@ export default function CommandBar({
           <span className="chip-hint">введи вопрос и нажми ↵ · пустая строка — без вопроса</span>
         </div>
       ) : (
-        <div className="chips-row">
-          {QUICK_CHIPS.map((chip) => (
-            <button
-              key={chip}
-              type="button"
-              className="chip"
-              onClick={() => runChip(chip)}
-              disabled={busy}
-            >
-              <span className="chip-arrow">▸</span> {chip}
-            </button>
+        <>
+          {/* два компактных ряда — на 390px один ряд рвётся на 3-4 строки */}
+          {[QUICK_CHIPS.slice(0, 3), QUICK_CHIPS.slice(3)].map((rowChips, rowIdx) => (
+            <div className="chips-row" key={rowIdx}>
+              {rowChips.map((chip) => (
+                <button
+                  key={chip}
+                  type="button"
+                  className="chip"
+                  onClick={() => runChip(chip)}
+                  disabled={busy}
+                >
+                  <span className="chip-arrow">▸</span> {chip}
+                </button>
+              ))}
+              {rowIdx === 1 && (
+                <>
+                  <span className="chips-sep" aria-hidden="true">│</span>
+                  {SYS_CHIPS.map((chip) => (
+                    <button
+                      key={chip}
+                      type="button"
+                      className={`chip chip--sys${chip === 'taro sound' && !soundOn ? ' chip--muted' : ''}`}
+                      onClick={() => runChip(chip)}
+                      disabled={busy}
+                      aria-label={chip}
+                    >
+                      <span className="chip-icon">{sysIcon(chip, soundOn)}</span> {chip}
+                    </button>
+                  ))}
+                </>
+              )}
+            </div>
           ))}
-          <span className="chips-sep" aria-hidden="true">│</span>
-          {SYS_CHIPS.map((chip) => (
-            <button
-              key={chip}
-              type="button"
-              className={`chip chip--sys${chip === 'taro sound' && !soundOn ? ' chip--muted' : ''}`}
-              onClick={() => runChip(chip)}
-              disabled={busy}
-              aria-label={chip}
-            >
-              <span className="chip-icon">{sysIcon(chip, soundOn)}</span> {chip}
-            </button>
-          ))}
-        </div>
+        </>
       )}
     </div>
   );

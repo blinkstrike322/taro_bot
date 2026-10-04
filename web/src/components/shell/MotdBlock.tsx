@@ -2,10 +2,14 @@
 
 // MotdBlock — message of the day: ASCII-логотип + тапабельные команды.
 // Тап по строке = выполнить команду: меню тут не нужны.
+// Описания — ПОД командой (стек): двух колонок не хватает на 390px.
+import { useMemo } from 'react';
 import type { Cmd } from '@/lib/commands';
+import { randomWhisper } from '@/lib/transcript';
 
 interface MotdBlockProps {
   onRunCmd: (cmd: string) => void;
+  characterId: string;
 }
 
 const LOGO =
@@ -21,7 +25,10 @@ const COMMANDS: Array<{ cmd: string; desc: string }> = [
   { cmd: 'help', desc: 'полная справка' },
 ];
 
-export default function MotdBlock({ onRunCmd }: MotdBlockProps) {
+export default function MotdBlock({ onRunCmd, characterId }: MotdBlockProps) {
+  // шёпот в футере фиксируем на монтировании — не мигает при ре-рендерах шелла
+  const footerWhisper = useMemo(() => randomWhisper(characterId), [characterId]);
+
   return (
     <div className="motd-block">
       <div className="motd-logo" aria-hidden="true">{LOGO}</div>
@@ -40,14 +47,19 @@ export default function MotdBlock({ onRunCmd }: MotdBlockProps) {
             onClick={() => onRunCmd(c.cmd)}
           >
             <span className="mc-arrow">▸</span>
-            <span className="mc-text">{c.cmd}</span>
-            <span className="mc-desc">{c.desc}</span>
+            <span className="mc-stack">
+              <span className="mc-text">{c.cmd}</span>
+              <span className="mc-desc">{c.desc}</span>
+            </span>
           </button>
         ))}
       </div>
 
       <div className="tl tl-comment" style={{ marginTop: 10 }}>
         {'# вопрос можно задать сразу:\n# taro ask стоит ли открывать своё дело'}
+      </div>
+      <div className="tl tl-faint" style={{ marginTop: 8 }}>
+        {'# тени слушают · ' + footerWhisper}
       </div>
     </div>
   );

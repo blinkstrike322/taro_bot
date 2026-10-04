@@ -206,7 +206,7 @@ export default function Shell({
         return <BootSequence key={entry.id} characterId={characterId} onDone={onBootDone} />;
 
       case 'motd':
-        return <MotdBlock key={entry.id} onRunCmd={onRunCmd} />;
+        return <MotdBlock key={entry.id} onRunCmd={onRunCmd} characterId={characterId} />;
 
       case 'cmd':
         return (
