@@ -13,6 +13,7 @@ import httpx
 from config import settings
 from core.llm import parse_llm_response, strip_emojis
 from core.prompts import get_system_prompt, build_reading_prompt, build_followup_messages
+from core.spreads import get_spread
 from core.tarot import load_cards
 
 ZEN_URL = "https://opencode.ai/zen/v1/chat/completions"
@@ -39,9 +40,13 @@ def make_prompts():
         {"name": "Луна", "orientation": "reversed"},
         {"name": "Солнце", "orientation": "upright"},
     ]
+    daily_spread = get_spread("daily")
     daily = (
         get_system_prompt("shadow_walker"),
-        build_reading_prompt(daily_cards, None, "shadow_walker", "daily"),
+        build_reading_prompt(
+            daily_cards, None, "shadow_walker", daily_spread,
+            [p["name"] for p in daily_spread["positions"]],
+        ),
         6000,
     )
     follow = build_followup_messages(

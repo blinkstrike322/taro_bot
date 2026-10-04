@@ -257,6 +257,7 @@ async def test_garbage_llm_falls_back_to_cards_db(db, monkeypatch):
     """Трижды мусор ниже пола — пользователю едет детерминированный фолбэк
     по базе карт (с реальным именем карты), а не chain-of-thought (прод 2026-09-17)."""
     import core.llm as llm_module
+    from core.spreads import resolve_spread
 
     async def garbage_llm(*a, **kw):
         return "We need to produce JSON with fields — only thinking, no answer " * 20
@@ -266,8 +267,114 @@ async def test_garbage_llm_falls_back_to_cards_db(db, monkeypatch):
         question="вопрос?",
         cards=[{"name": "Башня", "orientation": "reversed"}],
         character_id="shadow_walker",
-        spread_type=1,
+        spread=resolve_spread(1, "вопрос?"),
     )
     blob = json.dumps(result, ensure_ascii=False)
     assert "Башня" in blob
     assert "We need" not in blob
+
+
+# ── Каталог раскладов (occult terminal 2.0): reading_type и поля ответа ────
+
+
+async def _reading_row(db, token: str) -> dict:
+    """Строка readings по токену: type + cards_data (get_reading_by_token их не отдаёт)."""
+    cursor = await db.execute(
+        "SELECT type, cards_data FROM readings WHERE client_token = ?", (token,)
+    )
+    row = await cursor.fetchone()
+    assert row is not None, f"reading {token} not found"
+    return {"type": row[0], "cards_data": json.loads(row[1]) if row[1] else {}}
+
+
+@pytest.mark.asyncio
+async def test_begin_serves_catalog_spread_fields(db, monkeypatch):
+    """Новый расклад из каталога: /begin отдаёт spread_id/spread_name/
+    position_keys/positions (по карте на позицию), в БД — reading_type
+    spread_<id> и строковый id в cards_data."""
+    async def fake_interpret(*a, **kw):
+        return _canned_interpretation()
+    monkeypatch.setattr(app_module, "interpret_reading", fake_interpret)
+
+    init_data = _make_init_data(777)
+    async with TestClient(TestServer(app_module.create_webapp())) as client:
+        resp = await client.post(
+            "/api/spread/begin",
+            json={"init_data": init_data, "spread_type": "horseshoe",
+                  "question": "куда это ведёт?"},
+        )
+        assert resp.status == 200, await resp.text()
+        body = await resp.json()
+        assert len(body["cards"]) == 7
+        assert body["spread_id"] == "horseshoe"
+        assert body["spread_name"] == "подкова"
+        assert body["position_keys"] == ["p1", "p2", "p3", "p4", "p5", "p6", "p7"]
+        assert body["positions"] == [
+            "ситуация", "скрытое", "препятствие", "внешнее",
+            "твоя позиция", "чужая позиция", "исход",
+        ]
+
+        row = await _reading_row(db, body["token"])
+        assert row["type"] == "spread_horseshoe"
+        assert row["cards_data"]["spread_type"] == "horseshoe"
+
+
+@pytest.mark.asyncio
+async def test_begin_legacy_types_keep_reading_type(db, monkeypatch):
+    """Легаси-типы фронта не ломаются: 1 без вопроса → daily (карта дня),
+    1 с вопросом → spread_1, 3 → spread_3 (значения знает spreadLabelFromType)."""
+    async def fake_interpret(*a, **kw):
+        return _canned_interpretation()
+    monkeypatch.setattr(app_module, "interpret_reading", fake_interpret)
+
+    cases = [
+        (888, {"spread_type": 1, "question": None}, "daily", 1),
+        (889, {"spread_type": "1", "question": "вопрос?"}, "spread_1", 1),
+        (890, {"spread_type": 3, "question": None}, "spread_3", 3),
+        (892, {"spread_type": "daily", "question": None}, "daily", 1),
+    ]
+    async with TestClient(TestServer(app_module.create_webapp())) as client:
+        for tg_id, payload, expected_type, expected_count in cases:
+            resp = await client.post(
+                "/api/spread/begin",
+                json={"init_data": _make_init_data(tg_id), **payload},
+            )
+            assert resp.status == 200, await resp.text()
+            body = await resp.json()
+            assert len(body["cards"]) == expected_count, payload
+            row = await _reading_row(db, body["token"])
+            assert row["type"] == expected_type, payload
+
+
+@pytest.mark.asyncio
+async def test_dedup_response_carries_catalog_fields(db, monkeypatch):
+    """Дедуп двойного /begin отдаёт те же каталоговые поля, что и обычный ответ."""
+    started = asyncio.Event()
+    release = asyncio.Event()
+
+    async def slow_interpret(*a, **kw):
+        started.set()
+        await release.wait()
+        return _canned_interpretation()
+    monkeypatch.setattr(app_module, "interpret_reading", slow_interpret)
+
+    init_data = _make_init_data(891)
+    payload = {"init_data": init_data, "spread_type": "mfd",
+               "question": "он думает обо мне?"}
+    async with TestClient(TestServer(app_module.create_webapp())) as client:
+        r1 = await client.post("/api/spread/begin", json=payload)
+        assert r1.status == 200
+        token1 = (await r1.json())["token"]
+        await asyncio.wait_for(started.wait(), timeout=5)
+
+        r2 = await client.post("/api/spread/begin", json=payload)
+        assert r2.status == 200
+        body2 = await r2.json()
+        assert body2["token"] == token1
+        assert body2["spread_id"] == "mfd"
+        assert body2["spread_name"] == "мысли · чувства · действия"
+        assert body2["position_keys"] == ["p1", "p2", "p3"]
+        assert body2["positions"] == ["мысли", "чувства", "действия"]
+
+        release.set()
+        await _wait_completed(db, token1)

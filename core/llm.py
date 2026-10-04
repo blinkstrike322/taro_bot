@@ -584,17 +584,26 @@ async def interpret_reading(
     question: str | None,
     cards: list[dict],
     character_id: str = "shadow_walker",
-    spread_type: int = 1,
+    spread: dict | None = None,
+    positions: list[str] | None = None,
     avoid_texts: list[str] | None = None,
 ) -> dict:
     from core.prompts import _load_characters, build_reading_prompt, get_system_prompt
+    from core.spreads import resolve_spread
     from core.voice_gate import SCORE_PASS, build_repair_note, score_interpretation
+
+    # Легаси-вызовы (скрипты, старый код) шлют spread_type значением —
+    # разрешаем его в запись каталога; dict проходит как есть.
+    if not isinstance(spread, dict):
+        spread = resolve_spread(spread, question)
+    if not positions:
+        positions = [p["name"] for p in spread["positions"]]
 
     ch = _load_characters().get(character_id, {})
     temperature = ch.get("temperature", DEFAULT_TEMPERATURE)
     preferred_models = ch.get("prefer_models") or None
     system_prompt = get_system_prompt(character_id, avoid_texts=avoid_texts)
-    user_prompt = build_reading_prompt(cards, question, character_id, spread_type)
+    user_prompt = build_reading_prompt(cards, question, character_id, spread, positions)
 
     # Reasoning models need extra token budget
     is_reasoning = _zen_key() is not None
@@ -627,8 +636,12 @@ async def interpret_reading(
                 continue
             parsed = parse_llm_response(raw)
             if parsed:
-                # схемная + семантическая проверка против фактических карт
-                parsed = validate_interpretation(parsed, cards, question, spread_type)
+                # схемная + семантическая проверка против фактических карт;
+                # валидатор понимает легаси-маркер "3" для трёхкарточной схемы
+                parsed = validate_interpretation(
+                    parsed, cards, question,
+                    "3" if spread["id"] == "three" else spread["id"],
+                )
             if not parsed:
                 logger.warning(
                     "LLM response failed validation (attempt %d) — raw head: %r",
@@ -672,7 +685,7 @@ async def interpret_reading(
     except RuntimeError:
         logger.error("All LLM models failed, using fallback")
 
-    return fallback_from_cards_db(cards, question, character_id, spread_type)
+    return fallback_from_cards_db(cards, question, character_id, spread)
 
 
 _TEXT_FIELD_ALIASES = {
@@ -779,9 +792,10 @@ def fallback_from_cards_db(
     cards: list[dict],
     question: str | None = None,
     character_id: str = "shadow_walker",
-    spread_type: object = 1,
+    spread: dict | None = None,
 ) -> dict:
-    from core.prompts import _positions_for_question, _spread_mode
+    from core.prompts import _positions_for_question
+    from core.spreads import resolve_spread
     from core.tarot import load_cards
 
     all_cards = load_cards()
@@ -794,7 +808,9 @@ def fallback_from_cards_db(
     voice = ch.get("name", "Проводник")
     advice = ch.get("fallback_advice", "Обдумай значение карт в контексте своего вопроса.")
 
-    mode = _spread_mode(spread_type, question, len(cards))
+    if not isinstance(spread, dict):
+        spread = resolve_spread(spread, question)
+    mode = spread["mode"]
 
     def _meaning(card: dict) -> str:
         name = card.get("name", "")

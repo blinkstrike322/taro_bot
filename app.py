@@ -21,6 +21,7 @@ from core.llm import get_last_llm_hop, interpret_reading
 from core.prompts import _positions_for_question
 from core.quota import check_quota, reserve_quota
 from core.reminder import reminder_loop
+from core.spreads import resolve_spread
 from core.tarot import draw_cards
 from storage.db import (
     STATUS_COMPLETED,
@@ -290,7 +291,8 @@ async def _whisper_task(token: str, ctx: dict, cards: list[dict]) -> None:
             question=ctx["question"],
             cards=cards,
             character_id=ctx["character_id"],
-            spread_type=ctx["spread_type"],
+            spread=ctx["spread"],
+            positions=ctx["positions"],
             avoid_texts=avoid_texts,
         )
         latency_ms = int((time.monotonic() - started) * 1000)
@@ -356,6 +358,9 @@ async def handle_spread_begin(request):
             "token": ctx["token"],
             "remaining": ctx["quota"].get("remaining"),
             "limit": ctx["quota"].get("limit"),
+            "spread_id": ctx["spread_id"],
+            "spread_name": ctx["spread_name"],
+            "position_keys": ctx["position_keys"],
         }
         if ctx.get("positions"):
             response["positions"] = ctx["positions"]
@@ -373,9 +378,12 @@ async def handle_spread_begin(request):
         "token": token,
         "remaining": ctx["quota"].get("remaining"),
         "limit": ctx["quota"].get("limit"),
+        "spread_id": ctx["spread_id"],
+        "spread_name": ctx["spread_name"],
+        "position_keys": ctx["position_keys"],
     }
-    # Динамические позиции трёхкарточного расклада — фронтенд показывает их
-    # сразу после раздачи (вместо легаси «прошлое·настоящее·будущее»).
+    # Имена позиций — фронтенд показывает их сразу после раздачи (для всех
+    # раскладов каталога, по одной на карту).
     if ctx.get("positions"):
         response["positions"] = ctx["positions"]
     return web.json_response(response)
@@ -434,12 +442,30 @@ async def _spread_request_context(request, client_token: str):
     user = await get_or_create_user(db, tg_id)
 
     # Quota — frontend sends spread_type=1 with no question for daily card
-    spread_type_str = "daily" if (spread_type == "daily" or (spread_type in (1, "1") and not question)) else "non_daily"
+    spread = resolve_spread(spread_type, question)
+    spread_id = spread["id"]
+    # легаси-типы сохраняют прежние reading_type (дедуп/журнал не ломаются):
+    # 1 → spread_1, 3 → spread_3; новые id — spread_<id>
+    if spread_id == "daily":
+        spread_type_str = "daily"
+        reading_type = "daily"
+    elif str(spread_type) in ("1", "3"):
+        spread_type_str = "non_daily"
+        reading_type = f"spread_{spread_type}"
+    else:
+        spread_type_str = "non_daily"
+        reading_type = f"spread_{spread_id}"
     is_daily = spread_type_str == "daily"
-    count = 3 if (not is_daily and str(spread_type) == "3") else 1
+    count = min(int(spread["count"]), 10)
+    needs_q = spread["needs_question"]
+    if needs_q and not (question and str(question).strip()):
+        return web.json_response({"error": "для этого расклада нужен вопрос"}, status=400)
+    if spread_id == "three":
+        positions = _positions_for_question(question)
+    else:
+        positions = [p["name"] for p in spread["positions"]]
+    position_keys = [p["key"] for p in spread["positions"]]
     cards = draw_cards(count)
-    reading_type = "daily" if is_daily else f"spread_{spread_type}"
-    positions = _positions_for_question(question) if count == 3 else None
 
     # Проводника определяет сервер: Telegram identity → пользователь БД.
     # Поле character_id из тела запроса — только UI-подсказка и не используется.
@@ -454,17 +480,29 @@ async def _spread_request_context(request, client_token: str):
         active_cards = (active["cards_data"] or {}).get("cards") or []
         if active_cards:
             quota_view = await check_quota(db, user.id, tg_id, spread_type_str)
+            # Позиции активного расклада — тем же способом, что для нового:
+            # three — динамические по вопросу, остальные — имена из каталога.
+            active_positions = (
+                _positions_for_question(active["question"])
+                if spread_id == "three"
+                else positions
+            )
+            if len(active_positions) != len(active_cards):
+                active_positions = None
             return {
                 "deduped": True,
                 "token": active["client_token"],
                 "cards": active_cards,
-                "positions": _positions_for_question(active["question"]) if len(active_cards) == 3 else None,
+                "positions": active_positions,
+                "spread_id": spread_id,
+                "spread_name": spread["name"],
+                "position_keys": position_keys,
                 "quota": {"remaining": quota_view.get("remaining"), "limit": quota_view.get("limit")},
             }
 
     # Резервируем слот квоты атомарно — до запуска LLM (см. reserve_quota).
     # Без _user_lock: резерв атомарен на уровне SQL (см. комментарий выше).
-    cards_data = {"cards": cards, "spread_type": spread_type}
+    cards_data = {"cards": cards, "spread_type": spread_id}
     quota = await reserve_quota(
         db,
         user_id=user.id,
@@ -513,7 +551,11 @@ async def _spread_request_context(request, client_token: str):
         "character_id": character_id,
         "spread_type": spread_type,
         "reading_type": reading_type,
+        "spread": spread,
+        "spread_id": spread_id,
+        "spread_name": spread["name"],
         "positions": positions,
+        "position_keys": position_keys,
         "reading_id": quota["reading_id"],
         "quota": quota,
     }

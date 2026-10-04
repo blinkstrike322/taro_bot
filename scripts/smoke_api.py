@@ -28,7 +28,7 @@ from core.quota import MONTHLY_LIMIT_FREE
 from storage.db import get_db
 
 
-async def fake_interpret_reading(question, cards, character_id="shadow_walker", spread_type=1):
+async def fake_interpret_reading(question, cards, character_id="shadow_walker", spread=None, positions=None, avoid_texts=None):
     """Стаб LLM: мгновенный валидный ответ — смоук-тестируем API, не модели."""
     return {
         "intro": "шёпот дыма",

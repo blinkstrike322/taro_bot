@@ -186,7 +186,9 @@ def test_fallback_from_cards_db_three_mode():
         {"name": "Маг", "orientation": "reversed", "is_reversed": True},
         {"name": "Верховная Жрица", "orientation": "upright", "is_reversed": False},
     ]
-    result = fallback_from_cards_db(cards, "Что ждёт меня?", "ruin_keeper", spread_type=3)
+    result = fallback_from_cards_db(
+        cards, "Что ждёт меня?", "ruin_keeper", spread=resolve_spread(3, "Что ждёт меня?")
+    )
     assert "позиции" in result
     assert "связь_карт" in result
     assert "card_meaning" not in result
@@ -200,7 +202,7 @@ def test_fallback_from_cards_db_three_mode():
 
 def test_fallback_from_cards_db_daily_mode():
     cards = [{"name": "Шут", "orientation": "upright", "is_reversed": False}]
-    result = fallback_from_cards_db(cards, None, "spark_of_chaos", spread_type=1)
+    result = fallback_from_cards_db(cards, None, "spark_of_chaos", spread=resolve_spread(1, None))
     assert "проявление" in result
     assert "на_что_смотреть" in result
     assert "траектория" in result
@@ -237,7 +239,7 @@ async def test_interpret_reading_mocked_llm():
             question=None,
             cards=cards,
             character_id="shadow_walker",
-            spread_type=1,
+            spread=resolve_spread(1, None),
         )
 
     assert result is not None
