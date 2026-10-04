@@ -7,6 +7,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { sKey } from '@/lib/sound';
 import { typeInto, type TypeFlowHandle } from '@/lib/typeFlow';
+import { typingActivity } from '@/lib/typingActivity';
 
 interface TypewriterProps {
   text: string;
@@ -49,11 +50,15 @@ export default function Typewriter({ text, speedMs = 22, className, sound = fals
     host.appendChild(node);
     let cancelled = false;
 
+    // begin/end строго парны: finished резолвится и при cancel(),
+    // поэтому единственный end живёт в .then.
+    typingActivity.begin();
     flowRef.current = typeInto(node, text, {
       cps,
       onTick: sound ? sKey : undefined,
     });
     flowRef.current.finished.then(() => {
+      typingActivity.end();
       if (cancelled) return;
       setDone(true);
       onDoneRef.current?.();

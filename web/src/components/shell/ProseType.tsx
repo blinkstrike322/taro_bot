@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from 'react';
 import { sType } from '@/lib/sound';
 import { joinedParagraphs } from '@/lib/prose';
 import { typeInto, type TypeFlowHandle } from '@/lib/typeFlow';
+import { typingActivity } from '@/lib/typingActivity';
 
 interface ProseTypeProps {
   text: string;
@@ -71,11 +72,15 @@ export default function ProseType({
 
     const start = () => {
       if (cancelled) return;
+      // begin/end строго парны: finished резолвится и при cancel(), поэтому
+      // единственный end живёт в .then — двойного декремента не бывает.
+      typingActivity.begin();
       flowRef.current = typeInto(node, joinedParagraphs(text), {
         cps: effCps,
         onTick: sound ? sType : undefined,
       });
       flowRef.current.finished.then(() => {
+        typingActivity.end();
         if (cancelled) return;
         setDone(true);
         onDoneRef.current?.();

@@ -253,6 +253,7 @@ body {
   opacity: .62;
   mix-blend-mode: overlay;
   image-rendering: pixelated;
+  transition: opacity .6s ease;
 }
 
 /* Фоновые слои изолированы от скролла без обрезки (paint/size containment
@@ -277,6 +278,25 @@ body {
 .crt[data-scrolling="1"] .ambient-symbol {
   animation-play-state: paused;
 }
+
+/* Пока канал печатает (data-typing ставит Shell по подписке на
+   typingActivity) — мир замирает: фокус на тексте + свободный main-thread */
+.crt[data-typing]::after,
+.crt[data-typing] .ritual-smoke__cloud,
+.crt[data-typing] .ambient-sigil,
+.crt[data-typing] .sigil-rotate-slow,
+.crt[data-typing] .sigil-rotate-slow-rev,
+.crt[data-typing] .sigil-pulse,
+.crt[data-typing] .sigil-dot,
+.crt[data-typing] .constellation-star,
+.crt[data-typing] .lunar-glyph,
+.crt[data-typing] .ambient-symbol {
+  animation-play-state: paused;
+}
+
+/* лёгкое притушивание тяжёлых фонов на время печати */
+.crt[data-typing] .ritual-smoke { opacity: .5; }
+.crt[data-typing] .crt-noise { opacity: .35; }
 
 /* ================================================================
    PROCEDURAL OCCULT CARD BACK
@@ -421,14 +441,14 @@ body {
 }
 
 .glitch {
-  animation: glitch 3.6s steps(2) infinite;
+  animation: glitch 3.6s cubic-bezier(.3, .7, .2, 1) infinite;
 }
 
 /* ================================================================
    BUTTON
    ================================================================ */
 .btn {
-  transition: transform .08s steps(2);
+  transition: transform .08s cubic-bezier(.3, .7, .2, 1);
   position: relative;
 }
 
@@ -836,7 +856,7 @@ body {
   height: 5px;
   background: var(--guide-accent, #fff);
   display: inline-block;
-  animation: term-rec-blink 1.6s steps(2) infinite;
+  animation: term-rec-blink 1.6s ease-in-out infinite;
 }
 
 @keyframes term-rec-blink {
@@ -1094,6 +1114,7 @@ body {
   z-index: 1;
   overflow: hidden;
   mix-blend-mode: screen;
+  transition: opacity 1.2s ease;
 }
 
 .ritual-smoke__cloud {
@@ -1428,14 +1449,13 @@ body {
 
 .guide-portrait-scan {
   filter: grayscale(1) contrast(1.5) brightness(0.85);
-  animation: portrait-flicker 5s steps(5) infinite;
+  animation: portrait-flicker 5s ease-in-out infinite;
 }
 
+/* v2: плёночное мерцание портрета — плавная пульсация яркости вместо рваных steps */
 @keyframes portrait-flicker {
-  0%, 100% { opacity: 0.95; filter: grayscale(1) contrast(1.5) brightness(0.85); }
-  23% { opacity: 0.85; filter: grayscale(1) contrast(1.7) brightness(0.78); }
-  47% { opacity: 0.95; filter: grayscale(1) contrast(1.5) brightness(0.85); }
-  73% { opacity: 0.75; filter: grayscale(1) contrast(1.4) brightness(0.7); }
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.85; }
 }
 
 /* ================================================================
@@ -1522,7 +1542,7 @@ body {
   height: 6px;
   background: var(--guide-accent, #fff);
   display: inline-block;
-  animation: guide-loading-pulse 1.2s steps(3) infinite;
+  animation: guide-loading-pulse 1.2s ease-in-out infinite;
   animation-delay: var(--dot-delay, 0s);
 }
 
@@ -1540,7 +1560,7 @@ body {
   background: #000;
   color: #fff;
   overflow: hidden;
-  transition: transform 0.08s steps(2), background 0.12s steps(2), color 0.12s steps(2);
+  transition: transform 0.08s cubic-bezier(.3, .7, .2, 1), background 0.12s cubic-bezier(.3, .7, .2, 1), color 0.12s cubic-bezier(.3, .7, .2, 1);
   isolation: isolate;
 }
 
@@ -1552,7 +1572,7 @@ body {
   border: 1px solid rgba(255,255,255,0.25);
   pointer-events: none;
   z-index: 1;
-  transition: border-color 0.12s steps(2);
+  transition: border-color 0.12s cubic-bezier(.3, .7, .2, 1);
 }
 
 /* CRT scanlines on the button face */
@@ -1584,7 +1604,7 @@ body {
   width: 3px;
   height: 3px;
   background: #fff;
-  transition: background 0.12s steps(2);
+  transition: background 0.12s cubic-bezier(.3, .7, .2, 1);
 }
 
 .bvc-tl { top: -1px;    left: -1px; }
@@ -1762,7 +1782,7 @@ body {
 }
 
 .sigil-dot {
-  animation: sigil-dot-blink var(--dot-dur, 2s) steps(2) infinite;
+  animation: sigil-dot-blink var(--dot-dur, 2s) ease-in-out infinite;
   animation-delay: var(--dot-delay, 0s);
   opacity: var(--dot-op, 0.5);
 }
@@ -2324,7 +2344,7 @@ div[class*="boot-log"]::-webkit-scrollbar {
   border-radius: 50%;
   background: var(--t-err, #ff7a7a);
   box-shadow: 0 0 6px var(--t-err, #ff7a7a);
-  animation: recblink 1.6s steps(1) infinite;
+  animation: recblink 1.6s ease-in-out infinite;
 }
 
 @keyframes recblink {
@@ -3015,7 +3035,7 @@ div[class*="boot-log"]::-webkit-scrollbar {
 }
 
 .pd-dots {
-  animation: blink 1.2s steps(1) infinite;
+  animation: blink 1.2s ease-in-out infinite;
   color: rgba(255, 255, 255, 0.4);
 }
 
@@ -3223,18 +3243,6 @@ button.history-row--open:active {
   animation-delay: var(--jl-delay, 0s);
 }
 
-.reading-transmission {
-  display: inline-block;
-  font-weight: 800;
-  font-size: 12px;
-  letter-spacing: 0.14em;
-  color: var(--guide-accent, #fff);
-  text-shadow: 0 0 8px var(--guide-accent-dim, transparent);
-  border: 1px solid var(--guide-accent-dim, rgba(255,255,255,0.25));
-  padding: 2px 8px;
-  margin-bottom: 8px;
-}
-
 .reading-meta {
   color: rgba(255,255,255,0.55);
   font-size: 11.5px;
@@ -3310,7 +3318,7 @@ button.history-row--open:active {
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.14em;
-  color: rgba(255,255,255,0.38);
+  color: rgba(255,255,255,0.45);
   margin: 14px 0 4px;
   text-transform: lowercase;
 }
@@ -3319,11 +3327,6 @@ button.history-row--open:active {
   color: var(--guide-accent, #fff);
   text-shadow: 0 0 8px var(--guide-accent-dim, transparent);
   margin-top: 12px;
-}
-
-.reading-section-label--advice {
-  color: var(--guide-accent, #fff);
-  text-shadow: 0 0 8px var(--guide-accent-dim, transparent);
 }
 
 .reading-whisper {
@@ -3353,12 +3356,6 @@ button.history-row--open:active {
   font-size: 14px;
   font-weight: 500;
   line-height: 1.7;
-}
-
-.reading-body {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
 }
 
 .reading-body-text {

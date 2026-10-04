@@ -8,6 +8,7 @@
 // видеомагнитофоне. prefers-reduced-motion замирает кадром.
 // ─────────────────────────────────────────────────────────────
 import { useEffect, useRef } from 'react';
+import { typingActivity } from '@/lib/typingActivity';
 
 export default function CrtNoise() {
   const ref = useRef<HTMLCanvasElement>(null);
@@ -45,7 +46,9 @@ export default function CrtNoise() {
     const draw = (t: number) => {
       if (reduced) return; // один статичный кадр
       raf = requestAnimationFrame(draw);
-      if (scrolling) return;
+      // во время печати putImageData тоже пропускаем — зерно канваса
+      // живёт собственным rAF-циклом, CSS-пауза его не останавливает
+      if (scrolling || typingActivity.isActive()) return;
       if (t - last < 68) return; // ~14 fps — глазу достаточно
       last = t;
 

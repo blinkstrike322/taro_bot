@@ -342,6 +342,8 @@ export default function ReadingResult({
             </div>
           )}
 
+          {/* инвариант buildBodyGroups: disclosures максимум один (траектория дня),
+              поэтому ниже читается только bodyDisclosures[0] — не «первый из списка» */}
           {bodyDisclosures.length > 0 && stage >= disclosureIdx && (
             <details
               className="reading-line reading-det"

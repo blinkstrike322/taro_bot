@@ -15,6 +15,7 @@ import ConstellationLayer from '@/components/ConstellationLayer';
 import LunarGlyphsLayer from '@/components/LunarGlyphsLayer';
 import { getGuide } from '@/lib/guides';
 import { shellUser } from '@/lib/commands';
+import { typingActivity } from '@/lib/typingActivity';
 import type { Entry, HistoryRow } from '@/lib/transcript';
 import CommandBar from './CommandBar';
 import BootSequence from './BootSequence';
@@ -103,6 +104,18 @@ export default function Shell({
       host.removeAttribute('data-scrolling');
     };
   }, []);
+
+  // Пока канал печатает (ProseType/Typewriter двигают счётчик) — ставим
+  // data-typing на .shell-root и на .crt: CSS ставит ambient-слои на паузу
+  // и притушивает дым/зерно, main-thread остаётся печати.
+  useEffect(() => {
+    const root = rootRef.current;
+    const host = root?.closest('.crt') ?? root;
+    return typingActivity.subscribe((active) => {
+      root?.toggleAttribute('data-typing', active);
+      host?.toggleAttribute('data-typing', active);
+    });
+  }, []);
   /** entryId → DOM-узел записи (для скролла к началу расклада) */
   // auto-scroll: обычный терминал следует за выводом (вниз), но когда появляется
   // НОВЫЙ расклад — мгновенно прыгаем к ЕГО началу, а не к низу транскрипта.
@@ -110,6 +123,7 @@ export default function Shell({
   const handledReadingRef = useRef<number | null>(null);
   const anchorIdRef = useRef<number | null>(null);
   const anchorUntilRef = useRef(0);
+  const scrollRafRef = useRef(0);
   const ANCHOR_MS = 2000; // окно «только что пришёл расклад» — не фоллоу-вниз
   // Пользователь ушёл читать наверх — новые строки не уводят вниз насильно.
   const stickRef = useRef(true);
@@ -164,10 +178,18 @@ export default function Shell({
 
     // обычный терминал: следуем за выводом вниз, только если пользователь
     // и так внизу (иначе плавный скролл вырывает чтение из-под пальцев).
-    // Без плавности под prefers-reduced-motion.
+    // Без плавности под prefers-reduced-motion и во время печати
+    // (smooth-скролл борется с посимвольным выводом).
     if (!stickRef.current) return;
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    el.scrollTo({ top: el.scrollHeight, behavior: reduced ? 'auto' : 'smooth' });
+    const behavior: ScrollBehavior = reduced || typingActivity.isActive() ? 'auto' : 'smooth';
+    if (scrollRafRef.current) cancelAnimationFrame(scrollRafRef.current);
+    scrollRafRef.current = requestAnimationFrame(() => {
+      el.scrollTo({ top: el.scrollHeight, behavior });
+    });
+    return () => {
+      if (scrollRafRef.current) cancelAnimationFrame(scrollRafRef.current);
+    };
   }, [entries, scrollTick]);
 
   // Тяжёлые постоянно анимированные ambient-слои (~6.8к SVG-нод + full-screen зерно)
