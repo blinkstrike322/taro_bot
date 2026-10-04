@@ -5,12 +5,12 @@ import { getGuide } from '@/lib/guides';
 import SpreadBlock from '@/components/shell/SpreadBlock';
 
 const CARDS = [
-  { id: 'seven-of-wands', name: 'Семёрка Жезлов', reversed: false, pos: 'Твоя позиция и энергия', тракт: 'Ты в обороне: держишь высоту и ждёшь подвоха. Эта усталость гасит свет Звезды — ты не даёшь надежде места.' },
-  { id: 'the-star', name: 'Звезда', reversed: true, pos: 'Динамика между вами', тракт: 'Перевёрнутая Звезда — вера на исходе. Динамика буксует не из-за внешних стен, а из-за внутреннего неверия.' },
+  { id: 'seven-of-wands', name: 'Семерка Жезлов', reversed: false, pos: 'Твоя позиция и энергия', тракт: 'Ты в обороне: держишь высоту и ждешь подвоха. Эта усталость гасит свет Звезды — ты не даешь надежде места.' },
+  { id: 'the-star', name: 'Звезда', reversed: true, pos: 'Динамика между вами', тракт: 'Перевернутая Звезда — вера на исходе. Динамика буксует не из-за внешних стен, а из-за внутреннего неверия.' },
   { id: 'death', name: 'Смерть', reversed: false, pos: 'Главный вектор развития', тракт: 'Вектор — завершение. Оборона и неверие держат тебя в коридоре, а Смерть открывает дверь в конце него.' },
 ];
 const WHISPER = 'Три карты дышат в такт — это одна история, а не три.';
-const SIGNAL = 'Ты стоишь на пороге: за спиной — незавершённый спор, а впереди — пауза, которую ты боишься. Семёрка Жезлов держит оборону там, где бой уже кончился, а Звезда тихо напоминает, что надежда — это тоже работа. Смерть в финале не забирает, а закрывает дверь, которую ты сам дёргаешь уже месяц.';
+const SIGNAL = 'Ты стоишь на пороге: за спиной — незавершенный спор, а впереди — пауза, которую ты боишься. Семерка Жезлов держит оборону там, где бой уже кончился, а Звезда тихо напоминает, что надежда — это тоже работа. Смерть в финале не забирает, а закрывает дверь, которую ты сам дергаешь уже месяц.';
 const THREAD = 'Механика расклада — переход: оборона перетекает в неверие, а неверие разрешается завершением. Карты не спорят, они ведут друг друга за руку.';
 const ADVICE = 'Перестань оборонять пустую высоту. Закрой один старый вопрос на этой неделе.';
 const QUESTION = 'что происходит в моих отношениях';
@@ -75,7 +75,7 @@ function VariantA({ gid }: { gid: string }) {
               <CardImg id={c.id} name={c.name} reversed={c.reversed} />
               <div className="va-name">{c.name}</div>
               <div className="va-rev" style={{ color: c.reversed ? g.accent : 'rgba(255,255,255,.35)' }}>
-                {c.reversed ? '↳ перевёрнутая' : '· прямая'}
+                {c.reversed ? '↳ перевернутая' : '· прямая'}
               </div>
             </div>
           ))}
@@ -131,7 +131,7 @@ function VariantC({ gid }: { gid: string }) {
         <div className="vc-body">
           {CARDS.map((c, i) => (
             <div key={c.id} style={{ marginBottom: 8 }}>
-              <div style={{ fontWeight: 800 }}>{String(i + 1).padStart(2, '0')} · {c.name} <span style={{ color: c.reversed ? g.accent : 'rgba(255,255,255,.4)', fontWeight: 400, fontSize: 12 }}>{c.reversed ? '↳ перевёрнутая' : '· прямая'}</span></div>
+              <div style={{ fontWeight: 800 }}>{String(i + 1).padStart(2, '0')} · {c.name} <span style={{ color: c.reversed ? g.accent : 'rgba(255,255,255,.4)', fontWeight: 400, fontSize: 12 }}>{c.reversed ? '↳ перевернутая' : '· прямая'}</span></div>
               <div style={{ color: 'rgba(255,255,255,.6)', fontSize: 12 }}>{c.pos}</div>
               <div style={{ marginTop: 3 }}>{c.тракт}</div>
             </div>
@@ -175,7 +175,7 @@ function VariantD({ gid }: { gid: string }) {
         <p>{THREAD}</p>
       </details>
       <details className="vd-det" style={{ ['--ga' as never]: g.accent }}>
-        <summary>шёпот <span className="vd-hint">— раскрой</span></summary>
+        <summary>шепот <span className="vd-hint">— раскрой</span></summary>
         <p style={{ fontStyle: 'italic' }}>{WHISPER}</p>
       </details>
     </div>
@@ -195,7 +195,7 @@ function VariantAD({ gid }: { gid: string }) {
               <CardImg id={c.id} name={c.name} reversed={c.reversed} />
               <div className="va-name">{c.name}</div>
               <div className="va-rev" style={{ color: c.reversed ? g.accent : 'rgba(255,255,255,.35)' }}>
-                {c.reversed ? '↳ перевёрнутая' : '· прямая'}
+                {c.reversed ? '↳ перевернутая' : '· прямая'}
               </div>
             </div>
           ))}
@@ -236,7 +236,7 @@ function VariantEcho({ gid }: { gid: string }) {
               <CardImg id={c.id} name={c.name} reversed={c.reversed} />
               <div className="va-name" style={{ fontSize: 11 }}>{String(i + 1).padStart(2, '0')} · {c.name}</div>
               <div className="va-rev" style={{ color: c.reversed ? g.accent : 'rgba(255,255,255,.35)' }}>
-                {c.reversed ? '↳ перевёрнутая' : '· прямая'}
+                {c.reversed ? '↳ перевернутая' : '· прямая'}
               </div>
             </div>
           ))}

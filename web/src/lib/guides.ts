@@ -70,7 +70,6 @@ export interface GuideMeta {
   whispers: string[];
 
   // Per-guide ritual closings — подпись в конце чтения (reading-close-phrase).
-  // ВРЕМЕННЫЕ тексты: задачи 12-14 финализируют это поле.
   closings: string[];
 }
 

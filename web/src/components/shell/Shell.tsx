@@ -36,6 +36,8 @@ export type ShellMode =
 interface ShellProps {
   characterId: string;
   mode: ShellMode;
+  /** имя активного расклада для статус-лайна — последний spreadLabel транскрипта */
+  spreadCtx?: string | null;
   sessionHex: string;
   entries: Entry[];
   scrollTick: number;
@@ -62,6 +64,7 @@ interface ShellProps {
 export default function Shell({
   characterId,
   mode,
+  spreadCtx,
   sessionHex,
   entries,
   scrollTick,
@@ -400,7 +403,7 @@ export default function Shell({
 
         {/* ── vim-статус-лайн ── */}
         <div className="statusline">
-          <span className="sl-mode">-- {mode} --</span>
+          <span className="sl-mode">-- {mode}{spreadCtx ? ' · ' + spreadCtx : ''} --</span>
           <span className="sl-mid">
             сеанс #{sessionHex} · {guide.tag}
             {channelBusy && (

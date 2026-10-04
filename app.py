@@ -455,7 +455,6 @@ async def _spread_request_context(request, client_token: str):
     else:
         spread_type_str = "non_daily"
         reading_type = f"spread_{spread_id}"
-    is_daily = spread_type_str == "daily"
     count = min(int(spread["count"]), 10)
     needs_q = spread["needs_question"]
     if needs_q and not (question and str(question).strip()):

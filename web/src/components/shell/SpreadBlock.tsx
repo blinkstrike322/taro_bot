@@ -9,6 +9,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Card from '@/components/Card';
 import type { TarotCard } from '@/components/Card';
+import { sFlip, sReveal } from '@/lib/sound';
 
 // Фолбэк-позиции для старых записей без серверных позиций — нейтральные,
 // не навязывают модель «прошлое-настоящее-будущее».
@@ -107,6 +108,9 @@ export default function SpreadBlock({
       shakeTimer.current = setTimeout(() => setShakeIdx(null), 300);
       return;
     }
+    // звук — только на принятом флипе; клик мимо очереди молчит (T10 minor 3)
+    sFlip();
+    setTimeout(sReveal, 380);
     onFlip(index);
   };
 

@@ -76,12 +76,12 @@ describe('Card / flip contract', () => {
     const { container, unmount } = render(
       <Card card={reversed} position="прошлое" flipped={true} onFlip={vi.fn()} />,
     );
-    expect(container.textContent).toContain('↳ перевёрнутая');
+    expect(container.textContent).toContain('↳ перевернутая');
     unmount();
 
     const upright = render(
       <Card card={base} position="прошлое" flipped={true} onFlip={vi.fn()} />,
     );
-    expect(upright.container.textContent).not.toContain('↳ перевёрнутая');
+    expect(upright.container.textContent).not.toContain('↳ перевернутая');
   });
 });

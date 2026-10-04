@@ -294,7 +294,7 @@ body {
   animation-play-state: paused;
 }
 
-/* лёгкое притушивание тяжёлых фонов на время печати */
+/* легкое притушивание тяжёлых фонов на время печати */
 .crt[data-typing] .ritual-smoke { opacity: .5; }
 .crt[data-typing] .crt-noise { opacity: .35; }
 
@@ -2666,7 +2666,7 @@ div[class*="boot-log"]::-webkit-scrollbar {
 }
 
 .mr-right {
-  color: rgba(255, 255, 255, 0.4);
+  color: rgba(255, 255, 255, 0.45);
   font-size: 10px;
   letter-spacing: 0.08em;
   white-space: nowrap;
@@ -2826,7 +2826,16 @@ div[class*="boot-log"]::-webkit-scrollbar {
 }
 
 .hr-id    { color: rgba(255, 255, 255, 0.4); }
-.hr-type  { color: var(--t-info); }
+.hr-type  {
+  color: var(--t-info);
+  /* полное имя расклада до 26 символов — ячейка типа не ломает псевдотаблицу */
+  display: inline-block;
+  max-width: 10ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
+}
 .hr-q     { color: rgba(255, 255, 255, 0.85); }
 .hr-date  { color: rgba(255, 255, 255, 0.38); }
 

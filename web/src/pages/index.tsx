@@ -5,7 +5,7 @@
 // Оркестратор: журнал записей + парсер команд + API + режимы.
 // Нет модалок. Нет экранов. Только транскрипт.
 // ─────────────────────────────────────────────────────────────
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Shell, { ShellMode } from '@/components/shell/Shell';
 import { parseCommand } from '@/lib/commands';
 import { SPREADS } from '@/lib/spreads';
@@ -66,6 +66,16 @@ export default function Home() {
     });
   }, []);
 
+  // ── статус-лайн: имя последнего активного расклада (для РАСКЛАД/ЧТЕНИЕ) ──
+  const spreadCtx = useMemo(() => {
+    for (let i = entries.length - 1; i >= 0; i--) {
+      const e = entries[i];
+      if ((e.kind === 'spread' || e.kind === 'json') && e.spreadLabel) return e.spreadLabel;
+      if (e.kind === 'daily') return 'карта дня';
+    }
+    return null;
+  }, [entries]);
+
   // ── пасхалки ──
   const runEasterEgg = useCallback(async (kind: string, rest?: string) => {
     switch (kind) {
@@ -85,7 +95,7 @@ export default function Home() {
         break;
       case 'ls':
         pushOut([{
-          text: 'колода/  проводники/  сеансы.log  README.оккульт  .шёпот',
+          text: 'колода/  проводники/  сеансы.log  README.оккульт  .шепот',
           tone: 'plain',
         }]);
         break;
@@ -98,7 +108,7 @@ export default function Home() {
       case 'exit':
         pushOut([
           { text: 'logout', tone: 'plain' },
-          { text: 'тени прощаются. канал остаётся открытым.', tone: 'comment' },
+          { text: 'тени прощаются. канал остается открытым.', tone: 'comment' },
         ]);
         break;
       case 'cat': {
@@ -108,7 +118,7 @@ export default function Home() {
             { text: 'README.оккульт — справочник оператора таротерминала.', tone: 'plain' },
             { text: 'восьмое правило: не спрашивай одно и то же дважды за луну.', tone: 'comment' },
           ]);
-        } else if (t.includes('шёпот')) {
+        } else if (t.includes('шепот') || t.includes('шёпот')) {
           pushOut([{ text: randomWhisper(characterId), tone: 'comment' }]);
         } else if (t.includes('сеансы') || t.includes('log')) {
           pushOut([{ text: 'подсказка: taro history — живой журнал сеансов', tone: 'dim' }]);
@@ -157,16 +167,16 @@ export default function Home() {
       { text: 'ОПИСАНИЕ', tone: 'accent' },
       { text: '  восемь раскладов: от карты дня до пентаграммы.' },
       { text: '  78 арканов. три проводника. один канал.' },
-      { text: '  позиции трёх карт подстраиваются под вопрос —' },
+      { text: '  позиции трех карт подстраиваются под вопрос —' },
       { text: '  не всегда «прошлое-настоящее-будущее».' },
-      { text: '  каждая сессия шифруется шёпотом луны.' },
+      { text: '  каждая сессия шифруется шепотом луны.' },
       { text: '' },
       { text: 'СОВЕТ', tone: 'accent' },
       { text: '  вопрос можно ввести сразу после команды:' },
-      { text: '  taro ask стоит ли открывать своё дело', tone: 'dim' },
+      { text: '  taro ask стоит ли открывать свое дело', tone: 'dim' },
       { text: '' },
       { text: 'ФАЙЛЫ', tone: 'accent' },
-      { text: '  README.оккульт · .шёпот · сеансы.log', tone: 'faint' },
+      { text: '  README.оккульт · .шепот · сеансы.log', tone: 'faint' },
       { text: '' },
       { text: '# тени слушают · ' + randomWhisper(characterId), tone: 'faint' },
     ], true);
@@ -316,7 +326,7 @@ export default function Home() {
     pendingRef.current = null;
     pushOut([
       { text: '^C', tone: 'err' },
-      { text: 'вопрос отменён · канал свободен', tone: 'dim' },
+      { text: 'вопрос отменен · канал свободен', tone: 'dim' },
     ]);
     setMode('ОЖИДАНИЕ');
   }, [pushOut]);
@@ -383,6 +393,7 @@ export default function Home() {
     <Shell
       characterId={characterId}
       mode={mode}
+      spreadCtx={mode === 'РАСКЛАД' || mode === 'ЧТЕНИЕ' ? spreadCtx : null}
       sessionHex={sessionHex}
       entries={entries}
       scrollTick={session.scrollTick}

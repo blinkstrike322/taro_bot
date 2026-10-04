@@ -2,7 +2,6 @@
 
 import { useCallback, useMemo } from 'react';
 import { getGuide } from '@/lib/guides';
-import { sFlip, sReveal } from '@/lib/sound';
 
 export interface TarotCard {
   id: string;
@@ -114,8 +113,8 @@ export default function Card({
       const tg = (window as any).Telegram?.WebApp;
       tg?.HapticFeedback?.impactOccurred('medium');
     } catch {}
-    sFlip();
-    setTimeout(sReveal, 380);
+    // звук флипа (sFlip/sReveal) играет в SpreadBlock — только на ПРИНЯТОМ
+    // клике по очереди вскрытия; клик мимо очереди молчит (T10 minor 3).
     onFlip?.();
   }, [flipped, onFlip]);
 
@@ -280,7 +279,7 @@ export default function Card({
           <>
             {card.name}
             {card.is_reversed && (
-              <span className="cn-rev" title="перевёрнута"> ↳ перевёрнутая</span>
+              <span className="cn-rev" title="перевернута"> ↳ перевернутая</span>
             )}
           </>
         ) : ''}

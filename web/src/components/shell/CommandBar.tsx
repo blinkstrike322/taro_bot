@@ -18,7 +18,7 @@ interface CommandBarProps {
   onCancelPending: () => void;
 }
 
-/** основные команды терминала: ряд 1 — daily/ask/catalog, ряд 2 — guides/history */
+/** основные команды терминала: ряд 1 — daily/ask/catalog, ряд 2 — guides/history (+ системный sound после разделителя) */
 const QUICK_CHIPS = [
   'taro daily',
   'taro ask',
@@ -33,8 +33,6 @@ const SYS_CHIPS = ['taro sound'] as const;
 /** пиктограмма для системного чипа (звук — живая, зависит от состояния) */
 function sysIcon(chip: string, soundOn: boolean): string {
   if (chip === 'taro sound') return soundOn ? '♪' : '♩';
-  if (chip === 'clear') return '⌫';
-  if (chip === 'help') return '?';
   return '·';
 }
 
