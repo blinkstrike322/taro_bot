@@ -1,0 +1,102 @@
+{
+  "version": 1,
+  "spreads": {
+    "daily": {
+      "id": "daily", "name": "карта дня", "aliases": ["день", "daily", "дневная", "карта"],
+      "cmd": "taro daily", "count": 1, "mode": "daily", "layout": "column1",
+      "needs_question": false, "flip_order": ["p1"],
+      "positions": [{"key": "p1", "name": "энергия дня", "desc": "главный сигнал сегодняшнего дня"}],
+      "synthesis": null, "quota_cost": 1
+    },
+    "single": {
+      "id": "single", "name": "одна карта", "aliases": ["одна", "one", "ask1"],
+      "cmd": "taro ask1", "count": 1, "mode": "single", "layout": "column1",
+      "needs_question": true, "flip_order": ["p1"],
+      "positions": [{"key": "p1", "name": "суть ответа", "desc": "прямой ответ на вопрос"}],
+      "synthesis": null, "quota_cost": 1
+    },
+    "yesno": {
+      "id": "yesno", "name": "да / нет", "aliases": ["данет", "да-нет", "yesno"],
+      "cmd": "taro yesno", "count": 3, "mode": "yesno", "layout": "trio",
+      "needs_question": true, "flip_order": ["p1", "p2", "p3"],
+      "positions": [
+        {"key": "p1", "name": "за", "desc": "что говорит «да»"},
+        {"key": "p2", "name": "против", "desc": "что говорит «нет»"},
+        {"key": "p3", "name": "совет", "desc": "как поступить с этим"}
+      ],
+      "synthesis": "вердикт одной фразой: да / скорее да / скорее нет / нет — первой фразой short_answer",
+      "quota_cost": 1
+    },
+    "three": {
+      "id": "three", "name": "три карты", "aliases": ["три", "ask", "спроси"],
+      "cmd": "taro ask", "count": 3, "mode": "three", "layout": "pyramid",
+      "needs_question": false, "flip_order": ["p1", "p2", "p3"],
+      "positions": [
+        {"key": "p1", "name": "позиция 1", "desc": "вычисляется бэкендом по вопросу"},
+        {"key": "p2", "name": "позиция 2", "desc": "вычисляется бэкендом по вопросу"},
+        {"key": "p3", "name": "позиция 3", "desc": "вычисляется бэкендом по вопросу"}
+      ],
+      "synthesis": "как карты усиливают / сталкиваются / переходят друг в друга",
+      "quota_cost": 1
+    },
+    "mfd": {
+      "id": "mfd", "name": "мысли · чувства · действия", "aliases": ["чувства", "мчд", "mfd"],
+      "cmd": "taro mfd", "count": 3, "mode": "mfd", "layout": "trio",
+      "needs_question": true, "flip_order": ["p1", "p2", "p3"],
+      "positions": [
+        {"key": "p1", "name": "мысли", "desc": "что этот человек думает — вслух и про себя"},
+        {"key": "p2", "name": "чувства", "desc": "что он чувствует на самом деле, под словами"},
+        {"key": "p3", "name": "действия", "desc": "как это выйдет наружу — что он будет делать"}
+      ],
+      "synthesis": "где мысль расходится с чувством и что из этого дойдёт до действий",
+      "quota_cost": 1
+    },
+    "shadow": {
+      "id": "shadow", "name": "тень", "aliases": ["тень-расклад", "shadow-work", "shadow"],
+      "cmd": "taro shadow", "count": 6, "mode": "shadow", "layout": "spine",
+      "needs_question": false, "flip_order": ["p1", "p2", "p3", "p4", "p5", "p6"],
+      "positions": [
+        {"key": "p1", "name": "что я скрываю", "desc": "что во мне прячется за этой темой"},
+        {"key": "p2", "name": "почему я это скрываю", "desc": "где и когда прятать стало безопаснее"},
+        {"key": "p3", "name": "что скрывание защищает", "desc": "какую выгоду оно всё ещё даёт"},
+        {"key": "p4", "name": "что оно стоит", "desc": "цена в энергии, честности, отношениях"},
+        {"key": "p5", "name": "путь интеграции", "desc": "какое внутреннее разрешение вернёт это к свету"},
+        {"key": "p6", "name": "следующий шаг", "desc": "одно маленькое конкретное действие на ближайшую неделю"}
+      ],
+      "synthesis": "переход от диагностики (позиции 1-4) к действию (5-6); спуск без надрыва",
+      "quota_cost": 1
+    },
+    "pentagram": {
+      "id": "pentagram", "name": "пентаграмма", "aliases": ["пента", "пентаграмма", "pent"],
+      "cmd": "taro pentagram", "count": 6, "mode": "pentagram", "layout": "pentagram",
+      "needs_question": true,
+      "flip_order": ["earth", "air", "water", "fire", "spirit", "center"],
+      "positions": [
+        {"key": "center", "name": "сигнификатор", "desc": "суть ситуации; кто ты в ней. вскрывается последней"},
+        {"key": "spirit", "name": "дух", "desc": "квинтэссенция; сквозная линия, объединяющая всё. не предсказание"},
+        {"key": "fire", "name": "огонь", "desc": "воля, импульс, что рвётся вперёд"},
+        {"key": "water", "name": "вода", "desc": "чувства, интуиция, невысказанное"},
+        {"key": "earth", "name": "земля", "desc": "тело, деньги, дом, опора"},
+        {"key": "air", "name": "воздух", "desc": "мысль, слово, ясность; истории, которые мы себе рассказываем"}
+      ],
+      "synthesis": "какой элемент доминирует, какой голодает, какие два в диалоге; дух — не событие, а рамка",
+      "quota_cost": 1
+    },
+    "horseshoe": {
+      "id": "horseshoe", "name": "подкова", "aliases": ["подкова", "shoe", "horseshoe"],
+      "cmd": "taro horseshoe", "count": 7, "mode": "horseshoe", "layout": "arc",
+      "needs_question": true, "flip_order": ["p1", "p2", "p3", "p4", "p5", "p6", "p7"],
+      "positions": [
+        {"key": "p1", "name": "ситуация", "desc": "что происходит сейчас, на чём стоишь"},
+        {"key": "p2", "name": "скрытое", "desc": "чего не видно изнутри ситуации"},
+        {"key": "p3", "name": "препятствие", "desc": "что встаёт на пути"},
+        {"key": "p4", "name": "внешнее", "desc": "люди и обстоятельства со стороны"},
+        {"key": "p5", "name": "твоя позиция", "desc": "твой ресурс и твоя роль в этом"},
+        {"key": "p6", "name": "чужая позиция", "desc": "другая сторона: что у них на уме"},
+        {"key": "p7", "name": "исход", "desc": "куда ведёт текущая линия, если ничего не менять"}
+      ],
+      "synthesis": "линия от ситуации к исходу: где она гнётся и что на это влияет",
+      "quota_cost": 1
+    }
+  }
+}
