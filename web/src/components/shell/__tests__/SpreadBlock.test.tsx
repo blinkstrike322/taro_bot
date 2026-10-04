@@ -213,7 +213,9 @@ describe('SpreadBlock / smoke всех 8 раскладов каталога', (
     expect(onFlip).toHaveBeenCalledWith(0);
   });
 
-  it('pentagram (backend-ключи): слоты по positionKeys, центр вскрывается последним', () => {
+  it('pentagram (реальный путь бэкенда): слоты по positionKeys, центр вскрывается последним', () => {
+    // Реальный контракт после фикса: position_keys от бэкенда — card-order,
+    // flipOrder — из каталога (useSpread не перезаписывает его position_keys).
     const spread = SPREADS.pentagram;
     const positions = spread.positions.map((p) => p.name);
     const positionKeys = spread.positions.map((p) => p.key); // card-order, как отдаёт бэкенд
@@ -334,7 +336,7 @@ describe('SpreadBlock / smoke всех 8 раскладов каталога', (
       />,
     );
     expect(container.querySelector('.spread-hint--ready')).not.toBeNull();
-    expect(container.textContent).toContain('шёпот уже здесь');
+    expect(container.textContent).toContain('шепот уже здесь');
     expect(container.textContent).toContain('вскрой: за');
   });
 

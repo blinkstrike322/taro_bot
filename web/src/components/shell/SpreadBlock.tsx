@@ -130,7 +130,7 @@ export default function SpreadBlock({
   const hint = nextIdx !== undefined && (
     <div className={`tl tl-comment spread-hint${whisperReady ? ' spread-hint--ready' : ''}`}>
       {whisperReady ? (
-        <><span className="blink">//</span> шёпот уже здесь · вскрой: {nextName}</>
+        <><span className="blink">//</span> шепот уже здесь · вскрой: {nextName}</>
       ) : (
         <><span className="blink">//</span> вскрой: {nextName}</>
       )}

@@ -207,7 +207,7 @@ export function useSpread(session: TarotSession, whisper: TarotWhisper): TarotSp
         count: spread.count,
         spreadId,
         layout: spread.layout,
-        flipOrder: res.position_keys ?? spread.flipOrder,
+        flipOrder: spread.flipOrder, // порядок вскрытия — из каталога; position_keys — метки в card-order
         positionKeys: res.position_keys,
         positions,
       });

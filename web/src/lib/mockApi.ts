@@ -76,9 +76,13 @@ const VERDICTS = ['Да.', 'Скорее да.', 'Скорее нет.', 'Нет
 let lastSpread: FrontSpread = SPREADS.three;
 
 function mockPositions(spread: FrontSpread): string[] {
-  return spread.id === 'three'
-    ? ['Твоя позиция и энергия', 'Динамика между вами', 'Главный вектор развития']
-    : spread.positions.map((p) => p.name);
+  if (spread.id === 'three') {
+    return ['Твоя позиция и энергия', 'Динамика между вами', 'Главный вектор развития'];
+  }
+  // метки — в том же порядке, что и position_keys (порядок вскрытия):
+  // каждый ключ разрешается в имя своей позиции каталога
+  const byKey = new Map(spread.positions.map((p) => [p.key, p.name]));
+  return spread.flipOrder.map((k) => byKey.get(k) ?? k);
 }
 
 function positionMeaning(seed: number, i: number): string {
