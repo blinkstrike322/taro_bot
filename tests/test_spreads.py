@@ -1,4 +1,4 @@
-from core.spreads import load_spreads, resolve_spread
+from core.spreads import get_spread, load_spreads, resolve_spread
 
 def test_all_spreads_valid():
     spreads = load_spreads()
@@ -22,3 +22,12 @@ def test_legacy_mapping():
 def test_unknown_falls_back():
     assert resolve_spread("nonexistent", "q")["id"] == "single"
     assert resolve_spread("nonexistent", None)["id"] == "daily"
+
+def test_get_spread_pentagram():
+    s = get_spread("pentagram")
+    assert s is not None
+    assert s["count"] == 6
+    assert s["flip_order"] == ["earth", "air", "water", "fire", "spirit", "center"]
+
+def test_whitespace_question_falls_back_to_daily():
+    assert resolve_spread("yesno", "   ")["id"] == "daily"

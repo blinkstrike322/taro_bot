@@ -3,13 +3,12 @@
 
 Легаси-совместимость: старые типы фронта (1, "1", 3, "3", "daily")
 маппятся на записи каталога. Неизвестный id безопасно падает в single/daily.
+Расклад, требующий вопрос (needs_question), при пустом/whitespace-вопросе
+тоже безопасно падает в daily — его нельзя разрешить сам по себе.
 """
 import json
-import logging
 from pathlib import Path
 from typing import Any
-
-logger = logging.getLogger(__name__)
 
 PROJECT_ROOT = Path(__file__).parent.parent
 _SPREADS: dict[str, dict[str, Any]] = {}
@@ -36,12 +35,18 @@ def resolve_spread(raw: object, question: str | None) -> dict[str, Any]:
     """Разрешить spread_type запроса в запись каталога (никогда не None)."""
     spreads = load_spreads()
     if isinstance(raw, str) and raw in spreads:
-        return spreads[raw]
-    if str(raw) in spreads:
-        return spreads[str(raw)]
-    legacy = _LEGACY_MAP.get(raw) or _LEGACY_MAP.get(str(raw))
-    if legacy:
-        return spreads[legacy]
-    if question and str(question).strip():
+        resolved = spreads[raw]
+    elif str(raw) in spreads:
+        resolved = spreads[str(raw)]
+    else:
+        legacy = _LEGACY_MAP.get(raw) or _LEGACY_MAP.get(str(raw))
+        resolved = spreads[legacy] if legacy else None
+
+    has_question = bool(question and str(question).strip())
+    if resolved is not None and resolved.get("needs_question") and not has_question:
+        return spreads["daily"]
+    if resolved is not None:
+        return resolved
+    if has_question:
         return spreads["single"]
     return spreads["daily"]
