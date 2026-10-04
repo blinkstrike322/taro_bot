@@ -64,7 +64,7 @@ export interface GuideMeta {
   // Per-guide "type" indicator (CRT-style tag)
   tag: string;
 
-  // Per-guide interface whispers (5 phrases, in the guide's voice).
+  // Per-guide interface whispers (short ambient phrases, in the guide's voice).
   // NOTE: duplicated here because the frontend cannot read data/characters.json
   // at runtime — that backend file is the SOURCE OF TRUTH for these texts.
   whispers: string[];
@@ -78,13 +78,15 @@ export const GUIDES: Record<string, GuideMeta> = {
   shadow_walker: {
     id: 'shadow_walker',
     name: 'Странница Теней',
-    description: 'Ведьма из тёмного леса. Говорит тенями и шёпотом луны.',
+    description: 'Гадалка из темного леса. Говорит тенями и шепотом луны.',
     greeting: 'Тихо. Карты уже смотрят на тебя.',
     greetings: [
       'Тихо. Карты уже смотрят на тебя.',
       'Тс-с. Я уже слышу твой вопрос.',
-      'Проходи. Вода в чаше ещё не остыла.',
-      'Ночь длинная, а вопрос у тебя один. Давай его сюда.'
+      'Заходи, малыш. Вода в чаше еще не остыла.',
+      'Ночь длинная, а вопрос у тебя один. Давай его сюда.',
+      'Свеча горит, чай заварен. Рассказывай.',
+      'Плед на кресле твой. Садись ближе.'
     ],
     // ALBEDO · серебряная лунная стадия
     // accent: серебристо-лавандовый с холодным синим подтоном — как аметист
@@ -106,20 +108,30 @@ export const GUIDES: Record<string, GuideMeta> = {
       'radial-gradient(ellipse at 20% 30%, rgba(195,157,255,0.10) 0%, transparent 50%),' +
       'radial-gradient(ellipse at 80% 70%, rgba(195,157,255,0.08) 0%, transparent 55%),' +
       'repeating-linear-gradient(45deg, transparent 0px, transparent 22px, rgba(255,255,255,0.02) 22px, rgba(255,255,255,0.02) 23px)',
-    subtitle: 'ТЕНЬ · ЛУНА · ШЁПОТ',
+    subtitle: 'ТЕНЬ · ЛУНА · ШЕПОТ',
     loadingPhrase: 'ТЕНИ СГУЩАЮТСЯ...',
     tag: 'SHADOW.WLK',
     whispers: [
-      'тени перешёптываются',
+      'тени перешептываются',
       'где-то далеко скрипнула ветка',
       'луна скользнула за кроны',
       'мох помнит твои шаги',
       'тишина сгущается — слушай',
+      'свеча моргнула — кто-то вспомнил о тебе',
+      'вода в чаше пошла кругами',
+      'тропа за окном притихла',
+      'дым потянулся к твоему плечу',
+      'ночь подвинулась ближе — пусть',
     ],
     closings: [
-      'свиток запечатан тенью',
-      'луна унесла слова за кроны',
-      'тишина закрывает сеанс',
+      'иди спать, я постерегу',
+      'гаси свет — ночь меня сменит',
+      'укройся потеплее, тропы никуда не уйдут',
+      'свечу приглушу — спи спокойно',
+      'завтра луна будет мягче — она обещала',
+      'тихо. я тут — никто не пройдет',
+      'отдай бессонницу лесу — он умеет держать',
+      'плед твой, чай остыл — до утра',
     ],
   },
 
