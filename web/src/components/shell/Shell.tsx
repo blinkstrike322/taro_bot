@@ -259,8 +259,11 @@ export default function Shell({
             <SpreadBlock
               cards={entry.cards}
               flipped={entry.flipped}
-              count={entry.count as 1 | 3}
+              count={entry.count}
+              layout={entry.layout}
               positions={entry.positions}
+              positionKeys={entry.positionKeys}
+              flipOrder={entry.flipOrder}
               whisperReady={entry.whisperReady}
               characterId={characterId}
               onFlip={(i) => onFlip(entry.id, i)}
