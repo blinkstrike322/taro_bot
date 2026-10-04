@@ -9,9 +9,17 @@ import { useCallback } from 'react';
 import * as API from '@/lib/api';
 import * as SFX from '@/lib/sound';
 import { randomWhisper, sleep, type Entry, type OutLine } from '@/lib/transcript';
+import { getFrontSpread } from '@/lib/spreads';
 import { track } from '@/lib/analytics';
 import type { TarotSession } from '@/hooks/useTarotSession';
 import type { TarotWhisper } from '@/hooks/useWhisper';
+
+/** русская плюрализация: 1 аркан / 3 аркана / 6 арканов */
+function arcanaWord(n: number): string {
+  if (n === 1) return 'аркан';
+  if (n < 5) return 'аркана';
+  return 'арканов';
+}
 
 const toTarotCards = (cards: API.TarotCardData[]): API.TarotCardData[] =>
   cards.map((c) => ({ ...c, image_url: `/cards/${c.id}.png` }));
@@ -47,8 +55,10 @@ async function waitWhisperReady(
 export interface TarotSpread {
   /** флоу: карта дня */
   runDaily: () => Promise<void>;
-  /** флоу: расклад с вопросом */
+  /** флоу: легаси-расклад с вопросом (1|3 карты, типы spread_1/spread_3) */
   runAsk: (cards: 1 | 3, question: string | null) => Promise<void>;
+  /** флоу: расклад каталога по id (yesno/mfd/shadow/pentagram/horseshoe/...) */
+  runSpread: (spreadId: string, question: string | null) => Promise<void>;
   /** вскрытие карт (daily vs spread) */
   handleFlip: (entryId: number, index: number) => void;
 }
@@ -155,6 +165,63 @@ export function useSpread(session: TarotSession, whisper: TarotWhisper): TarotSp
     }
   }, [characterId, echoCmd, progressWith, push, pushOut, startWhisper, handleChannelError, setBusy, busyRef, setMode, quotaRef]);
 
+  // ── флоу: расклад каталога по id ──
+  const runSpread = useCallback(async (spreadId: string, question: string | null) => {
+    const spread = getFrontSpread(spreadId);
+    if (!spread) {
+      pushOut([{ text: `расклад ${spreadId} не найден в каталоге`, tone: 'err' }]);
+      setMode('ОЖИДАНИЕ');
+      return;
+    }
+    setBusy(true); busyRef.current = true;
+    setMode('ТАСОВАНИЕ');
+    try {
+      await echoCmd(spread.cmd + (question ? ` "${question}"` : ''));
+      if (question) {
+        pushOut([{ text: 'вопрос принят · канал стабилен', tone: 'info' }]);
+      }
+      const res = await progressWith('тасование колоды', 1100, API.spreadBegin(spreadId, question, characterId));
+      track('spread_started', { guide: characterId, spread_type: spreadId, count: spread.count });
+
+      // позиции: имена от бэкенда (для three — динамические по вопросу)
+      const positions = res.positions;
+      const dealLines: OutLine[] = [{
+        text: `раздача: ${spread.count} ${arcanaWord(spread.count)} · ${spread.name}`,
+        tone: 'dim',
+      }];
+      if (positions) {
+        positions.forEach((p, i) => {
+          dealLines.push({ text: `0${i + 1} · ${p}`, tone: 'faint' });
+        });
+      }
+      pushOut(dealLines);
+
+      const spreadCards = toTarotCards(res.cards);
+      const entryId = push({
+        kind: 'spread',
+        cards: spreadCards,
+        flipped: spreadCards.map(() => false),
+        question,
+        interpretation: null,
+        spreadLabel: spread.name,
+        count: spread.count,
+        spreadId,
+        layout: spread.layout,
+        flipOrder: res.position_keys ?? spread.flipOrder,
+        positionKeys: res.position_keys,
+        positions,
+      });
+      quotaRef.current = { remaining: res.remaining, limit: res.limit };
+      setMode('РАСКЛАД');
+      startWhisper(entryId, res.token);
+    } catch (err: any) {
+      SFX.sError();
+      handleChannelError(err);
+    } finally {
+      setBusy(false); busyRef.current = false;
+    }
+  }, [characterId, echoCmd, progressWith, push, pushOut, startWhisper, handleChannelError, setBusy, busyRef, setMode, quotaRef]);
+
   // ── переворот карт ──
   const handleFlip = useCallback((entryId: number, index: number) => {
     setEntries((prev) => {
@@ -205,5 +272,5 @@ export function useSpread(session: TarotSession, whisper: TarotWhisper): TarotSp
     setScrollTick((t) => t + 1);
   }, [echoCmd, push, pushOut, resolveWhisper, setEntries, setScrollTick, quotaRef, setMode, characterId]);
 
-  return { runDaily, runAsk, handleFlip };
+  return { runDaily, runAsk, runSpread, handleFlip };
 }

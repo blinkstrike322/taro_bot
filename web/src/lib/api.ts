@@ -59,8 +59,14 @@ export interface SpreadBeginResponse {
   token: string;
   remaining?: number;
   limit?: number;
-  /** динамические позиции 3-карточного расклада — вычислены бэкендом по вопросу */
+  /** имена позиций расклада — вычислены бэкендом (для three — динамически по вопросу) */
   positions?: string[];
+  /** id расклада каталога, разрешённый бэкендом (легаси 1|3 → single/three/daily) */
+  spread_id?: string;
+  /** человекочитаемое имя расклада из каталога */
+  spread_name?: string;
+  /** ключи позиций — порядок вскрытия (flip_order каталога) */
+  position_keys?: string[];
 }
 
 export interface SpreadPollResponse {
@@ -105,9 +111,10 @@ async function readErrorBody(res: Response): Promise<ApiError> {
   return new ApiError(msg, { needsSubscription, status: res.status });
 }
 
-/** Двухфазный расклад: карты сразу, толкование — фоновым шёпотом. */
+/** Двухфазный расклад: карты сразу, толкование — фоновым шёпотом.
+ *  spreadType — id расклада каталога ('mfd') или легаси-число (1|3). */
 export async function spreadBegin(
-  spreadType: 1 | 3,
+  spreadType: string | number,
   question: string | null,
   characterId: string = 'shadow_walker',
 ): Promise<SpreadBeginResponse> {

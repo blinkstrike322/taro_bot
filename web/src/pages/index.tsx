@@ -8,6 +8,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Shell, { ShellMode } from '@/components/shell/Shell';
 import { parseCommand } from '@/lib/commands';
+import { SPREADS } from '@/lib/spreads';
 import * as API from '@/lib/api';
 import * as SFX from '@/lib/sound';
 import { randomHex, randomWhisper } from '@/lib/transcript';
@@ -18,7 +19,7 @@ import { useHistory } from '@/hooks/useHistory';
 import { useGuide } from '@/hooks/useGuide';
 import { useSpread } from '@/hooks/useSpread';
 
-type PendingQuestion = { cards: 1 | 3 } | null;
+type PendingQuestion = { spreadId?: string; cards?: 1 | 3 } | null;
 
 const MOON_PHASES = [
   'луна убывающая', 'луна растущая', 'новолуние близко', 'полнолуние вчера',
@@ -30,7 +31,7 @@ export default function Home() {
   const whisper = useWhisper(session);
   const { runHistory, handleHistorySelect } = useHistory(session);
   const { runGuideSet } = useGuide(session);
-  const { runDaily, runAsk, handleFlip } = useSpread(session, whisper);
+  const { runDaily, runAsk, runSpread, handleFlip } = useSpread(session, whisper);
 
   const {
     entries, setEntries, mode, setMode, busy, setBusy, busyRef, nidRef,
@@ -128,6 +129,11 @@ export default function Home() {
       { text: '  taro daily              карта дня без вопроса' },
       { text: '  taro ask [вопрос]       три карты · расклад собирается под вопрос' },
       { text: '  taro ask1 [вопрос]      одна карта · точечный ответ' },
+      { text: '  taro mfd [вопрос]       мысли · чувства · действия' },
+      { text: '  taro yesno [вопрос]     да / нет · вердикт' },
+      { text: '  taro shadow [тема]      работа с тенью · 6 карт' },
+      { text: '  taro pentagram [вопрос] пентаграмма · элементы и суть' },
+      { text: '  taro horseshoe [вопрос] подкова · от ситуации к исходу' },
       { text: '  taro catalog            виды раскладов' },
       { text: '  taro guides             сменить проводника' },
       { text: '  taro history            журнал сеансов (тап — развернуть)' },
@@ -135,6 +141,7 @@ export default function Home() {
       { text: '  clear                   очистить экран' },
       { text: '' },
       { text: 'ОПИСАНИЕ', tone: 'accent' },
+      { text: '  восемь раскладов: от карты дня до пентаграммы.' },
       { text: '  78 арканов. три проводника. один канал.' },
       { text: '  позиции трёх карт подстраиваются под вопрос —' },
       { text: '  не всегда «прошлое-настоящее-будущее».' },
@@ -181,6 +188,21 @@ export default function Home() {
           } else {
             setBusy(false); busyRef.current = false;
             await runAsk(parsed.cards, parsed.question);
+          }
+          return;
+        }
+
+        case 'spread': {
+          const spread = SPREADS[parsed.id];
+          if (parsed.question == null && spread?.needsQuestion) {
+            await echoCmd(spread.cmd);
+            pushOut([{ text: 'режим вопроса активирован', tone: 'info' }]);
+            setPendingQuestion({ spreadId: parsed.id });
+            pendingRef.current = { spreadId: parsed.id };
+            setMode('ВОПРОС');
+          } else {
+            setBusy(false); busyRef.current = false;
+            await runSpread(parsed.id, parsed.question);
           }
           return;
         }
@@ -252,7 +274,7 @@ export default function Home() {
     } finally {
       setBusy(false); busyRef.current = false;
     }
-  }, [echoCmd, push, pushOut, runAsk, runDaily, runGuideSet, runHistory, runHelp,
+  }, [echoCmd, push, pushOut, runAsk, runSpread, runDaily, runGuideSet, runHistory, runHelp,
     toggleSound, clearWhispers, setEntries, nidRef, setMode, setBusy, busyRef]);
 
   // ── ввод из командной строки ──
@@ -261,16 +283,17 @@ export default function Home() {
 
     // режим вопроса: любая строка = ответ
     if (pendingRef.current) {
-      const { cards } = pendingRef.current;
+      const { spreadId, cards } = pendingRef.current;
       setPendingQuestion(null);
       pendingRef.current = null;
       const q = v.length ? v : null;
-      await runAsk(cards, q);
+      if (spreadId) await runSpread(spreadId, q);
+      else await runAsk(cards ?? 3, q);
       return;
     }
 
     await executeCommand(v);
-  }, [executeCommand, runAsk]);
+  }, [executeCommand, runAsk, runSpread]);
 
   const handleCancelPending = useCallback(() => {
     setPendingQuestion(null);
@@ -297,6 +320,7 @@ export default function Home() {
     setBootDone(true);
 
     const t = typeParamRef.current;
+    // легаси-ссылки ?type=1|3|daily — поведение как раньше
     if (t === '1' || t === '3') {
       (async () => {
         await echoCmd(`taro ask${t === '1' ? ' --cards 1' : ''}`);
@@ -311,10 +335,26 @@ export default function Home() {
       (async () => { await executeCommand('taro daily'); })();
       return;
     }
+    // строковые id каталога: ?type=mfd / ?type=pentagram / ?type=shadow / ...
+    if (t && SPREADS[t]) {
+      const spread = SPREADS[t];
+      (async () => {
+        if (spread.needsQuestion) {
+          await echoCmd(spread.cmd);
+          pushOut([{ text: 'режим вопроса активирован', tone: 'info' }]);
+          setPendingQuestion({ spreadId: spread.id });
+          pendingRef.current = { spreadId: spread.id };
+          setMode('ВОПРОС');
+        } else {
+          await runSpread(spread.id, null);
+        }
+      })();
+      return;
+    }
     pushCmd('taro --motd');
     push({ kind: 'motd' });
     setMode('ОЖИДАНИЕ');
-  }, [bootDone, echoCmd, executeCommand, push, pushCmd, pushOut]);
+  }, [bootDone, echoCmd, executeCommand, push, pushCmd, pushOut, runSpread]);
 
   // ── закрыть WebApp (paywall → вернуться в чат бота) ──
   const handleCloseApp = useCallback(() => {

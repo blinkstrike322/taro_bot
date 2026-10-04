@@ -6,6 +6,7 @@
 import type { TarotCard } from '@/components/Card';
 import type { Interpretation } from '@/lib/api';
 import { GUIDES } from '@/lib/guides';
+import { SPREADS } from '@/lib/spreads';
 
 export type OutTone =
   | 'plain' | 'dim' | 'faint' | 'ok' | 'err' | 'warn'
@@ -50,8 +51,16 @@ export type Entry =
       cards: TarotCard[]; flipped: boolean[];
       question: string | null;
       interpretation: Interpretation | null;
-      spreadLabel: string; count: 1 | 3;
-      /** динамические позиции расклада от бэкенда (замена легаси П/Н/Б) */
+      spreadLabel: string; count: number;
+      /** id расклада каталога (в журнале — spread_<id>) */
+      spreadId?: string;
+      /** макет расклада из каталога (column1/pyramid/trio/spine/pentagram/arc) */
+      layout?: string;
+      /** порядок вскрытия карт — ключи позиций (position_keys бэкенда или каталог) */
+      flipOrder?: string[];
+      /** ключи позиций от бэкенда — Task 10 читает при рендере */
+      positionKeys?: string[];
+      /** имена позиций расклада от бэкенда (замена легаси П/Н/Б) */
       positions?: string[];
       whisperReady?: boolean;
     }
@@ -121,5 +130,9 @@ export function spreadLabelFromType(type: string): string {
   if (type === 'daily') return 'карта дня';
   if (type === 'spread_1') return 'одна карта';
   if (type === 'spread_3') return 'три карты';
+  if (type.startsWith('spread_')) {
+    const id = type.slice('spread_'.length);
+    if (SPREADS[id]) return SPREADS[id].name;
+  }
   return type;
 }

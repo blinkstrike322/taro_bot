@@ -2,10 +2,12 @@
 // commands.ts — парсер команд ARCANUM shell.
 // Терминал понимает префикс `taro` и без него, кириллицу тоже.
 // ─────────────────────────────────────────────────────────────
+import { SPREADS } from '@/lib/spreads';
 
 export type Cmd =
   | { kind: 'daily' }
   | { kind: 'ask'; question: string | null; cards: 1 | 3 }
+  | { kind: 'spread'; id: string; question: string | null }
   | { kind: 'catalog' }
   | { kind: 'guides' }
   | { kind: 'guide-set'; id: string }
@@ -32,6 +34,17 @@ const GUIDE_ALIASES: Record<string, string> = {
   'хаос': 'spark_of_chaos', 'искра': 'spark_of_chaos', 'chaos': 'spark_of_chaos',
   'spark': 'spark_of_chaos', 'спарк': 'spark_of_chaos', '3': 'spark_of_chaos',
 };
+
+// алиасы раскладов каталога → id. daily/single/three исключены: их алиасы
+// принадлежат легаси-кейсам daily/ask/ask1 (вопросный UX), а алиасы каталога
+// для этих трёх живут только в меню-каталоге.
+const SPREAD_ALIASES: Record<string, string> = {};
+for (const s of Object.values(SPREADS)) {
+  if (s.id === 'daily' || s.id === 'single' || s.id === 'three') continue;
+  for (const a of s.aliases) SPREAD_ALIASES[a] = s.id;
+}
+// правило конфликта «тень»: без текста — проводник, с текстом — расклад работы с тенью
+SPREAD_ALIASES['тень'] = 'shadow';
 
 function extractQuestion(rest: string): { question: string | null; cards: 1 | 3 } {
   let cards: 1 | 3 = 3;
@@ -114,6 +127,15 @@ export function parseCommand(rawInput: string): Cmd | null {
 
     case '': // bare `taro`
       return { kind: 'unknown', cmd: 'taro' };
+  }
+
+  // расклады каталога — до bare-guide-alias: алиас с текстом = расклад
+  // с вопросом, без текста — расклад без вопроса (needsQuestion решит index)
+  if (SPREAD_ALIASES[bhead]) {
+    if (!brest && GUIDE_ALIASES[bhead]) {
+      return { kind: 'guide-set', id: GUIDE_ALIASES[bhead] };
+    }
+    return { kind: 'spread', id: SPREAD_ALIASES[bhead], question: extractQuestion(brest).question };
   }
 
   // bare shell commands (also reachable without taro prefix)
