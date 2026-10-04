@@ -5,7 +5,7 @@
 // Секции рендерятся последовательно: стадия i маунтится, когда
 // предыдущая отчиталась (ProseType onDone / autoAdvance-таймер).
 // Никаких pre-computed задержек для прозы — только события.
-// instant (журнал) — всё сразу, без таймеров.
+// instant (журнал) — все секции сразу, без таймеров.
 // ─────────────────────────────────────────────────────────────
 import { useEffect, useMemo, useState } from 'react';
 import { getGuide } from '@/lib/guides';
@@ -269,7 +269,7 @@ export default function ReadingResult({
                   )}
                   <div className="reading-card-name">{c.name}</div>
                   <div className={c.reversed ? 'reading-card-rev' : 'reading-card-upright'}>
-                    {c.reversed ? '↳ перевёрнутая' : '· прямая'}
+                    {c.reversed ? '↳ перевернутая' : '· прямая'}
                   </div>
                 </div>
               ))}
@@ -278,7 +278,7 @@ export default function ReadingResult({
 
           {intro && stage >= introIdx && (
             <div className="reading-line">
-              <div className="reading-section-label">// шёпот</div>
+              <div className="reading-section-label">// шепот</div>
               <ProseType
                 text={intro}
                 instant={instant}
@@ -314,7 +314,7 @@ export default function ReadingResult({
                   <>
                     <div className="reading-position-name">{s.card}</div>
                     <div className={s.reversed ? 'reading-card-rev' : 'reading-card-upright'}>
-                      {s.reversed ? 'перевёрнутая' : 'прямая'}
+                      {s.reversed ? 'перевернутая' : 'прямая'}
                     </div>
                   </>
                 )}

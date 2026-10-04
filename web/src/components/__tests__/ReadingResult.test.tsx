@@ -35,7 +35,7 @@ function expectNoJsonLiterals(text: string): void {
   expect(text).not.toContain('}');
   // Explicit contract keys that a JSON dump would emit:
   expect(text).not.toContain('"сеанс"');
-  expect(text).not.toContain('"шёпот":');
+  expect(text).not.toContain('"шепот":');
   expect(text).not.toContain('"ответ"');
 }
 
@@ -47,12 +47,12 @@ beforeEach(() => {
 
 describe('ReadingResult / daily schema (проявление · на_что_смотреть · траектория)', () => {
   const daily: Interpretation = {
-    intro: 'Шёпот начинает звучать.',
+    intro: 'Шепот начинает звучать.',
     short_answer: 'Сигнал дня: двигайся.',
     проявление: 'День требует внимания к деталям.',
     на_что_смотреть: 'Смотри на повторяющиеся числа.',
     траектория: {
-      утро: 'Утро задаёт ритм.',
+      утро: 'Утро задает ритм.',
       день: 'День подтверждает выбор.',
       вечер: 'Вечер подводит итог.',
     },
@@ -144,7 +144,7 @@ describe('ReadingResult / three-card schema (позиции + связь_кар�
   const positions: ReadingPosition[] = [
     { позиция: 'прошлое', карта: 'Первый', реверс: false, трактовка: 'Прошлое держит ключ.' },
     { позиция: 'настоящее', карта: 'Второй', реверс: true, трактовка: 'Настоящее искрит.' },
-    { позиция: 'будущее', карта: 'Третий', реверс: false, трактовка: 'Будущее зовёт.' },
+    { позиция: 'будущее', карта: 'Третий', реверс: false, трактовка: 'Будущее зовет.' },
   ];
   const three: Interpretation = {
     intro: 'Три карты расстелены.',
@@ -177,9 +177,9 @@ describe('ReadingResult / three-card schema (позиции + связь_кар�
       expect(screen.getAllByText(name).length).toBeGreaterThanOrEqual(1);
     }
     // Header shows the ↳ marker once; inline position shows plain orientation.
-    expect(screen.getAllByText('↳ перевёрнутая').length).toBe(1);
+    expect(screen.getAllByText('↳ перевернутая').length).toBe(1);
     expect(container.textContent).toContain('· прямая');
-    expect(container.textContent).toContain('перевёрнутая');
+    expect(container.textContent).toContain('перевернутая');
   });
 
   it('skips the нить section gracefully when связь_карт is absent', () => {
