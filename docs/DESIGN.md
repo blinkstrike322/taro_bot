@@ -1,146 +1,201 @@
-# Dithered Divinations
+# ARCANUM — дизайн-система оккультного терминала (v2)
 
-> Category: Mystical · Monochrome
-> Tarot-reading Telegram WebApp. Cinema-black canvas, monochrome austerity, monumental display type. Inspired by Bugatti.com's visual discipline — pure `#000000`, pure `#FFFFFF`, and nothing else.
+> Telegram Mini App «таро-терминал»: весь флоу живёт в одном непрерывном
+> CRT-транскрипте. Нет экранов и модалок — только журнал, командная строка
+> и три проводника. Документ актуален на Task 16 (октябрь 2026); источники
+> правды: `web/src/lib/guides.ts` (палитры), `web/src/lib/spreads.ts` +
+> `data/spreads.json` (каталог), `web/src/styles/globals.css` (токены).
 
-## 1. Visual Theme & Atmosphere
+## 1. Тема и атмосфера
 
-The app behaves like a digital oracle — a ceremonial terminal. The canvas is pure `#000000`, the only color that ever appears is white, and the entire interface is carried by typographic moments laid over card imagery. There are no decorative backgrounds, no glowing auras, no gradients, no shadows. It is one continuous cinema-black channel, interrupted only by the cards themselves and a few ALL CAPS monochrome labels.
+Цифровой оракул в корпусе катодно-лучевой трубки: матовая тьма, фосфорный
+акцент проводника, ритуальная геометрия. Поверх канваса живут атмосферные
+слои (дым, зерно, созвездие, лунные глифы, вращающийся сигил), которые
+**уступают контент** — на время печати и скролла они ставятся на паузу.
 
-The single most distinctive move is **contrast at scale**. Typography runs from monumental headings to fine-print captions, all in pure white on black. The cards are high-contrast B&W dithered illustrations. Everything else is silent so the reading can speak.
+Ключевые приёмы:
 
-**Key Characteristics:**
-- Cinema-black `#000000` canvas — no gradients, no tints, no accents
-- Monochrome-only palette: `#000000` (canvas), `#FFFFFF` (text, borders), `#666666` (tertiary/disabled only)
-- Pure white B&W card illustrations with dithering texture
-- ALL CAPS monospace for UI labels and headers
-- Serif for card names (the only typographic ornament)
-- Rectangular everything — no border-radius anywhere
+- один непрерывный транскрипт: бут → MOTD → команды → расклады → чтения;
+- каждый проводник перекрашивает весь терминал (CSS-переменные
+  `--guide-accent`, `--guide-accent-dim`, `--guide-glow`, `--t-bg`);
+- пиксельная колода (78 арканов, `image-rendering: pixelated`) + рубашки
+  на проводника (`/cards/backs/back_*.png`, `cardBackVersion` для сброса кэша);
+- рамки с ASCII-уголками (`╔ ┐ └ ╝`), трассы-дорожки, глифы-осколки.
 
-## 2. Colors
+## 2. Палитра — «Alchemical Manuscript»
 
-Strict. No exceptions.
+Три проводника = три алхимические стадии. Цвета desaturated, «пигмент на
+пергаменте», не неон. Контраст акцента на тьме ≥ 7:1.
 
-| Token | Hex | Role |
+| Проводник | Стадия | accent | accentDim | bgDeep | corner-символы |
+|---|---|---|---|---|---|
+| Странница Теней (`shadow_walker`) | ALBEDO · серебро-лава | `#b5a5e6` | `rgba(181,165,230,.22)` | `#05040f` | `☾ ✦ † ☽` |
+| Хранитель Руин (`ruin_keeper`) | CITRINITAS · латунь | `#c8a368` | `rgba(200,163,104,.22)` | `#0a0704` | `⚰ ☥ † ⚹` |
+| Искра Хаоса (`spark_of_chaos`) | RUBEDO · кармин | `#d65a6e` | `rgba(214,90,110,.22)` | `#0a0406` | `⌇ ✕ ⋈ ※` |
+
+Правила: фон никогда не плоский `#000` — тонированная тьма `bgDeep` +
+пятно ЭЛТ `glowCenter`; акцент задаётся переменной проводника, а не
+хардкодом; `accentDim` — только подложки/свечения.
+
+## 3. Типографика
+
+Загрузка: Google Fonts (`_document.tsx`), `display=swap`.
+
+| Роль | Шрифт | Вес | Кейс |
+|---|---|---|---|
+| Терминальный body, UI-лейблы, статус-лайн | JetBrains Mono (`--font-mono-crt`, `--font-pixel`) | 300–800 | lowercase / UPPERCASE для меток |
+| Заголовок чтения `.reading-title` | Cormorant Garamond (`--font-serif`) | 600 · 18px | UPPERCASE, `letter-spacing .08em` |
+| Имена карт `.reading-position-name` | Cormorant Garamond | 600 · 20px | mixed |
+| Закрывающая фраза `.reading-close-phrase` | JetBrains Mono italic | 400 | lowercase |
+
+JetBrains Mono выбран вместо пиксельных шрифтов: полная кириллица
+(О/Ы/Ш рендерятся чисто), hinting допускает антиалиасинг.
+
+## 4. Каркас Shell (`components/shell/Shell.tsx`)
+
+```
+┌ shell-title   [ ARCANUM.ocv ] · REC · uptime · ./сеанс --tty1
+├ shell-scroll  транскрипт: boot → motd → cmd/out/progress/pending
+│                          → daily/spread → json(чтение) → menu/history/paywall
+├ statusline    -- РЕЖИМ · расклад -- · сеанс #hex · tag · ♪ · utf-8 · часы
+└ CommandBar    ввод + чипы (daily/ask/catalog/guides/history/·/sound)
+```
+
+Режимы (`ShellMode`): `БУТ · ОЖИДАНИЕ · ВОПРОС · ТАСОВАНИЕ · РАСКЛАД ·
+ЧТЕНИЕ · МЕНЮ · ЖУРНАЛ`. Автоскролл: новый расклад анкорится к началу
+(`ANCHOR_MS` 2000мс), дальше транскрипт следует вниз; smooth-скролл
+отключается при печати и `prefers-reduced-motion`.
+
+Команды (`lib/commands.ts`): префикс `taro` опционален, кириллица
+равноправна. Каталожные алиасы не пересекаются с легаси-кейсами
+`daily/ask/ask1`; «тень» без текста — проводник, с текстом — расклад
+`shadow`. Пасхалки: `whoami/uname/date/pwd/ls/sudo/cat/exit`.
+
+## 5. Движок печати — `lib/typeFlow.ts` + `components/shell/ProseType.tsx`
+
+- печать через `requestAnimationFrame` **прямой инжекцией в Text-ноду** —
+  ноль React-ререндеров на символ;
+- база 72 cps с плавным wobble `1 + 0.12·sin(i·0.35)`; паузы на знаках:
+  `.!?…` → 120мс, `,;:—` → 50мс (`punctDelay`);
+- расписание копится (`nextAt += delay`), а не пересчитывается от кадра;
+  после залипания кадра догоняем **максимум 2 символами за кадр** —
+  текст не «выстреливает» блоком;
+- `ProseType` сообщает о завершении через `onDone` (этапы чтения
+  двигаются событиями, без pre-computed задержек);
+- `Typewriter` (эхо команд, 18 мс/символ) — для коротких строк.
+
+### Механика is-typing
+
+`lib/typingActivity.ts` — модульный счётчик активных потоков
+(`begin()/end()` строго парны). Shell подписывается и ставит атрибут
+`data-typing` на `.shell-root` и `.crt`; CSS (globals.css, блок
+`data-typing`) ставит на паузу дым, сигил, зерно и глушит glow —
+main-thread остаётся печати. Аналогично `data-scrolling` (окно 160мс)
+морозит фон при скролле.
+
+## 6. Каталог 8 раскладов (`data/spreads.json` ↔ `lib/spreads.ts`)
+
+Backend — источник правды; фронт держит зеркало. `flip_order` — порядок
+вскрытия карт (ключи позиций), `layout` — геометрия SpreadBlock.
+
+| id | Имя | Команда | Карт | Layout | Вопрос | flip_order |
+|---|---|---|---|---|---|---|
+| `daily` | карта дня | `taro daily` | 1 | column1 | нет | p1 |
+| `single` | одна карта | `taro ask1 «q»` | 1 | column1 | да | p1 |
+| `yesno` | да / нет | `taro yesno «q»` | 3 | trio | да | p1 → p2 → p3 |
+| `three` | три карты | `taro ask «q»` | 3 | pyramid | нет* | p1 → p2 → p3 |
+| `mfd` | мысли · чувства · действия | `taro mfd «q»` | 3 | trio | да | p1 → p2 → p3 |
+| `shadow` | тень | `taro shadow [тема]` | 6 | spine | нет | p1…p6 |
+| `pentagram` | пентаграмма | `taro pentagram «q»` **†** | 6 | pentagram | да | earth → air → water → fire → spirit → center |
+| `horseshoe` | подкова | `taro horseshoe «q»` | 7 | arc | да | p1…p7 |
+
+\* «три карты» всегда динамическая: имена позиций вычисляет бэкенд по
+вопросу (`_positions_for_question`), JSON-позиции не рендерятся напрямую.
+† см. «Известные проблемы» — команда `taro pentagram` в текущем парсере
+не резолвится, рабочий алиас — `taro пентаграмма`.
+
+Геометрии: `column1` — одна карта по центру; `trio` — ряд из трёх с
+метками позиций; `pyramid` — верх (p2) над нижними [p1, p3]; `spine` —
+стек 4+2; `pentagram` — ритуальный круг, слоты по ключам
+(`center/spirit/fire/water/earth/air`); `arc` — дуга из 7 с
+вертикальными микросдвигами (`ARC_DY`).
+
+### Вскрытие (`SpreadBlock.tsx`)
+
+Очередь = `flip_order` → индексы карт через `position_keys` (cards[i] ↔
+positionKeys[i]); ключи `pN` мапятся сами, непонятые пропускаются,
+остаток добивается слева направо. Клик мимо очереди игнорируется с
+однократным shake. Подсказка `// вскрой: {имя позиции}` светится
+акцентом, когда фоновый шёпот уже доставлен (`spread-hint--ready`).
+
+## 7. Чтение (`components/ReadingResult.tsx`)
+
+Секции маунтятся последовательно по стейдж-машине: `header` (auto, 350мс +
+45мс/карта) → `intro` («шепот») → `signal` (short_answer, акцентный бокс)
+→ body (позиции/проявление+на-что-смотреть/значения) → `synthesis`
+(«нить») → `disclosure` (`<details>` «траектория дня», auto 200мс) →
+`advice` (бокс совета) → `close` (фраза + тег проводника). Проза печатается
+ProseType; каждая секция двигает стейдж своим `onDone`.
+
+- Формы body: multi-card — `позиции[]` + `связь_карт`; daily —
+  `проявление`/`на_что_смотреть` + disclosure `траектория`; легаси —
+  `card_meaning`.
+- **Closings** — пул ритуальных подписей на проводника (по 8 фраз,
+  `guides.ts`), выбирается случайно при каждом чтении; в журнале —
+  «из журнала сеансов».
+- `instant` (журнал) — все секции сразу, без таймеров.
+
+## 8. Атмосферные слои и перф-бюджет
+
+| Слой | Файл | Отключение |
 |---|---|---|
-| Canvas | `#000000` | Background, fills |
-| White | `#FFFFFF` | Text, borders, button labels |
-| Gray | `#666666` | Disabled text, tertiary labels only |
-| (none) | — | No mid-tones beyond `#666666`. No accent colors. |
+| ритуальный дым (3 облачка) | `Shell.tsx` (`.ritual-smoke`) | `data-typing`/`data-scrolling` |
+| ambient-сигил (вращ. пентаграмма, ~6.8к SVG-нод) | `AmbientSigil.tsx` | маунт после бута; `sigil-dim` при чтении; `heavyMotion` |
+| живое зерно ЭЛТ | `CrtNoise.tsx` | `heavyMotion`, `data-typing` |
+| созвездие + лунные глифы | `ConstellationLayer.tsx`, `LunarGlyphsLayer.tsx` | `heavyMotion` |
 
-**Rules:**
-- Every pixel is either `#000000`, `#FFFFFF`, or `#666666` (disabled only).
-- No `rgba()`, no opacity tricks for creating colors.
-- No gradients anywhere. No glow effects. No box-shadows.
+`heavyMotion = isLowEndDevice() || prefers-reduced-motion` — слабые
+устройства получают статичный фон. `.term-frame`/`frame-ritual`/`menu-box`
+используют `backdrop-filter: blur(6px)` — матовые боксы вместо сплошного
+блюра экрана. **Перф-цель: 0 long tasks > 50мс на фазе печати чтения** —
+проверяется туром `scripts/e2e_tour.mjs` (PerformanceObserver longtask);
+метрика на Task 16: 0 long tasks во всех 8 прогонах.
 
-## 3. Typography
+## 9. Данные и инструменты
 
-| Role | Font | Weight | Size | Case |
-|---|---|---|---|---|
-| Display / headings | `'Pixelify Sans', 'Courier New', monospace` | 700 | 24px / 20px | UPPERCASE |
-| Card names | `'Times New Roman', serif` | 400 | 20px | UPPERCASE |
-| Body / labels | `'Courier New', 'Courier', monospace` | 400 | 12-14px | UPPERCASE |
-| Interpretation | `'Courier New', 'Courier', monospace` | 400 | 14px | mixed case |
+- Двухфазный расклад: `POST /api/spread/begin` (карты сразу + token) →
+  `GET /api/spread/poll?token=…` (шёпот, поллинг 1.5с). Ответ begin несёт
+  `positions` (имена в card-order), `position_keys`, `spread_id/name`.
+- Моки: `scripts/serve_webapp_mock.py` — prod-статика + мок API
+  (каталог из `data/spreads.json`, легаси 1+question → single, 1 → daily,
+  3 → three — как `core/spreads.resolve_spread`); dev-мок `lib/mockApi.ts`
+  активен только в `next dev`.
+- Верификация: `scripts/e2e_tour.mjs` (Playwright, viewport 390×844) —
+  8 раскладов, флипы по flip_order через подсказку, скриншоты
+  `docs/assets/tour-v2/`, jank-проба на печати чтения.
+- Журнал: типы `daily`, `spread_{catalog_id}`; метки —
+  `spreadLabelFromType` (`lib/transcript.ts`).
 
-- **Letter-spacing:** `0.1em` for uppercase headings, `0.05em` for labels
-- **Line-height:** 1.6 for body, 1.2 for headings
-- **Font smoothing:** `-webkit-font-smoothing: none` for pixel fonts, `auto` for serif card names
-- Google Fonts: `Pixelify Sans` (loaded, keep existing link)
+## 10. Известные проблемы (Task 16, на контроллер)
 
-## 4. Layout
+1. **Дедлок чтения daily** — `ReadingResult.tsx`: при интерпретации без
+   `связь_карт`, но с `disclosure` (реальный daily из `core/llm.py`)
+   счётчик стадий доходит до `disclosureIdx`, но autoAdvance читает
+   `stages[stage]` по позиции массива, где лежит body-запись → `// совет`
+   и close-фраза не появляются. Unit-тесты не ловят: все кейсы `instant`.
+2. **Команда `taro pentagram` не резолвится** — `commands.ts` строит
+   алиасы только из `aliases` каталога (`пента/пентаграмма/pent`), а help
+   и строка каталога предлагают `taro pentagram`.
 
-- **Single column**, centered. Max-width: 400px.
-- **Vertical stacking** with 24-32px gaps.
-- **Content is top-biased** — card result sits at 25% from top, not center.
-- Padding: 16px sides, 24px top/bottom.
-- No sidebars, no multi-column.
+## 11. Do / Don't
 
-### Screen flow
-1. **Card pick** — 3 face-down cards in a row (12px gap). Title "ВЫБЕРИ КАРТУ" above.
-2. **Card reveal** — clicked card flips (3D rotateY). Others fade out.
-3. **Result** — revealed card (top third), card name below (serif, uppercase), interpretation block with dashed border below, then minimal navigation.
-
-## 5. Components
-
-### Cards (face-down)
-- 120×180px, `perspective: 800px`
-- Background: B&W mandala pattern from `/cards/back.png`, `image-rendering: pixelated`
-- Border: 2px solid `#FFFFFF`
-- No border-radius, no shadow
-- Hover: `scale(1.05)`, no shadow, no glow
-
-### Cards (face-up / revealed)
-- Fills container proportionally
-- Background: B&W card art from `/cards/{name}.png`, `background-size: cover`
-- Border: 2px solid `#FFFFFF`
-- `image-rendering: pixelated`
-
-### Buttons
-- **Style:** Rectangular, 2px solid `#FFFFFF` border, transparent background, white text
-- **Hover:** White fill, black text
-- **Active:** White fill, black text, 2px inset border
-- **Size:** 44px height, padding 12px 24px, font 12px ALL CAPS monospace, `0.1em` letter-spacing
-- No border-radius, no shadows
-
-### Interpretation block
-- Dashed border (2px white, 4px dash gap)
-- Padding 16px
-- White text, Courier New, 14px, line-height 1.6
-- `white-space: pre-wrap`
-
-### Calendar (B&W version)
-- Same black canvas, white text
-- Calendar grid: 7 columns, 2px gap
-- Days: white text, `opacity: 0.4` for non-active, `opacity: 1` for today/has-reading
-- Has-reading indicator: 4×4px white dot below date
-- Nav buttons: same as .btn style
-- Reading overlay: full-screen black overlay, white border, serif card name, mono interpretation
-
-## 6. Depth & Elevation
-
-None. Zero. No shadows, no z-index layering beyond basic stacking.
-
-- The only visual hierarchy comes from:
-  - Stroke weight (2px borders vs 1px rules)
-  - Type scale (24px heading vs 12px label)
-  - Active vs inactive opacity (1.0 vs 0.4)
-- Cards on hover: `scale(1.05)` only. No shadow, no glow.
-
-## 7. Animation
-
-- **Card flip:** 3D rotateY, 0.6s ease-in-out
-- **Card fade (unselected):** 0.5s fade + scale(0.8)
-- **Screen transitions:** instant (no animation, just class toggle)
-- **Button hover:** instant swap of fill/text color
-- No loading spinners, no particle effects, no twinkling
-
-## 8. Responsive
-
-- **Mobile default:** 100% width, 16px padding sides
-- **3 cards row:** flex, center, 12px gap
-- **Card size:** 100×150px minimum, scales up to 120×180px on larger screens
-- **Layout is the same at every width** — centered column, max 400px
-
-## 9. Design Rules (Do/Don't)
-
-- ✅ Pure B&W only. `#000000` and `#FFFFFF`.
-- ✅ ALL CAPS for all labels and headings. Monospace for UI, serif for card names.
-- ✅ Square corners everywhere. No border-radius.
-- ✅ `image-rendering: pixelated` on card images.
-- ✅ Let contrast and scale do the work. Big typography, simple layouts.
-- ❌ No colors. Not a single pixel.
-- ❌ No shadows, no gradients, no glowing auras.
-- ❌ No rounded corners.
-- ❌ No decorative backgrounds, particle effects, twinkling stars.
-- ❌ No emojis in UI copy.
-- ❌ No loading spinners — either the content is there or it isn't.
-
-## 10. Implementation Notes
-
-- Card images: `/cards/{card-id}.png` (B&W dithered, 1086×1810, mode=1)
-- Card back: `/cards/back.png` (B&W geometric mandala, 262×390, mode=1)
-- Fonts: Pixelify Sans (Google Fonts) for headings, Times New Roman for card names, Courier New for body
-- Card flip: `.card-back.flipped .card-inner { transform: rotateY(180deg) }`
-- Card hover: `.card-back:hover { transform: scale(1.05) }`
-- All `.star`, `.stars-container`, `@keyframes twinkle` removed from CSS
-- All color CSS variables replaced with `#000000` and `#FFFFFF`
+- ✅ акцент только через переменные проводника; кириллица в UI — всюду;
+- ✅ печать — только через typeFlow/ProseType (события onDone, без
+  фиксированных задержек под тайминги);
+- ✅ новые анимации — с учётом `data-typing`/`data-scrolling` и
+  `heavyMotion`;
+- ✅ флипы — строго по `flip_order`, клик мимо очереди = shake;
+- ❌ никаких модалок и отдельных экранов — только транскрипт;
+- ❌ не хардкодить цвета проводников в компонентах;
+- ❌ не рендерить посимвольно через React-состояние;
+- ❌ не блокировать main-thread на фазе печати (long tasks > 50мс).

@@ -23,7 +23,12 @@ from http.server import HTTPServer, SimpleHTTPRequestHandler
 from urllib.parse import parse_qs, urlparse
 
 ROOT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "static", "webapp")
+REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PORT = int(os.environ.get("PORT", "3000"))
+
+# Каталог раскладов — зеркало data/spreads.json (backend — источник правды).
+with open(os.path.join(REPO, "data", "spreads.json"), encoding="utf-8") as _f:
+    CATALOG = json.load(_f)["spreads"]
 
 DECK = [
     ("the-fool", "Дурак"), ("the-magician", "Маг"), ("the-high-priestess", "Жрица"),
@@ -53,11 +58,15 @@ ADVICES = [
     "Сделай маленький шаг сегодня. Хаос любит смелых, но платит по счетам аккуратно.",
     "Запиши сон утром — в нём будет первая строка ответа.",
 ]
-POSITIONS = ["прошлое", "настоящее", "будущее"]
 MEANING_TPL = [
     "то, что ушло, всё ещё держит тебя за рукав.",
     "ты стоишь на перекрёстке, и это честнее, чем кажется.",
     "будущее просит не скорости, а направления.",
+]
+SYNTHESIS = [
+    "карты спорят, но спор продуктивный: движение здесь важнее покоя.",
+    "все линии сходятся в одном: решает не обстоятельство, а твоя ставка.",
+    "путь не обещан лёгким, но он открыт — если не оборачиваться.",
 ]
 
 # двухфазный спред: токен → (ready_at, payload)
@@ -102,26 +111,32 @@ class Handler(SimpleHTTPRequestHandler):
                 _pending.pop(token, None)
             return self._json({"ready": True, "interpretation": job["interpretation"]})
         if parsed.path == "/api/readings":
-            return self._json({
-                "readings": [
-                    {
-                        "id": i + 1,
-                        "type": ["daily", "1", "3"][i % 3],
-                        "question": "стоит ли менять работу?" if i % 2 else None,
-                        "created_at": "2026-08-%02dT12:00:00" % (10 + i),
-                        "cards_data": [],
-                        "interpretation": {},
-                        "character_id": "shadow_walker",
-                    }
-                    for i in range(6)
-                ]
-            })
+            return self._json({"readings": self._mock_readings()})
         if parsed.path.startswith("/api/"):
             return self._json({"error": "unknown endpoint"}, 404)
         return super().do_GET()
 
+    def _resolve_spread(self, sid, question=None):
+        """sid → (spread_id, spread_name, n, position_keys, positions).
+
+        Легаси различает daily/single как бэкенд (core/spreads.resolve_spread):
+        1 без вопроса → daily, 1 с вопросом → single, 3 → three.
+        """
+        if isinstance(sid, str) and sid in CATALOG:
+            s = CATALOG[sid]
+            keys = [p["key"] for p in s["positions"]]
+            by_key = {p["key"]: p["name"] for p in s["positions"]}
+            return s["id"], s["name"], s["count"], keys, [by_key[k] for k in keys]
+        if str(sid) == "3":
+            return ("three", "три карты", 3, ["p1", "p2", "p3"],
+                    ["Твоя позиция и энергия", "Динамика между вами", "Главный вектор развития"])
+        if str(sid) == "1" and question and str(question).strip():
+            return ("single", "одна карта", 1, ["p1"], ["суть ответа"])
+        return ("daily", "карта дня", 1, ["p1"], ["энергия дня"])
+
     def _draw_cards(self, payload):
-        n = 3 if payload.get("spread_type") == 3 else 1
+        spread_id, spread_name, n, position_keys, positions = self._resolve_spread(
+            payload.get("spread_type"), payload.get("question"))
         pick = random.sample(DECK, n)
         now = random.randrange(10 ** 6)
         cards = [
@@ -133,21 +148,102 @@ class Handler(SimpleHTTPRequestHandler):
             }
             for cid, name in pick
         ]
-        meanings = [
-            "%s%s — «%s»: %s" % (
-                name, " перевёрнута" if cards[i]["is_reversed"] else "",
-                (POSITIONS if n == 3 else ["послание"])[i],
-                MEANING_TPL[i] if i < len(MEANING_TPL) else "тише — и увидишь.",
-            )
+        lines = [
+            "%s%s — %s" % (name, " перевёрнута" if cards[i]["is_reversed"] else "", MEANING_TPL[i % len(MEANING_TPL)])
             for i, (cid, name) in enumerate(pick)
         ]
-        interpretation = {
-            "intro": INTROS[now % len(INTROS)],
-            "short_answer": ANSWERS[now % len(ANSWERS)],
-            "card_meaning": meanings,
-            "advice": ADVICES[now % len(ADVICES)],
+        verdict = ("Да.", "Скорее да.", "Скорее нет.", "Нет.")[now % 4]
+        if spread_id in ("daily", "single"):
+            interpretation = {
+                "intro": INTROS[now % len(INTROS)],
+                "short_answer": ANSWERS[now % len(ANSWERS)],
+                "advice": ADVICES[now % len(ADVICES)],
+            }
+            if spread_id == "single":
+                interpretation["позиции"] = [
+                    {"позиция": positions[0], "карта": "%s%s" % (pick[0][1], " перевёрнута" if cards[0]["is_reversed"] else ""),
+                     "реверс": cards[0]["is_reversed"], "трактовка": MEANING_TPL[0]},
+                ]
+            else:
+                interpretation["проявление"] = "день ровный, без резких изломов: всё, что откладывалось, мягко напомнит о себе."
+                interpretation["на_что_смотреть"] = "смотри на повторяющиеся числа и слова — сегодня они не случайны."
+                interpretation["траектория"] = {
+                    "утро": "утро задаёт ритм: одно дело за раз, без метаний между вкладками.",
+                    "день": "день подтверждает выбор: разговор, который ты откладывал, пройдёт легче, чем казался.",
+                    "вечер": "вечер подводит итог: запиши три строки о дне — завтра они станут картой.",
+                }
+        elif spread_id == "yesno":
+            interpretation = {
+                "intro": INTROS[now % len(INTROS)],
+                "short_answer": "%s %s" % (verdict, ANSWERS[now % len(ANSWERS)]),
+                "позиции": [
+                    {"позиция": positions[i], "карта": "%s%s" % (pick[i][1], " перевёрнута" if cards[i]["is_reversed"] else ""),
+                     "реверс": cards[i]["is_reversed"], "трактовка": MEANING_TPL[i % len(MEANING_TPL)]}
+                    for i in range(n)
+                ],
+                "связь_карт": "линия простая: за и против спорят, совет держит равновесие.",
+                "advice": ADVICES[now % len(ADVICES)],
+            }
+        else:
+            interpretation = {
+                "intro": INTROS[now % len(INTROS)],
+                "short_answer": ANSWERS[now % len(ANSWERS)],
+                "позиции": [
+                    {"позиция": positions[i], "карта": "%s%s" % (pick[i][1], " перевёрнута" if cards[i]["is_reversed"] else ""),
+                     "реверс": cards[i]["is_reversed"], "трактовка": "%s %s" % (lines[i], lines[(i + 1) % n])}
+                    for i in range(n)
+                ],
+                "связь_карт": SYNTHESIS[now % len(SYNTHESIS)],
+                "advice": ADVICES[now % len(ADVICES)],
+            }
+        meta = {
+            "spread_id": spread_id,
+            "spread_name": spread_name,
+            "positions": positions,
+            "position_keys": position_keys,
         }
-        return cards, interpretation
+        return cards, interpretation, meta
+
+    def _mock_readings(self):
+        rows = []
+        types = [
+            "daily", "spread_single", "spread_three", "spread_yesno",
+            "spread_mfd", "spread_shadow", "spread_pentagram", "spread_horseshoe",
+        ]
+        for i, t in enumerate(types):
+            spread_id = "daily" if t == "daily" else t[len("spread_"):]
+            _, _, n, _, positions = self._resolve_spread(spread_id)
+            pick = random.sample(DECK, n)
+            cards = [
+                {"id": cid, "name": name, "is_reversed": (i + j) % 3 == 1}
+                for j, (cid, name) in enumerate(pick)
+            ]
+            interp = {
+                "intro": INTROS[i % len(INTROS)],
+                "short_answer": ANSWERS[i % len(ANSWERS)],
+                "позиции": [
+                    {"позиция": positions[j], "карта": cards[j]["name"],
+                     "реверс": cards[j]["is_reversed"], "трактовка": MEANING_TPL[j % len(MEANING_TPL)]}
+                    for j in range(n)
+                ],
+                "связь_карт": SYNTHESIS[i % len(SYNTHESIS)],
+                "advice": ADVICES[i % len(ADVICES)],
+            }
+            if spread_id == "daily":
+                interp.pop("позиции")
+                interp.pop("связь_карт")
+                interp["проявление"] = "день ровный, без резких изломов."
+                interp["траектория"] = {"утро": "одно дело за раз.", "день": "разговор пройдёт легче.", "вечер": "запиши три строки."}
+            rows.append({
+                "id": i + 1,
+                "type": t,
+                "question": "стоит ли менять работу?" if i % 2 else None,
+                "created_at": "2026-08-%02dT12:00:00" % (10 + i),
+                "cards_data": {"cards": cards, "spread_type": spread_id},
+                "interpretation": interp,
+                "character_id": "shadow_walker",
+            })
+        return rows
 
     def do_POST(self):
         parsed = urlparse(self.path)
@@ -158,9 +254,9 @@ class Handler(SimpleHTTPRequestHandler):
             payload = json.loads(self.rfile.read(length) or b"{}")
         except json.JSONDecodeError:
             payload = {}
-        cards, interpretation = self._draw_cards(payload)
+        cards, interpretation, meta = self._draw_cards(payload)
         if parsed.path == "/api/spread":
-            return self._json({"cards": cards, "interpretation": interpretation})
+            return self._json({"cards": cards, "interpretation": interpretation, **meta})
         # двухфазный: карты сразу, шёпот — через LLM_LATENCY секунд
         token = uuid.uuid4().hex[:20]
         with _pending_lock:
@@ -168,7 +264,7 @@ class Handler(SimpleHTTPRequestHandler):
                 "ready_at": time.time() + LLM_LATENCY,
                 "interpretation": interpretation,
             }
-        return self._json({"cards": cards, "token": token})
+        return self._json({"cards": cards, "token": token, **meta})
 
 
 def _sweep():

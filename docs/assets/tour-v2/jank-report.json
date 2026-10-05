@@ -1,0 +1,171 @@
+{
+  "url": "http://localhost:3100",
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "catalogRows": 8,
+  "spreads": [
+    {
+      "id": "daily",
+      "cmd": "taro daily",
+      "cardsSeen": true,
+      "flipSeq": [
+        "карта дня"
+      ],
+      "flipOrderOk": true,
+      "allFlipped": true,
+      "readingMs": -1,
+      "readingComplete": false,
+      "longTasks": 0,
+      "jankMaxMs": 0,
+      "readingTitle": null
+    },
+    {
+      "id": "single",
+      "cmd": "taro ask1 стоит ли менять работу?",
+      "cardsSeen": true,
+      "flipSeq": [
+        "суть ответа"
+      ],
+      "flipOrderOk": true,
+      "allFlipped": true,
+      "readingMs": 6644,
+      "readingComplete": true,
+      "longTasks": 0,
+      "jankMaxMs": 0,
+      "readingTitle": "✦ ОДНА КАРТА ✦"
+    },
+    {
+      "id": "yesno",
+      "cmd": "taro yesno отпускать ли старое?",
+      "cardsSeen": true,
+      "flipSeq": [
+        "за",
+        "против",
+        "совет"
+      ],
+      "flipOrderOk": true,
+      "allFlipped": true,
+      "readingMs": 8711,
+      "readingComplete": true,
+      "longTasks": 0,
+      "jankMaxMs": 0,
+      "readingTitle": "✦ ДА / НЕТ ✦"
+    },
+    {
+      "id": "three",
+      "cmd": "taro ask стоит ли менять работу?",
+      "cardsSeen": true,
+      "flipSeq": [
+        "Твоя позиция и энергия",
+        "Динамика между вами",
+        "Главный вектор развития"
+      ],
+      "flipOrderOk": true,
+      "allFlipped": true,
+      "readingMs": 13265,
+      "readingComplete": true,
+      "longTasks": 0,
+      "jankMaxMs": 0,
+      "readingTitle": "✦ ТРИ КАРТЫ ✦"
+    },
+    {
+      "id": "mfd",
+      "cmd": "taro mfd что думает обо мне М.?",
+      "cardsSeen": true,
+      "flipSeq": [
+        "мысли",
+        "чувства",
+        "действия"
+      ],
+      "flipOrderOk": true,
+      "allFlipped": true,
+      "readingMs": 13259,
+      "readingComplete": true,
+      "longTasks": 0,
+      "jankMaxMs": 0,
+      "readingTitle": "✦ МЫСЛИ · ЧУВСТВА · ДЕЙСТВИЯ ✦"
+    },
+    {
+      "id": "shadow",
+      "cmd": "taro shadow выгорание",
+      "cardsSeen": true,
+      "flipSeq": [
+        "что я скрываю",
+        "почему я это скрываю",
+        "что скрывание защищает",
+        "что оно стоит",
+        "путь интеграции",
+        "следующий шаг"
+      ],
+      "flipOrderOk": true,
+      "allFlipped": true,
+      "readingMs": 19135,
+      "readingComplete": true,
+      "longTasks": 0,
+      "jankMaxMs": 0,
+      "readingTitle": "✦ ТЕНЬ ✦"
+    },
+    {
+      "id": "pentagram",
+      "cmd": "taro пентаграмма кто я в этой ситуации?",
+      "cardsSeen": true,
+      "flipSeq": [
+        "земля",
+        "воздух",
+        "вода",
+        "огонь",
+        "дух",
+        "сигнификатор"
+      ],
+      "flipOrderOk": true,
+      "allFlipped": true,
+      "readingMs": 17970,
+      "readingComplete": true,
+      "longTasks": 0,
+      "jankMaxMs": 0,
+      "readingTitle": "✦ ПЕНТАГРАММА ✦"
+    },
+    {
+      "id": "horseshoe",
+      "cmd": "taro horseshoe переезд в другой город",
+      "cardsSeen": true,
+      "flipSeq": [
+        "ситуация",
+        "скрытое",
+        "препятствие",
+        "внешнее",
+        "твоя позиция",
+        "чужая позиция",
+        "исход"
+      ],
+      "flipOrderOk": true,
+      "allFlipped": true,
+      "readingMs": 21068,
+      "readingComplete": true,
+      "longTasks": 0,
+      "jankMaxMs": 0,
+      "readingTitle": "✦ ПОДКОВА ✦"
+    },
+    {
+      "id": "history",
+      "types": [
+        "карта дня",
+        "одна карта",
+        "три карты",
+        "да / нет",
+        "мысли · чувства · действия",
+        "тень",
+        "пентаграмма",
+        "подкова"
+      ]
+    }
+  ],
+  "jankAfterAll": {
+    "count": 0,
+    "maxMs": 0
+  },
+  "consoleErrors": [],
+  "durationS": 197.717
+}
