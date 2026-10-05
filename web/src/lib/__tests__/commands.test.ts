@@ -19,4 +19,24 @@ describe('spread commands', () => {
     expect(parseCommand('taro ask вопрос')).toEqual({ kind: 'ask', question: 'вопрос', cards: 3 });
     expect(parseCommand('taro daily')).toEqual({ kind: 'daily' });
   });
+  it('latin catalog ids resolve as commands (help/каталог их рекламируют)', () => {
+    expect(parseCommand('taro pentagram кто я в этой ситуации?')).toEqual({
+      kind: 'spread', id: 'pentagram', question: 'кто я в этой ситуации?',
+    });
+    expect(parseCommand('taro horseshoe переезд в другой город')).toEqual({
+      kind: 'spread', id: 'horseshoe', question: 'переезд в другой город',
+    });
+    expect(parseCommand('taro single суть ответа')).toEqual({
+      kind: 'spread', id: 'single', question: 'суть ответа',
+    });
+    expect(parseCommand('taro three вопрос')).toEqual({
+      kind: 'spread', id: 'three', question: 'вопрос',
+    });
+    expect(parseCommand('taro pentagram')).toEqual({ kind: 'spread', id: 'pentagram', question: null });
+  });
+  it('latin ids do not hijack legacy cases', () => {
+    expect(parseCommand('taro ask1 вопрос')).toEqual({ kind: 'ask', question: 'вопрос', cards: 1 });
+    expect(parseCommand('taro день')).toEqual({ kind: 'daily' });
+    expect(parseCommand('taro shadow')).toEqual({ kind: 'guide-set', id: 'shadow_walker' });
+  });
 });

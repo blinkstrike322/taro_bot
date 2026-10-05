@@ -106,13 +106,11 @@ Backend — источник правды; фронт держит зеркал�
 | `three` | три карты | `taro ask «q»` | 3 | pyramid | нет* | p1 → p2 → p3 |
 | `mfd` | мысли · чувства · действия | `taro mfd «q»` | 3 | trio | да | p1 → p2 → p3 |
 | `shadow` | тень | `taro shadow [тема]` | 6 | spine | нет | p1…p6 |
-| `pentagram` | пентаграмма | `taro pentagram «q»` **†** | 6 | pentagram | да | earth → air → water → fire → spirit → center |
+| `pentagram` | пентаграмма | `taro pentagram «q»` | 6 | pentagram | да | earth → air → water → fire → spirit → center |
 | `horseshoe` | подкова | `taro horseshoe «q»` | 7 | arc | да | p1…p7 |
 
 \* «три карты» всегда динамическая: имена позиций вычисляет бэкенд по
 вопросу (`_positions_for_question`), JSON-позиции не рендерятся напрямую.
-† см. «Известные проблемы» — команда `taro pentagram` в текущем парсере
-не резолвится, рабочий алиас — `taro пентаграмма`.
 
 Геометрии: `column1` — одна карта по центру; `trio` — ряд из трёх с
 метками позиций; `pyramid` — верх (p2) над нижними [p1, p3]; `spine` —
@@ -176,16 +174,18 @@ ProseType; каждая секция двигает стейдж своим `onD
 - Журнал: типы `daily`, `spread_{catalog_id}`; метки —
   `spreadLabelFromType` (`lib/transcript.ts`).
 
-## 10. Известные проблемы (Task 16, на контроллер)
+## 10. Известные проблемы
 
-1. **Дедлок чтения daily** — `ReadingResult.tsx`: при интерпретации без
-   `связь_карт`, но с `disclosure` (реальный daily из `core/llm.py`)
-   счётчик стадий доходит до `disclosureIdx`, но autoAdvance читает
-   `stages[stage]` по позиции массива, где лежит body-запись → `// совет`
-   и close-фраза не появляются. Unit-тесты не ловят: все кейсы `instant`.
-2. **Команда `taro pentagram` не резолвится** — `commands.ts` строит
-   алиасы только из `aliases` каталога (`пента/пентаграмма/pent`), а help
-   и строка каталога предлагают `taro pentagram`.
+Все баги, найденные туром T16, исправлены в fix-back:
+1. daily-стейдж-машина (disclosure без синтеза) — autoAdvance теперь
+   ключуется на счётчик стадий, а не на позицию массива
+   (`ReadingResult.tsx`); покрыто тестами на non-instant путь.
+2. Латинские id каталога (`taro pentagram/horseshoe/single/three`)
+   резолвятся как команды (`commands.ts`), легаси-кейсы не задеты;
+   покрыто тестами `commands.test.ts`.
+3. Оверлап слотов пентаграммы на 390px (fire×water, earth×air ~86px)
+   устранён подгонкой слотов (`globals.css`, spread-pentagram) —
+   проверено bbox-замером (пересечений нет, hit-test точный).
 
 ## 11. Do / Don't
 

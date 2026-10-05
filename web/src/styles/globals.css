@@ -2779,15 +2779,15 @@ div[class*="boot-log"]::-webkit-scrollbar {
 
 .spread-pentagram .spread-cell {
   position: absolute;
-  width: 27%;
+  width: 23%;
 }
 
-.spread-pentagram .spread-cell--center { width: 30%; left: 36.5%; top: 36.5%; }
+.spread-pentagram .spread-cell--center { width: 30%; left: 36.5%; top: 33%; }
 .spread-pentagram .spread-cell--spirit { left: 36.5%; top: 0; }
-.spread-pentagram .spread-cell--fire   { right: 0; top: 26%; }
-.spread-pentagram .spread-cell--water  { right: 0; bottom: 6%; }
-.spread-pentagram .spread-cell--earth  { left: 0; bottom: 6%; }
-.spread-pentagram .spread-cell--air    { left: 0; top: 26%; }
+.spread-pentagram .spread-cell--fire   { right: 0; top: 17%; }
+.spread-pentagram .spread-cell--water  { right: 0; bottom: 0; }
+.spread-pentagram .spread-cell--earth  { left: 0; bottom: 0; }
+.spread-pentagram .spread-cell--air    { left: 0; top: 17%; }
 
 /* arc — подкова: 7 карт дугой в три ряда */
 .spread-arc {

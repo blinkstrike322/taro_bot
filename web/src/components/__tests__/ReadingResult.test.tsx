@@ -5,8 +5,8 @@
 //
 // `instant` is passed so no typing timers run — the tests assert finished state.
 
-import { render, screen } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen, act } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import ReadingResult from '@/components/ReadingResult';
 import type { Interpretation, ReadingPosition } from '@/lib/api';
 import type { TarotCard } from '@/components/Card';
@@ -22,6 +22,15 @@ vi.mock('@/lib/sound', () => ({
   sError: vi.fn(),
   sWhisper: vi.fn(),
   sBoot: vi.fn(),
+}));
+
+// Stage-sequencing tests drive the stage machine, not the typing speed:
+// typeInto finishes immediately (full text injected, resolved promise).
+vi.mock('@/lib/typeFlow', () => ({
+  typeInto: vi.fn((node: Text, text: string) => {
+    node.textContent = text;
+    return { cancel: vi.fn(), finished: Promise.resolve() };
+  }),
 }));
 
 function makeCard(id: string, name: string, is_reversed = false): TarotCard {
@@ -207,5 +216,62 @@ describe('ReadingResult / three-card schema (позиции + связь_кар�
     expect(container.textContent).toContain('02');
     expect(screen.getByText('Прошлое держит ключ.')).toBeInTheDocument();
     expectNoJsonLiterals(container.textContent ?? '');
+  });
+});
+
+describe('ReadingResult / daily autoAdvance (non-instant stage machine)', () => {
+  const daily: Interpretation = {
+    intro: 'Шепот начинает звучать.',
+    short_answer: 'Сигнал дня: двигайся.',
+    проявление: 'День требует внимания к деталям.',
+    на_что_смотреть: 'Смотри на повторяющиеся числа.',
+    траектория: {
+      утро: 'Утро задает ритм.',
+      день: 'День подтверждает выбор.',
+      вечер: 'Вечер подводит итог.',
+    },
+    advice: 'Не торопись.',
+  };
+
+  beforeEach(() => vi.useFakeTimers());
+  afterEach(() => vi.useRealTimers());
+
+  it('daily (disclosure без синтеза) доходит до // совет и close-фразы', async () => {
+    const { container } = render(
+      <ReadingResult interpretation={daily} cards={[makeCard('moon', 'Луна')]} spreadLabel="карта дня" />,
+    );
+    for (let i = 0; i < 24; i += 1) {
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(250);
+      });
+      if (container.querySelector('.reading-close-phrase')) break;
+    }
+    expect(container.textContent).toContain('// совет');
+    expect(container.textContent).toContain('Не торопись.');
+    expect(container.querySelector('.reading-close-phrase')).not.toBeNull();
+  });
+
+  it('multi-card (синтез с позициями) также доходит до close-фразы', async () => {
+    const three: Interpretation = {
+      intro: 'Три карты расстелены.',
+      short_answer: 'Связь ясна.',
+      позиции: [
+        { позиция: 'прошлое', карта: 'Первый', реверс: false, трактовка: 'Прошлое держит ключ.' },
+        { позиция: 'настоящее', карта: 'Второй', реверс: true, трактовка: 'Настоящее искрит.' },
+      ],
+      связь_карт: 'Карты связаны выбором.',
+      advice: 'Прислушайся к себе.',
+    };
+    const { container } = render(
+      <ReadingResult interpretation={three} spreadLabel="три карты" />,
+    );
+    for (let i = 0; i < 24; i += 1) {
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(250);
+      });
+      if (container.querySelector('.reading-close-phrase')) break;
+    }
+    expect(container.textContent).toContain('// совет');
+    expect(container.querySelector('.reading-close-phrase')).not.toBeNull();
   });
 });

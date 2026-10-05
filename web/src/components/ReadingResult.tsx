@@ -46,7 +46,6 @@ interface BodyDisclosure {
 // порядок секций; ProseType-стадии двигаются по onDone, остальные — по таймеру
 interface StageSpec {
   id: 'header' | 'intro' | 'signal' | 'body' | 'synthesis' | 'disclosure' | 'advice' | 'close';
-  autoMs?: number;
 }
 
 function buildCardLines(
@@ -161,30 +160,20 @@ export default function ReadingResult({
   );
 
   const stages = useMemo<StageSpec[]>(() => {
-    const list: StageSpec[] = [
-      { id: 'header', autoMs: HEADER_BASE_MS + HEADER_PER_CARD_MS * cardLines.length },
-    ];
+    const list: StageSpec[] = [{ id: 'header' }];
     if (intro) list.push({ id: 'intro' });
     if (short_answer) list.push({ id: 'signal' });
     bodyVisible.forEach(() => list.push({ id: 'body' }));
     if (synthesis) list.push({ id: 'synthesis' });
-    if (bodyDisclosures.length > 0) list.push({ id: 'disclosure', autoMs: DISCLOSURE_MS });
+    if (bodyDisclosures.length > 0) list.push({ id: 'disclosure' });
     if (advice) list.push({ id: 'advice' });
     list.push({ id: 'close' });
     return list;
-  }, [intro, short_answer, bodyVisible, synthesis, bodyDisclosures, advice, cardLines.length]);
+  }, [intro, short_answer, bodyVisible, synthesis, bodyDisclosures, advice]);
 
   const [stage, setStage] = useState(() => (instant ? stages.length : 0));
 
   const advanceTo = (next: number) => setStage((v) => Math.max(v, next));
-
-  // autoAdvance-стадии (header, disclosure): таймер вместо onDone
-  const autoMs = instant ? undefined : stages[stage]?.autoMs;
-  useEffect(() => {
-    if (autoMs == null) return;
-    const t = setTimeout(() => setStage((v) => v + 1), autoMs);
-    return () => clearTimeout(t);
-  }, [stage, autoMs]);
 
   // индексы стадий (порядок фиксирован сборкой stages)
   let cursor = 0;
@@ -195,6 +184,23 @@ export default function ReadingResult({
   const disclosureIdx = bodyDisclosures.length > 0 ? cursor++ : -1;
   const adviceIdx = advice ? cursor++ : -1;
   const closeIdx = cursor++;
+
+  // autoAdvance-стадии (header, disclosure): таймер вместо onDone.
+  // Ключ — счётчик стадий, а не позиция в stages: при пропуске синтеза
+  // (daily: disclosure без связь_карт) позиции массива разъезжаются со
+  // счётчиком, и disclosure-таймер не срабатывал — совет/close не рендерились.
+  const autoMs = instant
+    ? undefined
+    : stage === 0
+      ? HEADER_BASE_MS + HEADER_PER_CARD_MS * cardLines.length
+      : stage === disclosureIdx
+        ? DISCLOSURE_MS
+        : undefined;
+  useEffect(() => {
+    if (autoMs == null) return;
+    const t = setTimeout(() => setStage((v) => v + 1), autoMs);
+    return () => clearTimeout(t);
+  }, [stage, autoMs]);
 
   let headerDelay = 0;
   const next = () => {

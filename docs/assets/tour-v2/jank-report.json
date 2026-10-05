@@ -15,11 +15,11 @@
       ],
       "flipOrderOk": true,
       "allFlipped": true,
-      "readingMs": -1,
-      "readingComplete": false,
+      "readingMs": 7849,
+      "readingComplete": true,
       "longTasks": 0,
       "jankMaxMs": 0,
-      "readingTitle": null
+      "readingTitle": "✦ КАРТА ДНЯ ✦"
     },
     {
       "id": "single",
@@ -30,7 +30,7 @@
       ],
       "flipOrderOk": true,
       "allFlipped": true,
-      "readingMs": 6644,
+      "readingMs": 6606,
       "readingComplete": true,
       "longTasks": 0,
       "jankMaxMs": 0,
@@ -47,7 +47,7 @@
       ],
       "flipOrderOk": true,
       "allFlipped": true,
-      "readingMs": 8711,
+      "readingMs": 8308,
       "readingComplete": true,
       "longTasks": 0,
       "jankMaxMs": 0,
@@ -64,7 +64,7 @@
       ],
       "flipOrderOk": true,
       "allFlipped": true,
-      "readingMs": 13265,
+      "readingMs": 12466,
       "readingComplete": true,
       "longTasks": 0,
       "jankMaxMs": 0,
@@ -81,7 +81,7 @@
       ],
       "flipOrderOk": true,
       "allFlipped": true,
-      "readingMs": 13259,
+      "readingMs": 11197,
       "readingComplete": true,
       "longTasks": 0,
       "jankMaxMs": 0,
@@ -101,7 +101,7 @@
       ],
       "flipOrderOk": true,
       "allFlipped": true,
-      "readingMs": 19135,
+      "readingMs": 17946,
       "readingComplete": true,
       "longTasks": 0,
       "jankMaxMs": 0,
@@ -109,7 +109,7 @@
     },
     {
       "id": "pentagram",
-      "cmd": "taro пентаграмма кто я в этой ситуации?",
+      "cmd": "taro pentagram кто я в этой ситуации?",
       "cardsSeen": true,
       "flipSeq": [
         "земля",
@@ -121,7 +121,7 @@
       ],
       "flipOrderOk": true,
       "allFlipped": true,
-      "readingMs": 17970,
+      "readingMs": 19614,
       "readingComplete": true,
       "longTasks": 0,
       "jankMaxMs": 0,
@@ -142,7 +142,7 @@
       ],
       "flipOrderOk": true,
       "allFlipped": true,
-      "readingMs": 21068,
+      "readingMs": 19782,
       "readingComplete": true,
       "longTasks": 0,
       "jankMaxMs": 0,
@@ -167,5 +167,5 @@
     "maxMs": 0
   },
   "consoleErrors": [],
-  "durationS": 197.717
+  "durationS": 167.867
 }

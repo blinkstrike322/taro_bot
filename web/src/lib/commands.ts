@@ -138,6 +138,15 @@ export function parseCommand(rawInput: string): Cmd | null {
     return { kind: 'spread', id: SPREAD_ALIASES[bhead], question: extractQuestion(brest).question };
   }
 
+  // латинские id каталога как команды (help и строка каталога их
+  // рекламируют); алиасы выше и легаси-кейсы (daily/ask/ask1) приоритетны
+  if (SPREADS[bhead]) {
+    if (!brest && GUIDE_ALIASES[bhead]) {
+      return { kind: 'guide-set', id: GUIDE_ALIASES[bhead] };
+    }
+    return { kind: 'spread', id: SPREADS[bhead].id, question: extractQuestion(brest).question };
+  }
+
   // bare shell commands (also reachable without taro prefix)
   switch (head) {
     case 'help': case 'помощь': case 'ман': case 'man': case '?': return { kind: 'help' };
