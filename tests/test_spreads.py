@@ -1,5 +1,6 @@
 from core.spreads import get_spread, load_spreads, resolve_spread
 
+
 def test_all_spreads_valid():
     spreads = load_spreads()
     assert set(spreads) == {"daily","single","yesno","three","mfd","shadow","pentagram","horseshoe"}

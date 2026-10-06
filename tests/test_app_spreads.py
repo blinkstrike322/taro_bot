@@ -2,7 +2,6 @@
 # Контракт каталога раскладов на уровне /api/spread/begin: count приходит
 # из каталога, позиции/ключи соответствуют записям data/spreads.json.
 # Интеграцию хендлера проверяем на уровне моков — tests/test_spread_lifecycle.py.
-import pytest
 from core.spreads import resolve_spread
 
 

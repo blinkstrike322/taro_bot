@@ -1,6 +1,6 @@
 # tests/test_prompts_spreads.py
-from core.spreads import get_spread
 from core.prompts import build_reading_prompt
+from core.spreads import get_spread
 
 CARDS = [
     {"name": "Луна", "orientation": "reversed"},
@@ -50,7 +50,8 @@ def test_mfd_third_person_and_position_records():
         assert name in p
 
 def test_horseshoe_seven_position_records():
-    cards = CARDS + [
+    cards = [
+        *CARDS,
         {"name": "Звезда", "orientation": "upright"},
         {"name": "Колесо", "orientation": "upright"},
         {"name": "Император", "orientation": "reversed"},

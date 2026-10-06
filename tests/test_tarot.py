@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, patch
 import pytest
 
 # ── build_reading_prompt tests ──────────────────────────────────────────────
-from core.prompts import build_reading_prompt, _positions_for_question
+from core.prompts import _positions_for_question, build_reading_prompt
 from core.spreads import resolve_spread
 from core.tarot import draw_cards, get_card_image, load_cards
 

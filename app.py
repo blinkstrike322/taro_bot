@@ -481,12 +481,12 @@ async def _spread_request_context(request, client_token: str):
             quota_view = await check_quota(db, user.id, tg_id, spread_type_str)
             # Позиции активного расклада — тем же способом, что для нового:
             # three — динамические по вопросу, остальные — имена из каталога.
-            active_positions = (
+            active_positions: list[str] | None = (
                 _positions_for_question(active["question"])
                 if spread_id == "three"
                 else positions
             )
-            if len(active_positions) != len(active_cards):
+            if active_positions is not None and len(active_positions) != len(active_cards):
                 active_positions = None
             return {
                 "deduped": True,

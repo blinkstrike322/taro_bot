@@ -34,6 +34,7 @@ def get_spread(spread_id: str) -> dict[str, Any] | None:
 def resolve_spread(raw: object, question: str | None) -> dict[str, Any]:
     """Разрешить spread_type запроса в запись каталога (никогда не None)."""
     spreads = load_spreads()
+    resolved: dict[str, Any] | None
     if isinstance(raw, str) and raw in spreads:
         resolved = spreads[raw]
     elif str(raw) in spreads:
