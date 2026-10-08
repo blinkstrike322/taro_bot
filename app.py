@@ -43,6 +43,13 @@ from core.reminder import reminder_loop
 from core.ritual import touch_daily_streak
 from core.spreads import resolve_spread
 from core.tarot import draw_cards, load_cards_index
+from core.tg_share import (
+    TelegramAPIError,
+    build_share_message,
+    load_deck_filenames,
+    resolve_reading,
+    send_share,
+)
 from storage.db import (
     STATUS_COMPLETED,
     STATUS_FAILED,
@@ -986,6 +993,46 @@ async def handle_month(request):
     return web.json_response({"answer": answer, "fallback": fallback})
 
 
+# ── Шеринг расклада в личку через нашего бота (/api/share) ────────
+# Порт SNAP3 share: resolve по токену/reading_id строго своего completed-
+# чтения, медиа — PNG карт из static/webapp/cards/, текст — HTML-частями.
+def _clean_reading_id(raw: object) -> int | None:
+    """reading_id из тела: int (не bool) или строка из цифр, иначе None."""
+    if isinstance(raw, bool):
+        return None
+    if isinstance(raw, int):
+        return raw
+    if isinstance(raw, str) and raw.strip().isdigit():
+        return int(raw.strip())
+    return None
+
+
+async def handle_share(request):
+    try:
+        body = await request.json()
+    except Exception:
+        return web.json_response({"error": "invalid json"}, status=400)
+    user = verify_telegram_init_data(body.get("init_data", ""))
+    if not user:
+        return web.json_response({"error": "unauthorized"}, status=401)
+    tg_id = user.get("id") or 0
+    token = _clean_str(body.get("token"), 64) or None
+    reading_id = _clean_reading_id(body.get("reading_id"))
+    if not token and reading_id is None:
+        return web.json_response({"error": "нечем поделиться"}, status=400)
+    db = await get_db()
+    row = await resolve_reading(db, tg_id, token=token, reading_id=reading_id)
+    if row is None:
+        return web.json_response({"error": "чтение не найдено"}, status=404)
+    media, text_parts = build_share_message(row, load_deck_filenames())
+    try:
+        await send_share(request.app["bot"], tg_id, media, text_parts)
+    except TelegramAPIError:
+        logger.warning("share: telegram rejected reading tg_id=%s", tg_id)
+        return web.json_response({"error": "телеграм не принял сообщение"}, status=502)
+    return web.json_response({"ok": True})
+
+
 # ── Gzip + cache-заголовки для статики и API ─────────────────────
 # aiohttp не жмёт и не кэширует сам: JS/CSS/JSON уходили сырыми (~0.5 МБ по
 # мобильной сети), а index.html кэшировался WebView эвристически — после
@@ -1017,8 +1064,10 @@ async def gzip_cache_middleware(request, handler):
     return resp
 
 
-def create_webapp() -> web.Application:
+def create_webapp(bot: Bot | None = None) -> web.Application:
     app = web.Application()
+    # Бот для /api/share (отправка расклада в личку); None в тестах вебаппа.
+    app["bot"] = bot
     app.middlewares.append(gzip_cache_middleware)
     app.router.add_get('/api/readings', handle_readings)
     app.router.add_get('/api/stats', handle_stats)
@@ -1033,6 +1082,7 @@ def create_webapp() -> web.Application:
     app.router.add_post('/api/forecast', handle_forecast)
     app.router.add_post('/api/week', handle_week)
     app.router.add_post('/api/month', handle_month)
+    app.router.add_post('/api/share', handle_share)
     webapp_dir = Path(__file__).parent / "static" / "webapp"
     if webapp_dir.is_dir():
         index = webapp_dir / "index.html"
@@ -1080,7 +1130,7 @@ async def main() -> None:
 
     register_handlers(dp)
 
-    webapp = create_webapp()
+    webapp = create_webapp(bot)
 
     await asyncio.gather(
         run_webapp(webapp),

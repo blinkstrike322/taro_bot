@@ -262,6 +262,52 @@ async def get_reading_by_token(
     }
 
 
+async def get_reading_by_id(
+    db: aiosqlite.Connection,
+    reading_id: int,
+) -> dict | None:
+    """Полная строка чтения по id + владелец (tg_id) — зеркально get_reading_by_token.
+
+    resolve_reading (/api/share) должен проверять владельца одинаково для
+    токена и id: JOIN с users даёт tg_id, парсинг cards_data/interpretation —
+    тот же защитный стиль, что у остальных геттеров чтений.
+    """
+    cursor = await db.execute(
+        """SELECT r.id, r.user_id, r.status, r.type, r.question, r.cards_data,
+                  r.interpretation, r.character_id, r.created_at, u.tg_id
+           FROM readings r JOIN users u ON r.user_id = u.id
+           WHERE r.id = ?""",
+        (reading_id,),
+    )
+    row = await cursor.fetchone()
+    if row is None:
+        return None
+    try:
+        cards_data = json.loads(row[5]) if row[5] else {}
+    except (json.JSONDecodeError, TypeError):
+        cards_data = {}
+    if not isinstance(cards_data, dict):
+        cards_data = {}
+    interpretation = row[6] if row[6] != _PENDING_MARKER else None
+    if interpretation is not None:
+        try:
+            interpretation = json.loads(interpretation)
+        except (json.JSONDecodeError, TypeError):
+            interpretation = None
+    return {
+        "reading_id": row[0],
+        "user_id": row[1],
+        "status": row[2],
+        "type": row[3],
+        "question": row[4],
+        "cards_data": cards_data,
+        "interpretation": interpretation,
+        "character_id": row[7] or "shadow_walker",
+        "created_at": row[8] or "",
+        "tg_id": row[9],
+    }
+
+
 async def _migrate_schema(db: aiosqlite.Connection) -> None:
     """Idiomatic SQLite migrations — try ALTER, ignore if exists."""
     migrations = [
