@@ -11,6 +11,10 @@ class User(BaseModel):
     last_reminder_sent_at: str | None = None
     subscription_end: str | None = None
     first_month_done: int = 0
+    streak_days: int = 0
+    last_daily_at: str | None = None
+    morning_streak: int = 0
+    last_morning_at: str | None = None
 
 
 class Reading(BaseModel):

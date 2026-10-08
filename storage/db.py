@@ -265,6 +265,10 @@ async def get_reading_by_token(
 async def _migrate_schema(db: aiosqlite.Connection) -> None:
     """Idiomatic SQLite migrations — try ALTER, ignore if exists."""
     migrations = [
+        "ALTER TABLE users ADD COLUMN streak_days INTEGER DEFAULT 0",
+        "ALTER TABLE users ADD COLUMN last_daily_at TEXT",
+        "ALTER TABLE users ADD COLUMN morning_streak INTEGER DEFAULT 0",
+        "ALTER TABLE users ADD COLUMN last_morning_at TEXT",
         "ALTER TABLE users ADD COLUMN subscription_end TEXT",
         "ALTER TABLE users ADD COLUMN first_month_done INTEGER DEFAULT 0",
         "ALTER TABLE users ADD COLUMN notifications_enabled INTEGER DEFAULT 1",
@@ -633,7 +637,7 @@ async def get_daily_card_count_today(db: aiosqlite.Connection, user_id: int) -> 
 async def get_user_by_tg_id(db: aiosqlite.Connection, tg_id: int) -> User | None:
     """Get full user row by tg_id."""
     cursor = await db.execute(
-        "SELECT id, tg_id, character_id, created_at, last_active_at, last_reminder_sent_at, subscription_end, first_month_done FROM users WHERE tg_id = ?",
+        "SELECT id, tg_id, character_id, created_at, last_active_at, last_reminder_sent_at, subscription_end, first_month_done, streak_days, last_daily_at, morning_streak, last_morning_at FROM users WHERE tg_id = ?",
         (tg_id,),
     )
     row = await cursor.fetchone()
@@ -644,6 +648,8 @@ async def get_user_by_tg_id(db: aiosqlite.Connection, tg_id: int) -> User | None
         created_at=row[3], last_active_at=row[4],
         last_reminder_sent_at=row[5],
         subscription_end=row[6], first_month_done=row[7],
+        streak_days=row[8], last_daily_at=row[9],
+        morning_streak=row[10], last_morning_at=row[11],
     )
 
 
