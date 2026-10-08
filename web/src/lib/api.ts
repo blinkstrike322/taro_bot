@@ -3,6 +3,17 @@
 // карты сразу, толкование — фоновым шёпотом через поллинг).
 // ─────────────────────────────────────────────────────────────
 
+/** Telegram initData для авторизации каждого запроса.
+ *  Dev-мок: NEXT_PUBLIC_DEV_MOCK_INITDATA — только локальная разработка,
+ *  в проде Python отвергнет такие данные (подпись не совпадёт). */
+function init_data(): string {
+  if (typeof window === 'undefined') return '';
+  const tg = (window as unknown as { Telegram?: { WebApp?: { initData?: string } } })
+    .Telegram?.WebApp;
+  if (tg?.initData) return tg.initData;
+  return (process.env.NEXT_PUBLIC_DEV_MOCK_INITDATA as string | undefined) ?? '';
+}
+
 export interface TarotCardData {
   id: string;
   name: string;
@@ -104,6 +115,7 @@ export async function spreadBegin(
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
+      init_data: init_data(),
       spread_type: spreadType,
       question,
       character_id: characterId,
@@ -115,7 +127,7 @@ export async function spreadBegin(
 }
 
 export async function spreadPoll(token: string): Promise<SpreadPollResponse> {
-  const res = await fetch(`/api/spread/poll?token=${encodeURIComponent(token)}`);
+  const res = await fetch(`/api/spread/poll?token=${encodeURIComponent(token)}&init_data=${encodeURIComponent(init_data())}`);
   if (!res.ok) throw new Error('канал прерван');
   return res.json();
 }
@@ -141,7 +153,7 @@ export async function pollInterpretation(
 
 export async function getCharacter(): Promise<string> {
   try {
-    const res = await fetch('/api/character');
+    const res = await fetch(`/api/character?init_data=${encodeURIComponent(init_data())}`);
     if (!res.ok) return 'shadow_walker';
     const data = await res.json();
     return data.character_id || 'shadow_walker';
@@ -154,7 +166,7 @@ export async function setCharacter(id: string): Promise<string> {
   const res = await fetch('/api/character', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ character_id: id }),
+    body: JSON.stringify({ init_data: init_data(), character_id: id }),
   });
   if (!res.ok) throw await readErrorBody(res);
   const data = await res.json();
@@ -164,7 +176,7 @@ export async function setCharacter(id: string): Promise<string> {
 export async function getReadings(): Promise<ReadingEntry[]> {
   const now = new Date();
   const res = await fetch(
-    `/api/history?year=${now.getFullYear()}&month=${now.getMonth() + 1}`,
+    `/api/readings?year=${now.getFullYear()}&month=${now.getMonth() + 1}&init_data=${encodeURIComponent(init_data())}`,
   );
   if (!res.ok) throw new Error('журнал недоступен');
   const data = await res.json();
@@ -174,7 +186,7 @@ export async function getReadings(): Promise<ReadingEntry[]> {
 /** журнал за последние N дней (1-30): без привязки к месяцу —
  *  ретро-окно от текущего момента, для дайджеста недели */
 export async function getReadingsDays(days: number): Promise<ReadingEntry[]> {
-  const res = await fetch(`/api/history?days=${days}`);
+  const res = await fetch(`/api/readings?days=${days}&init_data=${encodeURIComponent(init_data())}`);
   if (!res.ok) throw new Error('журнал недоступен');
   const data = await res.json();
   return data.readings ?? [];
@@ -195,7 +207,7 @@ export interface OperatorStats {
 }
 export async function getStats(): Promise<OperatorStats | null> {
   try {
-    const res = await fetch('/api/stats');
+    const res = await fetch(`/api/stats?init_data=${encodeURIComponent(init_data())}`);
     if (!res.ok) return null;
     return await res.json();
   } catch {
@@ -235,7 +247,7 @@ export async function askFollowup(payload: FollowUpPayload): Promise<FollowUpRes
   const res = await fetch('/api/ask', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
+    body: JSON.stringify({ init_data: init_data(), ...payload }),
   });
   if (!res.ok) throw await readErrorBody(res);
   const data = await res.json();
@@ -269,7 +281,7 @@ export async function askWeek(
   const res = await fetch('/api/week', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ digest, character_id: characterId }),
+    body: JSON.stringify({ init_data: init_data(), digest, character_id: characterId }),
   });
   if (!res.ok) throw await readErrorBody(res);
   const data = await res.json();
@@ -307,7 +319,7 @@ export async function askMonth(
   const res = await fetch('/api/month', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ digest, character_id: characterId }),
+    body: JSON.stringify({ init_data: init_data(), digest, character_id: characterId }),
   });
   if (!res.ok) throw await readErrorBody(res);
   const data = await res.json();
@@ -345,7 +357,7 @@ export async function dayForecast(payload: DayForecastPayload): Promise<DayForec
   const res = await fetch('/api/forecast', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
+    body: JSON.stringify({ init_data: init_data(), ...payload }),
   });
   if (!res.ok) throw await readErrorBody(res);
   const data = await res.json();
@@ -355,7 +367,7 @@ export async function dayForecast(payload: DayForecastPayload): Promise<DayForec
 
 /** весь журнал (до 500 строк) — хроника карты смотрит на всё */
 export async function getAllReadings(): Promise<ReadingEntry[]> {
-  const res = await fetch('/api/history?all=1');
+  const res = await fetch(`/api/readings?all=1&init_data=${encodeURIComponent(init_data())}`);
   if (!res.ok) throw new Error('журнал недоступен');
   const data = await res.json();
   return data.readings ?? [];
