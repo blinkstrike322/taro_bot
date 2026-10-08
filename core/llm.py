@@ -794,7 +794,13 @@ def _parse_text_format(text: str) -> dict | None:
     return None
 
 
-def parse_llm_response(text: str) -> dict | None:
+def _extract_json(text: str) -> dict | None:
+    """Extract the first JSON object from a raw LLM answer (strict).
+
+    Shared core of parse_llm_response (и строгий экстрактор для /api/forecast):
+    срез markdown-заборов (```json), сопоставление скобок, regex-фолбэк.
+    Возвращает dict или None — без text-format и дефолтного dict.
+    """
     text = strip_emojis(text)
 
     # 1. Strip markdown code blocks if present
@@ -825,14 +831,25 @@ def parse_llm_response(text: str) -> dict | None:
         except json.JSONDecodeError:
             pass
 
+    return None
+
+
+def parse_llm_response(text: str) -> dict | None:
+    text = strip_emojis(text)
+
+    parsed = _extract_json(text)
+    if parsed is not None:
+        return parsed
+
     # 4. Fallback: try text format
-    parsed = _parse_text_format(text)
+    stripped = re.sub(r'```(?:json)?\s*', '', text).strip()
+    parsed = _parse_text_format(stripped)
     if parsed:
         return parsed
 
     return {
         "intro": "Карты готовы поведать свою историю...",
-        "short_answer": text.strip(),
+        "short_answer": stripped.strip(),
         "card_meaning": [],
         "advice": "",
     }

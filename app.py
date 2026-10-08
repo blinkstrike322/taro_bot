@@ -17,13 +17,26 @@ from aiohttp import web
 
 from bot.router import register_handlers
 from config import logger, settings
-from core.llm import get_last_llm_hop, interpret_reading
-from core.prompts import _positions_for_question
+from core.fallbacks import (
+    local_day_forecast,
+    local_followup_fallback,
+    local_pair_fallback,
+    parse_forecast,
+    sanitize_llm_text,
+)
+from core.llm import call_llm_with_fallback, get_last_llm_hop, interpret_reading
+from core.prompts import (
+    _positions_for_question,
+    build_day_forecast_prompt,
+    build_follow_up_prompt,
+    build_pair_prompt,
+    get_system_prompt,
+)
 from core.quota import check_quota, reserve_quota
 from core.reminder import reminder_loop
 from core.ritual import touch_daily_streak
 from core.spreads import resolve_spread
-from core.tarot import draw_cards
+from core.tarot import draw_cards, load_cards_index
 from storage.db import (
     STATUS_COMPLETED,
     STATUS_FAILED,
@@ -696,6 +709,141 @@ async def handle_events(request):
     return web.Response(status=204)
 
 
+# ── Уточняющий вопрос (/api/ask) и прогноз дня (/api/forecast) ────
+# Порт SNAP3 api/ask + api/forecast: резолв карты по cards.json, до 2 попыток
+# LLM, санитизация/строгий JSON-парс, дальше детерминированный локальный
+# фолбэк из значений карты голосом проводника (fallback: true).
+def _clean_str(value: object, max_len: int) -> str:
+    """str → trimmed и обрезанный; всё остальное → пустая строка."""
+    if not isinstance(value, str):
+        return ""
+    return value.strip()[:max_len]
+
+
+def _resolve_card_entry(raw: object, deck: dict) -> dict | None:
+    """Клиент даёт имя — сервер достаёт значения (порт SNAP3 resolveCard).
+
+    raw: {name, position?, is_reversed?/orientation?}. Возвращает dict с
+    данными cards.json + position/is_reversed/orientation, либо None.
+    """
+    if not isinstance(raw, dict):
+        return None
+    entry = deck.get(_clean_str(raw.get("name"), 100))
+    if not entry:
+        return None
+    is_reversed = bool(raw.get("is_reversed")) or _clean_str(raw.get("orientation"), 20) == "reversed"
+    return {
+        **entry,
+        "position": _clean_str(raw.get("position"), 100) or None,
+        "is_reversed": is_reversed,
+        "orientation": "reversed" if is_reversed else "upright",
+    }
+
+
+async def _ask_llm(messages, **kw):  # тонкая обёртка для тестируемости
+    return await call_llm_with_fallback(messages, **kw)
+
+
+async def _forecast_llm(messages, **kw):
+    return await call_llm_with_fallback(messages, **kw)
+
+
+async def handle_ask(request):
+    try:
+        body = await request.json()
+    except Exception:
+        return web.json_response({"error": "invalid json"}, status=400)
+    user = verify_telegram_init_data(body.get("init_data", ""))
+    if not user:
+        return web.json_response({"error": "unauthorized"}, status=401)
+    question = _clean_str(body.get("question"), 500)
+    spread_name = _clean_str(body.get("spread_name"), 100)
+    spread_question = (
+        _clean_str(body.get("spread_question"), 500) if body.get("spread_question") else None
+    )
+    summary = _clean_str(body.get("reading_summary"), 1000)
+    character_id = (
+        body.get("character_id") if body.get("character_id") in CHARACTER_IDS else "shadow_walker"
+    )
+    deck = load_cards_index()
+    pair = card_entry = None
+    if isinstance(body.get("cards"), list):
+        if len(body["cards"]) != 2:
+            return web.json_response({"error": "нужны ровно две карты"}, status=400)
+        pair = []
+        for c in body["cards"]:
+            entry = _resolve_card_entry(c, deck)
+            if not entry:
+                return web.json_response({"error": "карты не опознаны"}, status=400)
+            pair.append(entry)
+    elif isinstance(body.get("card"), dict):
+        card_entry = _resolve_card_entry(body["card"], deck)
+        if not card_entry:
+            return web.json_response({"error": "карты не опознаны"}, status=400)
+    else:
+        return web.json_response({"error": "карта не указана"}, status=400)
+
+    ctx = {"question": question, "spread_name": spread_name,
+           "spread_question": spread_question, "reading_summary": summary,
+           "character_id": character_id}
+    system = get_system_prompt(character_id)
+    user_prompt = build_pair_prompt(pair, ctx) if pair else build_follow_up_prompt(card_entry, ctx)
+    messages = [{"role": "system", "content": system}, {"role": "user", "content": user_prompt}]
+
+    answer = ""
+    for _ in range(2):
+        try:
+            raw = sanitize_llm_text(
+                await _ask_llm(messages, max_tokens=900, temperature=0.85)
+            )
+        except Exception:
+            logger.warning("ask: LLM attempt failed", exc_info=True)
+            raw = ""
+        if len(raw) >= 20:
+            answer = raw
+            break
+    fallback = not answer
+    if fallback:
+        answer = (
+            local_pair_fallback(pair[0], pair[1], ctx)
+            if pair
+            else local_followup_fallback(card_entry, ctx)
+        )
+    return web.json_response({"answer": answer, "fallback": fallback})
+
+
+async def handle_forecast(request):
+    try:
+        body = await request.json()
+    except Exception:
+        return web.json_response({"error": "invalid json"}, status=400)
+    user = verify_telegram_init_data(body.get("init_data", ""))
+    if not user:
+        return web.json_response({"error": "unauthorized"}, status=401)
+    character_id = (
+        body.get("character_id") if body.get("character_id") in CHARACTER_IDS else "shadow_walker"
+    )
+    card_entry = _resolve_card_entry(body.get("card"), load_cards_index())
+    if not card_entry:
+        return web.json_response({"error": "карты не опознаны"}, status=400)
+
+    fallback = local_day_forecast(card_entry)
+    system = get_system_prompt(character_id)
+    user_prompt = build_day_forecast_prompt(card_entry)
+    messages = [{"role": "system", "content": system}, {"role": "user", "content": user_prompt}]
+
+    for _ in range(2):
+        try:
+            raw = await _forecast_llm(messages, max_tokens=900, temperature=0.85)
+        except Exception:
+            logger.warning("forecast: LLM attempt failed", exc_info=True)
+            continue
+        parsed = parse_forecast(raw)
+        if parsed:
+            return web.json_response({"forecast": parsed, "fallback": False})
+    return web.json_response({"forecast": fallback, "fallback": True})
+
+
 # ── Gzip + cache-заголовки для статики и API ─────────────────────
 # aiohttp не жмёт и не кэширует сам: JS/CSS/JSON уходили сырыми (~0.5 МБ по
 # мобильной сети), а index.html кэшировался WebView эвристически — после
@@ -739,6 +887,8 @@ def create_webapp() -> web.Application:
     app.router.add_get('/api/spread/poll', handle_spread_poll)
     app.router.add_post('/api/log', handle_client_log)
     app.router.add_post('/api/events', handle_events)
+    app.router.add_post('/api/ask', handle_ask)
+    app.router.add_post('/api/forecast', handle_forecast)
     webapp_dir = Path(__file__).parent / "static" / "webapp"
     if webapp_dir.is_dir():
         index = webapp_dir / "index.html"

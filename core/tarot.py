@@ -2,6 +2,7 @@
 import json
 import logging
 import random
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -22,6 +23,11 @@ def load_cards() -> list[dict[str, Any]]:
         logger.exception("Не удалось загрузить cards.json: %s", path)
         raise
     return _CARDS
+
+@lru_cache(maxsize=1)
+def load_cards_index() -> dict[str, dict[str, Any]]:
+    """Индекс точного имени карты (name из cards.json) → карточный dict."""
+    return {str(c.get("name")): c for c in load_cards()}
 
 def validate_cards() -> None:
     cards = load_cards()
