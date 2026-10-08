@@ -14,7 +14,8 @@ import { StatusClock, TitleUptime } from '@/components/arcanum/StatusTime';
 import { getGuide } from '@/lib/guides';
 import { shellUser } from '@/lib/commands';
 import { typingActivity } from '@/lib/typingActivity';
-import { MOON_GLYPHS, glyphMirrored, moonPhase } from '@/lib/moon';
+import { moonPhase } from '@/lib/moon';
+import MoonGlyph from '@/components/arcanum/MoonGlyph';
 import { sGlyph } from '@/lib/sound';
 import CommandBar from '@/components/arcanum/CommandBar';
 import BootSequence from '@/components/arcanum/BootSequence';
@@ -148,21 +149,45 @@ export default function Shell({
   const scrollRef = useRef<HTMLDivElement>(null);
   const rootRef = useRef<HTMLDivElement>(null);
 
-  // глиф фазы луны для статус-лайна: считается один раз после
+  // луна для статус-лайна: считается один раз после
   // первого кадра (день за сеанс не сменится) — как StatusClock,
   // без SSR-расхождения
-  const [moonSl, setMoonSl] = useState<{ glyph: string; name: string; mirror: boolean } | null>(null);
+  const [moonSl, setMoonSl] = useState<{
+    name: string; illum: number; waning: boolean;
+  } | null>(null);
   useEffect(() => {
     const raf = requestAnimationFrame(() => {
       const p = moonPhase(new Date());
       setMoonSl({
-        glyph: MOON_GLYPHS[p.phaseIndex],
         name: p.phaseName,
-        mirror: glyphMirrored(p.phaseIndex),
+        illum: p.illum,
+        waning: p.waning,
       });
     });
     return () => cancelAnimationFrame(raf);
   }, []);
+
+  // ambient-сигил: после бута и без reduced-motion. Оптимизированная
+  // версия (~30 узлов, GPU-слои) дешёвая — гейтим только совсем
+  // слабую память (deviceMemory < 2), ядра больше не решают.
+  // (rAF-дефер — как у луны: первый кадр без сигила, гидрация сходится)
+  const [sigilOk, setSigilOk] = useState(false);
+  useEffect(() => {
+    if (!bootDone) return;
+    const raf = requestAnimationFrame(() => {
+      const nav = navigator as Navigator & { deviceMemory?: number };
+      const weak = nav.deviceMemory != null && nav.deviceMemory < 2;
+      const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (!weak && !reduced) setSigilOk(true);
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [bootDone]);
+
+  // сигил в фон, когда в транскрипте уже есть карты на столе
+  const dimSigil = useMemo(
+    () => entries.some((e) => e.kind === 'json' || e.kind === 'daily' || e.kind === 'spread'),
+    [entries],
+  );
 
   // флаг активного скролла: фон замирает, контент получает бюджет
   useEffect(() => {
@@ -567,7 +592,7 @@ export default function Shell({
   };
 
   return (
-    <CrtOverlay characterId={characterId} themeId={themeId}>
+    <CrtOverlay characterId={characterId} themeId={themeId} showSigil={sigilOk} dimSigil={dimSigil}>
       <div
         className="shell-root"
         ref={rootRef}
@@ -626,7 +651,7 @@ export default function Shell({
               <span className="sl-dawn-glyph" aria-hidden="true">☀</span>{morningStreak}
             </span>
           )}
-          {/* луна в статус-лайне: тихий глиф фазы, клик — подробнее */}
+          {/* луна в статус-лайне: векторный диск фазы + подпись, клик — подробнее */}
           {moonSl && (
             <button
               type="button"
@@ -636,15 +661,16 @@ export default function Shell({
               title={`фаза луны: ${moonSl.name} · taro moon`}
               aria-label={`фаза луны: ${moonSl.name} — показать`}
             >
-              <span
-                className={`sl-moon-glyph${moonSl.mirror ? ' sl-moon-glyph--mirror' : ''}`}
-                aria-hidden="true"
-              >
-                {moonSl.glyph}
-              </span>
+              <MoonGlyph
+                illum={moonSl.illum}
+                waning={moonSl.waning}
+                size={15}
+                className="sl-moon-glyph-svg"
+              />
+              <span className="sl-moon-label">{moonSl.name}</span>
             </button>
           )}
-          {/* покрытие фосфора: глиф активной темы, клик — список */}
+          {/* покрытие фосфора: глиф + имя активной темы, клик — список */}
           <button
             type="button"
             className="sl-theme"
@@ -654,6 +680,7 @@ export default function Shell({
             aria-label={`тема терминала: ${theme.name} — показать покрытия`}
           >
             <span className="sl-theme-glyph" aria-hidden="true">{theme.glyph}</span>
+            <span className="sl-theme-label">{theme.name}</span>
           </button>
           <StatusClock />
         </div>

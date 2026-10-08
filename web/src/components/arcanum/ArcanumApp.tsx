@@ -173,22 +173,26 @@ export default function ArcanumApp() {
   // следим за последней json-записью в транскрипте; гонок нет — тихо
   // пропускаем обновление, если предыдущее ещё в полёте.
   // здесь же обновляем ритуал дня: после завершённого чтения сервер
-  // уже знает свежий lastDailyAt
+  // уже знает свежий lastDailyAt. ФИКС: карта дня пишется как 'daily',
+  // а не 'json' — раньше баннер «сегодняшний ритуал не свершён» не
+  // исчезал после вытягивания дневной карты.
   const loreJsonIdRef = useRef<number | null>(null);
   const loreBusyRef = useRef(false);
   useEffect(() => {
-    let newestJson: number | null = null;
+    let newest: number | null = null;
     for (let i = entries.length - 1; i >= 0; i--) {
-      if (entries[i].kind === 'json') { newestJson = entries[i].id; break; }
+      const k = entries[i].kind;
+      if (k === 'json' || k === 'daily') { newest = entries[i].id; break; }
     }
-    if (newestJson == null || loreJsonIdRef.current === newestJson) return;
-    loreJsonIdRef.current = newestJson;
+    if (newest == null || loreJsonIdRef.current === newest) return;
+    loreJsonIdRef.current = newest;
     if (loreBusyRef.current) return;
     loreBusyRef.current = true;
     void API.getStats()
       .then((stats) => {
         if (stats?.guideReadings) setGuideReadings(stats.guideReadings);
         if (stats) {
+          setStreak(stats.streakDays ?? 0);
           setDailyDone(stats.lastDailyAt ? isSameLocalDay(stats.lastDailyAt) : false);
           setMorningToday(
             stats.lastMorningAt ? isSameLocalDay(stats.lastMorningAt) : false,

@@ -1110,6 +1110,48 @@ export function sWeek(): void {
 }
 
 /**
+ * отправка в телеграм: свиток улетает — короткий воздушный
+ * свип вверх (шёпот крыла) + далёкий подтверждающий тик
+ * relay (эхо доставки). Тихий, ~0.45с.
+ */
+export function sSent(): void {
+  const a = ok();
+  if (!a) return;
+  const { c, m } = a;
+  const t0 = c.currentTime;
+
+  // свип: полосовой шум с поднимающейся частотой — «улетел»
+  const noiseSrc = c.createBufferSource();
+  noiseSrc.buffer = c.createBuffer(1, Math.ceil(c.sampleRate * 0.3), c.sampleRate);
+  const ch = noiseSrc.buffer.getChannelData(0);
+  for (let i = 0; i < ch.length; i++) ch[i] = Math.random() * 2 - 1;
+  const bp = c.createBiquadFilter();
+  bp.type = 'bandpass';
+  bp.Q.value = 6;
+  bp.frequency.setValueAtTime(700, t0);
+  bp.frequency.exponentialRampToValueAtTime(2600, t0 + 0.24);
+  const g = c.createGain();
+  g.gain.setValueAtTime(0.0001, t0);
+  g.gain.exponentialRampToValueAtTime(0.08, t0 + 0.05);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.3);
+  noiseSrc.connect(bp).connect(g).connect(m);
+  noiseSrc.start(t0);
+  killAt(noiseSrc, t0 + 0.32);
+
+  // relay-тик в конце: «доставлено»
+  const o = c.createOscillator();
+  o.type = 'square';
+  o.frequency.setValueAtTime(1560, t0 + 0.28);
+  const g2 = c.createGain();
+  g2.gain.setValueAtTime(0.0001, t0 + 0.28);
+  g2.gain.exponentialRampToValueAtTime(0.035, t0 + 0.3);
+  g2.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.4);
+  o.connect(g2).connect(m);
+  o.start(t0 + 0.28);
+  killAt(o, t0 + 0.44);
+}
+
+/**
  * дайджест месяца: журнала больше — пять страниц подряд с
  * замедлением (месяц длиннее недели, листается неспешно),
  * затем глубокий колокол на две октавы НИЖЕ недельного:

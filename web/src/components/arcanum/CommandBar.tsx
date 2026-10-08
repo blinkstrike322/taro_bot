@@ -2,13 +2,13 @@
 
 // ─────────────────────────────────────────────────────────────
 // CommandBar — командная строка + чипы быстрых команд.
-// Чипы сжаты до контента (flex: 0 0 auto) — уже прежних
-// full-width плиток; иконки из открытого банка lucide.
-// При нехватке — переносятся, не уезжают за край.
-// min-height 42px — тач-таргеты. safe-area учтён.
+// ФИКС МАСШТАБИРОВАНИЯ: чипы в flex-сетке flex:1 1 0 —
+// равномерно делят доступную ширину на любом экране;
+// при нехватке — переносятся, а не уезжают за край.
+// min-height 34px (38px на узких) — тач-таргеты. safe-area учтён.
 // ─────────────────────────────────────────────────────────────
 import { useEffect, useRef, useState } from 'react';
-import { Drama, History, LayoutGrid, MessageCircleQuestion, Sun, Volume2, VolumeX, X } from 'lucide-react';
+import { CircleHelp, Compass, History, Sparkles, Volume2, VolumeX, X } from 'lucide-react';
 import { shellUser, COMMAND_HINTS } from '@/lib/commands';
 import { sEnter, sKey, sMenu, haptic } from '@/lib/sound';
 
@@ -24,13 +24,13 @@ interface CommandBarProps {
   onToggleSound: () => void;
 }
 
-// иконки — lucide (открытый банк, MIT): солнце, вопрос,
-// сетка раскладов, маски проводников, журнал-циферблат
-const QUICK_CHIPS: { cmd: string; label: string; Icon: typeof Sun }[] = [
-  { cmd: 'taro daily', label: 'день', Icon: Sun },
-  { cmd: 'taro ask', label: 'спроси', Icon: MessageCircleQuestion },
-  { cmd: 'taro catalog', label: 'расклады', Icon: LayoutGrid },
-  { cmd: 'taro guides', label: 'проводники', Icon: Drama },
+// иконки — lucide (открытый банк, MIT): вопрос, расклады,
+// проводники, журнал-циферблат. Чип «день» убран по дизайн-ревью:
+// карта дня доступна из баннера ритуала и команды taro daily.
+const QUICK_CHIPS: { cmd: string; label: string; Icon: typeof CircleHelp }[] = [
+  { cmd: 'taro ask', label: 'спроси', Icon: CircleHelp },
+  { cmd: 'taro catalog', label: 'расклады', Icon: Sparkles },
+  { cmd: 'taro guides', label: 'проводники', Icon: Compass },
   { cmd: 'taro history', label: 'журнал', Icon: History },
 ];
 
@@ -171,7 +171,9 @@ export default function CommandBar({
               onClick={() => runChip(chip.cmd)}
               disabled={busy}
             >
-              <chip.Icon size={13} strokeWidth={1.75} className="chip-icon" aria-hidden="true" />
+              <span className="chip-icn" aria-hidden="true">
+                <chip.Icon size={13} strokeWidth={1.75} />
+              </span>
               <span className="chip-label">{chip.label}</span>
             </button>
           ))}

@@ -2,13 +2,14 @@
 
 // ─────────────────────────────────────────────────────────────
 // CrtOverlay — атмосферные слои терминала: скан-линии, виньетка,
-// созвездие, лунные глифы, дым, ритуальный сигил. Все слои
-// aria-hidden и замирают при data-typing / data-scrolling (CSS).
+// созвездие, лунные глифы, дым. Все слои aria-hidden
+// и замирают при data-typing / data-scrolling (CSS).
 // ВНИМАНИЕ: все вычисленные стили округляются — Math.sin
 // даёт разные младшие биты на сервере и клиенте (hydration).
 // ─────────────────────────────────────────────────────────────
 import { memo, useMemo } from 'react';
 import { getGuide } from '@/lib/guides';
+import AmbientSigil from '@/components/arcanum/AmbientSigil';
 
 const LUNAR_ALPHABET = ['☾', '☽', '∴', '⌁', '◌', '○', '◇', '∼'];
 
@@ -22,6 +23,10 @@ interface CrtOverlayProps {
   characterId: string;
   /** покрытие фосфора: тема терминала (classic/silver/ember/ash) */
   themeId?: string;
+  /** ambient-сигил: монтировать после бута (слабые устройства — нет) */
+  showSigil?: boolean;
+  /** в транскрипте есть чтение — сигил притушить */
+  dimSigil?: boolean;
   children: React.ReactNode;
 }
 
@@ -107,43 +112,7 @@ const LunarGlyphsLayer = memo(function LunarGlyphsLayer({ accent }: { accent: st
   );
 });
 
-/**
- * SigilLayer — ритуальный сигил за стеклом трубки.
- * Геометрия гримуара: два кольца (тикс-разметка + пунктир),
- * двойной треугольник, малые круги на вершинах, внутренний круг
- * с перекрестием. Внешний ротор крутится по часовой, внутренний —
- * против: механизм «дышит». Прозрачность ~6% — фон, не декор.
- */
-const SigilLayer = memo(function SigilLayer({ accent }: { accent: string }) {
-  return (
-    <div className="sigil-layer" aria-hidden="true" style={{ color: accent }}>
-      <svg viewBox="0 0 400 400" fill="none" className="sigil-svg">
-        {/* внешний ротор: тикс-кольцо, сплошное кольцо, треугольники */}
-        <g className="sigil-rotor" stroke="currentColor">
-          <circle cx="200" cy="200" r="193" strokeWidth="1" strokeDasharray="1.6 7.3" opacity="0.9" />
-          <circle cx="200" cy="200" r="179" strokeWidth="0.7" opacity="0.55" />
-          <path d="M200 51 L338 290 L62 290 Z" strokeWidth="1" opacity="0.65" />
-          <path d="M200 349 L62 110 L338 110 Z" strokeWidth="1" opacity="0.65" />
-          <circle cx="200" cy="51" r="9" strokeWidth="1" opacity="0.8" />
-          <circle cx="338" cy="290" r="9" strokeWidth="1" opacity="0.8" />
-          <circle cx="62" cy="290" r="9" strokeWidth="1" opacity="0.8" />
-          <circle cx="200" cy="110" r="5.5" strokeWidth="0.8" opacity="0.6" />
-          <circle cx="338" cy="200" r="5.5" strokeWidth="0.8" opacity="0.6" />
-          <circle cx="62" cy="200" r="5.5" strokeWidth="0.8" opacity="0.6" />
-        </g>
-        {/* внутренний ротор: пунктирное кольцо, ядро с перекрестием */}
-        <g className="sigil-rotor sigil-rotor--inner" stroke="currentColor">
-          <circle cx="200" cy="200" r="132" strokeWidth="0.8" strokeDasharray="26 6 2 6" opacity="0.6" />
-          <circle cx="200" cy="200" r="58" strokeWidth="1" opacity="0.7" />
-          <path d="M200 128 v-14 M200 272 v14 M128 200 h-14 M272 200 h14" strokeWidth="1" opacity="0.7" />
-          <circle cx="200" cy="200" r="26" strokeWidth="0.8" opacity="0.5" />
-        </g>
-      </svg>
-    </div>
-  );
-});
-
-export default function CrtOverlay({ characterId, themeId, children }: CrtOverlayProps) {
+export default function CrtOverlay({ characterId, themeId, showSigil, dimSigil, children }: CrtOverlayProps) {
   const guide = getGuide(characterId);
   // тема = фильтр над всей трубкой; класс не подставляем при
   // classic-дефолте до гидрации — она и так стартовая
@@ -161,17 +130,20 @@ export default function CrtOverlay({ characterId, themeId, children }: CrtOverla
     >
       {/* тонированная тьма + пятно ЭЛТ */}
       <div className="crt-bg" aria-hidden="true" />
-      {/* ритуальный сигил — крутится за стеклом */}
-      <SigilLayer accent={guide.accent} />
       {/* ритуальный дым по краям */}
       <div className="ritual-smoke" aria-hidden="true" style={{ '--smoke': guide.accentDim } as React.CSSProperties}>
         <div className="ritual-smoke__cloud ritual-smoke__cloud--tl" />
         <div className="ritual-smoke__cloud ritual-smoke__cloud--br" />
       </div>
+      {/* ambient-сигил — оригинальная пентаграмма (после бута, не на слабых) */}
+      {showSigil && <AmbientSigil accent={guide.accent} accentDim={guide.accentDim} dim={dimSigil} />}
       {/* созвездие */}
       <ConstellationLayer />
       {/* лунные глифы */}
       <LunarGlyphsLayer accent={guide.accent} />
+      {/* зерно плёнки + строка развёртки */}
+      <div className="crt-grain" aria-hidden="true" />
+      <div className="crt-retrace" aria-hidden="true" />
       {/* скан-линии */}
       <div className="crt-scanlines" aria-hidden="true" />
       {/* виньетка + блик */}
