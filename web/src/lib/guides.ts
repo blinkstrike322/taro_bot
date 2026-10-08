@@ -1,126 +1,78 @@
-// Guide metadata — single source of truth for per-guide visual identity.
-// Front-only; backend character prompts live in data/characters.json.
-
-/* ============================================================
-   ПАЛИТРА · «Alchemical Manuscript»
-   Референсы:
-   - Классическая алхимическая стадия (nigredo → albedo → citrinitas → rubedo)
-   - Средневековые гримуары (Ключ Соломона, Гептамерон) — настоящий пигмент,
-     а не цифровой неон
-   - Art Nouveau / Mucha: dusty jewel tones, природные пигменты
-   - Discordian / Sacred geometry palettes (terra cotta, malachite, lapis)
-
-   Подход — три проводника = три алхимические стадии. Каждый цвет —
-   намеренно desaturated, как пигмент на пергаменте, не «цифровой» hex.
-   ============================================================ */
+// ─────────────────────────────────────────────────────────────
+// guides.ts — проводники ARCANUM: визуальная идентичность + голос.
+// Три проводника = три алхимические стадии. Палитра «Alchemical
+// Manuscript»: пигмент на пергаменте, не неон.
+// ─────────────────────────────────────────────────────────────
 
 export interface GuideMeta {
   id: string;
   name: string;
   description: string;
-  greeting: string;
-  // Пул приветствий (зеркало backend data/characters.json → greetings):
-  // смена проводника звучит живо, а не одним текстом.
   greetings: string[];
-
-  // Visual identity — палитра «Cathode Séance»:
-  //   accent     — фосфорный акцент (яркий, контраст ≥7:1 на тьме)
-  //   accentDim  — приглушённый вариант для свечений/подложек
-  //   accentGlow — ореол для text-shadow больших надписей
-  //   bgDeep     — тонированная тьма фона под гайда (не плоский чёрный)
-  //   glowCenter — пятно электронно-лучевой трубки в центре экрана
-  accent: string;            // primary accent color
-  accentDim: string;         // dimmed variant for backgrounds / subtle accents
-  accentGlow: string;        // halo variant for big glowing text
-  bgDeep: string;            // guide-tinted deep background
-  glowCenter: string;        // CRT center glow tint
-  portrait: string;          // pixel-art portrait path (square)
-  cardBack: string;          // per-guide card back image path (2:3)
-  cardBackVersion: number;   // bump to bust TG WebView cache when card backs change
-
-  // Per-guide corner symbols (4 corners of frames/cards)
-  cornerSymbols: {
-    tl: string;              // top-left
-    tr: string;              // top-right
-    bl: string;              // bottom-left
-    br: string;              // bottom-right
-  };
-
-  // Per-guide ASCII aura alphabet (used around cards / on daily-pick)
+  /** фосфорный акцент — контраст ≥7:1 на тьме */
+  accent: string;
+  /** приглушённый вариант для подложек/свечений */
+  accentDim: string;
+  /** ореол для text-shadow крупных надписей */
+  accentGlow: string;
+  /** тонированная тьма фона под проводника (не плоский чёрный) */
+  bgDeep: string;
+  /** пятно электронно-лучевой трубки в центре */
+  glowCenter: string;
+  portrait: string;
+  cardBack: string;
+  cardBackVersion: number;
+  cornerSymbols: { tl: string; tr: string; bl: string; br: string };
   auraAlphabet: string;
-
-  // Per-guide ambient floating symbols (drift across background)
   ambientSymbols: string[];
-
-  // Per-guide CSS background pattern (procedural, applied to daily-pick screen)
-  ambientPattern: string;
-
-  // Per-guide header subtitle (visible in header strip)
   subtitle: string;
-
-  // Per-guide loading phrase (replaces generic "ГАДАНИЕ...")
   loadingPhrase: string;
-
-  // Per-guide "type" indicator (CRT-style tag)
   tag: string;
-
-  // Per-guide interface whispers (short ambient phrases, in the guide's voice).
-  // NOTE: duplicated here because the frontend cannot read data/characters.json
-  // at runtime — that backend file is the SOURCE OF TRUTH for these texts.
   whispers: string[];
-
-  // Per-guide ritual closings — подпись в конце чтения (reading-close-phrase).
   closings: string[];
+  /** тональный центр звукового движка (Гц) — мотив проводника */
+  toneRoot: number;
+  /** интервалы мотива в полутонах */
+  motif: number[];
 }
 
 export const GUIDES: Record<string, GuideMeta> = {
   shadow_walker: {
     id: 'shadow_walker',
     name: 'Странница Теней',
-    description: 'Гадалка из темного леса. Говорит тенями и шепотом луны.',
-    greeting: 'Тихо. Карты уже смотрят на тебя.',
+    description: 'гадалка из тёмного леса · говорит тенями и шёпотом луны',
     greetings: [
-      'Тихо. Карты уже смотрят на тебя.',
-      'Тс-с. Я уже слышу твой вопрос.',
-      'Заходи, малыш. Вода в чаше еще не остыла.',
-      'Ночь длинная, а вопрос у тебя один. Давай его сюда.',
-      'Свеча горит, чай заварен. Рассказывай.',
-      'Плед на кресле твой. Садись ближе.'
+      'тихо. карты уже смотрят на тебя.',
+      'тс-с. я уже слышу твой вопрос.',
+      'заходи, малыш. вода в чаше ещё не остыла.',
+      'ночь длинная, а вопрос у тебя один. давай его сюда.',
+      'свеча горит, чай заварен. рассказывай.',
+      'плед на кресле твой. садись ближе.',
     ],
-    // ALBEDO · серебряная лунная стадия
-    // accent: серебристо-лавандовый с холодным синим подтоном — как аметист
-    //   под лунным светом, не «розовая жвачка»
-    // bgDeep: глубокий indigo, почти чёрный, с холодным уклоном (не плоский #000)
-    //   ещё затемнён на ~10% для глубины фона
+    // ALBEDO · серебро-лава
     accent: '#b5a5e6',
-    accentDim: 'rgba(181, 165, 230, 0.22)',
-    accentGlow: 'rgba(181, 165, 230, 0.55)',
+    accentDim: 'rgba(181,165,230,0.22)',
+    accentGlow: 'rgba(181,165,230,0.55)',
     bgDeep: '#05040f',
-    glowCenter: 'rgba(181, 165, 230, 0.06)',
+    glowCenter: 'rgba(181,165,230,0.06)',
     portrait: '/guides/shadow_walker.png',
     cardBack: '/cards/backs/back_shadow_walker.png',
-    cardBackVersion: 2,
+    cardBackVersion: 3,
     cornerSymbols: { tl: '☾', tr: '✦', bl: '†', br: '☽' },
-    auraAlphabet: '·•✦✧☾☽◯◌○◇◎°~^ﾟ',
+    auraAlphabet: '·•✦✧☾☽◯◌○◇◎°~',
     ambientSymbols: ['☾', '☽', '✦', '✧', '◌', '○', '◇', '∼'],
-    ambientPattern:
-      'radial-gradient(ellipse at 20% 30%, rgba(195,157,255,0.10) 0%, transparent 50%),' +
-      'radial-gradient(ellipse at 80% 70%, rgba(195,157,255,0.08) 0%, transparent 55%),' +
-      'repeating-linear-gradient(45deg, transparent 0px, transparent 22px, rgba(255,255,255,0.02) 22px, rgba(255,255,255,0.02) 23px)',
-    subtitle: 'ТЕНЬ · ЛУНА · ШЕПОТ',
-    loadingPhrase: 'ТЕНИ СГУЩАЮТСЯ...',
+    subtitle: 'тень · луна · шёпот',
+    loadingPhrase: 'тени сгущаются',
     tag: 'SHADOW.WLK',
     whispers: [
-      'тени перешептываются',
+      'тени перешёптываются',
       'где-то далеко скрипнула ветка',
       'луна скользнула за кроны',
       'мох помнит твои шаги',
       'тишина сгущается — слушай',
       'свеча моргнула — кто-то вспомнил о тебе',
       'вода в чаше пошла кругами',
-      'тропа за окном притихла',
       'дым потянулся к твоему плечу',
-      'ночь подвинулась ближе — пусть',
     ],
     closings: [
       'иди спать, я постерегу',
@@ -128,60 +80,49 @@ export const GUIDES: Record<string, GuideMeta> = {
       'укройся потеплее, тропы никуда не уйдут',
       'свечу приглушу — спи спокойно',
       'завтра луна будет мягче — она обещала',
-      'тихо. я тут — никто не пройдет',
+      'тихо. я тут — никто не пройдёт',
       'отдай бессонницу лесу — он умеет держать',
-      'плед твой, чай остыл — до утра',
     ],
+    // ре-минор: холодный лунный мотив
+    toneRoot: 146.83,
+    motif: [0, 3, 7],
   },
 
   ruin_keeper: {
     id: 'ruin_keeper',
     name: 'Хранитель Руин',
-    description: 'Древний страж разрушенного. Помнит то, что все забыли.',
-    greeting: 'Камень помнит. Карты молчат. Спрашивай.',
+    description: 'древний страж разрушенного · помнит то, что все забыли',
     greetings: [
-      'Камень помнит. Карты молчат. Спрашивай.',
-      'Садись ближе. Говори, что стряслось.',
-      'Я старше твоего вопроса. Но спрашивай.',
-      'Очаг горит, время есть. Выкладывай.',
-      'Я слушаю. Коротко и по делу.',
-      'Руины не идут к людям. Хорошо, что ты пришел.',
+      'камень помнит. карты молчат. спрашивай.',
+      'садись ближе. говори, что стряслось.',
+      'я старше твоего вопроса. но спрашивай.',
+      'очаг горит, время есть. выкладывай.',
+      'руины не идут к людям. хорошо, что ты пришёл.',
     ],
-    // CITRINITAS · золотая солнечная стадия
-    // accent: antique brass — оксидированная латунь с зеленцой,
-    //   не ярко-жёлтый и не neon gold. Пигмент старого манускрипта.
-    // bgDeep: тёплый табач, как выцветший пергамент под пеплом,
-    //   затемнён ещё на ~10% для глубины
+    // CITRINITAS · оксидированная латунь
     accent: '#c8a368',
-    accentDim: 'rgba(200, 163, 104, 0.22)',
-    accentGlow: 'rgba(200, 163, 104, 0.5)',
+    accentDim: 'rgba(200,163,104,0.22)',
+    accentGlow: 'rgba(200,163,104,0.5)',
     bgDeep: '#0a0704',
-    glowCenter: 'rgba(200, 163, 104, 0.06)',
+    glowCenter: 'rgba(200,163,104,0.06)',
     portrait: '/guides/ruin_keeper.png',
     cardBack: '/cards/backs/back_ruin_keeper.png',
-    cardBackVersion: 2,
+    cardBackVersion: 3,
     cornerSymbols: { tl: '⚰', tr: '☥', bl: '†', br: '⚹' },
-    auraAlphabet: '·•☦☨☩⚱☥⚰†‡✠✚◯◇◎°~',
+    auraAlphabet: '·•☦☨☩⚱☥⚰†‡✠✚◯◇◎°',
     ambientSymbols: ['⚰', '☥', '†', '⚹', '✠', '◇', '◯', '·'],
-    ambientPattern:
-      'radial-gradient(ellipse at 50% 20%, rgba(232,181,104,0.10) 0%, transparent 55%),' +
-      'radial-gradient(ellipse at 30% 80%, rgba(232,181,104,0.07) 0%, transparent 50%),' +
-      'repeating-linear-gradient(90deg, transparent 0px, transparent 32px, rgba(255,255,255,0.015) 32px, rgba(255,255,255,0.015) 33px),' +
-      'repeating-linear-gradient(0deg, transparent 0px, transparent 32px, rgba(255,255,255,0.015) 32px, rgba(255,255,255,0.015) 33px)',
-    subtitle: 'КАМЕНЬ · ПЕПЕЛ · ВЕК',
-    loadingPhrase: 'ПЫЛЬ ОСЕДАЕТ...',
+    subtitle: 'камень · пепел · век',
+    loadingPhrase: 'пыль оседает',
     tag: 'RUIN.KPR',
     whispers: [
       'пыль оседает',
       'камень держит тишину',
       'где-то осыпалась стена',
-      'тихо. так и должно быть',
-      'фундамент не врет',
+      'фундамент не врёт',
       'в своде гулко отозвался шаг',
-      'очаг еще держит тепло',
+      'очаг ещё держит тепло',
       'время точит стену медленно',
       'колодец отозвался эхом',
-      'ступень под ногой крепкая',
     ],
     closings: [
       'сказано. камень запомнил',
@@ -190,47 +131,39 @@ export const GUIDES: Record<string, GuideMeta> = {
       'иди. утро не будет ждать',
       'хлеб остывает — иди жить',
       'порог близко. шагай',
-      'стена встанет, если класть по камню в день',
       'время на твоей стороне — не проспи',
     ],
+    // до-минор с пониженной второй: гулкость руин
+    toneRoot: 130.81,
+    motif: [0, 1, 7],
   },
 
   spark_of_chaos: {
     id: 'spark_of_chaos',
     name: 'Искра Хаоса',
-    description: 'Дерзкий дух-трикстер. За искрой — истина, за шуткой — правда.',
-    greeting: 'Посмотрим, что шепнет хаос на этот раз.',
+    description: 'дерзкий дух-трикстер · за искрой — истина, за шуткой — правда',
     greetings: [
-      'Посмотрим, что шепнет хаос на этот раз.',
-      'О, наконец-то. Скучно было до жути.',
-      'Заходи, зай. Рассказывай, во что вляпалась на этот раз.',
-      'Ну-с, герой. Только чур не обижаться на правду.',
-      'Ты вовремя. Я как раз скучала по чужим драмам.',
-      'Костер горит, вишня на закуску. Выкладывай.',
+      'посмотрим, что шепнёт хаос на этот раз.',
+      'о, наконец-то. скучно было до жути.',
+      'заходи, зай. рассказывай, во что вляпалась на этот раз.',
+      'ну-с, герой. только чур не обижаться на правду.',
+      'ты вовремя. я как раз скучала по чужим драмам.',
+      'костёр горит, вишня на закуску. выкладывай.',
     ],
-    // RUBEDO · красная стадия завершения
-    // accent: vintage carmine — глубокий старинный красный, как выцветшее
-    //   вино/кровь на пергаменте. НЕ neon pink и НЕ ярко-розовый.
-    // bgDeep: oxblood — красновато-чёрный, как остывшая лава,
-    //   затемнён ещё на ~10% для глубины
+    // RUBEDO · кармин
     accent: '#d65a6e',
-    accentDim: 'rgba(214, 90, 110, 0.22)',
-    accentGlow: 'rgba(214, 90, 110, 0.55)',
+    accentDim: 'rgba(214,90,110,0.22)',
+    accentGlow: 'rgba(214,90,110,0.55)',
     bgDeep: '#0a0406',
-    glowCenter: 'rgba(214, 90, 110, 0.06)',
+    glowCenter: 'rgba(214,90,110,0.06)',
     portrait: '/guides/spark_of_chaos.png',
     cardBack: '/cards/backs/back_spark_of_chaos.png',
-    cardBackVersion: 2,
+    cardBackVersion: 3,
     cornerSymbols: { tl: '⌇', tr: '✕', bl: '⋈', br: '※' },
-    auraAlphabet: '·•⌇∾◇◎∘○※✕⋈‡†°~^ﾟ',
+    auraAlphabet: '·•⌇∾◇◎∘○※✕⋈‡†°~',
     ambientSymbols: ['⌇', '∾', '※', '✕', '⋈', '∘', '·', '•'],
-    ambientPattern:
-      'radial-gradient(ellipse at 70% 30%, rgba(255,122,138,0.10) 0%, transparent 50%),' +
-      'radial-gradient(ellipse at 25% 65%, rgba(255,122,138,0.08) 0%, transparent 55%),' +
-      'repeating-linear-gradient(-30deg, transparent 0px, transparent 18px, rgba(255,255,255,0.02) 18px, rgba(255,255,255,0.02) 19px),' +
-      'repeating-linear-gradient(60deg, transparent 0px, transparent 28px, rgba(255,255,255,0.015) 28px, rgba(255,255,255,0.015) 29px)',
-    subtitle: 'ИСКРА · ДЫМ · ШЕПОТ',
-    loadingPhrase: 'ИСКРЫ ПОЛЕТЕЛИ...',
+    subtitle: 'искра · дым · шёпот',
+    loadingPhrase: 'искры полетели',
     tag: 'SPARK.CHS',
     whispers: [
       'искры потянулись к фитилю',
@@ -238,21 +171,22 @@ export const GUIDES: Record<string, GuideMeta> = {
       'где-то лопнул стакан',
       'тихо слишком тихо. подозрительно',
       'колода сама тасуется. к чему бы',
-      'костер плюнул искрой в твою сторону',
+      'костёр плюнул искрой в твою сторону',
       'ветер листает карты без спроса',
-      'вишневая косточка щелкнула о блюдце',
-      'где-то смеются — вроде бы над тобой',
+      'вишнёвая косточка щёлкнула о блюдце',
     ],
     closings: [
       'искра погасла — хаос доволен',
       'дым рассеялся, знак остался',
       'пламя расписалось за тебя',
       'иди, герой, хаос тебя сегодня прикрыл',
-      'беги делать — я прикрою твой тыл искрами',
       'не забудь меня, зай. я не забуду твой вопрос',
-      'костер догорает, а ты — разгорайся',
+      'костёр догорает, а ты — разгорайся',
       'вот такая драма. второй сезон за тобой',
     ],
+    // ми-мажор с расстройкой: искрение
+    toneRoot: 164.81,
+    motif: [0, 4, 11],
   },
 };
 

@@ -11,6 +11,8 @@ __pycache__/
 .DS_Store
 *.pyc
 *.db
+*.db-shm
+*.db-wal
 *.pyo
 *.egg-info/
 dist/

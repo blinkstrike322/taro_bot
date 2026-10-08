@@ -1,85 +1,80 @@
-'use client';
+// ─────────────────────────────────────────────────────────────
+// typeFlow.ts — планировщик посимвольной печати через rAF.
+// Прямая инжекция в Text-ноду: ноль React-ререндеров на символ.
+// База ~72 cps с wobble; паузы на знаках; после залипания
+// кадра догоняем максимум 2 символами за кадр.
+// ─────────────────────────────────────────────────────────────
 
-/**
- * Typing-движок ARCANUM v2: печать через requestAnimationFrame
- * прямой инжекцией в Text-нод. Никаких React-ререндеров на символ,
- * никакого случайного джиттера — микро-вариация скорости плавная.
- * Расписание символов копится относительно предыдущей задержки
- * (nextAt += delay), а не пересчитывается от текущего кадра: средний
- * cps держится выше частоты кадров. После залипания кадра догоняем
- * максимум 2 символами за кадр — текст не «выстреливает» блоком.
- */
-
-export interface TypeFlowHandle {
+export interface TypeHandle {
   cancel: () => void;
   finished: Promise<void>;
 }
 
-export interface TypeFlowOptions {
-  /** базовая скорость, символов в секунду */
-  cps?: number;
-  /** звук на тик (движок сам троттлит); pitch 0.7–1.1 — тон тика */
-  onTick?: (pitch: number) => void;
-  minSoundIntervalMs?: number;
-}
-
-/** Пауза после знака препинания, мс. */
-export function punctDelay(ch: string): number {
-  if ('.!?…'.includes(ch)) return 120;
-  if (',;:—'.includes(ch)) return 50;
-  return 0;
-}
+const PUNCT_LONG = '.!?…';
+const PUNCT_SHORT = ',;:—';
 
 export function typeInto(
   node: Text,
   text: string,
-  opts: TypeFlowOptions = {},
-): TypeFlowHandle {
-  const cps = Math.max(10, opts.cps ?? 72);
-  const minSoundIntervalMs = opts.minSoundIntervalMs ?? 48;
+  opts: {
+    cps?: number;
+    onChar?: () => void;
+    onDone?: () => void;
+  } = {},
+): TypeHandle {
+  const { cps = 66, onChar, onDone } = opts;
   let i = 0;
-  let lastSound = 0;
+  let nextAt = performance.now();
   let raf = 0;
-  let cancelled = false;
-  // первый символ печатается сразу — расписание от старта потока
-  const flowStart = performance.now();
-  let nextAt = flowStart;
-  let resolveDone: (() => void) | undefined;
+  let dead = false;
+  let resolveFinished: () => void = () => {};
 
-  const finished = new Promise<void>((resolve) => { resolveDone = resolve; });
-  const finish = () => { if (!cancelled) resolveDone?.(); };
+  const finished = new Promise<void>((resolve) => {
+    resolveFinished = resolve;
+    const step = (now: number) => {
+      if (dead) { resolve(); return; }
+      // после длинного кадра не «выстреливаем» блоком
+      if (nextAt < now - 260) nextAt = now - 2;
 
-  const baseDelay = () => {
-    const wobble = 1 + 0.12 * Math.sin(i * 0.35);
-    return 1000 / (cps * wobble);
-  };
-
-  const step = (now: number) => {
-    if (cancelled) return;
-    if (i >= text.length) { finish(); return; }
-    if (now < nextAt) { raf = requestAnimationFrame(step); return; }
-    let budget = 2; // жёсткий кап на кадр — анти-«блок»
-    while (budget-- > 0 && i < text.length && now >= nextAt) {
-      i += 1;
-      node.textContent = text.slice(0, i);
-      if (opts.onTick) {
-        const t = performance.now();
-        if (t - lastSound >= minSoundIntervalMs) {
-          lastSound = t;
-          // пинч синхронен с wobble скорости — твёрдый, стабильный окрас
-          opts.onTick(0.9 + 0.2 * Math.sin(i * 0.35));
-        }
+      let budget = 0;
+      while (nextAt <= now && i < text.length && budget < 2) {
+        const ch = text[i];
+        i += 1;
+        budget += 1;
+        node.data += ch;
+        onChar?.();
+        const wobble = 1 + 0.14 * Math.sin(i * 0.4);
+        let d = (1000 / cps) / wobble;
+        if (PUNCT_LONG.includes(ch)) d += 110;
+        else if (PUNCT_SHORT.includes(ch)) d += 45;
+        nextAt += d;
       }
-      nextAt += baseDelay() + punctDelay(text[i - 1]);
-    }
-    if (i >= text.length) { finish(); return; }
-    raf = requestAnimationFrame(step);
-  };
 
-  raf = requestAnimationFrame(step);
+      if (i >= text.length) {
+        dead = true;
+        onDone?.();
+        resolve();
+        return;
+      }
+      raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+  });
 
   return {
-    cancel: () => { cancelled = true; cancelAnimationFrame(raf); resolveDone?.(); },
+    cancel: () => {
+      if (dead) return;
+      dead = true;
+      cancelAnimationFrame(raf);
+      node.data = text;
+      onDone?.();
+      resolveFinished();
+    },
     finished,
   };
+}
+
+/** длительность печати строки для синхронизации эха */
+export function typeDuration(text: string, msPerChar = 16): number {
+  return Math.min(text.length * msPerChar, 1400);
 }

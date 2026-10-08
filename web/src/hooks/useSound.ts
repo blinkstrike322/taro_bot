@@ -1,28 +1,35 @@
-'use client';
+ 'use client';
 
 // ─────────────────────────────────────────────────────────────
-// useSound — звук терминала вкл/выкл с памятью в localStorage.
-// Один предмет — звуковая настройка (SFX-вызовы идут напрямую).
+// useSound — тумблер звука с персистом.
 // ─────────────────────────────────────────────────────────────
-import { useCallback, useState, type Dispatch, type SetStateAction } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import * as SFX from '@/lib/sound';
 
-export interface TarotSound {
-  soundOn: boolean;
-  setSoundOn: Dispatch<SetStateAction<boolean>>;
-  toggleSound: () => void;
-}
+export function useSound() {
+  // ленивая инициализация: на клиенте читаем преф сразу
+  const [soundOn, setSoundOn] = useState(() => {
+    if (typeof window === 'undefined') return true;
+    return SFX.isSoundEnabled();
+  });
+  const loadedRef = useRef(false);
 
-export function useSound(): TarotSound {
-  const [soundOn, setSoundOn] = useState(true);
+  useEffect(() => {
+    if (loadedRef.current) return;
+    loadedRef.current = true;
+    // rAF-дефер: чтение префа после первого кадра (гидрация уже сошлась)
+    const raf = requestAnimationFrame(() => {
+      const pref = SFX.loadSoundPref();
+      setSoundOn((prev) => (prev === pref ? prev : pref));
+    });
+    return () => cancelAnimationFrame(raf);
+  }, []);
 
-  // ── звук терминала: вкл/выкл с памятью ──
   const toggleSound = useCallback(() => {
     setSoundOn((prev) => {
       const next = !prev;
       SFX.setSoundEnabled(next);
       SFX.saveSoundPref(next);
-      if (next) SFX.sEnter();
       return next;
     });
   }, []);

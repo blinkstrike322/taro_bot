@@ -1,12 +1,7 @@
-const API_BASE = '';
-
-export function getInitData(): string {
-  try {
-    return (window as any).Telegram?.WebApp?.initData || '';
-  } catch {
-    return '';
-  }
-}
+// ─────────────────────────────────────────────────────────────
+// api.ts — клиент канала ARCANUM (двухфазный расклад:
+// карты сразу, толкование — фоновым шёпотом через поллинг).
+// ─────────────────────────────────────────────────────────────
 
 export interface TarotCardData {
   id: string;
@@ -30,21 +25,16 @@ export interface Interpretation {
   short_answer: string;
   card_meaning?: string[] | string;
   advice?: string;
-  // новая схема этапа 2 (аддитивная, легаси-фолбэк на card_meaning):
-  // three-card
   позиции?: ReadingPosition[];
   связь_карт?: string;
-  // daily
   проявление?: string;
   на_что_смотреть?: string;
   траектория?: { утро?: string; день?: string; вечер?: string };
 }
 
-/** Ошибка API с продуктовым флагом: пелена сомкнулась — нужен paywall. */
 export class ApiError extends Error {
   needsSubscription?: boolean;
   status?: number;
-
   constructor(message: string, opts?: { needsSubscription?: boolean; status?: number }) {
     super(message);
     this.name = 'ApiError';
@@ -53,20 +43,24 @@ export class ApiError extends Error {
   }
 }
 
-/** Phase 1 of the two-phase spread: cards at once, LLM whisper in background. */
+/** итог ритуала карты дня: серии после тяги */
+export interface DailyRitualInfo {
+  counted: boolean;
+  morning: boolean;
+  streakDays: number;
+  morningStreak: number;
+}
+
 export interface SpreadBeginResponse {
   cards: TarotCardData[];
   token: string;
   remaining?: number;
   limit?: number;
-  /** имена позиций расклада — вычислены бэкендом (для three — динамически по вопросу) */
   positions?: string[];
-  /** id расклада каталога, разрешённый бэкендом (легаси 1|3 → single/three/daily) */
   spread_id?: string;
-  /** человекочитаемое имя расклада из каталога */
   spread_name?: string;
-  /** ключи позиций — порядок вскрытия (flip_order каталога) */
   position_keys?: string[];
+  daily_ritual?: DailyRitualInfo;
 }
 
 export interface SpreadPollResponse {
@@ -76,7 +70,7 @@ export interface SpreadPollResponse {
 }
 
 export interface ReadingEntry {
-  id: number;
+  id: string;
   type: string;
   question: string | null;
   created_at: string;
@@ -85,21 +79,8 @@ export interface ReadingEntry {
   character_id: string;
 }
 
-export interface ReadingsResponse {
-  readings: ReadingEntry[];
-}
-
-function telegramInitData(): string {
-  try {
-    return (window as any).Telegram?.WebApp?.initData || '';
-  } catch {
-    return '';
-  }
-}
-
-/** Разобрать тело ошибки: message + продуктовый флаг needs_subscription. */
 async function readErrorBody(res: Response): Promise<ApiError> {
-  let msg = 'Spread failed';
+  let msg = 'канал недоступен';
   let needsSubscription: boolean | undefined;
   try {
     const body = await res.json();
@@ -111,22 +92,22 @@ async function readErrorBody(res: Response): Promise<ApiError> {
   return new ApiError(msg, { needsSubscription, status: res.status });
 }
 
-/** Двухфазный расклад: карты сразу, толкование — фоновым шёпотом.
- *  spreadType — id расклада каталога ('mfd') или легаси-число (1|3). */
+/** фаза 1: раздача карт + запуск фонового шёпота */
 export async function spreadBegin(
   spreadType: string | number,
   question: string | null,
   characterId: string = 'shadow_walker',
+  /** локальный час оператора 0-23 — для серии рассветов */
+  localHour?: number,
 ): Promise<SpreadBeginResponse> {
-  const initData = telegramInitData();
-  const res = await fetch(`${API_BASE}/api/spread/begin`, {
+  const res = await fetch('/api/spread/begin', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      init_data: initData,
       spread_type: spreadType,
       question,
       character_id: characterId,
+      ...(typeof localHour === 'number' ? { local_hour: localHour } : {}),
     }),
   });
   if (!res.ok) throw await readErrorBody(res);
@@ -134,19 +115,16 @@ export async function spreadBegin(
 }
 
 export async function spreadPoll(token: string): Promise<SpreadPollResponse> {
-  const initData = telegramInitData();
-  const res = await fetch(
-    `${API_BASE}/api/spread/poll?token=${encodeURIComponent(token)}&init_data=${encodeURIComponent(initData)}`,
-  );
+  const res = await fetch(`/api/spread/poll?token=${encodeURIComponent(token)}`);
   if (!res.ok) throw new Error('канал прерван');
   return res.json();
 }
 
-/** Ждать шёпот: поллит до готовности, пока оператор вскрывает карты. */
+/** ждать шёпот: поллинг до готовности, пока оператор вскрывает карты */
 export async function pollInterpretation(
   token: string,
-  timeoutMs = 180000,
-  intervalMs = 1500,
+  timeoutMs = 120000,
+  intervalMs = 1400,
 ): Promise<Interpretation> {
   const t0 = Date.now();
   for (;;) {
@@ -162,9 +140,8 @@ export async function pollInterpretation(
 }
 
 export async function getCharacter(): Promise<string> {
-  const initData = getInitData();
   try {
-    const res = await fetch(`${API_BASE}/api/character?init_data=${encodeURIComponent(initData)}`);
+    const res = await fetch('/api/character');
     if (!res.ok) return 'shadow_walker';
     const data = await res.json();
     return data.character_id || 'shadow_walker';
@@ -173,30 +150,213 @@ export async function getCharacter(): Promise<string> {
   }
 }
 
-/** Синхронизация проводника с сервером (иначе шёпот придёт голосом старого). */
 export async function setCharacter(id: string): Promise<string> {
-  const res = await fetch(`${API_BASE}/api/character`, {
+  const res = await fetch('/api/character', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ init_data: getInitData(), character_id: id }),
+    body: JSON.stringify({ character_id: id }),
   });
   if (!res.ok) throw await readErrorBody(res);
   const data = await res.json();
   return data.character_id || id;
 }
 
-export async function getReadings(
-  year: number,
-  month: number,
-): Promise<ReadingsResponse> {
-  let initData = '';
-  try {
-    initData = (window as any).Telegram?.WebApp?.initData || '';
-  } catch {}
-  const monthStr = String(month).padStart(2, '0');
+export async function getReadings(): Promise<ReadingEntry[]> {
+  const now = new Date();
   const res = await fetch(
-    `${API_BASE}/api/readings?init_data=${encodeURIComponent(initData)}&year=${year}&month=${monthStr}`,
+    `/api/history?year=${now.getFullYear()}&month=${now.getMonth() + 1}`,
   );
-  if (!res.ok) throw new Error('Get readings failed');
-  return res.json();
+  if (!res.ok) throw new Error('журнал недоступен');
+  const data = await res.json();
+  return data.readings ?? [];
+}
+
+/** журнал за последние N дней (1-30): без привязки к месяцу —
+ *  ретро-окно от текущего момента, для дайджеста недели */
+export async function getReadingsDays(days: number): Promise<ReadingEntry[]> {
+  const res = await fetch(`/api/history?days=${days}`);
+  if (!res.ok) throw new Error('журнал недоступен');
+  const data = await res.json();
+  return data.readings ?? [];
+}
+
+/** статистика оператора: серия дней, всего чтений, лорометр проводников */
+export interface OperatorStats {
+  streakDays: number;
+  totalReadings: number;
+  lastDailyAt: string | null;
+  /** серия рассветов: карты дня, тянутые до полудня, подряд */
+  morningStreak?: number;
+  lastMorningAt?: string | null;
+  /** сколько чтений голосом каждого проводника (id → N) */
+  guideReadings?: Record<string, number>;
+  /** сколько чтений по каждому типу расклада (raw type → N) */
+  spreadCounts?: Record<string, number>;
+}
+export async function getStats(): Promise<OperatorStats | null> {
+  try {
+    const res = await fetch('/api/stats');
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+// ── уточняющий вопрос после чтения ──
+
+/** карта в запросе: имя + контекст выпадения */
+export interface FollowUpCardPayload {
+  name: string;
+  id?: string;
+  orientation?: string;
+  is_reversed?: boolean;
+  position?: string | null;
+}
+
+export interface FollowUpPayload {
+  question: string;
+  /** одиночный путь (основной): одна карта */
+  card?: FollowUpCardPayload;
+  /** парный путь: вопрос о связи двух карт */
+  cards?: [FollowUpCardPayload, FollowUpCardPayload];
+  spread_name: string;
+  spread_question: string | null;
+  reading_summary: string;
+  character_id: string;
+}
+
+export interface FollowUpResponse {
+  answer: string;
+  fallback?: boolean;
+}
+
+export async function askFollowup(payload: FollowUpPayload): Promise<FollowUpResponse> {
+  const res = await fetch('/api/ask', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw await readErrorBody(res);
+  const data = await res.json();
+  if (!data?.answer) throw new ApiError('шёпот вернулся пустым');
+  return { answer: String(data.answer), fallback: data.fallback === true };
+}
+
+// ── рефлексия недели ──
+
+/** сводка недели — клиент агрегирует, сервер валидирует */
+export interface WeekDigestPayload {
+  total: number;
+  days_active: number;
+  spread_counts: Record<string, number>;
+  card_counts: Record<string, number>;
+  guide_counts: Record<string, number>;
+  questions: string[];
+  date_from: string;
+  date_to: string;
+}
+
+export interface WeekResponse {
+  answer: string;
+  fallback?: boolean;
+}
+
+export async function askWeek(
+  digest: WeekDigestPayload,
+  characterId: string,
+): Promise<WeekResponse> {
+  const res = await fetch('/api/week', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ digest, character_id: characterId }),
+  });
+  if (!res.ok) throw await readErrorBody(res);
+  const data = await res.json();
+  if (!data?.answer) throw new ApiError('неделя молчит');
+  return { answer: String(data.answer), fallback: data.fallback === true };
+}
+
+// ── месячный дайджест ──
+
+/** сводка месяца для /api/month: числа + имена + вопросы */
+export interface MonthDigestPayload {
+  total: number;
+  days_active: number;
+  days_in_month: number;
+  month_name: string;
+  year: number;
+  spread_counts: Record<string, number>;
+  card_counts: Record<string, number>;
+  guide_counts: Record<string, number>;
+  majors: number;
+  suit_counts: Record<string, number>;
+  days: { day: number; count: number }[];
+  questions: string[];
+}
+
+export interface MonthResponse {
+  answer: string;
+  fallback?: boolean;
+}
+
+export async function askMonth(
+  digest: MonthDigestPayload,
+  characterId: string,
+): Promise<MonthResponse> {
+  const res = await fetch('/api/month', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ digest, character_id: characterId }),
+  });
+  if (!res.ok) throw await readErrorBody(res);
+  const data = await res.json();
+  if (!data?.answer) throw new ApiError('месяц молчит');
+  return { answer: String(data.answer), fallback: data.fallback === true };
+}
+
+// ── прогноз дня по карте ──
+
+/** структура дневного прогноза: лозунг, три времени, фокус, шкалы */
+export interface DayForecast {
+  лозунг: string;
+  утро: string;
+  день: string;
+  вечер: string;
+  фокус: string;
+  тонус: number;
+  удача: number;
+  общение: number;
+  глоток: string;
+}
+
+export interface DayForecastPayload {
+  card: { name: string; is_reversed?: boolean };
+  character_id: string;
+}
+
+export interface DayForecastResponse {
+  forecast: DayForecast;
+  fallback: boolean;
+}
+
+/** прогноз дня: карта дня уже вскрыта — вывести из неё план дня */
+export async function dayForecast(payload: DayForecastPayload): Promise<DayForecastResponse> {
+  const res = await fetch('/api/forecast', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw await readErrorBody(res);
+  const data = await res.json();
+  if (!data?.forecast) throw new ApiError('прогноз не собрался');
+  return { forecast: data.forecast as DayForecast, fallback: data.fallback === true };
+}
+
+/** весь журнал (до 500 строк) — хроника карты смотрит на всё */
+export async function getAllReadings(): Promise<ReadingEntry[]> {
+  const res = await fetch('/api/history?all=1');
+  if (!res.ok) throw new Error('журнал недоступен');
+  const data = await res.json();
+  return data.readings ?? [];
 }

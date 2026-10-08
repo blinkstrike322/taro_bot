@@ -1,95 +1,82 @@
 'use client';
 
 // ─────────────────────────────────────────────────────────────
-// useHistory — журнал сеансов: чтение из API и мгновенный
-// повторный рендер старого чтения. Один предмет — журнал сеансов.
+// useHistory — журнал сеансов: загрузка, выбор (разворот полного
+// чтения в транскрипте).
 // ─────────────────────────────────────────────────────────────
 import { useCallback } from 'react';
 import * as API from '@/lib/api';
-import { spreadLabelFromType, type HistoryRow } from '@/lib/transcript';
-import { track } from '@/lib/analytics';
-import type { TarotCard } from '@/components/Card';
+import { SPREADS } from '@/lib/spreads';
+import type { HistoryRow } from '@/lib/transcript';
 import type { TarotSession } from '@/hooks/useTarotSession';
-
-/** Карты из записи журнала → формат рендера (два исторических формата). */
-export function cardsFromHistory(cardsData: any): TarotCard[] {
-  const toCard = (c: any): TarotCard | null => {
-    if (!c || !c.id || !c.name) return null;
-    return {
-      id: c.id,
-      name: c.name,
-      image_url: `/cards/${c.id}.png`,
-      is_reversed: Boolean(c.is_reversed ?? (c.orientation === 'reversed')),
-    };
-  };
-  const raw: any[] = Array.isArray(cardsData?.cards)
-    ? cardsData.cards                      // новый формат: {cards: [...], spread_type}
-    : cardsData?.chosen_card               // легаси карты дня: {chosen_index, chosen_card}
-      ? [cardsData.chosen_card]
-      : [];
-  return raw.map(toCard).filter((c: TarotCard | null): c is TarotCard => c !== null);
-}
 
 export interface TarotHistory {
   runHistory: () => Promise<void>;
-  /** тап по строке журнала → развернуть полный сеанс */
-  handleHistorySelect: (row: HistoryRow) => Promise<void>;
+  handleHistorySelect: (row: HistoryRow) => void;
 }
 
 export function useHistory(session: TarotSession): TarotHistory {
-  const { push, pushOut, echoCmd, busyRef, setBusy, setMode } = session;
+  const { push, echoCmd, setMode, setBusy, busyRef } = session;
 
-  // ── флоу: журнал сеансов ──
   const runHistory = useCallback(async () => {
-    setBusy(true); busyRef.current = true;
-    setMode('ЖУРНАЛ');
+    setBusy(true);
+    busyRef.current = true;
     try {
-      pushOut([{ text: 'чтение журнала ~/сеансы.log …', tone: 'dim' }]);
-      const now = new Date();
-      const res = await API.getReadings(now.getFullYear(), now.getMonth() + 1);
-      // журнал несёт полные данные чтений — тап разворачивает сеанс целиком
-      const rows: HistoryRow[] = (res.readings || []).map((r) => ({
-        id: r.id,
-        type: r.type,
-        question: r.question,
-        created_at: r.created_at,
-        cards_data: r.cards_data,
-        interpretation: r.interpretation,
-        character_id: r.character_id,
-      }));
-      push({ kind: 'history', rows });
-      track('history_open', {});
-    } catch {
-      push({ kind: 'history', rows: [] });
-    } finally {
-      setBusy(false); busyRef.current = false;
+      await echoCmd('taro history');
+      const readings = await API.getReadings();
+      push({ kind: 'history', rows: readings as HistoryRow[] });
+      setMode('ЖУРНАЛ');
+    } catch (err: any) {
+      push({ kind: 'error', msg: err?.message ?? 'журнал недоступен' });
       setMode('ОЖИДАНИЕ');
+    } finally {
+      setBusy(false);
+      busyRef.current = false;
     }
-  }, [push, pushOut, busyRef, setBusy, setMode]);
+  }, [push, echoCmd, setMode, setBusy, busyRef]);
 
-  // ── разворачивание старого сеанса: тот же рендер, мгновенно, без звука печати ─
-  const handleHistorySelect = useCallback(async (row: HistoryRow) => {
-    if (busyRef.current) return;
-    const cards = cardsFromHistory(row.cards_data);
-    if (!cards.length || !row.interpretation) {
-      pushOut([{ text: `cat: сеанс #${row.id}: запись без карт`, tone: 'err' }]);
-      return;
-    }
-    await echoCmd(`taro show ${row.id}`);
-    pushOut([
-      { text: `сеанс #${row.id} · ${spreadLabelFromType(row.type)}`, tone: 'dim' },
-    ]);
-    push({
-      kind: 'json',
-      interpretation: row.interpretation,
-      cards,
-      question: row.question,
-      spreadLabel: spreadLabelFromType(row.type),
-      instant: true,
-      characterId: row.character_id,
-    });
-    setMode('ОЖИДАНИЕ');
-  }, [echoCmd, push, pushOut, busyRef, setMode]);
+  /** тап по строке → полный сеанс в транскрипте */
+  const handleHistorySelect = useCallback(
+    (row: HistoryRow) => {
+      const data = row.cards_data;
+      const cards: API.TarotCardData[] = Array.isArray(data)
+        ? (data as API.TarotCardData[])
+        : Array.isArray(data?.cards)
+          ? (data.cards as API.TarotCardData[])
+          : [];
+      const norm = cards.map((c) => ({
+        ...c,
+        image_url: c.image_url || `/cards/${c.id}.png`,
+      }));
+      push({
+        kind: 'json',
+        interpretation: row.interpretation ?? {
+          intro: '(толкование не сохранилось)',
+          short_answer: '',
+        },
+        cards: norm,
+        question: row.question,
+        spreadLabel: labelFromRow(row),
+        instant: true,
+        characterId: row.character_id,
+        // свиток из журнала помнит дату исходного чтения
+        readAt: row.created_at,
+        // строка БД — чтобы отголосок не нашёл самого себя
+        dbId: row.id,
+      });
+      setMode('ЧТЕНИЕ');
+    },
+    [push, setMode],
+  );
 
   return { runHistory, handleHistorySelect };
+}
+
+function labelFromRow(row: HistoryRow): string {
+  const t = row.type || '';
+  const spread = SPREADS[t];
+  if (spread) return spread.name;
+  const st = Array.isArray(row.cards_data) ? undefined : row.cards_data?.spread_type;
+  if (st && SPREADS[st]) return SPREADS[st].name;
+  return t;
 }

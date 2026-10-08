@@ -1,103 +1,139 @@
 'use client';
 
 // ─────────────────────────────────────────────────────────────
-// useSpread — расклады: карта дня и вопрос-расклад (двухфазный
-// spreadBegin + фоновый шёпот) плюс переворот карт для вскрытия.
-// Один предмет — расклад/вскрытие.
+// useSpread — расклады: раздача + фоновый шёпот + вскрытие.
 // ─────────────────────────────────────────────────────────────
 import { useCallback } from 'react';
 import * as API from '@/lib/api';
 import * as SFX from '@/lib/sound';
-import { randomWhisper, sleep, type Entry, type OutLine } from '@/lib/transcript';
+import { randomWhisper, sleep, type Entry, type OutLine, type TarotCard } from '@/lib/transcript';
 import { getFrontSpread } from '@/lib/spreads';
-import { track } from '@/lib/analytics';
 import type { TarotSession } from '@/hooks/useTarotSession';
 import type { TarotWhisper } from '@/hooks/useWhisper';
 
-/** русская плюрализация: 1 аркан / 3 аркана / 6 арканов */
 function arcanaWord(n: number): string {
   if (n === 1) return 'аркан';
   if (n < 5) return 'аркана';
   return 'арканов';
 }
 
-const toTarotCards = (cards: API.TarotCardData[]): API.TarotCardData[] =>
-  cards.map((c) => ({ ...c, image_url: `/cards/${c.id}.png` }));
+/** последний выбранный расклад — сохраняется при старте чтения;
+ *  «спросить снова» и каталог используют его после перезапуска */
+const LAST_SPREAD_KEY = 'taro_last_spread';
 
-/** Остаток квоты после расклада — тихая строка под exit-статусом. */
-function quotaLine(remaining: number | undefined | null, limit: number | undefined | null): OutLine | null {
-  if (remaining == null || limit == null || limit <= 1) return null; // daily — не показываем
-  return { text: `пелена: осталось ${remaining} из ${limit} призывов`, tone: 'faint' };
+function rememberLastSpread(spreadId: string): void {
+  try {
+    localStorage.setItem(LAST_SPREAD_KEY, spreadId);
+  } catch {}
 }
 
-/**
- * Готовность шёпота к моменту вскрытия: если канал уже доставил
- * толкование — короткая пауза 750мс; если нет — resolveWhisper сам
- * ставит pending «расшифровка шёпота» и держит его до готовности,
- * после чего минимум 600мс тишины перед чтением. Никаких мёртвых
- * пауз под хардкод. Шёпот резолвится ровно один раз: джоба удаляется
- * из канала после первого вызова resolveWhisper.
- */
+export function readLastSpread(): string | null {
+  try {
+    return localStorage.getItem(LAST_SPREAD_KEY);
+  } catch {
+    return null;
+  }
+}
+
+const toTarotCards = (cards: API.TarotCardData[]): TarotCard[] =>
+  cards.map((c) => ({ ...c, image_url: c.image_url || `/cards/${c.id}.png` }));
+
+/** готовность шёпота к моменту вскрытия последней карты */
 async function waitWhisperReady(
   entryId: number,
   entry: { interpretation: API.Interpretation | null; whisperReady?: boolean },
   resolveWhisper: (id: number, cached: API.Interpretation | null) => Promise<API.Interpretation | null>,
 ): Promise<API.Interpretation | null> {
   if (entry.whisperReady) {
-    await sleep(750);
+    await sleep(700);
     return resolveWhisper(entryId, entry.interpretation);
   }
   const interp = await resolveWhisper(entryId, entry.interpretation);
-  await sleep(600);
+  await sleep(450);
   return interp;
 }
 
 export interface TarotSpread {
-  /** флоу: карта дня */
   runDaily: () => Promise<void>;
-  /** флоу: легаси-расклад с вопросом (1|3 карты, типы spread_1/spread_3) */
   runAsk: (cards: 1 | 3, question: string | null) => Promise<void>;
-  /** флоу: расклад каталога по id (yesno/mfd/shadow/pentagram/horseshoe/...) */
   runSpread: (spreadId: string, question: string | null) => Promise<void>;
-  /** вскрытие карт (daily vs spread) */
   handleFlip: (entryId: number, index: number) => void;
 }
 
 export function useSpread(session: TarotSession, whisper: TarotWhisper): TarotSpread {
   const {
     characterId, push, pushOut, echoCmd, setBusy, busyRef, setMode,
-    quotaRef, setEntries, setScrollTick,
+    setEntries, bumpScroll, setStreak, setMorningStreak,
   } = session;
   const { startWhisper, resolveWhisper } = whisper;
 
-  // ── прогресс + параллельный запрос ──
-  const progressWith = useCallback(async <T,>(label: string, durMs: number, job: Promise<T>): Promise<T> => {
-    push({ kind: 'progress', label, durMs });
-    setMode('ТАСОВАНИЕ');
-    const [res] = await Promise.all([job, sleep(durMs + 120)]);
-    return res;
-  }, [push, setMode]);
+  // прогресс тасования + параллельная раздача
+  const progressWith = useCallback(
+    async <T,>(label: string, durMs: number, job: Promise<T>): Promise<T> => {
+      push({ kind: 'progress', label, durMs });
+      setMode('ТАСОВАНИЕ');
+      SFX.sShuffle(durMs);
+      const [res] = await Promise.all([job, sleep(durMs + 100)]);
+      return res;
+    },
+    [push, setMode],
+  );
 
-  // ── ошибка канала: пелена → продуктовый paywall, остальное → обычный сбой ──
-  const handleChannelError = useCallback((err: any) => {
-    if (err?.needsSubscription) {
-      track('paywall_shown', {});
-      push({ kind: 'paywall', msg: err?.message || 'призывы иссякли' });
-    } else {
+  const handleChannelError = useCallback(
+    (err: any) => {
       push({ kind: 'error', msg: err?.message || 'канал недоступен' });
-    }
-    setMode('ОЖИДАНИЕ');
-  }, [push, setMode]);
+      setMode('ОЖИДАНИЕ');
+    },
+    [push, setMode],
+  );
 
   // ── флоу: карта дня ──
+  // локальный час едет на сервер — мини-игра «рассвет»:
+  // серия утренних ритуалов растёт только до полудня
   const runDaily = useCallback(async () => {
-    setBusy(true); busyRef.current = true;
+    setBusy(true);
+    busyRef.current = true;
     try {
-      const res = await progressWith('тасование колоды', 950, API.spreadBegin(1, null, characterId));
-      track('daily_started', { guide: characterId, spread_type: 1 });
-      pushOut([
-        { text: 'карта выбрана. коснись, чтобы вскрыть.', tone: 'dim' },
-      ]);
+      const localHour = new Date().getHours();
+      const res = await progressWith(
+        'тасование колоды',
+        950,
+        API.spreadBegin('daily', null, characterId, localHour),
+      );
+      pushOut([{ text: 'карта выбрана · коснись, чтобы вскрыть', tone: 'dim' }]);
+
+      // итог ритуала: рассвет пойман или день закрыт впустую
+      const ritual = res.daily_ritual;
+      if (ritual && ritual.counted) {
+        setStreak(ritual.streakDays);
+        setMorningStreak(ritual.morningStreak);
+        if (ritual.morning) {
+          SFX.sDawn();
+          pushOut([
+            {
+              text: `☀ рассвет пойман · серия рассветов ${ritual.morningStreak}`,
+              tone: 'ok',
+            },
+          ]);
+        } else if (ritual.morningStreak > 0) {
+          pushOut([
+            {
+              text: `день закрыт · но рассвет ушёл — серия рассветов замерла на ${ritual.morningStreak}`,
+              tone: 'faint',
+            },
+          ]);
+        } else {
+          pushOut([
+            {
+              text: 'день закрыт · полдень уже прошёл — рассветы ловят по утрам',
+              tone: 'faint',
+            },
+          ]);
+        }
+      } else {
+        setStreak((s) => (s === 0 ? 1 : s));
+      }
+
       const entryId = push({
         kind: 'daily',
         card: toTarotCards(res.cards)[0],
@@ -110,167 +146,177 @@ export function useSpread(session: TarotSession, whisper: TarotWhisper): TarotSp
       SFX.sError();
       handleChannelError(err);
     } finally {
-      setBusy(false); busyRef.current = false;
+      setBusy(false);
+      busyRef.current = false;
     }
-  }, [characterId, progressWith, push, pushOut, startWhisper, handleChannelError, setBusy, busyRef, setMode]);
+  }, [characterId, progressWith, push, pushOut, startWhisper, handleChannelError, setBusy, busyRef, setMode, setStreak, setMorningStreak]);
 
-  // ── флоу: расклад с вопросом ──
-  const runAsk = useCallback(async (cards: 1 | 3, question: string | null) => {
-    setBusy(true); busyRef.current = true;
-    setMode('ТАСОВАНИЕ');
-    try {
-      const cmdQuestion = question ? ` "${question}"` : '';
-      const cmdCards = cards === 1 ? ' --cards 1' : '';
-      await echoCmd(`taro ask${cmdQuestion}${cmdCards}`);
-      if (question) {
-        pushOut([{ text: 'вопрос принят · канал стабилен', tone: 'info' }]);
-      }
-      const res = await progressWith('тасование колоды', 1100, API.spreadBegin(cards, question, characterId));
-      track('spread_started', { guide: characterId, spread_type: cards, count: cards });
+  // ── флоу: легаси-расклад ask (1|3) ──
+  const runAsk = useCallback(
+    async (cards: 1 | 3, question: string | null) => {
+      setBusy(true);
+      busyRef.current = true;
+      setMode('ТАСОВАНИЕ');
+      try {
+        const cmdQuestion = question ? ` "${question}"` : '';
+        const cmdCards = cards === 1 ? ' --cards 1' : '';
+        await echoCmd(`taro ask${cmdQuestion}${cmdCards}`);
 
-      // динамический расклад: позиции вычислены бэкендом по вопросу
-      const positions = res.positions;
-      const dealLines: OutLine[] = [{
-        text: cards === 3
-          ? 'раздача: 3 аркана · динамический расклад'
-          : 'раздача: 1 аркан',
-        tone: 'dim',
-      }];
-      if (positions) {
-        positions.forEach((p, i) => {
-          dealLines.push({ text: `0${i + 1} · ${p}`, tone: 'faint' });
+        const res = await progressWith(
+          'тасование колоды',
+          1100,
+          API.spreadBegin(cards === 1 ? 'single' : 'three', question, characterId),
+        );
+
+        const positions = res.positions;
+        const spreadId = res.spread_id ?? (cards === 1 ? 'single' : 'three');
+        const spread = getFrontSpread(spreadId);
+
+        pushOut([
+          {
+            text: `раздача: ${cards} ${arcanaWord(cards)} · ${spread?.name ?? 'динамический расклад'}`,
+            tone: 'dim',
+          },
+        ]);
+
+        const spreadCards = toTarotCards(res.cards);
+        rememberLastSpread(spreadId);
+        const entryId = push({
+          kind: 'spread',
+          cards: spreadCards,
+          flipped: spreadCards.map(() => false),
+          question,
+          interpretation: null,
+          spreadLabel: spread?.name ?? (cards === 3 ? 'три карты' : 'одна карта'),
+          count: cards,
+          spreadId,
+          layout: spread?.layout ?? (cards === 3 ? 'pyramid' : 'column1'),
+          flipOrder: spread?.flipOrder,
+          positionKeys: res.position_keys,
+          positions,
         });
+        setMode('РАСКЛАД');
+        startWhisper(entryId, res.token);
+      } catch (err: any) {
+        SFX.sError();
+        handleChannelError(err);
+      } finally {
+        setBusy(false);
+        busyRef.current = false;
       }
-      pushOut(dealLines);
+    },
+    [characterId, echoCmd, progressWith, push, pushOut, startWhisper, handleChannelError, setBusy, busyRef, setMode],
+  );
 
-      const spreadCards = toTarotCards(res.cards);
-      const entryId = push({
-        kind: 'spread',
-        cards: spreadCards,
-        flipped: spreadCards.map(() => false),
-        question,
-        interpretation: null,
-        spreadLabel: cards === 3 ? 'три карты' : 'одна карта',
-        count: cards,
-        positions,
-      });
-      quotaRef.current = { remaining: res.remaining, limit: res.limit };
-      setMode('РАСКЛАД');
-      startWhisper(entryId, res.token);
-    } catch (err: any) {
-      SFX.sError();
-      handleChannelError(err);
-    } finally {
-      setBusy(false); busyRef.current = false;
-    }
-  }, [characterId, echoCmd, progressWith, push, pushOut, startWhisper, handleChannelError, setBusy, busyRef, setMode, quotaRef]);
-
-  // ── флоу: расклад каталога по id ──
-  const runSpread = useCallback(async (spreadId: string, question: string | null) => {
-    const spread = getFrontSpread(spreadId);
-    if (!spread) {
-      pushOut([{ text: `расклад ${spreadId} не найден в каталоге`, tone: 'err' }]);
-      setMode('ОЖИДАНИЕ');
-      return;
-    }
-    setBusy(true); busyRef.current = true;
-    setMode('ТАСОВАНИЕ');
-    try {
-      await echoCmd(spread.cmd + (question ? ` "${question}"` : ''));
-      if (question) {
-        pushOut([{ text: 'вопрос принят · канал стабилен', tone: 'info' }]);
+  // ── флоу: расклад каталога ──
+  const runSpread = useCallback(
+    async (spreadId: string, question: string | null) => {
+      const spread = getFrontSpread(spreadId);
+      if (!spread) {
+        pushOut([{ text: `расклад «${spreadId}» не найден в каталоге`, tone: 'err' }]);
+        setMode('ОЖИДАНИЕ');
+        return;
       }
-      const res = await progressWith('тасование колоды', 1100, API.spreadBegin(spreadId, question, characterId));
-      track('spread_started', { guide: characterId, spread_type: spreadId, count: spread.count });
+      setBusy(true);
+      busyRef.current = true;
+      setMode('ТАСОВАНИЕ');
+      try {
+        await echoCmd(spread.cmd + (question ? ` "${question}"` : ''));
+        const res = await progressWith('тасование колоды', 1100, API.spreadBegin(spreadId, question, characterId));
 
-      // позиции: имена от бэкенда (для three — динамические по вопросу)
-      const positions = res.positions;
-      const dealLines: OutLine[] = [{
-        text: `раздача: ${spread.count} ${arcanaWord(spread.count)} · ${spread.name}`,
-        tone: 'dim',
-      }];
-      if (positions) {
-        positions.forEach((p, i) => {
-          dealLines.push({ text: `0${i + 1} · ${p}`, tone: 'faint' });
+        const positions = res.positions;
+        pushOut([
+          {
+            text: `раздача: ${spread.count} ${arcanaWord(spread.count)} · ${spread.name}`,
+            tone: 'dim',
+          },
+        ]);
+
+        const spreadCards = toTarotCards(res.cards);
+        rememberLastSpread(spreadId);
+        const entryId = push({
+          kind: 'spread',
+          cards: spreadCards,
+          flipped: spreadCards.map(() => false),
+          question,
+          interpretation: null,
+          spreadLabel: spread.name,
+          count: spread.count,
+          spreadId,
+          layout: spread.layout,
+          flipOrder: spread.flipOrder,
+          positionKeys: res.position_keys,
+          positions,
         });
+        setMode('РАСКЛАД');
+        startWhisper(entryId, res.token);
+      } catch (err: any) {
+        SFX.sError();
+        handleChannelError(err);
+      } finally {
+        setBusy(false);
+        busyRef.current = false;
       }
-      pushOut(dealLines);
+    },
+    [characterId, echoCmd, progressWith, push, pushOut, startWhisper, handleChannelError, setBusy, busyRef, setMode],
+  );
 
-      const spreadCards = toTarotCards(res.cards);
-      const entryId = push({
-        kind: 'spread',
-        cards: spreadCards,
-        flipped: spreadCards.map(() => false),
-        question,
-        interpretation: null,
-        spreadLabel: spread.name,
-        count: spread.count,
-        spreadId,
-        layout: spread.layout,
-        flipOrder: spread.flipOrder, // порядок вскрытия — из каталога; position_keys — метки в card-order
-        positionKeys: res.position_keys,
-        positions,
-      });
-      quotaRef.current = { remaining: res.remaining, limit: res.limit };
-      setMode('РАСКЛАД');
-      startWhisper(entryId, res.token);
-    } catch (err: any) {
-      SFX.sError();
-      handleChannelError(err);
-    } finally {
-      setBusy(false); busyRef.current = false;
-    }
-  }, [characterId, echoCmd, progressWith, push, pushOut, startWhisper, handleChannelError, setBusy, busyRef, setMode, quotaRef]);
+  // ── вскрытие карт ──
+  const handleFlip = useCallback(
+    (entryId: number, index: number) => {
+      setEntries((prev) => {
+        const entry = prev.find((e) => e.id === entryId);
+        if (!entry) return prev;
 
-  // ── переворот карт ──
-  const handleFlip = useCallback((entryId: number, index: number) => {
-    setEntries((prev) => {
-      const entry = prev.find((e) => e.id === entryId);
-      if (!entry) return prev;
-
-      if (entry.kind === 'daily' && !entry.flipped) {
-        track('card_revealed', { spread_type: 1, count: 1 });
-        // чтение стартует после готовности шёпота, не по мёртвому таймеру
-        const reveal = async () => {
-          const interp = await waitWhisperReady(entryId, entry, resolveWhisper);
-          if (!interp) return;
-          push({ kind: 'json', interpretation: interp, cards: [entry.card], question: null, spreadLabel: 'карта дня' });
-          pushOut([{ text: randomWhisper(characterId), tone: 'comment' }]);
-          setMode('ОЖИДАНИЕ');
-        };
-        // 250мс — дать анимации флипа начаться до цепочки чтения
-        setTimeout(() => { void reveal(); }, 250);
-        return prev.map((e) => (e.id === entryId ? ({ ...e, flipped: true } as Entry) : e));
-      }
-
-      if (entry.kind === 'spread') {
-        if (entry.flipped[index]) return prev;
-        const flipped = [...entry.flipped];
-        flipped[index] = true;
-        track('card_revealed', { spread_type: entry.count, count: flipped.filter(Boolean).length });
-        const allFlipped = flipped.every(Boolean);
-        if (allFlipped) {
+        if (entry.kind === 'daily' && !entry.flipped) {
           const reveal = async () => {
             const interp = await waitWhisperReady(entryId, entry, resolveWhisper);
             if (!interp) return;
-            await echoCmd('taro read --json');
-            push({ kind: 'json', interpretation: interp, cards: entry.cards, question: entry.question, spreadLabel: entry.spreadLabel });
+            push({
+              kind: 'json',
+              interpretation: interp,
+              cards: [entry.card],
+              question: null,
+              spreadLabel: 'карта дня',
+            });
             pushOut([{ text: randomWhisper(characterId), tone: 'comment' }]);
-            // тихий индикатор остатка квоты — без этого лимит не виден до отказа
-            const qline = quotaLine(quotaRef.current.remaining, quotaRef.current.limit);
-            if (qline) pushOut([qline]);
             setMode('ОЖИДАНИЕ');
           };
-          // 250мс — дать анимации флипа начаться до цепочки чтения
           setTimeout(() => { void reveal(); }, 250);
+          return prev.map((e) => (e.id === entryId ? ({ ...e, flipped: true } as Entry) : e));
         }
-        return prev.map((e) => (e.id === entryId ? ({ ...e, flipped } as Entry) : e));
-      }
 
-      return prev;
-    });
-    setScrollTick((t) => t + 1);
-  }, [echoCmd, push, pushOut, resolveWhisper, setEntries, setScrollTick, quotaRef, setMode, characterId]);
+        if (entry.kind === 'spread') {
+          if (entry.flipped[index]) return prev;
+          const flipped = [...entry.flipped];
+          flipped[index] = true;
+          const allFlipped = flipped.every(Boolean);
+          if (allFlipped) {
+            const reveal = async () => {
+              const interp = await waitWhisperReady(entryId, entry, resolveWhisper);
+              if (!interp) return;
+              push({
+                kind: 'json',
+                interpretation: interp,
+                cards: entry.cards,
+                question: entry.question,
+                spreadLabel: entry.spreadLabel,
+                spreadId: entry.spreadId,
+              });
+              pushOut([{ text: randomWhisper(characterId), tone: 'comment' }]);
+              setMode('ОЖИДАНИЕ');
+            };
+            setTimeout(() => { void reveal(); }, 300);
+          }
+          return prev.map((e) => (e.id === entryId ? ({ ...e, flipped } as Entry) : e));
+        }
+
+        return prev;
+      });
+      bumpScroll();
+    },
+    [resolveWhisper, push, pushOut, setEntries, bumpScroll, setMode, characterId],
+  );
 
   return { runDaily, runAsk, runSpread, handleFlip };
 }

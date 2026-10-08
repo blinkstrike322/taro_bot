@@ -1,32 +1,42 @@
 {
   "compilerOptions": {
     "target": "ES2017",
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
     "noEmit": true,
+    "noImplicitAny": false,
     "esModuleInterop": true,
     "module": "esnext",
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "jsx": "preserve",
+    "jsx": "react-jsx",
     "incremental": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": [
+        "./src/*"
+      ]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"],
-  // NOTE (tests now typechecked): the old exclusions of `**/__tests__/` and
-  // `**/*.test.*` are removed. Those tests were orphaned because `vitest` was
-  // not a dependency here; the suite is now real (vitest + @testing-library
-  // installed as devDependencies), so `tsc --noEmit` MUST cover the test files
-  // to catch type regressions in them. `vitest` and `@testing-library/jest-dom`
-  // ship their types, so removing the exclusions is safe — test files resolve
-  // their imports and jest-dom matchers from devDependencies.
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts"
+  ],
   "exclude": [
-    "node_modules",
-    ".next"
+    "node_modules"
   ]
 }

@@ -1,9 +1,8 @@
 // ─────────────────────────────────────────────────────────────
 // transcript.ts — модель записей терминального скроллбэка.
-// Весь флоу приложения — это растущий журнал: команды,
-// вывод, меню, карты, JSON. Никаких модалок и экранов.
+// Весь флоу приложения — растущий журнал: команды, вывод,
+// меню, карты, чтения. Никаких модалок и экранов.
 // ─────────────────────────────────────────────────────────────
-import type { TarotCard } from '@/components/Card';
 import type { Interpretation } from '@/lib/api';
 import { GUIDES } from '@/lib/guides';
 import { SPREADS } from '@/lib/spreads';
@@ -17,19 +16,41 @@ export interface OutLine {
   tone?: OutTone;
 }
 
-/** Строка журнала — несёт полные данные чтения, чтобы тап
- *  разворачивал сеанс в том же виде, каким он был изначально. */
+export interface TarotCard {
+  id: string;
+  name: string;
+  image_url: string;
+  is_reversed: boolean;
+}
+
+/** строка журнала истории — полные данные для повторного разворота */
+export interface HistoryCardsData {
+  cards?: TarotCard[];
+  spread_type?: string;
+}
+
 export interface HistoryRow {
-  id: number;
+  id: string;
   type: string;
   question: string | null;
   created_at: string;
-  /** полные карты расклада (вариант: {cards: [...], spread_type} | {chosen_card}) */
-  cards_data?: any;
-  /** сохранённое толкование */
+  cards_data?: HistoryCardsData | TarotCard[] | null;
   interpretation?: Interpretation;
-  /** проводник сеанса — влияет на акцент повторного рендера */
   character_id?: string;
+}
+
+/** вариант списка отголосков: полная строка журнала едет с собой —
+ *  клик разворачивает чтение без нового похода в сеть */
+export interface EchoMatchItem {
+  dbId: string;
+  created_at: string;
+  spreadLabel: string;
+  question: string | null;
+  sharedNames: string[];
+  sharedCount: number;
+  character_id?: string;
+  /** полная строка журнала — карты и толкование для разворота */
+  row: HistoryRow;
 }
 
 export type Entry =
@@ -38,12 +59,10 @@ export type Entry =
   | { id: number; kind: 'boot' }
   | { id: number; kind: 'motd' }
   | { id: number; kind: 'progress'; label: string; durMs: number }
-  /** неопределённое ожидание шёпота — рыщущий бар, живёт пока канал думает */
   | { id: number; kind: 'pending'; label: string }
   | {
       id: number; kind: 'daily'; card: TarotCard; flipped: boolean;
       interpretation: Interpretation | null;
-      /** шёпот уже доставлен из канала — можно вскрывать без паузы */
       whisperReady?: boolean;
     }
   | {
@@ -52,15 +71,10 @@ export type Entry =
       question: string | null;
       interpretation: Interpretation | null;
       spreadLabel: string; count: number;
-      /** id расклада каталога (в журнале — spread_<id>) */
       spreadId?: string;
-      /** макет расклада из каталога (column1/pyramid/trio/spine/pentagram/arc) */
       layout?: string;
-      /** порядок вскрытия карт — ключи позиций (position_keys бэкенда или каталог) */
       flipOrder?: string[];
-      /** ключи позиций от бэкенда — Task 10 читает при рендере */
       positionKeys?: string[];
-      /** имена позиций расклада от бэкенда (замена легаси П/Н/Б) */
       positions?: string[];
       whisperReady?: boolean;
     }
@@ -70,27 +84,132 @@ export type Entry =
       cards: TarotCard[];
       question: string | null;
       spreadLabel: string;
-      /** мгновенный рендер без посимвольной печати (повторный просмотр из журнала) */
       instant?: boolean;
-      /** проводник сеанса — для повторного рендера в цвете оригинала */
       characterId?: string;
+      /** id расклада — «спросить снова» повторяет расклад */
+      spreadId?: string;
+      /** момент чтения (ISO) — для свитка журналных чтений */
+      readAt?: string;
+      /** id строки БД — для инстант-разворотов из журнала:
+       *  отголосок исключает саму строку из поиска */
+      dbId?: string;
     }
   | { id: number; kind: 'menu'; menuId: 'catalog' | 'guides' }
+  | { id: number; kind: 'library' }
+  | { id: number; kind: 'stats' }
   | { id: number; kind: 'history'; rows: HistoryRow[] }
+  | { id: number; kind: 'restore'; count: number; savedAt: number }
+  | {
+      id: number; kind: 'followup';
+      cardName: string;
+      cardImage?: string;
+      question: string;
+      answer: string;
+      spreadLabel?: string;
+      characterId?: string;
+      /** парный вопрос: вторая карта и признак пары */
+      cardName2?: string;
+      cardImage2?: string;
+      pair?: boolean;
+    }
   | { id: number; kind: 'error'; msg: string }
   | { id: number; kind: 'ok'; msg: string }
-  /** пелена сомкнулась — продуктовый paywall в стилистике ARCANUM */
-  | { id: number; kind: 'paywall'; msg: string };
+  | { id: number; kind: 'paywall'; msg: string }
+  | {
+      /** свиток: подтверждение экспорта чтения (не restorable) */
+      id: number; kind: 'scroll';
+      label: string;
+      text: string;
+      filename: string;
+      copied?: boolean;
+    }
+  | {
+      /** личный аркан: нумерологическое ядро даты рождения.
+       *  не restorable — после рестарта taro arcana пересчитает
+       *  мгновенно (whisper не персистится). */
+      id: number; kind: 'arcana';
+      /** дата рождения дд.мм.гггг (цепочка пересчитывается на лету) */
+      dateStr: string;
+      cardId: string;
+      /** шёпот проводника — приходит асинхронно (или фолбэк) */
+      whisper?: string;
+      /** ждём LLM-шёпот: до ответа показываем pending-строку */
+      askWhisper?: boolean;
+      /** повторный показ из localStorage — без шёпота, компактно */
+      fromMemory?: boolean;
+    }
+  | {
+      /** фаза луны: блок сам пересчитывает дату при рендере.
+       *  не restorable — пересчёт дешевле хранения. */
+      id: number; kind: 'moon';
+    }
+  | {
+      /** дайджест недели: сводка чтений за 7 дней. блок сам
+       *  грузит журнал и LLM-рефлексию. не restorable — цифры
+       *  недели меняются день ото дня, пересчёт честнее хранения. */
+      id: number; kind: 'week';
+    }
+  | {
+      /** дайджест месяца: текущий календарный месяц в картах —
+       *  полоса дней, баланс аркан, карта месяца, рефлексия.
+       *  не restorable — месяц доживает до конца, пересчёт
+       *  честнее хранения. */
+      id: number; kind: 'month';
+    }
+  | {
+      /** покрытие фосфора: список тем терминала. активная тема —
+       *  live-состояние, не запись; блок рендерит текущее всегда.
+       *  не restorable — тема живёт в taro_theme, не в транскрипте. */
+      id: number; kind: 'theme';
+    }
+  | {
+      /** прогноз дня по карте: лозунг/утро/день/вечер/шкалы/глоток.
+       *  прогноз прилетает асинхронно (LLM) и дописывается в запись.
+       *  не restorable — прогноз свеж только для сегодняшнего дня. */
+      id: number; kind: 'forecast';
+      /** карта дня, по которой выведен прогноз */
+      cardName: string;
+      cardImage?: string;
+      reversed?: boolean;
+      /** сама структура; пока нет — блок показывает ожидание */
+      forecast?: import('@/lib/api').DayForecast;
+      /** прогноз собран локально, без LLM */
+      fallback?: boolean;
+      /** канал не ответил — блок честно говорит об этом */
+      failed?: boolean;
+    }
+  | {
+      /** хроника карты: вся история выпадений аркана в журнале.
+       *  блок сам тянет журнал (?all=1) и собирает события.
+       *  не restorable — хроника пересчитывается по команде. */
+      id: number; kind: 'card';
+      /** id карты в колоде (the-fool и т.п.) */
+      cardId: string;
+      cardName: string;
+      cardImage: string;
+      arcana: string;
+      suit: string | null;
+      /** номер аркана/масти — для подписи */
+      number: number;
+      upright: string;
+      reversed: string;
+    }
+  | {
+      /** отголосок журнала: прошлые чтения с общими картами —
+       *  список-выбор под текущим чтением. не restorable —
+       *  эхо переслушивается чипом заново, БД не дублируем. */
+      id: number; kind: 'echo';
+      /** строка-вариант: всё для показа + полная строка для разворота */
+      matches: EchoMatchItem[];
+      /** чтение, к которому прислушивались */
+      forEntryId: number;
+    };
 
-// ── шёпот системы — вкусовые реплики между делами ──
-export const WHISPERS: string[] = [
+const WHISPERS: string[] = [
   'тени перешёптываются',
-  'где-то далеко скрипнула свеча',
-  'луна одобряет',
   'канал стабилен. помехи минимальны',
   'карты дышат в такт',
-  'эхо пустоты вернулось с ответом',
-  'связь с продавцом тумана восстановлена',
+  'луна одобряет',
 ];
 
 export function randomWhisper(guideId?: string | null): string {
@@ -112,8 +231,6 @@ export function sleep(ms: number): Promise<void> {
 export function formatDateTime(iso: string): string {
   try {
     const d = new Date(iso);
-    // Safari строг к не-ISO строкам: new Date('2026-01-01 10:00') не бросает,
-    // а возвращает Invalid Date → getDate() = NaN без этой проверки.
     if (Number.isNaN(d.getTime())) return iso;
     const months = ['янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
     const dd = String(d.getDate()).padStart(2, '0');
@@ -125,14 +242,9 @@ export function formatDateTime(iso: string): string {
   }
 }
 
-/** Метка расклада по типу записи журнала. */
 export function spreadLabelFromType(type: string): string {
-  if (type === 'daily') return 'карта дня';
-  if (type === 'spread_1') return 'одна карта';
-  if (type === 'spread_3') return 'три карты';
-  if (type.startsWith('spread_')) {
-    const id = type.slice('spread_'.length);
-    if (SPREADS[id]) return SPREADS[id].name;
-  }
+  // легаси-формат бота хранил «spread_yesno»; наша БД — голый id
+  const id = type.startsWith('spread_') ? type.slice('spread_'.length) : type;
+  if (SPREADS[id]) return SPREADS[id].name;
   return type;
 }
