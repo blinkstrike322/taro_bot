@@ -479,6 +479,37 @@ async def get_user_readings(
     ]
 
 
+def _reading_row_to_dict(row) -> dict:
+    """Маппинг строки readings → dict журнала (единый для всех веток /api/readings).
+
+    Единая точка правды для формы строк: месячная ветка, ?days=N и ?all=1
+    обязаны отдавать клиенту идентичный объект (см. контракт SNAP3 api.ts).
+    """
+    try:
+        interpretation = json.loads(row[4]) if row[4] else {}
+    except (json.JSONDecodeError, TypeError):
+        interpretation = {}
+    try:
+        cards_data = json.loads(row[3]) if row[3] else {}
+    except (json.JSONDecodeError, TypeError):
+        cards_data = {}
+    return {
+        "id": row[0],
+        "type": row[1] or "",
+        "question": row[2],
+        "cards_data": cards_data,
+        "interpretation": interpretation,
+        "character_id": row[5] or "shadow_walker",
+        "created_at": row[6] or "",
+    }
+
+
+_READINGS_SELECT = """SELECT r.id, r.type, r.question, r.cards_data, r.interpretation,
+              r.character_id, r.created_at
+           FROM readings r
+           JOIN users u ON r.user_id = u.id"""
+
+
 async def get_user_readings_by_month(
     db: aiosqlite.Connection,
     tg_id: int,
@@ -491,10 +522,7 @@ async def get_user_readings_by_month(
     character_id, created_at — so the frontend can render cards + reading.
     """
     cursor = await db.execute(
-        """SELECT r.id, r.type, r.question, r.cards_data, r.interpretation,
-                  r.character_id, r.created_at
-           FROM readings r
-           JOIN users u ON r.user_id = u.id
+        _READINGS_SELECT + """
            WHERE u.tg_id = ?
              AND strftime('%Y', r.created_at) = ?
              AND strftime('%m', r.created_at) = ?
@@ -503,26 +531,97 @@ async def get_user_readings_by_month(
         (tg_id, year, month, _PENDING_MARKER),
     )
     rows = await cursor.fetchall()
-    result = []
-    for row in rows:
-        try:
-            interpretation = json.loads(row[4]) if row[4] else {}
-        except (json.JSONDecodeError, TypeError):
-            interpretation = {}
-        try:
-            cards_data = json.loads(row[3]) if row[3] else {}
-        except (json.JSONDecodeError, TypeError):
-            cards_data = {}
-        result.append({
-            "id": row[0],
-            "type": row[1] or "",
-            "question": row[2],
-            "cards_data": cards_data,
-            "interpretation": interpretation,
-            "character_id": row[5] or "shadow_walker",
-            "created_at": row[6] or "",
-        })
-    return result
+    return [_reading_row_to_dict(row) for row in rows]
+
+
+async def get_user_readings_days(
+    db: aiosqlite.Connection,
+    tg_id: int,
+    days: int,
+    take: int = 400,
+) -> list[dict]:
+    """Журнал за последние N дней (ретро-окно от текущего момента), свежие первыми.
+
+    Тот же SELECT-список и маппинг, что у месячной ветки: формы строк совпадают.
+    Резервы без толкования ('{}') в журнал не попадают — как и в месяцной ветке.
+    """
+    cursor = await db.execute(
+        _READINGS_SELECT + """
+           WHERE u.tg_id = ?
+             AND r.created_at >= datetime('now', ?)
+             AND r.interpretation != ?
+           ORDER BY r.created_at DESC
+           LIMIT ?""",
+        (tg_id, f"-{int(days)} days", _PENDING_MARKER, take),
+    )
+    rows = await cursor.fetchall()
+    return [_reading_row_to_dict(row) for row in rows]
+
+
+async def get_user_readings_all(
+    db: aiosqlite.Connection,
+    tg_id: int,
+    take: int = 500,
+) -> list[dict]:
+    """Весь журнал пользователя, свежие первыми (лимит take)."""
+    cursor = await db.execute(
+        _READINGS_SELECT + """
+           WHERE u.tg_id = ?
+             AND r.interpretation != ?
+           ORDER BY r.created_at DESC
+           LIMIT ?""",
+        (tg_id, _PENDING_MARKER, take),
+    )
+    rows = await cursor.fetchall()
+    return [_reading_row_to_dict(row) for row in rows]
+
+
+async def count_user_readings(db: aiosqlite.Connection, tg_id: int) -> int:
+    """Всего чтений пользователя — истина из строк журнала.
+
+    Считаются те же строки, что видны в журнале: резервы/сбои ('{}') исключены,
+    иначе статистика расходится с тем, что пользователь прокручивает.
+    """
+    cursor = await db.execute(
+        "SELECT COUNT(*) FROM readings r "
+        "JOIN users u ON r.user_id = u.id "
+        "WHERE u.tg_id = ? AND r.interpretation != ?",
+        (tg_id, _PENDING_MARKER),
+    )
+    row = await cursor.fetchone()
+    return row[0] or 0
+
+
+async def count_user_readings_grouped(
+    db: aiosqlite.Connection,
+    tg_id: int,
+    group_col: str,
+    allowed,
+) -> dict:
+    """Групповые счётчики чтений (по type или character_id) — истина из строк.
+
+    allowed — фильтр по значению (None = без фильтра); нулевые группы
+    невозможны по определению GROUP BY. Незнакомая колонка — ошибка программиста:
+    колонку нельзя подставлять в SQL из внешних данных.
+    """
+    if group_col not in ("type", "character_id"):
+        raise ValueError(f"unsupported group column: {group_col}")
+    if allowed is not None and not allowed:
+        return {}
+    sql = (
+        f"SELECT r.{group_col}, COUNT(*) FROM readings r "
+        "JOIN users u ON r.user_id = u.id "
+        "WHERE u.tg_id = ? AND r.interpretation != ?"
+    )
+    params: list = [tg_id, _PENDING_MARKER]
+    if allowed is not None:
+        placeholders = ", ".join("?" for _ in allowed)
+        sql += f" AND r.{group_col} IN ({placeholders})"
+        params.extend(allowed)
+    sql += f" GROUP BY r.{group_col}"
+    cursor = await db.execute(sql, params)
+    rows = await cursor.fetchall()
+    return {row[0]: row[1] for row in rows}
 
 
 async def update_character(db: aiosqlite.Connection, tg_id: int, character_id: str) -> None:

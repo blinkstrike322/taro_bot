@@ -21,12 +21,15 @@ from core.llm import get_last_llm_hop, interpret_reading
 from core.prompts import _positions_for_question
 from core.quota import check_quota, reserve_quota
 from core.reminder import reminder_loop
+from core.ritual import touch_daily_streak
 from core.spreads import resolve_spread
 from core.tarot import draw_cards
 from storage.db import (
     STATUS_COMPLETED,
     STATUS_FAILED,
     complete_reading,
+    count_user_readings,
+    count_user_readings_grouped,
     fail_reading,
     get_active_reading,
     get_db,
@@ -34,7 +37,9 @@ from storage.db import (
     get_reading_by_token,
     get_recent_texts,
     get_user_by_tg_id,
+    get_user_readings_all,
     get_user_readings_by_month,
+    get_user_readings_days,
     init_db,
     mark_reading_processing,
     sweep_stale_reservations,
@@ -153,16 +158,55 @@ async def handle_readings(request):
         # Явный 401: фронт отличает «нет авторизации» от «нет данных за месяц»
         return web.json_response({"error": "unauthorized"}, status=401)
     tg_id = user.get('id', 0)
-    year = request.query.get('year', '')
-    month = request.query.get('month', '')
-    if not tg_id or not year or not month:
+    if not tg_id:
         return web.json_response({"readings": []})
     db = await get_db()
+
+    # Ретро-окно (?days=N, 1–62) и весь журнал (?all=1) — приоритет над
+    # year/month: фронт запрашивает их для дайджеста недели и полной истории.
+    all_raw = request.query.get("all", "")
+    days_raw = request.query.get("days", "")
+    if all_raw == "1":
+        return web.json_response({"readings": await get_user_readings_all(db, tg_id)})
+    if days_raw:
+        try:
+            days = min(62, max(1, int(float(days_raw))))
+        except (ValueError, OverflowError):
+            days = 0
+        if days:
+            return web.json_response({"readings": await get_user_readings_days(db, tg_id, days)})
+
+    year = request.query.get('year', '')
+    month = request.query.get('month', '')
+    if not year or not month:
+        return web.json_response({"readings": []})
     rows = await get_user_readings_by_month(db, tg_id, year, month)
     # Server-side "history open" — shape-only, no question/card content.
-    if tg_id:
-        await safe_log_event(db, tg_id, "history_open", {}, user_id=None)
+    await safe_log_event(db, tg_id, "history_open", {}, user_id=None)
     return web.json_response({"readings": rows})
+
+
+async def handle_stats(request):
+    """Статистика оператора для меню: серии ритуала, лорометр, счётчики раскладов.
+
+    Контракт клиента (SNAP3 api.ts) — camelCase. totalReadings/spreadCounts —
+    истина из строк журнала, а не из денормализованных счётчиков.
+    """
+    user = verify_telegram_init_data(request.query.get("init_data", ""))
+    if not user:
+        return web.json_response({"error": "unauthorized"}, status=401)
+    tg_id = user.get("id", 0)
+    db = await get_db()
+    row = await get_user_by_tg_id(db, tg_id)
+    return web.json_response({
+        "streakDays": row.streak_days if row else 0,
+        "totalReadings": await count_user_readings(db, tg_id),
+        "lastDailyAt": row.last_daily_at if row else None,
+        "morningStreak": row.morning_streak if row else 0,
+        "lastMorningAt": row.last_morning_at if row else None,
+        "guideReadings": await count_user_readings_grouped(db, tg_id, "character_id", CHARACTER_IDS),
+        "spreadCounts": await count_user_readings_grouped(db, tg_id, "type", None),
+    })
 
 
 async def handle_disk_usage(request):
@@ -364,6 +408,8 @@ async def handle_spread_begin(request):
         }
         if ctx.get("positions"):
             response["positions"] = ctx["positions"]
+        if ctx.get("daily_ritual"):
+            response["daily_ritual"] = ctx["daily_ritual"]
         return web.json_response(response)
     cards = ctx["cards"]
 
@@ -386,6 +432,8 @@ async def handle_spread_begin(request):
     # раскладов каталога, по одной на карту).
     if ctx.get("positions"):
         response["positions"] = ctx["positions"]
+    if ctx.get("daily_ritual"):
+        response["daily_ritual"] = ctx["daily_ritual"]
     return web.json_response(response)
 
 
@@ -455,6 +503,25 @@ async def _spread_request_context(request, client_token: str):
     else:
         spread_type_str = "non_daily"
         reading_type = f"spread_{spread_id}"
+
+    # Ритуал карты дня: считаем в момент начала расклада (семантика SNAP3:
+    # raw-проверка после resolve; легаси-числа считаются daily, если резолвятся
+    # в daily). Час присылает клиент — без валидного local_hour ритуал не трогаем.
+    # Пользователь перечитывается свежим запросом: get_or_create_user выше не
+    # выбирает streak-колонки.
+    local_hour_raw = body.get("local_hour")
+    try:
+        local_hour = int(local_hour_raw) if local_hour_raw is not None else None
+    except (TypeError, ValueError):
+        local_hour = None
+    if local_hour is not None and not (0 <= local_hour <= 23):
+        local_hour = None
+    daily_ritual = None
+    if spread_id == "daily" and local_hour is not None:
+        user_row = await get_user_by_tg_id(db, tg_id)
+        if user_row is not None:
+            daily_ritual = await touch_daily_streak(db, user_row, local_hour)
+
     count = min(int(spread["count"]), 10)
     needs_q = spread["needs_question"]
     if needs_q and not (question and str(question).strip()):
@@ -496,6 +563,7 @@ async def _spread_request_context(request, client_token: str):
                 "spread_id": spread_id,
                 "spread_name": spread["name"],
                 "position_keys": position_keys,
+                "daily_ritual": daily_ritual,
                 "quota": {"remaining": quota_view.get("remaining"), "limit": quota_view.get("limit")},
             }
 
@@ -555,6 +623,7 @@ async def _spread_request_context(request, client_token: str):
         "spread_name": spread["name"],
         "positions": positions,
         "position_keys": position_keys,
+        "daily_ritual": daily_ritual,
         "reading_id": quota["reading_id"],
         "quota": quota,
     }
@@ -662,6 +731,7 @@ def create_webapp() -> web.Application:
     app = web.Application()
     app.middlewares.append(gzip_cache_middleware)
     app.router.add_get('/api/readings', handle_readings)
+    app.router.add_get('/api/stats', handle_stats)
     app.router.add_get('/api/disk', handle_disk_usage)
     app.router.add_get('/api/character', handle_character)
     app.router.add_post('/api/character', handle_character_set)
