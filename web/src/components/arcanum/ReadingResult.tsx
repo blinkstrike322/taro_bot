@@ -7,7 +7,7 @@
 // ─────────────────────────────────────────────────────────────
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  AudioLines, BookOpen, CloudSun, Eye, Link2, LayoutGrid, MessageCircleQuestion, ScrollText, X,
+  AudioLines, BookOpen, CloudSun, Eye, Link2, LayoutGrid, MessageCircleQuestion, ScrollText, Send, X,
 } from 'lucide-react';
 import { getGuide } from '@/lib/guides';
 import type { TarotCard } from '@/components/arcanum/Card';
@@ -35,6 +35,8 @@ interface ReadingResultProps {
   onForecast?: () => void;
   /** хроника карты: история выпадений аркана — без набора имени */
   onChronicle?: (cardName: string) => void;
+  /** отправить в терминал: шаринг чтения в личку (фолбэк — свиток .txt) */
+  onShare?: () => void;
   /** момент чтения (ISO) — свиток журналных чтений датируется им */
   readAt?: string;
   /** id расклада — «спросить снова» повторяет расклад, а не каталог */
@@ -155,6 +157,7 @@ export default function ReadingResult({
   onEcho,
   onForecast,
   onChronicle,
+  onShare,
   readAt,
   spreadId,
   onAskAgain,
@@ -228,6 +231,8 @@ export default function ReadingResult({
   const canEcho = cardLines.length > 0 && typeof onEcho === 'function';
   // хроника карты: живой журнал — работает и для журналных чтений
   const canChronicle = cardLines.length > 0 && typeof onChronicle === 'function';
+  // шаринг в терминал: живое чтение (токен) и развороты журнала (id)
+  const canShare = typeof onShare === 'function';
   // спросить снова: только живые чтения со знакомым раскладом —
   // выбранный расклад сохраняется, вопрос вводится сразу
   const canAskAgain = !instant && Boolean(spreadId) && typeof onAskAgain === 'function';
@@ -618,7 +623,7 @@ export default function ReadingResult({
           </div>
 
           {/* продолжение: снова / уточнение / свиток / отголосок */}
-          {(canAskAgain || canAsk || canAskPair || canScroll || canEcho || canForecast || canChronicle) && (
+          {(canAskAgain || canAsk || canAskPair || canScroll || canEcho || canForecast || canChronicle || canShare) && (
             <div className="reading-fu mt-1.5" style={{ '--guide-accent': guide.accent } as React.CSSProperties}>
               {askMode || pairMode || chronicleMode ? (
                 <button
@@ -715,6 +720,17 @@ export default function ReadingResult({
                     >
                       <CloudSun size={13} strokeWidth={1.75} aria-hidden="true" />
                       прогноз дня
+                    </button>
+                  )}
+                  {canShare && (
+                    <button
+                      type="button"
+                      className="chip reading-fu-chip reading-fu-chip--share"
+                      onClick={() => { sSeal(); haptic('tick'); onShare?.(); }}
+                      title="расклад уйдёт в личку терминала"
+                    >
+                      <Send size={13} strokeWidth={1.75} aria-hidden="true" />
+                      отправить в терминал
                     </button>
                   )}
                 </>

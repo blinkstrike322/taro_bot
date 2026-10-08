@@ -367,7 +367,7 @@ export function buildForecastScrollText(src: ForecastScrollSource): ScrollExport
   lines.push('', '// глоток дня', f.глоток);
 
   if (src.fallback) {
-    lines.push('', '(прогноз собран из значений карты — канал был занят)');
+    lines.push('', '(отражение от колоды — без связи с эфиром)');
   }
 
   lines.push('', '— день запечатан —', '', `${guide.tag} · arcanum terminal`);

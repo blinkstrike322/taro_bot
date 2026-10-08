@@ -95,6 +95,8 @@ export default function WeekBlock({ characterId, onRunCmd, onExportScroll }: Wee
   const [failed, setFailed] = useState(false);
   // LLM-рефлексия: null — ждём, строка — готова
   const [reflection, setReflection] = useState<string | null>(null);
+  // рефлексия собрана локально, без LLM
+  const [reflexFallback, setReflexFallback] = useState(false);
 
   // загрузка журнала за 7 дней + агрегация + фоновая рефлексия
   useEffect(() => {
@@ -120,11 +122,17 @@ export default function WeekBlock({ characterId, onRunCmd, onExportScroll }: Wee
             characterId,
           )
             .then((r) => {
-              if (alive) setReflection(r.answer);
+              if (alive) {
+                setReflection(r.answer);
+                setReflexFallback(r.fallback === true);
+              }
             })
             .catch(() => {
               // рефлексия не дошла — неделя говорит числами, не ошибка
-              if (alive) setReflection(null);
+              if (alive) {
+                setReflection(null);
+                setReflexFallback(false);
+              }
             });
         }
       })
@@ -280,6 +288,11 @@ export default function WeekBlock({ characterId, onRunCmd, onExportScroll }: Wee
               </div>
             ) : (
               <div className="week-reflex-answer">
+                {reflexFallback && (
+                  <div className="tl tl-faint week-reflex-fallback">
+                    отражение от колоды (без связи с эфиром)
+                  </div>
+                )}
                 <ProseType text={reflection} />
               </div>
             )}

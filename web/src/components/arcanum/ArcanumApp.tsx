@@ -28,6 +28,7 @@ import {
   saveArcanaDate,
 } from '@/lib/arcana';
 import {
+  buildScrollText,
   SCROLL_FALLBACK_LABEL,
   scrollCopiedLabel,
   type ScrollExport,
@@ -829,6 +830,46 @@ export default function ArcanumApp() {
     [push],
   );
 
+  // ── шеринг чтения: «отправить в терминал» → /api/share ──
+  // живое чтение — токен сеанса, разворот из журнала — id строки;
+  // телеграм не принял (502/сеть) — запасной путь: свиток .txt,
+  // собранный из того же чтения (скачивание через запись scroll)
+  const handleShare = useCallback(
+    (entryId: number) => {
+      const entry = entriesRef.current.find((e) => e.id === entryId);
+      if (entry?.kind !== 'json') return;
+      if (!entry.token && !entry.dbId) return;
+      void API.shareReading({
+        ...(entry.token ? { token: entry.token } : {}),
+        ...(entry.dbId ? { reading_id: entry.dbId } : {}),
+      })
+        .then(() => {
+          SFX.sSeal();
+          SFX.haptic('tick');
+          pushOut([{ text: 'чтение ушло в терминал · свиток ждёт в личке', tone: 'ok' }]);
+        })
+        .catch(() => {
+          SFX.sError();
+          const scroll = buildScrollText({
+            interpretation: entry.interpretation,
+            cards: entry.cards,
+            question: entry.question,
+            spreadLabel: entry.spreadLabel,
+            characterId: entry.characterId ?? characterId,
+            ...(entry.readAt ? { at: new Date(entry.readAt) } : {}),
+          });
+          push({
+            kind: 'scroll',
+            label: 'терминал не принял — свиток файлом',
+            text: scroll.text,
+            filename: scroll.filename,
+            copied: false,
+          });
+        });
+    },
+    [characterId, push, pushOut],
+  );
+
   // ── хроника карты: единый вход для команды и чипа ──
   // артефакт журнала — живые данные, пересчёт при каждой открытии
   const pushChronicleCard = useCallback(
@@ -1196,6 +1237,7 @@ export default function ArcanumApp() {
       onEchoSelect={handleEchoSelect}
       onChronicle={handleChronicle}
       onAskAgain={handleAskAgain}
+      onShare={handleShare}
       guideReadings={guideReadings}
       dailyDone={dailyDone}
       themeId={themeId}

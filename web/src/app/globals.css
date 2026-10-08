@@ -4233,6 +4233,12 @@ button {
   animation: week-part-in 0.45s ease-out backwards;
 }
 
+/* строка локального фолбэка рефлексии — перед ответом проводника */
+.week-reflex-fallback {
+  margin-bottom: 6px;
+  font-size: 10.5px;
+}
+
 .week-reflex-answer .prose-type {
   font-size: 13px;
   line-height: 1.7;
@@ -4859,6 +4865,15 @@ button {
 .reading-fu-chip--fc .chip-glyph {
   color: var(--fc-chip);
   text-shadow: 0 0 8px color-mix(in srgb, var(--fc-chip) 45%, transparent);
+}
+
+/* чип «отправить в терминал»: холодный эфир личного канала —
+   глиф тонирован, анимаций нет (reduced-motion не трогаем) */
+.reading-fu-chip--share {
+  --share-chip: #8fc3de;
+}
+.reading-fu-chip--share > svg {
+  color: var(--share-chip);
 }
 
 /* мобильный 390: арт меньше и выше текста, шкалы компактнее */

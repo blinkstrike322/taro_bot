@@ -139,6 +139,7 @@ export function useSpread(session: TarotSession, whisper: TarotWhisper): TarotSp
         card: toTarotCards(res.cards)[0],
         flipped: false,
         interpretation: null,
+        token: res.token,
       });
       setMode('РАСКЛАД');
       startWhisper(entryId, res.token);
@@ -194,6 +195,7 @@ export function useSpread(session: TarotSession, whisper: TarotWhisper): TarotSp
           flipOrder: spread?.flipOrder,
           positionKeys: res.position_keys,
           positions,
+          token: res.token,
         });
         setMode('РАСКЛАД');
         startWhisper(entryId, res.token);
@@ -247,6 +249,7 @@ export function useSpread(session: TarotSession, whisper: TarotWhisper): TarotSp
           flipOrder: spread.flipOrder,
           positionKeys: res.position_keys,
           positions,
+          token: res.token,
         });
         setMode('РАСКЛАД');
         startWhisper(entryId, res.token);
@@ -278,6 +281,7 @@ export function useSpread(session: TarotSession, whisper: TarotWhisper): TarotSp
               cards: [entry.card],
               question: null,
               spreadLabel: 'карта дня',
+              token: entry.token,
             });
             pushOut([{ text: randomWhisper(characterId), tone: 'comment' }]);
             setMode('ОЖИДАНИЕ');
@@ -302,6 +306,7 @@ export function useSpread(session: TarotSession, whisper: TarotWhisper): TarotSp
                 question: entry.question,
                 spreadLabel: entry.spreadLabel,
                 spreadId: entry.spreadId,
+                token: entry.token,
               });
               pushOut([{ text: randomWhisper(characterId), tone: 'comment' }]);
               setMode('ОЖИДАНИЕ');

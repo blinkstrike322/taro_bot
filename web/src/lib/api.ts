@@ -365,6 +365,29 @@ export async function dayForecast(payload: DayForecastPayload): Promise<DayForec
   return { forecast: data.forecast as DayForecast, fallback: data.fallback === true };
 }
 
+// ── шеринг чтения в личку через нашего бота ──
+
+/** ответ шары: ok — сообщение ушло ботом в личку оператора */
+export interface ShareResponse {
+  ok: boolean;
+}
+
+/** «отправить в терминал»: живое чтение — по токену сеанса,
+ *  запись журнала — по id строки. Ошибка (401/404/502/сеть) —
+ *  ApiError с текстом от сервера; вызывающий делает фолбэк. */
+export async function shareReading(payload: {
+  token?: string;
+  reading_id?: string | number;
+}): Promise<ShareResponse> {
+  const res = await fetch('/api/share', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ init_data: init_data(), ...payload }),
+  });
+  if (!res.ok) throw await readErrorBody(res);
+  return res.json();
+}
+
 /** весь журнал (до 500 строк) — хроника карты смотрит на всё */
 export async function getAllReadings(): Promise<ReadingEntry[]> {
   const res = await fetch(`/api/readings?all=1&init_data=${encodeURIComponent(init_data())}`);

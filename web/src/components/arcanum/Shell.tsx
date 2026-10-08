@@ -96,6 +96,8 @@ interface ShellProps {
   onChronicle?: (cardName: string) => void;
   /** спросить снова: повторить расклад этого чтения */
   onAskAgain?: (spreadId: string) => void;
+  /** отправить в терминал: шаринг чтения в личку (токен/id строки) */
+  onShare?: (entryId: number) => void;
   onRestoreSession: () => void;
   onDiscardSession: () => void;
 }
@@ -137,6 +139,7 @@ export default function Shell({
   onForecast,
   onChronicle,
   onAskAgain,
+  onShare,
   onRestoreSession,
   onDiscardSession,
 }: ShellProps) {
@@ -365,6 +368,9 @@ export default function Shell({
               onEcho={() => onEcho(entry.id)}
               onForecast={entry.instant ? undefined : () => onForecast?.(entry.id)}
               onChronicle={onChronicle ? (name) => onChronicle(name) : undefined}
+              onShare={
+                entry.token || entry.dbId ? () => onShare?.(entry.id) : undefined
+              }
               readAt={entry.readAt}
             />
           </div>

@@ -152,7 +152,7 @@ export default function HoroscopeBlock({ entry, characterId, onExportScroll }: H
 
       {entry.fallback && (
         <div className="fc-fallback tl tl-faint">
-          {'// прогноз собран из значений карты — канал был занят'}
+          {'// отражение от колоды (без связи с эфиром)'}
         </div>
       )}
 

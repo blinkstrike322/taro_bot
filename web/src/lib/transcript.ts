@@ -64,6 +64,8 @@ export type Entry =
       id: number; kind: 'daily'; card: TarotCard; flipped: boolean;
       interpretation: Interpretation | null;
       whisperReady?: boolean;
+      /** токен сеанса — «отправить в терминал» после вскрытия */
+      token?: string;
     }
   | {
       id: number; kind: 'spread';
@@ -77,6 +79,8 @@ export type Entry =
       positionKeys?: string[];
       positions?: string[];
       whisperReady?: boolean;
+      /** токен сеанса — «отправить в терминал» после вскрытия */
+      token?: string;
     }
   | {
       id: number; kind: 'json';
@@ -91,8 +95,11 @@ export type Entry =
       /** момент чтения (ISO) — для свитка журналных чтений */
       readAt?: string;
       /** id строки БД — для инстант-разворотов из журнала:
-       *  отголосок исключает саму строку из поиска */
+       *  отголосок исключает саму строку из поиска;
+       *  «отправить в терминал» шарит по нему */
       dbId?: string;
+      /** токен сеанса живого чтения — шаринг по нему */
+      token?: string;
     }
   | { id: number; kind: 'menu'; menuId: 'catalog' | 'guides' }
   | { id: number; kind: 'library' }
