@@ -18,9 +18,13 @@ from aiohttp import web
 from bot.router import register_handlers
 from config import logger, settings
 from core.fallbacks import (
+    _clean_questions,
+    _validate_counts,
     local_day_forecast,
     local_followup_fallback,
+    local_month_reflection,
     local_pair_fallback,
+    local_week_reflection,
     parse_forecast,
     sanitize_llm_text,
 )
@@ -29,7 +33,9 @@ from core.prompts import (
     _positions_for_question,
     build_day_forecast_prompt,
     build_follow_up_prompt,
+    build_month_prompt,
     build_pair_prompt,
+    build_week_prompt,
     get_system_prompt,
 )
 from core.quota import check_quota, reserve_quota
@@ -844,6 +850,142 @@ async def handle_forecast(request):
     return web.json_response({"forecast": fallback, "fallback": True})
 
 
+# ── Дайджесты недели и месяца (/api/week, /api/month) ────────────
+# Порт SNAP3 api/week + api/month: дайджест строит клиент, сервер валидирует
+# числа (clamp/truncate/top-N), связывает их промптом из Task 7 голосом
+# проводника; 2 попытки LLM → детерминированный фолбэк из топ-карты.
+def _digest_int(value: object, default: int = 0) -> int:
+    """Число из поля дайджеста; мусор → default (total=0 превращается в 400)."""
+    if isinstance(value, bool):
+        return default
+    if isinstance(value, (int, float)):
+        return int(value)
+    try:
+        return int(str(value).strip())
+    except (TypeError, ValueError):
+        return default
+
+
+def _clean_month_days(raw: object) -> list[dict]:
+    """days ≤62 записей {day, count}: мусорные записи долой, числа clamp."""
+    if not isinstance(raw, list):
+        return []
+    out: list[dict] = []
+    for entry in raw[:62]:
+        if not isinstance(entry, dict):
+            continue
+        day = _digest_int(entry.get("day"))
+        if not 1 <= day <= 62:
+            continue
+        out.append({"day": day, "count": max(0, min(999, _digest_int(entry.get("count"))))})
+    return out
+
+
+def _digest_character(body: dict) -> str:
+    raw = body.get("character_id")
+    return str(raw) if raw in CHARACTER_IDS else "shadow_walker"
+
+
+async def handle_week(request):
+    try:
+        body = await request.json()
+    except Exception:
+        return web.json_response({"error": "invalid json"}, status=400)
+    user = verify_telegram_init_data(body.get("init_data", ""))
+    if not user:
+        return web.json_response({"error": "unauthorized"}, status=401)
+    digest = body.get("digest")
+    if not isinstance(digest, dict):
+        return web.json_response({"error": "invalid digest"}, status=400)
+    total = _digest_int(digest.get("total"))
+    if total <= 0:
+        return web.json_response({"error": "за неделю не было чтений"}, status=400)
+    clean = {
+        "total": total,
+        "days_active": max(0, min(7, _digest_int(digest.get("days_active")))),
+        "spread_counts": _validate_counts(digest.get("spread_counts")),
+        "card_counts": _validate_counts(digest.get("card_counts")),
+        "guide_counts": _validate_counts(digest.get("guide_counts")),
+        "questions": _clean_questions(digest.get("questions")),
+        "date_from": _clean_str(digest.get("date_from"), 40),
+        "date_to": _clean_str(digest.get("date_to"), 40),
+    }
+    character_id = _digest_character(body)
+    messages = [
+        {"role": "system", "content": get_system_prompt(character_id)},
+        {"role": "user", "content": build_week_prompt(clean, character_id)},
+    ]
+
+    answer = ""
+    for _ in range(2):
+        try:
+            raw = sanitize_llm_text(
+                await _ask_llm(messages, max_tokens=900, temperature=0.85)
+            )
+        except Exception:
+            logger.warning("week: LLM attempt failed", exc_info=True)
+            raw = ""
+        if len(raw) >= 20:
+            answer = raw
+            break
+    fallback = not answer
+    if fallback:
+        answer = local_week_reflection(clean)
+    return web.json_response({"answer": answer, "fallback": fallback})
+
+
+async def handle_month(request):
+    try:
+        body = await request.json()
+    except Exception:
+        return web.json_response({"error": "invalid json"}, status=400)
+    user = verify_telegram_init_data(body.get("init_data", ""))
+    if not user:
+        return web.json_response({"error": "unauthorized"}, status=401)
+    digest = body.get("digest")
+    if not isinstance(digest, dict):
+        return web.json_response({"error": "invalid digest"}, status=400)
+    total = _digest_int(digest.get("total"))
+    if total <= 0:
+        return web.json_response({"error": "за месяц не было чтений"}, status=400)
+    clean = {
+        "total": total,
+        "days_active": max(0, min(62, _digest_int(digest.get("days_active")))),
+        "days_in_month": max(1, min(62, _digest_int(digest.get("days_in_month"), default=31))),
+        "month_name": _clean_str(digest.get("month_name"), 40),
+        "year": max(0, min(9999, _digest_int(digest.get("year")))),
+        "spread_counts": _validate_counts(digest.get("spread_counts")),
+        "card_counts": _validate_counts(digest.get("card_counts")),
+        "guide_counts": _validate_counts(digest.get("guide_counts")),
+        "majors": max(0, min(999, _digest_int(digest.get("majors")))),
+        "suit_counts": _validate_counts(digest.get("suit_counts")),
+        "days": _clean_month_days(digest.get("days")),
+        "questions": _clean_questions(digest.get("questions")),
+    }
+    character_id = _digest_character(body)
+    messages = [
+        {"role": "system", "content": get_system_prompt(character_id)},
+        {"role": "user", "content": build_month_prompt(clean, character_id)},
+    ]
+
+    answer = ""
+    for _ in range(2):
+        try:
+            raw = sanitize_llm_text(
+                await _ask_llm(messages, max_tokens=900, temperature=0.85)
+            )
+        except Exception:
+            logger.warning("month: LLM attempt failed", exc_info=True)
+            raw = ""
+        if len(raw) >= 20:
+            answer = raw
+            break
+    fallback = not answer
+    if fallback:
+        answer = local_month_reflection(clean)
+    return web.json_response({"answer": answer, "fallback": fallback})
+
+
 # ── Gzip + cache-заголовки для статики и API ─────────────────────
 # aiohttp не жмёт и не кэширует сам: JS/CSS/JSON уходили сырыми (~0.5 МБ по
 # мобильной сети), а index.html кэшировался WebView эвристически — после
@@ -889,6 +1031,8 @@ def create_webapp() -> web.Application:
     app.router.add_post('/api/events', handle_events)
     app.router.add_post('/api/ask', handle_ask)
     app.router.add_post('/api/forecast', handle_forecast)
+    app.router.add_post('/api/week', handle_week)
+    app.router.add_post('/api/month', handle_month)
     webapp_dir = Path(__file__).parent / "static" / "webapp"
     if webapp_dir.is_dir():
         index = webapp_dir / "index.html"

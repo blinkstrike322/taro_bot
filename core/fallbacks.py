@@ -110,6 +110,96 @@ def local_day_forecast(card: dict) -> dict:
     }
 
 
+# ── Дайджесты недели/месяца: чистка полей (порт SNAP3-валидации) ──
+def _validate_counts(raw: object, max_items: int = 8) -> dict[str, int]:
+    """map имя→число: ключи-строки ≤60 симв, значения clamp 0–999,
+    сортировка по убыванию, топ max_items. Мусорные ключи/значения — долой."""
+    if not isinstance(raw, dict):
+        return {}
+    items: list[tuple[str, int]] = []
+    for key, value in raw.items():
+        k = str(key).strip()[:60]
+        if not k or isinstance(value, bool):
+            continue
+        try:
+            n = int(value)
+        except (TypeError, ValueError):
+            continue
+        items.append((k, max(0, min(999, n))))
+    items.sort(key=lambda item: (-item[1], item[0]))
+    return dict(items[:max_items])
+
+
+def _clean_questions(raw: object, max: int = 5, max_len: int = 80) -> list[str]:
+    """Список вопросов оператора: строки ≤max_len симв, максимум max штук."""
+    if not isinstance(raw, (list, tuple)):
+        return []
+    out: list[str] = []
+    for q in raw:
+        if not isinstance(q, str):
+            continue
+        q = q.strip()[:max_len]
+        if q:
+            out.append(q)
+        if len(out) >= max:
+            break
+    return out
+
+
+def _times_ru(n: int) -> str:
+    """Русское «раз/раза»: 1 раз, 4 раза, 5 раз, 11 раз."""
+    if n % 100 in (11, 12, 13, 14):
+        return "раз"
+    if n % 10 == 1:
+        return "раз"
+    if n % 10 in (2, 3, 4):
+        return "раза"
+    return "раз"
+
+
+def _top_card(digest: dict) -> tuple[str, int] | None:
+    """Топ-карта дайджеста (имя, выпадений) — из уже чистого card_counts."""
+    counts = _validate_counts(digest.get("card_counts")) if isinstance(digest, dict) else {}
+    if not counts:
+        return None
+    name = next(iter(counts))
+    return name, counts[name]
+
+
+# ── Детерминированные фолбэки дайджестов: из топ-карты ────────────
+def local_week_reflection(digest: dict) -> str:
+    top = _top_card(digest)
+    if top:
+        name, count = top
+        return (
+            f"неделя прошла под знаком «{name}» — она выпала {count} {_times_ru(count)}, "
+            f"и колода не стала прятать главное: смотри, где эта карта звучала в твоих "
+            f"решениях, она и есть ответ недели. что спросишь у колоды завтра?"
+        )
+    return (
+        "неделя рассыпала знаки ровно, без одного громкого имени — колода говорила "
+        "тихо и разными голосами. вернись к дню, который помнишь ярче остальных: "
+        "там и лежит ответ. что спросишь у колоды завтра?"
+    )
+
+
+def local_month_reflection(digest: dict) -> str:
+    top = _top_card(digest)
+    if top:
+        name, count = top
+        return (
+            f"месяц прошёл под знаком «{name}» — она выпала {count} {_times_ru(count)}, "
+            f"держала весь сюжет в своих руках: колода повторяла один урок разными "
+            f"словами, и к концу месяца он стал громче. что спросишь у колоды в "
+            f"следующем месяце?"
+        )
+    return (
+        "месяц прошёл без одной главной карты — колода говорила хором, тихо и "
+        "разными голосами. самый громкий день месяца подскажет, где жил настоящий "
+        "сюжет. что спросишь у колоды в следующем месяце?"
+    )
+
+
 # ── Строгий парс JSON-прогноза ────────────────────────────────────
 # Прогноз НЕ проходит через validate_interpretation (урок T7): только
 # строгий экстрактор JSON + обязательные 9 ключей.
