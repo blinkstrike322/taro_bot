@@ -12,6 +12,7 @@ import re
 from functools import lru_cache
 from pathlib import Path
 
+import aiohttp
 from aiogram.exceptions import AiogramError
 from aiogram.types import FSInputFile, InputMediaPhoto
 
@@ -221,8 +222,9 @@ def build_share_message(
 async def send_share(bot, chat_id: int, media: list[dict] | None, text_parts: list[str]) -> None:
     """Отправить расклад ботом: фото/группа + текст частями, parse_mode="HTML".
 
-    Любая ошибка Telegram API (и транспорта под ней) → TelegramAPIError,
-    чтобы обработчик отдал единый 502.
+    Ошибка Telegram API (и транспорта под ней) → TelegramAPIError, чтобы
+    обработчик отдал единый 502; прочие исключения (баги кода) летят наружу
+    как есть — не маскируются под 502.
     """
     try:
         if media:
@@ -250,5 +252,5 @@ async def send_share(bot, chat_id: int, media: list[dict] | None, text_parts: li
             )
     except AiogramError as e:
         raise TelegramAPIError(f"telegram: {e}") from e
-    except Exception as e:  # FileNotFoundError от FSInputFile, транспорт и пр.
+    except aiohttp.ClientError as e:  # транспорт под aiogram
         raise TelegramAPIError(f"share send failed: {e}") from e

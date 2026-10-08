@@ -11,6 +11,7 @@ from urllib.parse import quote, urlencode
 import pytest
 import pytest_asyncio
 from aiohttp.test_utils import TestClient, TestServer
+from aiogram.exceptions import AiogramError
 
 import app as app_module
 import storage.db as sdb
@@ -98,23 +99,30 @@ def _row(cards: list[dict], question: str = "Вопрос?", interp: object = IN
 
 
 class FakeBot:
-    def __init__(self, fail: bool = False):
+    def __init__(self, fail: bool = False, bug: bool = False):
         self.calls: list[tuple] = []
         self.fail = fail
+        self.bug = bug
 
     async def send_photo(self, chat_id, photo, caption=None, parse_mode=None, **kw):
+        if self.bug:
+            raise TypeError("programming error in bot layer")
         if self.fail:
-            raise TelegramAPIError("telegram rejected")
+            raise AiogramError("telegram rejected")
         self.calls.append(("photo", chat_id, caption, parse_mode))
 
     async def send_media_group(self, chat_id, media, **kw):
+        if self.bug:
+            raise TypeError("programming error in bot layer")
         if self.fail:
-            raise TelegramAPIError("telegram rejected")
+            raise AiogramError("telegram rejected")
         self.calls.append(("group", chat_id, media))
 
     async def send_message(self, chat_id, text, parse_mode=None, **kw):
+        if self.bug:
+            raise TypeError("programming error in bot layer")
         if self.fail:
-            raise TelegramAPIError("telegram rejected")
+            raise AiogramError("telegram rejected")
         self.calls.append(("msg", chat_id, text, parse_mode))
 
 
@@ -368,3 +376,19 @@ async def test_handle_share_telegram_failure_502(db):
         )
         assert resp.status == 502
         assert (await resp.json())["error"] == "телеграм не принял сообщение"
+
+
+@pytest.mark.asyncio
+async def test_handle_share_programming_error_500(db):
+    """TypeError из бота — не telegram-домен: летит из send_share → 500, не 502."""
+    await _seed_reading(db, 111, "tok-bug", [CARD_1])
+    # send_share не оборачивает чужие исключения в TelegramAPIError
+    media, parts = build_share_message(_row([CARD_1]), DECK_OK)
+    with pytest.raises(TypeError):
+        await send_share(FakeBot(bug=True), 555, media, parts)
+    async with _client(FakeBot(bug=True)) as client:
+        resp = await client.post(
+            "/api/share",
+            json={"init_data": _make_init_data(111), "token": "tok-bug"},
+        )
+        assert resp.status == 500, "баг кода → 500, а не 502 «телеграм не принял»"

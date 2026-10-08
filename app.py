@@ -1028,7 +1028,9 @@ async def handle_share(request):
     try:
         await send_share(request.app["bot"], tg_id, media, text_parts)
     except TelegramAPIError:
-        logger.warning("share: telegram rejected reading tg_id=%s", tg_id)
+        logger.warning(
+            "share: telegram rejected reading tg_id=%s", tg_id, exc_info=True
+        )
         return web.json_response({"error": "телеграм не принял сообщение"}, status=502)
     return web.json_response({"ok": True})
 
