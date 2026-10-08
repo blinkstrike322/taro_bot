@@ -245,6 +245,14 @@ def _norm_name(value: object) -> str:
 
 _DAILY_FIELDS = ("проявление", "на_что_смотреть", "траектория")
 
+_TRAJECTORY_KEYS = ("утро", "день", "вечер")
+
+# ARCANUM reading v2: единственный набор ключей толкования; лишние отбрасываются
+_ALLOWED_TOP_KEYS = (
+    "intro", "short_answer", "advice", "card_meaning",
+    "позиции", "связь_карт", "проявление", "на_что_смотреть", "траектория",
+)
+
 
 def _has_daily_field(repaired: dict) -> bool:
     """Есть ли в карте дня хотя бы одно непустое дневное поле."""
@@ -259,6 +267,32 @@ def _has_daily_field(repaired: dict) -> bool:
     return False
 
 
+def _strip_emojis_deep(value):
+    if isinstance(value, str):
+        return strip_emojis(value)
+    if isinstance(value, list):
+        return [_strip_emojis_deep(item) for item in value]
+    if isinstance(value, dict):
+        return {key: _strip_emojis_deep(item) for key, item in value.items()}
+    return value
+
+
+def _positions_shape_valid(positions_raw: object, cards: list[dict]) -> bool:
+    """«позиции» — list длиной len(cards), каждый элемент с непустыми карта/трактовка."""
+    if not isinstance(positions_raw, list) or len(positions_raw) != len(cards):
+        return False
+    for item in positions_raw:
+        if not isinstance(item, dict):
+            return False
+        card_name = item.get("карта")
+        text = item.get("трактовка")
+        if not isinstance(card_name, str) or not card_name.strip():
+            return False
+        if not isinstance(text, str) or not text.strip():
+            return False
+    return True
+
+
 def validate_interpretation(
     parsed: object,
     cards: list[dict],
@@ -267,22 +301,25 @@ def validate_interpretation(
 ) -> dict | None:
     """Схемная + семантическая проверка ответа LLM о фактических картах.
 
-    LLM может вернуть красивый JSON, в котором перепутаны карты, реверсы или
-    порядок позиций. Проверяем и чиним:
-      • short_answer обязателен — без него ответ непригоден (None);
-      • карта дня обязана нести хотя бы одно дневное поле
-        (проявление / на_что_смотреть / траектория) — иначе None;
-      • позиции → пересобираем по фактическим картам: имя карты из ответа
-        находит реальную карту, её реверс и позиция берутся из бэкенда;
-      • интро/совет при отсутствии заменяются на «».
+    ARCANUM reading v2: обязателен непустой short_answer; если модель отдала
+    ключ intro — он тоже обязан быть непустой строкой (отсутствие ключа
+    терпимо: легаси/фолбэк-пути, дефолт ""). «позиции» опциональна, но если
+    присутствует — list длиной len(cards), каждый элемент с непустыми
+    карта/трактовка. Лишние ключи отбрасываются, все строки чистятся от
+    эмодзи. Легаси-шейп (card_meaning без «позиции») проходит как есть —
+    клиент нормализует.
+
+    Три карты: дополнительно пересобираем «позиции» по фактическим картам
+    (имя из ответа находит реальную карту, реверс и позиция — из бэкенда).
+    Карта дня обязана нести хотя бы одно дневное поле (проявление /
+    на_что_смотреть / траектория) — иначе None.
 
     Возвращает починенный dict или None — тогда сработает фолбэк по БД карт.
     """
     if not isinstance(parsed, dict):
         return None
 
-    repaired = dict(parsed)
-    repaired.setdefault("intro", "")
+    repaired = {key: value for key, value in parsed.items() if key in _ALLOWED_TOP_KEYS}
     repaired.setdefault("advice", "")
     # Модель иногда отдаёт прозу списком вместо строки — фронт падает
     # (CLIENT ERROR 2026-09-17). Склеиваем до схемных проверок.
@@ -299,7 +336,14 @@ def validate_interpretation(
             k: ("\n".join(str(x) for x in v if str(x).strip())
                 if isinstance(v, list) else v)
             for k, v in _traj.items()
+            if k in _TRAJECTORY_KEYS
         }
+
+    _intro = repaired.get("intro")
+    if _intro is None:
+        repaired["intro"] = ""
+    elif not isinstance(_intro, str) or not _intro.strip():
+        return None
 
     short_answer = repaired.get("short_answer")
     if not isinstance(short_answer, str) or not short_answer.strip():
@@ -356,18 +400,24 @@ def validate_interpretation(
             del p["_card_idx"]
         repaired["позиции"] = rebuilt
 
-    elif len(cards) == 1:
-        meaning = repaired.get("card_meaning")
-        if isinstance(meaning, str) and not meaning.strip():
-            repaired["card_meaning"] = []
-        elif isinstance(meaning, list):
-            repaired["card_meaning"] = [m for m in meaning if isinstance(m, str) and m.strip()]
-        elif meaning is None:
-            repaired["card_meaning"] = []
-        elif not isinstance(meaning, (str, list)):
-            repaired["card_meaning"] = []
+    else:
+        if "позиции" in repaired and not _positions_shape_valid(
+            repaired.get("позиции"), cards
+        ):
+            return None
 
-    return repaired
+        if len(cards) == 1:
+            meaning = repaired.get("card_meaning")
+            if isinstance(meaning, str) and not meaning.strip():
+                repaired["card_meaning"] = []
+            elif isinstance(meaning, list):
+                repaired["card_meaning"] = [m for m in meaning if isinstance(m, str) and m.strip()]
+            elif meaning is None:
+                repaired["card_meaning"] = []
+            elif not isinstance(meaning, (str, list)):
+                repaired["card_meaning"] = []
+
+    return _strip_emojis_deep(repaired)
 
 
 def _iter_prose(value):

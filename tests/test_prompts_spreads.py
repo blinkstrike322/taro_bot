@@ -24,9 +24,10 @@ def test_pentagram_rules():
     assert "доминирует" in p
 
 def test_shadow_requires_concrete_step():
+    # ARCANUM: «одно наблюдаемое маленькое действие» (было «конкретное»)
     p = build_reading_prompt(CARDS, None, "spark_of_chaos",
                              get_spread("shadow"), _pos("shadow"))
-    assert "конкретное" in p
+    assert "наблюдаемое" in p
 
 def test_three_uses_dynamic_positions():
     p = build_reading_prompt(CARDS, "что будет в отношениях?", "shadow_walker",
@@ -44,7 +45,8 @@ def test_mfd_third_person_and_position_records():
     cards = CARDS[:3]
     p = build_reading_prompt(cards, "он ко мне остыл?", "shadow_walker",
                              get_spread("mfd"), _pos("mfd"))
-    assert "Говори о нем в третьем лице" in p
+    # ARCANUM: «Говори о нём» (буква ё)
+    assert "Говори о нём в третьем лице" in p
     assert p.count('{"позиция":') == 3
     for name in _pos("mfd"):
         assert name in p
