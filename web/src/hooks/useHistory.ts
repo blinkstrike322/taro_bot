@@ -68,8 +68,6 @@ export function useHistory(session: TarotSession): TarotHistory {
         spreadLabel: labelFromRow(row),
         instant: true,
         characterId: row.character_id,
-        // свиток из журнала помнит дату исходного чтения
-        readAt: row.created_at,
         // строка БД — чтобы отголосок не нашёл самого себя
         dbId: row.id,
       });

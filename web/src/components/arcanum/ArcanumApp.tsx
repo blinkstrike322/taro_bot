@@ -28,12 +28,6 @@ import {
   saveArcanaDate,
 } from '@/lib/arcana';
 import {
-  buildScrollText,
-  SCROLL_FALLBACK_LABEL,
-  scrollCopiedLabel,
-  type ScrollExport,
-} from '@/lib/scroll';
-import {
   getTheme,
   normalizeThemeArg,
   readSavedTheme,
@@ -833,38 +827,8 @@ export default function ArcanumApp() {
     [characterId, echoCmd, push, setBusy, busyRef, setMode],
   );
 
-  // ── экспорт свитка: буфер обмена + запись-подтверждение ──
-  // попытка буфера стартует синхронно внутри жеста клика —
-  // иначе браузер откажет в пермиссии; сбой не смертелен:
-  // остаётся кнопка скачивания файла
-  const handleExportScroll = useCallback(
-    (scroll: ScrollExport) => {
-      const clip: Promise<boolean> = (async () => {
-        try {
-          if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
-            await navigator.clipboard.writeText(scroll.text);
-            return true;
-          }
-        } catch {}
-        return false;
-      })();
-      void clip.then((copied) => {
-        push({
-          kind: 'scroll',
-          label: copied ? scrollCopiedLabel(scroll.lineCount) : SCROLL_FALLBACK_LABEL,
-          text: scroll.text,
-          filename: scroll.filename,
-          copied,
-        });
-      });
-    },
-    [push],
-  );
-
   // ── шеринг чтения: «отправить в терминал» → /api/share ──
-  // живое чтение — токен сеанса, разворот из журнала — id строки;
-  // телеграм не принял (502/сеть) — запасной путь: свиток .txt,
-  // собранный из того же чтения (скачивание через запись scroll)
+  // живое чтение — токен сеанса, разворот из журнала — id строки
   const handleShare = useCallback(
     (entryId: number) => {
       const entry = entriesRef.current.find((e) => e.id === entryId);
@@ -882,24 +846,10 @@ export default function ArcanumApp() {
         })
         .catch(() => {
           SFX.sError();
-          const scroll = buildScrollText({
-            interpretation: entry.interpretation,
-            cards: entry.cards,
-            question: entry.question,
-            spreadLabel: entry.spreadLabel,
-            characterId: entry.characterId ?? characterId,
-            ...(entry.readAt ? { at: new Date(entry.readAt) } : {}),
-          });
-          push({
-            kind: 'scroll',
-            label: 'терминал не принял — свиток файлом',
-            text: scroll.text,
-            filename: scroll.filename,
-            copied: false,
-          });
+          pushOut([{ text: 'терминал не принял свиток · повтори позже', tone: 'err' }]);
         });
     },
-    [characterId, push, pushOut],
+    [pushOut],
   );
 
   // ── хроника карты: единый вход для команды и чипа ──
@@ -1020,8 +970,7 @@ export default function ArcanumApp() {
         spreadLabel: match.spreadLabel,
         instant: true,
         characterId: row.character_id,
-        // свиток и повторный отголосок помнят исходную строку
-        readAt: row.created_at,
+        // отголосок и шаринг помнят исходную строку
         dbId: row.id,
       });
       setMode('ЧТЕНИЕ');
@@ -1258,7 +1207,6 @@ export default function ArcanumApp() {
       onHistorySelect={handleHistorySelect}
       onAskCard={handleAskCard}
       onAskPair={handleAskPair}
-      onExportScroll={handleExportScroll}
       onEcho={handleEcho}
       onEchoSelect={handleEchoSelect}
       onChronicle={handleChronicle}

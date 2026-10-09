@@ -28,7 +28,6 @@ import { ProgressLine, PendingLine } from '@/components/arcanum/ProgressLine';
 import HistoryBlock from '@/components/arcanum/HistoryBlock';
 import RestoreOffer from '@/components/arcanum/RestoreOffer';
 import ReadingResult from '@/components/arcanum/ReadingResult';
-import ScrollLine from '@/components/arcanum/ScrollLine';
 import ArcanaBlock from '@/components/arcanum/ArcanaBlock';
 import MoonBlock from '@/components/arcanum/MoonBlock';
 import WeekBlock from '@/components/arcanum/WeekBlock';
@@ -39,7 +38,6 @@ import CardChronicleBlock from '@/components/arcanum/CardChronicleBlock';
 import EchoBlock from '@/components/arcanum/EchoBlock';
 import Typewriter from '@/components/arcanum/Typewriter';
 import ProseType from '@/components/arcanum/ProseType';
-import type { ScrollExport } from '@/lib/scroll';
 import type { EchoMatchItem, Entry, HistoryRow } from '@/lib/transcript';
 import { getTheme } from '@/lib/themes';
 
@@ -77,8 +75,6 @@ interface ShellProps {
   onAskCard: (entryId: number, cardIdx: number) => void;
   /** парный follow-up: связь двух карт из чтения */
   onAskPair: (entryId: number, cardIdxs: [number, number]) => void;
-  /** экспорт свитка: текст чтения — в буфер и файлом */
-  onExportScroll: (scroll: ScrollExport) => void;
   /** отголосок журнала: поиск прошлых чтений с общими картами */
   onEcho: (entryId: number) => void | Promise<void>;
   /** клик по отголоску: развернуть то чтение (instant) */
@@ -132,7 +128,6 @@ export default function Shell({
   onHistorySelect,
   onAskCard,
   onAskPair,
-  onExportScroll,
   onEcho,
   onEchoSelect,
   guideReadings,
@@ -415,20 +410,15 @@ export default function Shell({
               onAskCard={entry.instant ? undefined : (idx) => onAskCard(entry.id, idx)}
               onAskPair={entry.instant ? undefined : (idxs) => onAskPair(entry.id, idxs)}
               onRunCmd={onRunCmd}
-              onExportScroll={onExportScroll}
               onEcho={() => onEcho(entry.id)}
               onForecast={entry.instant ? undefined : () => onForecast?.(entry.id)}
               onChronicle={onChronicle ? (name) => onChronicle(name) : undefined}
               onShare={
                 entry.token || entry.dbId ? () => onShare?.(entry.id) : undefined
               }
-              readAt={entry.readAt}
             />
           </div>
         );
-
-      case 'scroll':
-        return <ScrollLine key={entry.id} entry={entry} />;
 
       case 'arcana':
         return (
@@ -457,7 +447,7 @@ export default function Shell({
       case 'week':
         return (
           <div key={entry.id} className="entry-pad">
-            <WeekBlock characterId={characterId} onRunCmd={onRunCmd} onExportScroll={onExportScroll} />
+            <WeekBlock characterId={characterId} onRunCmd={onRunCmd} />
           </div>
         );
 
@@ -465,7 +455,7 @@ export default function Shell({
       case 'month':
         return (
           <div key={entry.id} className="entry-pad">
-            <MonthBlock characterId={characterId} onRunCmd={onRunCmd} onExportScroll={onExportScroll} />
+            <MonthBlock characterId={characterId} onRunCmd={onRunCmd} />
           </div>
         );
 
@@ -484,7 +474,6 @@ export default function Shell({
             <HoroscopeBlock
               entry={entry}
               characterId={characterId}
-              onExportScroll={onExportScroll}
             />
           </div>
         );

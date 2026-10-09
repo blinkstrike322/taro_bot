@@ -3183,95 +3183,6 @@ button {
 /* ── polировка: каскад строк чтения при instant-восстановлении ── */
 .instant .reading-line { animation: motd-hint-in 0.5s ease-out both; }
 
-/* ═════ 19. Свиток: экспорт чтения ═══════════════════════════ */
-
-/* чип «⎘ переписать в свиток» — брат follow-up чипов; глиф ⎘
-   при касании наливается свечением — «перо касается пергамента» */
-.reading-fu-chip--scroll {
-  border-color: color-mix(in srgb, var(--guide-accent, #b5a5e6) 45%, transparent);
-  color: rgba(255, 255, 255, 0.85);
-}
-
-.reading-fu-chip--scroll:hover:not(:disabled) {
-  box-shadow: 0 0 14px color-mix(in srgb, var(--guide-accent, #b5a5e6) 25%, transparent);
-}
-
-.reading-fu-chip--scroll .chip-glyph {
-  transition: text-shadow 0.25s ease-out, color 0.25s;
-}
-
-.reading-fu-chip--scroll:hover:not(:disabled) .chip-glyph,
-.reading-fu-chip--scroll:focus-visible .chip-glyph {
-  text-shadow: 0 0 12px color-mix(in srgb, var(--guide-accent, #b5a5e6) 80%, transparent);
-}
-
-/* строка свитка в транскрипте: ок-нить слева, глиф ⎘, текст
-   ok-тоном + инлайн-ссылка на файл; вход — мягкий fade */
-.scroll-entry {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 4px 12px;
-  border-left: 2px solid color-mix(in srgb, var(--t-ok, #93c9a0) 45%, transparent);
-  padding: 3px 0 3px 10px;
-  margin: 3px 0;
-  animation: motd-hint-in 0.35s ease-out both;
-}
-
-.scroll-glyph {
-  color: var(--t-ok, #93c9a0);
-  text-shadow: 0 0 10px color-mix(in srgb, var(--t-ok, #93c9a0) 35%, transparent);
-}
-
-.scroll-label { min-width: 0; }
-
-/* кнопка-ссылка «↓ свиток.txt»: терминальное пунктирное
-   подчёркивание, hover — акцент проводника + глиф ↓ оседает */
-.scroll-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 2px 1px;
-  background: none;
-  border: none;
-  font: inherit;
-  font-size: 12.5px;
-  letter-spacing: 0.03em;
-  color: var(--t-ok, #93c9a0);
-  text-decoration: underline dotted;
-  text-decoration-thickness: 1px;
-  text-underline-offset: 4px;
-  cursor: pointer;
-  transition: color 0.22s, text-shadow 0.22s;
-}
-
-.scroll-link:hover {
-  color: var(--guide-accent, #b5a5e6);
-  text-shadow: 0 0 12px color-mix(in srgb, var(--guide-accent, #b5a5e6) 45%, transparent);
-}
-
-.scroll-link-glyph {
-  display: inline-block;
-  transition: transform 0.22s ease-out;
-}
-
-/* глиф ↓ тянется к файлу — сдвиг вниз на 1px при касании */
-.scroll-link:hover .scroll-link-glyph,
-.scroll-link:focus-visible .scroll-link-glyph {
-  transform: translateY(1px);
-}
-
-.scroll-link:focus-visible {
-  outline: 1px solid color-mix(in srgb, var(--guide-accent, #b5a5e6) 70%, transparent);
-  outline-offset: 2px;
-}
-
-/* мобильная строка свитка: тап-зона ссылки от 44px */
-@media (max-width: 479px) {
-  .scroll-entry { gap: 2px 10px; }
-  .scroll-link { padding: 12px 2px; min-height: 44px; }
-}
-
 /* reduced-motion: финальная полировка гаснет */
 @media (prefers-reduced-motion: reduce) {
   .motd-chip,
@@ -3280,15 +3191,10 @@ button {
   .err-block,
   .ok-block,
   .reading-close,
-  .instant .reading-line,
-  .scroll-entry { animation: none !important; }
+  .instant .reading-line { animation: none !important; }
   .reading-artifacts:not(.reading-artifacts--ask) .reading-artifact,
   .reading-artifacts:not(.reading-artifacts--ask) .reading-artifact .reading-artifact-img,
   .reading-artifact-btn { transition-duration: 0.01ms !important; }
-  /* свиток: fade строки, свечение глифа и ход ↓ гаснут */
-  .scroll-link,
-  .scroll-link-glyph,
-  .reading-fu-chip--scroll .chip-glyph { transition-duration: 0.01ms !important; }
 }
 
 /* cache-bust 1791330101 */
@@ -4950,38 +4856,7 @@ button {
 /* bust-27 */
 .forecast-block { outline: 1px solid transparent; }
 
-/* свиток недели: чип экспорта в дайджесте (после рефлексии) */
-.week-fu {
-  display: flex;
-  justify-content: flex-start;
-  margin-top: 10px;
-  animation: wk-part-in 0.4s ease-out backwards;
-}
 
-@keyframes wk-part-in {
-  from { opacity: 0; transform: translateY(5px); }
-  to   { opacity: 1; transform: none; }
-}
-
-/* bust-27b */
-.week-fu .reading-fu-chip { font-size: 11.5px; }
-
-@media (prefers-reduced-motion: reduce) {
-  .week-fu { animation: none !important; }
-}
-
-/* имя файла свитка: длинные имена (свиток-недели-…) не рвут
-   строку — ellipsis с min-width, полный путь в aria-label */
-.scroll-link-name {
-  max-width: 200px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-@media (max-width: 479px) {
-  .scroll-link-name { max-width: 150px; }
-}
 
 /* ═════ 28. Хроника карты: история выпадений аркана ══════════
    «ХРОНИКА КАРТЫ» — арт и грани значений переиспользуют .arc-*
@@ -5244,20 +5119,7 @@ button {
 /* bust-28 */
 .cr-block { outline: 1px solid transparent; }
 
-/* свиток прогноза: чип экспорта (после глотка) */
-.fc-fu {
-  display: flex;
-  justify-content: flex-start;
-  margin: 0 0 8px;
-  animation: fc-part-in 0.4s ease-out 1200ms backwards;
-}
 
-@media (prefers-reduced-motion: reduce) {
-  .fc-fu { animation: none !important; }
-}
-
-/* bust-28b */
-.fc-fu .reading-fu-chip { font-size: 11.5px; }
 
 /* хроника: событие реагирует на наведение — дата и расклад
    подсвечиваются, вопрос проявляется целиком (no-ellipsis) */

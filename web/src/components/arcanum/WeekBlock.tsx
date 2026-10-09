@@ -6,15 +6,15 @@
 // голосом активного проводника. Данные тянет сама — запись в
 // транскрипте view-only, ничего не хранит.
 // ─────────────────────────────────────────────────────────────
-import { ScrollText, Sun } from 'lucide-react';
+import { Sun } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import * as API from '@/lib/api';
 import type { HistoryRow } from '@/lib/transcript';
 import { buildWeekDigest, WEEK_TOP_CARDS, type WeekDigest } from '@/lib/week';
-import { buildWeekScrollText, type ScrollExport } from '@/lib/scroll';
+
 import { PendingLine } from '@/components/arcanum/ProgressLine';
 import ProseType from '@/components/arcanum/ProseType';
-import { sMenu, sSeal, haptic } from '@/lib/sound';
+import { sMenu, haptic } from '@/lib/sound';
 import deckJson from '@/lib/tarot-deck.json';
 
 /** сегментов в полосе недели — на два короче статистики */
@@ -86,11 +86,9 @@ interface WeekBlockProps {
   /** активный проводник — его голос рефлексирует неделю */
   characterId: string;
   onRunCmd: (cmd: string) => void;
-  /** экспорт свитка недели (буфер + файл) */
-  onExportScroll?: (scroll: ScrollExport) => void;
 }
 
-export default function WeekBlock({ characterId, onRunCmd, onExportScroll }: WeekBlockProps) {
+export default function WeekBlock({ characterId, onRunCmd }: WeekBlockProps) {
   const [digest, setDigest] = useState<WeekDigest | null>(null);
   const [failed, setFailed] = useState(false);
   // LLM-рефлексия: null — ждём, строка — готова
@@ -298,30 +296,6 @@ export default function WeekBlock({ characterId, onRunCmd, onExportScroll }: Wee
             )}
           </section>
 
-          {/* свиток недели: забрать дайджест с собой */}
-          {onExportScroll && (
-            <div className="week-fu" style={secDelay(5)}>
-              <button
-                type="button"
-                className="chip reading-fu-chip reading-fu-chip--scroll"
-                onClick={() => {
-                  sSeal();
-                  haptic('tick');
-                  onExportScroll(
-                    buildWeekScrollText({
-                      digest,
-                      reflection,
-                      characterId,
-                    }),
-                  );
-                }}
-                title="дайджест недели — в буфер обмена и файлом"
-              >
-                <ScrollText size={13} strokeWidth={1.75} aria-hidden="true" />
-                переписать в свиток
-              </button>
-            </div>
-          )}
         </>
       )}
     </section>

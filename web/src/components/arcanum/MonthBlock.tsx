@@ -9,15 +9,15 @@
 // Данные тянет сама (окно 62 дня), запись в транскрипте
 // view-only, ничего не хранит.
 // ─────────────────────────────────────────────────────────────
-import { ScrollText, Sun } from 'lucide-react';
+import { Sun } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import * as API from '@/lib/api';
 import type { HistoryRow } from '@/lib/transcript';
 import { buildMonthDigest, MONTH_WINDOW_DAYS, MONTH_TOP_CARDS, type MonthDigest } from '@/lib/month';
-import { buildMonthScrollText, type ScrollExport } from '@/lib/scroll';
+
 import { PendingLine } from '@/components/arcanum/ProgressLine';
 import ProseType from '@/components/arcanum/ProseType';
-import { sMenu, sSeal, haptic } from '@/lib/sound';
+import { sMenu, haptic } from '@/lib/sound';
 import deckJson from '@/lib/tarot-deck.json';
 
 /** сегментов в полосе расклада месяца — как у недели */
@@ -89,11 +89,9 @@ interface MonthBlockProps {
   /** активный проводник — его голос рефлексирует месяц */
   characterId: string;
   onRunCmd: (cmd: string) => void;
-  /** экспорт свитка месяца (буфер + файл) */
-  onExportScroll?: (scroll: ScrollExport) => void;
 }
 
-export default function MonthBlock({ characterId, onRunCmd, onExportScroll }: MonthBlockProps) {
+export default function MonthBlock({ characterId, onRunCmd }: MonthBlockProps) {
   const [digest, setDigest] = useState<MonthDigest | null>(null);
   const [failed, setFailed] = useState(false);
   // LLM-рефлексия: null — ждём, строка — готова
@@ -358,30 +356,6 @@ export default function MonthBlock({ characterId, onRunCmd, onExportScroll }: Mo
             )}
           </section>
 
-          {/* свиток месяца: забрать дайджест с собой */}
-          {onExportScroll && (
-            <div className="week-fu" style={secDelay(7)}>
-              <button
-                type="button"
-                className="chip reading-fu-chip reading-fu-chip--scroll"
-                onClick={() => {
-                  sSeal();
-                  haptic('tick');
-                  onExportScroll(
-                    buildMonthScrollText({
-                      digest,
-                      reflection,
-                      characterId,
-                    }),
-                  );
-                }}
-                title="дайджест месяца — в буфер обмена и файлом"
-              >
-                <ScrollText size={13} strokeWidth={1.75} aria-hidden="true" />
-                переписать в свиток
-              </button>
-            </div>
-          )}
         </>
       )}
     </section>

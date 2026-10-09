@@ -7,17 +7,12 @@
 // прогноз собирается — шёпот-ожидание с нитью. Каскад секций,
 // как у чтения; арт карты — миниатюрой в шапке.
 // ─────────────────────────────────────────────────────────────
-import { ScrollText } from 'lucide-react';
 import type { Entry } from '@/lib/transcript';
 import { getGuide } from '@/lib/guides';
-import { buildForecastScrollText, type ScrollExport } from '@/lib/scroll';
-import { sSeal, haptic } from '@/lib/sound';
 
 interface HoroscopeBlockProps {
   entry: Extract<Entry, { kind: 'forecast' }>;
   characterId: string;
-  /** экспорт свитка прогноза (буфер + файл) */
-  onExportScroll?: (scroll: ScrollExport) => void;
 }
 
 /** строка-шкала: ▰▱ + число (каскад сегментов, как статистика) */
@@ -41,7 +36,7 @@ function Scale({ label, value, delay }: { label: string; value: number; delay: n
   );
 }
 
-export default function HoroscopeBlock({ entry, characterId, onExportScroll }: HoroscopeBlockProps) {
+export default function HoroscopeBlock({ entry, characterId }: HoroscopeBlockProps) {
   const guide = getGuide(characterId);
   const f = entry.forecast;
   // якорь дня: «07 окт · среда» — прогноз привязан к сегодняшнему
@@ -153,33 +148,6 @@ export default function HoroscopeBlock({ entry, characterId, onExportScroll }: H
       {entry.fallback && (
         <div className="fc-fallback tl tl-faint">
           {'// отражение от колоды (без связи с эфиром)'}
-        </div>
-      )}
-
-      {/* свиток прогноза: забрать план дня с собой */}
-      {onExportScroll && (
-        <div className="fc-fu">
-          <button
-            type="button"
-            className="chip reading-fu-chip reading-fu-chip--scroll"
-            onClick={() => {
-              sSeal();
-              haptic('tick');
-              onExportScroll(
-                buildForecastScrollText({
-                  cardName: entry.cardName,
-                  reversed: entry.reversed,
-                  forecast: f,
-                  fallback: entry.fallback,
-                  characterId,
-                }),
-              );
-            }}
-            title="план дня — в буфер обмена и файлом"
-          >
-            <ScrollText size={13} strokeWidth={1.75} aria-hidden="true" />
-            переписать в свиток
-          </button>
         </div>
       )}
 

@@ -95,8 +95,6 @@ export type Entry =
       characterId?: string;
       /** id расклада — «спросить снова» повторяет расклад */
       spreadId?: string;
-      /** момент чтения (ISO) — для свитка журналных чтений */
-      readAt?: string;
       /** id строки БД — для инстант-разворотов из журнала:
        *  отголосок исключает саму строку из поиска;
        *  «отправить в терминал» шарит по нему */
@@ -125,14 +123,6 @@ export type Entry =
   | { id: number; kind: 'error'; msg: string }
   | { id: number; kind: 'ok'; msg: string }
   | { id: number; kind: 'paywall'; msg: string }
-  | {
-      /** свиток: подтверждение экспорта чтения (не restorable) */
-      id: number; kind: 'scroll';
-      label: string;
-      text: string;
-      filename: string;
-      copied?: boolean;
-    }
   | {
       /** личный аркан: нумерологическое ядро даты рождения.
        *  не restorable — после рестарта taro arcana пересчитает

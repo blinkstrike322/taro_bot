@@ -7,13 +7,12 @@
 // ─────────────────────────────────────────────────────────────
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  AudioLines, BookOpen, CloudSun, Eye, Link2, LayoutGrid, MessageCircleQuestion, ScrollText, Send, X,
+  AudioLines, BookOpen, CloudSun, Eye, Link2, LayoutGrid, MessageCircleQuestion, Send, X,
 } from 'lucide-react';
 import { getGuide } from '@/lib/guides';
 import type { TarotCard } from '@/components/arcanum/Card';
 import ProseType from '@/components/arcanum/ProseType';
 import { sMenu, sFlip, sAskOpen, sPairMark, sSeal, sRitual, haptic } from '@/lib/sound';
-import { buildScrollText, type ScrollExport } from '@/lib/scroll';
 import type { Interpretation, ReadingPosition } from '@/lib/api';
 
 interface ReadingResultProps {
@@ -27,18 +26,14 @@ interface ReadingResultProps {
   /** парный follow-up: индексы двух выбранных карт */
   onAskPair?: (cardIdxs: [number, number]) => void;
   onRunCmd?: (cmd: string) => void;
-  /** экспорт свитка: забрать чтение с собой (буфер + файл) */
-  onExportScroll?: (scroll: ScrollExport) => void;
   /** отголосок журнала: поиск прошлых чтений с общими картами */
   onEcho?: () => void | Promise<void>;
   /** прогноз дня: вывести план дня из карты дня (только daily) */
   onForecast?: () => void;
   /** хроника карты: история выпадений аркана — без набора имени */
   onChronicle?: (cardName: string) => void;
-  /** отправить в терминал: шаринг чтения в личку (фолбэк — свиток .txt) */
+  /** отправить в терминал: шаринг чтения в личку */
   onShare?: () => void;
-  /** момент чтения (ISO) — свиток журналных чтений датируется им */
-  readAt?: string;
   /** id расклада — «спросить снова» повторяет расклад, а не каталог */
   spreadId?: string;
   /** спросить снова: тот же расклад — вопрос вводится сразу */
@@ -153,12 +148,10 @@ export default function ReadingResult({
   onAskCard,
   onAskPair,
   onRunCmd,
-  onExportScroll,
   onEcho,
   onForecast,
   onChronicle,
   onShare,
-  readAt,
   spreadId,
   onAskAgain,
 }: ReadingResultProps) {
@@ -224,8 +217,6 @@ export default function ReadingResult({
     spreadLabel === 'карта дня' &&
     cardLines.length > 0 &&
     typeof onForecast === 'function';
-  // свиток доступен и журналным (instant) чтениям — забрать с собой
-  const canScroll = typeof onExportScroll === 'function';
   // отголосок: работает и для живых, и для инстант-чтений —
   // карты повторяются независимо от того, когда их вытянули
   const canEcho = cardLines.length > 0 && typeof onEcho === 'function';
@@ -244,23 +235,6 @@ export default function ReadingResult({
     haptic('tick');
     setEchoBusy(true);
     Promise.resolve(onEcho()).finally(() => setEchoBusy(false));
-  };
-
-  // переписать в свиток: текст собирается с той же фразой-закрытием,
-  // что видна на экране (closing рандомится один раз при маунте)
-  const handleExportScroll = () => {
-    if (typeof onExportScroll !== 'function') return;
-    const scroll = buildScrollText({
-      interpretation,
-      cards,
-      question,
-      spreadLabel,
-      characterId: guide.id,
-      closing,
-      // журналные чтения — датой исходного сеанса, живые — сейчас
-      ...(readAt ? { at: new Date(readAt) } : {}),
-    });
-    onExportScroll(scroll);
   };
 
   const handleCardAsk = (i: number) => {
@@ -622,8 +596,8 @@ export default function ReadingResult({
             <span className="reading-close-tag te-ok">{guide.tag}</span>
           </div>
 
-          {/* продолжение: снова / уточнение / свиток / отголосок */}
-          {(canAskAgain || canAsk || canAskPair || canScroll || canEcho || canForecast || canChronicle || canShare) && (
+          {/* продолжение: снова / уточнение / отголосок */}
+          {(canAskAgain || canAsk || canAskPair || canEcho || canForecast || canChronicle || canShare) && (
             <div className="reading-fu mt-1.5" style={{ '--guide-accent': guide.accent } as React.CSSProperties}>
               {askMode || pairMode || chronicleMode ? (
                 <button
@@ -675,16 +649,6 @@ export default function ReadingResult({
                     >
                       <LayoutGrid size={13} strokeWidth={1.75} aria-hidden="true" />
                       другой расклад
-                    </button>
-                  )}
-                  {canScroll && (
-                    <button
-                      type="button"
-                      className="chip reading-fu-chip reading-fu-chip--scroll"
-                      onClick={() => { sSeal(); haptic('tick'); handleExportScroll(); }}
-                    >
-                      <ScrollText size={13} strokeWidth={1.75} aria-hidden="true" />
-                      переписать в свиток
                     </button>
                   )}
                   {canEcho && (
