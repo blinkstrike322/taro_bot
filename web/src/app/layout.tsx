@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 import { JetBrains_Mono, Cormorant_Garamond } from "next/font/google";
+import TelegramInit from "@/components/TelegramInit";
 import "./globals.css";
 
 const mono = JetBrains_Mono({
@@ -37,6 +39,13 @@ export default function RootLayout({
   return (
     <html lang="ru" suppressHydrationWarning>
       <body className={`${mono.variable} ${serif.variable} antialiased`}>
+        {/* Официальный SDK Mini App: без него клиент не предоставляет
+            window.Telegram.WebApp → initData пуст → API отвечает E1. */}
+        <Script
+          src="https://telegram.org/js/telegram-web-app.js"
+          strategy="beforeInteractive"
+        />
+        <TelegramInit />
         {children}
       </body>
     </html>
