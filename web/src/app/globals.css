@@ -1032,7 +1032,7 @@ button {
 
 .spread-wrap {
   margin: 8px auto 4px;
-  max-width: 420px;
+  max-width: 470px;
 }
 
 .spread-wrap--single { max-width: 230px; }
@@ -1042,12 +1042,12 @@ button {
   position: relative;
   margin: 4px auto 0;
   width: 100%;
-  max-width: 400px;
+  max-width: 448px;
 }
 
-.spread-stage--pentagram { max-width: 320px; }
-.spread-stage--arc { max-width: 420px; }
-.spread-stage--spine { max-width: 400px; }
+.spread-stage--pentagram { max-width: 358px; }
+.spread-stage--arc { max-width: 470px; }
+.spread-stage--spine { max-width: 448px; }
 
 .spread-cell--slot {
   position: absolute;
@@ -1059,7 +1059,7 @@ button {
 .spread-trio {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
+  gap: 6px;
 }
 
 .spread-cell--flow { min-width: 0; }
@@ -1766,17 +1766,17 @@ button {
   .cmdbar { padding: 6px 8px calc(6px + env(safe-area-inset-bottom)); }
   .chip { font-size: 10px; min-height: 38px; }
   .reading-title { font-size: 15px; }
-  .spread-stage { max-width: 320px; }
-  .spread-stage--pentagram { max-width: 290px; }
+  .spread-stage { max-width: 340px; }
+  .spread-stage--pentagram { max-width: 320px; }
   .mr-desc { display: none; }
 }
 
 @media (min-width: 768px) {
   .shell-scroll { padding: 16px 24px 24px; }
   .cmdbar { padding: 10px 24px calc(10px + env(safe-area-inset-bottom)); }
-  .spread-wrap { max-width: 480px; }
-  .spread-stage { max-width: 440px; }
-  .spread-stage--pentagram { max-width: 380px; }
+  .spread-wrap { max-width: 535px; }
+  .spread-stage { max-width: 490px; }
+  .spread-stage--pentagram { max-width: 425px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
