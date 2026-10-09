@@ -1,6 +1,6 @@
 // ─────────────────────────────────────────────────────────────
 // moon.ts — фазы луны без библиотек: синодический цикл,
-// юлианские дни, пиксель-арт и глифы. Оккультный терминал
+// юлианские дни, векторный диск и глифы. Оккультный терминал
 // обязан знать луну — она вне досягаемости юрисдикции, но
 // не вне досягаемости арифметики.
 // ─────────────────────────────────────────────────────────────
@@ -100,58 +100,38 @@ export const PHASE_NOTES: string[] = [
   'тонкий свет — время итогов и сна. расклады отложи, слушай тишину',
 ];
 
-// ── пиксель-арт: круг 9×9, терминатор — эллипс ──
+// ── векторный диск: путь светлой части через эллипс-терминатор ──
 
-export type MoonPixel = 'lit' | 'pen' | 'dark' | 'void';
+/** viewBox диска MoonDisc: 0 0 100 100, центр 50, радиус 46 */
+const DISC_R = 46;
 
-export interface MoonArt {
-  /** 9 строк по 9 символов: ● свет, ▒ полутень, · тень, пробел вне круга */
-  rows: string[];
-  /** классы символов для раскраски (те же размеры, что rows) */
-  cls: MoonPixel[][];
+/** тёмный диск: полная окружность из двух дуг (путь, не <circle> — по контракту) */
+const DISC_PATH = `M50 4A${DISC_R} ${DISC_R} 0 1 1 50 96A${DISC_R} ${DISC_R} 0 1 1 50 4Z`;
+
+export interface MoonDiscPaths {
+  /** путь тёмного диска */
+  disc: string;
+  /** путь освещённой части: полуокружность светлой стороны + терминатор-эллипс */
+  lit: string;
 }
 
 /**
- * терминальный пиксель-арт луны 9×9, честно отражающий фазу:
- * терминатор — полуэллипс (x = C ± cosφ·√(R²−dy²));
- * при растущей луне свет справа, при убывающей — слева.
- * полутень ▒ — клетка в ~одной колонке от терминатора.
+ * геометрия векторной луны по фазе (та же математика, что у
+ * MoonGlyph статус-лайна, в масштабе блока): терминатор —
+ * эллиптическая дуга с rx = R·|1−2·illum|; при растущей луне
+ * свет справа, при убывающей — слева.
  */
-export function moonArt(phase: MoonPhase): MoonArt {
-  const R = 4.5; // радиус в клетках (круг диаметром 9)
-  const C = 4; // центр
-  const phi = (2 * Math.PI * phase.age) / SYNODIC;
-  const cosPhi = Math.cos(phi);
-  const rows: string[] = [];
-  const cls: MoonPixel[][] = [];
-  for (let row = 0; row < 9; row++) {
-    const dy = row - C;
-    const half = Math.sqrt(Math.max(0, R * R - dy * dy));
-    // терминатор: при росте сдвинут вправо от центра при cosφ>0
-    const xT = phase.waning ? C - cosPhi * half : C + cosPhi * half;
-    let line = '';
-    const lineCls: MoonPixel[] = [];
-    for (let col = 0; col < 9; col++) {
-      const dx = col - C;
-      if (dx * dx + dy * dy > R * R) {
-        line += ' ';
-        lineCls.push('void');
-        continue;
-      }
-      const dist = Math.abs(col - xT);
-      if (dist <= 0.9) {
-        line += '▒';
-        lineCls.push('pen');
-        continue;
-      }
-      const lit = phase.waning ? col <= xT : col >= xT;
-      line += lit ? '●' : '·';
-      lineCls.push(lit ? 'lit' : 'dark');
-    }
-    rows.push(line);
-    cls.push(lineCls);
-  }
-  return { rows, cls };
+export function moonDiscPaths(illum: number, waning: boolean): MoonDiscPaths {
+  const k = Math.min(0.998, Math.max(0.002, illum));
+  const gibbous = k > 0.5;
+  const rx = +(DISC_R * (gibbous ? 2 * k - 1 : 1 - 2 * k)).toFixed(2);
+  // полуокружность светлой стороны: растёт — правая, убывает — левая
+  const sideSweep = waning ? 0 : 1;
+  // терминатор (возврат снизу вверх): до четверти выпукл в светлую
+  // сторону (тонкий серп), после — в тёмную (горб)
+  const termSweep = waning ? (gibbous ? 0 : 1) : (gibbous ? 1 : 0);
+  const lit = `M50 4A${DISC_R} ${DISC_R} 0 0 ${sideSweep} 50 96A${rx} ${DISC_R} 0 0 ${termSweep} 50 4Z`;
+  return { disc: DISC_PATH, lit };
 }
 
 /** «07 окт, 07.10.2026» — подпись дня в шапке блока */

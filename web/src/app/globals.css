@@ -3542,7 +3542,7 @@ button {
 
 /* cache-bust 20-arcana-forced 1791331647 */
 
-/* ═══ 21. Луна: фаза, пиксель-арт, глиф статус-лайна ═════════ */
+/* ═══ 21. Луна: фаза, векторный диск, глиф статус-лайна ═══════ */
 
 /* блок — рамка-ритуал с углами (разметка как у arcana) */
 .moon-block {
@@ -3551,8 +3551,7 @@ button {
   padding: 14px 16px 16px;
 }
 
-/* каскад входа: шапка → арт → данные → заметка → шёпот;
-   арт стаггерится строками — как бут */
+/* каскад входа: шапка → диск → данные → заметка → шёпот */
 .moon-head,
 .moon-data,
 .moon-next,
@@ -3571,7 +3570,7 @@ button {
   to   { opacity: 1; transform: none; }
 }
 
-/* шапка: «ЛУНА» — серебристая, не акцентная */
+/* шапка: «лунный канал» — серебристая, не акцентная */
 .moon-head {
   display: flex;
   flex-wrap: wrap;
@@ -3594,51 +3593,21 @@ button {
   letter-spacing: 0.08em;
 }
 
-/* пиксель-арт 9×9: моноширинная сетка, letter-spacing 0,
-   строки pre-formatted; весь арт медленно мерцает — живая луна */
-.moon-art {
-  display: inline-block;
+/* векторный диск фазы: приходит каскадом, дальше статичен —
+   свечение задано инлайном (opacity по illum), без анимации */
+.moon-disc {
+  display: flex;
+  justify-content: center;
   margin: 4px 0 8px;
-  padding: 10px 16px;
-  font-family: var(--font-mono-crt), ui-monospace, monospace;
-  font-size: 24px;
-  line-height: 1.12;
-  letter-spacing: 0;
-  white-space: pre;
-  animation:
-    moon-part-in 0.45s ease-out 120ms backwards,
-    moon-breathe 5.5s ease-in-out 1.6s infinite;
+  padding: 8px 0 6px;
+  animation: moon-part-in 0.45s ease-out 120ms backwards;
 }
 
-/* строки арта проявляются стаггером (задержка inline) */
-.moon-art-row {
+.moon-disc-svg {
   display: block;
-  animation: moon-row-in 0.4s ease-out backwards;
+  width: 132px;
+  height: 132px;
 }
-
-@keyframes moon-row-in {
-  from { opacity: 0; transform: translateY(3px); }
-  to   { opacity: 1; transform: none; }
-}
-
-/* мерцание: почти незаметное дыхание яркости */
-@keyframes moon-breathe {
-  0%, 100% { opacity: 1; }
-  50%      { opacity: 0.92; }
-}
-
-/* пиксели: свет — тёплое серебро со свечением, тень — тусклая,
-   полутень у терминатора — между */
-.moon-px--lit {
-  color: rgba(226, 230, 240, 0.85);
-  text-shadow: 0 0 8px rgba(226, 230, 240, 0.28);
-}
-.moon-px--pen {
-  color: rgba(226, 230, 240, 0.38);
-  text-shadow: 0 0 5px rgba(226, 230, 240, 0.12);
-}
-.moon-px--dark { color: rgba(255, 255, 255, 0.13); }
-.moon-px--void { color: transparent; }
 
 /* строка данных: глиф + фаза + освещённость + возраст;
    числа яркие, названия plain, разделители « · » */
@@ -3682,6 +3651,49 @@ button {
 }
 .moon-next-soon { color: rgba(255, 255, 255, 0.7); }
 .moon-next-far  { color: rgba(255, 255, 255, 0.4); }
+
+/* «прогноз дня»: та же тихая пилюля, что луна статус-лайна —
+   терминальный тон, наведение подсвечивает голосом проводника */
+.moon-actions {
+  margin-top: 10px;
+}
+
+.moon-forecast {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid var(--crt-line-soft);
+  background: rgba(255, 255, 255, 0.03);
+  font-family: var(--font-mono-crt), ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  line-height: 1;
+  color: rgba(226, 230, 240, 0.72);
+  cursor: pointer;
+  transition: border-color 0.25s, color 0.25s, text-shadow 0.25s, background 0.25s;
+}
+
+.moon-forecast:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--guide-accent, #b5a5e6) 55%, transparent);
+  background: color-mix(in srgb, var(--guide-accent, #b5a5e6) 10%, transparent);
+  color: rgba(226, 230, 240, 0.98);
+  text-shadow: 0 0 8px rgba(226, 230, 240, 0.45);
+}
+
+.moon-forecast:hover:not(:disabled) > svg {
+  color: rgba(226, 230, 240, 0.95);
+}
+
+.moon-forecast:focus-visible {
+  outline: 1px solid rgba(226, 230, 240, 0.55);
+  outline-offset: 1px;
+}
+
+.moon-forecast > svg {
+  color: rgba(226, 230, 240, 0.6);
+  transition: color 0.25s;
+}
 
 /* заметка по фазе: серебристая нить слева (нейтральный тон) */
 .moon-note {
@@ -3747,37 +3759,40 @@ button {
   .sl-moon-label { display: inline; }
 }
 
-/* мобильный 390: арт мельче, данные переносятся, глиф не
+/* мобильный 390: диск мельче, данные переносятся, глиф не
    выталкивает часы (sl-mid сжимается с ellipsis) */
 @media (max-width: 479px) {
   .moon-block { padding: 12px 12px 14px; }
   .moon-title { font-size: 15px; letter-spacing: 0.18em; }
-  .moon-art {
-    font-size: 18px;
-    padding: 8px 12px;
-  }
+  .moon-disc { padding: 4px 0 2px; }
+  .moon-disc-svg { width: 104px; height: 104px; }
   .moon-data { font-size: 11.5px; }
   .moon-data-glyph { font-size: 13px; }
+  .moon-forecast { font-size: 10.5px; padding: 5px 10px; }
   .moon-note { font-size: 11px; }
   .moon-whisper { font-size: 11px; }
   .sl-moon { padding: 0 6px; }
 }
 
-/* reduced-motion: стаггер, мерцание и переходы гаснут */
+/* reduced-motion: каскад и переходы гаснут; диск и без того
+   статичен (свечение без анимации) */
 @media (prefers-reduced-motion: reduce) {
   .moon-head,
-  .moon-art,
-  .moon-art-row,
+  .moon-disc,
   .moon-data,
   .moon-next,
+  .moon-forecast,
   .moon-note,
   .moon-whisper { animation: none !important; }
+  .moon-forecast,
+  .moon-forecast > svg { transition-duration: 0.01ms !important; }
   .sl-moon { transition-duration: 0.01ms !important; }
 }
 
 /* cache-bust 21-moon 1791334800 */
+/* cache-bust 21-moon-vector 1791594000 */
 
-/* bust-21 .moon-art 24px pre stagger-rows breathe 1791334999 */
+/* bust-21 устарел: .moon-art заменён векторным .moon-disc 1791594000 */
 
 /* ═══════════════════════════════════════════════════════════════
    22 · ФИНАЛЬНАЯ ПОЛИРОВКА РАУНДА 4 — углы ритуальных рамок

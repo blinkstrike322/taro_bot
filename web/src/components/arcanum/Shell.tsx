@@ -189,6 +189,19 @@ export default function Shell({
     [entries],
   );
 
+  // карта дня для кнопки «прогноз дня» в лунном блоке: последнее
+  // живое чтение «карта дня» (не журнал) с картой на руках —
+  // нет карты, нет кнопки (лунный блок не сделает битый вызов)
+  const dailyForecastEntry = useMemo(() => {
+    for (let i = entries.length - 1; i >= 0; i--) {
+      const e = entries[i];
+      if (e.kind === 'json' && !e.instant && e.spreadLabel === 'карта дня' && e.cards.length > 0) {
+        return e;
+      }
+    }
+    return null;
+  }, [entries]);
+
   // глиф сигила сшит из контекста чтения: проводник + карта дня
   // (id и имя); карта ещё не вытянута — глиф держится на проводнике
   const sigilSeed = useMemo(() => {
@@ -421,11 +434,19 @@ export default function Shell({
           </div>
         );
 
-      // фаза луны: блок пересчитывает дату сам
+      // фаза луны: блок пересчитывает дату сам; «прогноз дня» —
+      // тот же обработчик, что чип на чтении карты дня
       case 'moon':
         return (
           <div key={entry.id} className="entry-pad">
-            <MoonBlock characterId={characterId} />
+            <MoonBlock
+              characterId={characterId}
+              onForecast={
+                dailyForecastEntry && onForecast
+                  ? () => onForecast(dailyForecastEntry.id)
+                  : undefined
+              }
+            />
           </div>
         );
 
