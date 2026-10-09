@@ -3737,7 +3737,7 @@ button {
 .sl-moon::after {
   content: '';
   position: absolute;
-  top: -6px;
+  top: -9px;
   bottom: 0;
   left: -4px;
   right: -4px;
@@ -4400,7 +4400,7 @@ button {
 .sl-theme::after {
   content: '';
   position: absolute;
-  top: -6px;
+  top: -9px;
   bottom: 0;
   left: -4px;
   right: -4px;
