@@ -120,16 +120,34 @@ def _chunk_text(text: str, limit: int = MAX_TEXT_PART) -> list[str]:
     return parts
 
 
+def _escaped_fit(question: str, room: int) -> str:
+    """Самый длинный префикс вопроса, чья html-экранированная форма ≤ room."""
+    if room <= 0:
+        return ""
+    lo, hi = 0, len(question)
+    while lo < hi:
+        mid = (lo + hi + 1) // 2
+        if len(html.escape(question[:mid])) <= room:
+            lo = mid
+        else:
+            hi = mid - 1
+    return html.escape(question[:lo])
+
+
 def _build_caption(reading_row: dict, guide: str, cards: list[dict]) -> str:
     """HTML-подпись ≤1024: проводник/дата/вопрос/карты — всё экранировано.
 
     Варианты по убыванию детальности: полный вопрос → обрезанный вопрос →
-    без вопроса → только счётчик карт. Все варианты — валидный HTML.
+    без вопроса → только счётчик карт. Бюджет обрезки метрится по
+    экранированной длине: '& < >' раздуваются до ×5, и срез по сырой длине
+    вылетал за лимит Telegram. Если не влезает даже минимальный вариант —
+    возвращается последний, как и раньше.
     """
     header = f"<b>🔮 {html.escape(guide)}</b>"
     date_line = f"<i>{html.escape(str(reading_row.get('created_at') or '')[:16])}</i>"
     base = f"{header}\n{date_line}"
     question = str(reading_row.get("question") or "").strip()
+    eq = html.escape(question)
     card_lines = [
         f"🃏 <b>{html.escape(str(c.get('name') or 'Карта'))}</b>{_orientation_suffix(c)}"
         for c in cards
@@ -139,18 +157,18 @@ def _build_caption(reading_row: dict, guide: str, cards: list[dict]) -> str:
     variants: list[str] = []
     if cards_block:
         if question:
-            variants.append(f"{base}\n\n❓ {html.escape(question)}\n\n{cards_block}")
-            budget = MAX_CAPTION_LEN - len(f"{base}\n\n❓ \n\n{cards_block}") - 1
-            if budget > 50 and len(question) > budget:
-                variants.append(f"{base}\n\n❓ {html.escape(question[:budget])}…\n\n{cards_block}")
+            variants.append(f"{base}\n\n❓ {eq}\n\n{cards_block}")
+            room = MAX_CAPTION_LEN - len(f"{base}\n\n❓ …\n\n{cards_block}")
+            if room > 50 and len(eq) > room:
+                variants.append(f"{base}\n\n❓ {_escaped_fit(question, room)}…\n\n{cards_block}")
         variants.append(f"{base}\n\n{cards_block}")
     else:
-        body = f"❓ {html.escape(question)}" if question else "🃏 карта"
+        body = f"❓ {eq}" if question else "🃏 карта"
         variants.append(f"{base}\n\n{body}")
         if question:
-            q_budget = MAX_CAPTION_LEN - len(f"{base}\n\n❓ ") - 1
-            if q_budget > 50 and len(question) > q_budget:
-                variants.append(f"{base}\n\n❓ {html.escape(question[:q_budget])}…")
+            room = MAX_CAPTION_LEN - len(f"{base}\n\n❓ …")
+            if room > 50 and len(eq) > room:
+                variants.append(f"{base}\n\n❓ {_escaped_fit(question, room)}…")
     for variant in variants:
         if len(variant) <= MAX_CAPTION_LEN:
             return variant

@@ -17,6 +17,7 @@ import app as app_module
 import storage.db as sdb
 from core.tg_share import (
     TelegramAPIError,
+    _build_caption,
     build_share_message,
     resolve_reading,
     send_share,
@@ -255,6 +256,27 @@ def test_build_media_paths_resolve_inside_cards_dir():
     p = app_module.Path(str(media[0]["media"]))
     assert p.is_file()
     assert CARDS_DIR.resolve() in p.resolve().parents
+
+
+# ── _build_caption: бюджет обрезки по ЭКРАНИРОВАННОЙ длине вопроса ───
+
+def test_caption_escaped_expansion_never_exceeds_1024():
+    """&<>-тяжёлый вопрос: '&'*1100 — сырая длина проходит проверку
+    len(question) > q_budget, но escape раздувает ×5 → caption > 1024."""
+    row = _row([], question="&" * 1100)
+    caption = _build_caption(row, "shadow_walker", [])
+    assert len(caption) <= 1024
+    assert caption.endswith("…"), "вопрос обрезан, а не выброшен"
+
+
+def test_caption_truncates_on_escaped_length_not_raw():
+    """Сырой len('&'*400) влезает в сырой бюджет, экранированная ×5 — нет:
+    старый код не добавлял обрезанный вариант и терял вопрос целиком."""
+    row = _row([CARD_1], question="&" * 400)
+    caption = _build_caption(row, "shadow_walker", [{"id": "the-moon", "name": "Луна"}])
+    assert len(caption) <= 1024
+    assert "&amp;" in caption, "часть вопроса сохранена"
+    assert "…\n\n🃏" in caption, "вопрос обрезан, а не выброшен"
 
 
 # ── send_share (FakeBot) ─────────────────────────────────────────────
