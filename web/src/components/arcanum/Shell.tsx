@@ -466,7 +466,7 @@ export default function Shell({
       // покрытие фосфора: список тем, активная — live
       case 'theme':
         return (
-          <div key={entry.id} className="entry-pad">
+          <div key={entry.id} data-eid={entry.id} className="entry-pad">
             <ThemeBlock activeId={themeId ?? 'classic'} onSelect={(id) => onThemeSelect?.(id)} />
           </div>
         );
