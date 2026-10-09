@@ -273,7 +273,10 @@ export function useSpread(session: TarotSession, whisper: TarotWhisper): TarotSp
 
         if (entry.kind === 'daily' && !entry.flipped) {
           const reveal = async () => {
+            // между вскрытием и приходом толкования — строка-индикатор с брайль-спиннером
+            const pendId = push({ kind: 'pending', label: 'письмо о «карте дня»' });
             const interp = await waitWhisperReady(entryId, entry, resolveWhisper);
+            setEntries((prev) => prev.filter((e) => e.id !== pendId));
             if (!interp) return;
             push({
               kind: 'json',
@@ -297,7 +300,10 @@ export function useSpread(session: TarotSession, whisper: TarotWhisper): TarotSp
           const allFlipped = flipped.every(Boolean);
           if (allFlipped) {
             const reveal = async () => {
+              // между вскрытием последней карты и приходом толкования — строка-индикатор
+              const pendId = push({ kind: 'pending', label: `письмо о «${entry.spreadLabel}»` });
               const interp = await waitWhisperReady(entryId, entry, resolveWhisper);
+              setEntries((prev) => prev.filter((e) => e.id !== pendId));
               if (!interp) return;
               push({
                 kind: 'json',

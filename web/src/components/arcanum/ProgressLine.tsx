@@ -37,6 +37,7 @@ const SWEEP_FRAMES = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '�
 export function PendingLine({ label }: { label: string }) {
   const [frame, setFrame] = useState(0);
   useEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     const t = setInterval(() => setFrame((f) => (f + 1) % SWEEP_FRAMES.length), 110);
     return () => clearInterval(t);
   }, []);
