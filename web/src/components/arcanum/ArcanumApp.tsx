@@ -43,7 +43,7 @@ import { resolveCardQuery, type ChronicleCard } from '@/lib/chronicle';
 import { useTarotSession } from '@/hooks/useTarotSession';
 import { useSound } from '@/hooks/useSound';
 import { useWhisper } from '@/hooks/useWhisper';
-import { useHistory } from '@/hooks/useHistory';
+import { useHistory, cardsFromHistory } from '@/hooks/useHistory';
 import { useGuide } from '@/hooks/useGuide';
 import { useSpread } from '@/hooks/useSpread';
 import * as sessionStore from '@/lib/sessionPersist';
@@ -977,13 +977,7 @@ export default function ArcanumApp() {
     (match: EchoMatchItem) => {
       if (busyRef.current) return;
       const row = match.row;
-      const data = row.cards_data;
-      const cards: API.TarotCardData[] = Array.isArray(data)
-        ? (data as API.TarotCardData[])
-        : Array.isArray(data?.cards)
-          ? (data.cards as API.TarotCardData[])
-          : [];
-      const norm = cards.map((c) => ({
+      const norm = cardsFromHistory(row.cards_data).map((c) => ({
         ...c,
         image_url: c.image_url || `/cards/${c.id}.png`,
       }));

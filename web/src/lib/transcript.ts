@@ -27,6 +27,9 @@ export interface TarotCard {
 export interface HistoryCardsData {
   cards?: TarotCard[];
   spread_type?: string;
+  /** легаси карты дня: {chosen_index, chosen_card} — старые строки журнала */
+  chosen_index?: number;
+  chosen_card?: TarotCard;
 }
 
 export interface HistoryRow {

@@ -7,12 +7,27 @@
 import { useCallback } from 'react';
 import * as API from '@/lib/api';
 import { SPREADS } from '@/lib/spreads';
-import type { HistoryRow } from '@/lib/transcript';
+import type { HistoryCardsData, HistoryRow, TarotCard } from '@/lib/transcript';
 import type { TarotSession } from '@/hooks/useTarotSession';
 
 export interface TarotHistory {
   runHistory: () => Promise<void>;
   handleHistorySelect: (row: HistoryRow) => void;
+}
+
+/**
+ * cards_data строки журнала → карты для разворота. Три исторических формата:
+ * массив карт, {cards, spread_type} (текущий) и {chosen_index, chosen_card}
+ * (легаси карты дня — без него старые дневные строки открывались без арта).
+ */
+export function cardsFromHistory(
+  cardsData: HistoryCardsData | TarotCard[] | null | undefined,
+): API.TarotCardData[] {
+  if (Array.isArray(cardsData)) return cardsData as API.TarotCardData[];
+  const cards = cardsData?.cards;
+  if (Array.isArray(cards)) return cards as API.TarotCardData[];
+  const legacy = cardsData?.chosen_card;
+  return legacy ? [legacy as API.TarotCardData] : [];
 }
 
 export function useHistory(session: TarotSession): TarotHistory {
@@ -38,13 +53,7 @@ export function useHistory(session: TarotSession): TarotHistory {
   /** тап по строке → полный сеанс в транскрипте */
   const handleHistorySelect = useCallback(
     (row: HistoryRow) => {
-      const data = row.cards_data;
-      const cards: API.TarotCardData[] = Array.isArray(data)
-        ? (data as API.TarotCardData[])
-        : Array.isArray(data?.cards)
-          ? (data.cards as API.TarotCardData[])
-          : [];
-      const norm = cards.map((c) => ({
+      const norm = cardsFromHistory(row.cards_data).map((c) => ({
         ...c,
         image_url: c.image_url || `/cards/${c.id}.png`,
       }));
