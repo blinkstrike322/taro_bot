@@ -286,6 +286,22 @@ async def handle_disk_usage(request):
     return web.json_response(usage)
 
 
+async def handle_schema(request):
+    # Диагностика схемы для админов (бой 09.10.2026: код с миграциями,
+    # а в прод-БД нет колонок). Таблицы зашиты — инъекции некуда.
+    init_data = request.query.get('init_data', '')
+    user = verify_telegram_init_data(init_data)
+    if not user or user.get('id') not in _admin_tg_ids():
+        return web.json_response({"error": "forbidden"}, status=403)
+    from storage.db import get_db
+    db = await get_db()
+    out = {}
+    for table in ("users", "readings"):
+        cursor = await db.execute(f"PRAGMA table_info({table})")
+        out[table] = [{"name": row[1], "type": row[2]} for row in await cursor.fetchall()]
+    return web.json_response(out)
+
+
 CHARACTER_IDS = ("shadow_walker", "ruin_keeper", "spark_of_chaos")
 
 
@@ -1073,6 +1089,11 @@ async def gzip_cache_middleware(request, handler):
     if request.path.startswith("/_next/static/"):
         # хэшированные ассеты Next.js — вечный кэш
         resp.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+    elif request.path.startswith(("/cards/", "/guides/")):
+        # арты карт/проводников: ревизия сети на каждое вскрытие давала
+        # чёрные лица карт (бой 09.10.2026) — сутки из кэша без revalidate.
+        # арт меняется редко; у рубашек есть ?v=, у лиц — смена имён файлов
+        resp.headers["Cache-Control"] = "public, max-age=86400"
     else:
         resp.headers["Cache-Control"] = "no-cache"
     if (
@@ -1094,6 +1115,7 @@ def create_webapp(bot: Bot | None = None) -> web.Application:
     app.router.add_get('/api/readings', handle_readings)
     app.router.add_get('/api/stats', handle_stats)
     app.router.add_get('/api/disk', handle_disk_usage)
+    app.router.add_get('/api/schema', handle_schema)
     app.router.add_get('/api/character', handle_character)
     app.router.add_post('/api/character', handle_character_set)
     app.router.add_post('/api/spread/begin', handle_spread_begin)

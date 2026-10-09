@@ -33,3 +33,21 @@ async def test_get_user_returns_new_fields(db):
     assert fresh is not None
     assert fresh.streak_days == 0 and fresh.morning_streak == 0
     assert fresh.last_daily_at is None and fresh.last_morning_at is None
+
+@pytest.mark.asyncio
+async def test_migrate_unexpected_errors_raise(tmp_path):
+    # Бой 09.10.2026: широкое except прятало битую схему.
+    # На пустой БД (нет таблиц) — «no such table», не duplicate-column → вверх.
+    import aiosqlite as _aiosqlite
+
+    conn = await _aiosqlite.connect(str(tmp_path / "empty.db"))
+    with pytest.raises(_aiosqlite.OperationalError):
+        await sdb._migrate_schema(conn)
+    await conn.close()
+
+
+@pytest.mark.asyncio
+async def test_migrate_covers_readings_columns(db):
+    cursor = await db.execute("PRAGMA table_info(readings)")
+    cols = {row[1] for row in await cursor.fetchall()}
+    assert {"status", "completed_at", "error", "client_token"} <= cols

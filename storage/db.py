@@ -1,7 +1,10 @@
 import json
+import logging
 from datetime import UTC, datetime
 
 import aiosqlite
+
+logger = logging.getLogger(__name__)
 
 from .events import _CREATE_EVENTS_TABLE
 from .models import Reading, User
@@ -309,7 +312,12 @@ async def get_reading_by_id(
 
 
 async def _migrate_schema(db: aiosqlite.Connection) -> None:
-    """Idiomatic SQLite migrations — try ALTER, ignore if exists."""
+    """Idiomatic SQLite migrations — try ALTER, ignore if exists.
+
+    Глотаем ТОЛЬКО «колонка уже есть»: широкое except OperationalError
+    однажды спрятало битую схему прода (бой 09.10.2026 — no such column
+    при живых миграциях в коде). Остальное — вслух, в лог и наверх.
+    """
     migrations = [
         "ALTER TABLE users ADD COLUMN streak_days INTEGER DEFAULT 0",
         "ALTER TABLE users ADD COLUMN last_daily_at TEXT",
@@ -327,8 +335,25 @@ async def _migrate_schema(db: aiosqlite.Connection) -> None:
         try:
             await db.execute(sql)
             await db.commit()
-        except aiosqlite.OperationalError:
-            pass  # column already exists
+        except aiosqlite.OperationalError as e:
+            if "duplicate column name" not in str(e).lower():
+                logger.error("migration failed: %s (%s)", sql, e)
+                raise
+
+    # Пост-проверка: колонки обязаны быть на месте после миграций.
+    # Только лог (не raise): проверка не должна ронять старт из-за
+    # собственной ошибки, диагностика — в логах и /api/schema.
+    for table, expected in (
+        ("users", ("streak_days", "last_daily_at", "morning_streak",
+                   "last_morning_at", "subscription_end", "first_month_done",
+                   "notifications_enabled")),
+        ("readings", ("status", "completed_at", "error", "client_token")),
+    ):
+        cursor = await db.execute(f"PRAGMA table_info({table})")
+        have = {row[1] for row in await cursor.fetchall()}
+        missing = [c for c in expected if c not in have]
+        if missing:
+            logger.error("schema drift: %s missing columns %s", table, missing)
 
     # Backfill: легаси-строки с реальным толкованием — completed, остальные
     # остаются 'reserved' (in-flight на момент рестарта) — их добьёт sweep.

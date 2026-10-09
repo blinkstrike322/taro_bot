@@ -45,6 +45,38 @@ _RU_REASONING_RE = re.compile(
 _ANSWER_ANNOUNCE_RE = re.compile(r"Напишу\s*:\s*")
 _MIN_ANSWER_LEN = 20
 
+# ── Англоязычный chain-of-thought в ответе (бой 09.10.2026) ──────
+# Reasoning-модели иногда отдают планирование целиком на английском
+# («Let me analyze…», «The user provides…», «I need to respond as…»):
+# русские маркеры выше его не ловят, и мусор уходил пользователям
+# month/arcana-потоков как «готовый ответ». Легитимные ответы — строго
+# русские (терминал, lowercase), английских planning-оборотов в них нет,
+# поэтому срез по первому маркеру безопасен: голова без маркеров —
+# ответ (хвостовые самопроверки), иначе — мусор целиком в retry/fallback.
+_EN_COT_RE = re.compile(
+    r"(\blet me\s|\bi need to\b|\bwe need\b|\bthe user\b|"
+    r"\bi(['’]ll| will)\s+(draft|respond|write|connect|answer)\b|"
+    r"\bwait,\s*let me\b|\bpersona\b|\btrickster\b|\bkey points\b|"
+    r"\bmy (draft|final)\b|\bfinal (line|answer)\b)",
+    re.IGNORECASE,
+)
+
+
+def _strip_en_cot(text: str) -> str:
+    """Отрезать английский CoT: голова до первого маркера — кандидат
+    в ответ; маркер в начале (дамп целиком) — пусто в retry/fallback."""
+    cut = _EN_COT_RE.search(text)
+    if not cut:
+        return text
+    head = text[:cut.start()].strip()
+    if (
+        len(head) >= _MIN_ANSWER_LEN
+        and not _RU_REASONING_RE.search(head)
+        and not _EN_COT_RE.search(head)
+    ):
+        return head
+    return ""
+
 
 def strip_reasoning_dump(text: str) -> str:
     """Отрезать ризонинг, оставить готовый ответ; ответа под мусором нет — «»."""
@@ -71,8 +103,8 @@ def strip_reasoning_dump(text: str) -> str:
 
 
 def clean_llm_answer(text: str) -> str:
-    """Полная чистка прозы LLM: sanitize + срез ризонинга."""
-    return strip_reasoning_dump(sanitize_llm_text(text))
+    """Полная чистка прозы LLM: sanitize + срез ризонинга (RU + EN CoT)."""
+    return _strip_en_cot(strip_reasoning_dump(sanitize_llm_text(text)))
 
 
 # ── Голос проводника для фолбэков ────────────────────────────────

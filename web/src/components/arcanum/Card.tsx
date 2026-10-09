@@ -94,6 +94,15 @@ function makeBurstParticles(alphabet: string, count = 18): BurstParticle[] {
 
 let revealNoteCounter = 0;
 
+/** битая картинка = чёрное лицо карты (фон подложки #000):
+ *  одна попытка перезагрузки с cache-buster, дальше — как есть */
+function retryImageOnce(e: React.SyntheticEvent<HTMLImageElement>): void {
+  const img = e.currentTarget;
+  if (img.dataset.retried) return;
+  img.dataset.retried = '1';
+  img.src = `${img.src}${img.src.includes('?') ? '&' : '?'}retry=1`;
+}
+
 export default function Card({
   card,
   position,
@@ -190,6 +199,7 @@ export default function Card({
                 alt=""
                 className="card-img"
                 loading="lazy"
+                onError={retryImageOnce}
               />
               <div
                 className="absolute inset-0 pointer-events-none"
@@ -204,6 +214,7 @@ export default function Card({
                 src={card.image_url}
                 alt={card.name}
                 className={`card-img crt-distort flip-glitch ${card.is_reversed ? 'card-img--rev' : ''}`}
+                onError={retryImageOnce}
               />
               {card.is_reversed && (
                 <span className="card-rev-mark" style={{ color: guide.accent }} aria-hidden="true">⧖</span>

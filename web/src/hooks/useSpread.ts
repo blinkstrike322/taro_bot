@@ -38,6 +38,18 @@ export function readLastSpread(): string | null {
 const toTarotCards = (cards: API.TarotCardData[]): TarotCard[] =>
   cards.map((c) => ({ ...c, image_url: c.image_url || `/cards/${c.id}.png` }));
 
+/** прогрев картинок раздачи в кэш браузера: вскрытие не должно
+ *  застать пустой <img> (лицо с фоном #000 = чёрный прямоугольник) */
+function preloadSpreadImages(cards: API.TarotCardData[]): void {
+  try {
+    for (const c of cards) {
+      const img = new Image();
+      img.decoding = 'async';
+      img.src = c.image_url || `/cards/${c.id}.png`;
+    }
+  } catch {}
+}
+
 /** готовность шёпота к моменту вскрытия последней карты */
 async function waitWhisperReady(
   entryId: number,
@@ -100,6 +112,7 @@ export function useSpread(session: TarotSession, whisper: TarotWhisper): TarotSp
         950,
         API.spreadBegin('daily', null, characterId, localHour),
       );
+      preloadSpreadImages(res.cards);
       pushOut([{ text: 'карта выбрана · коснись, чтобы вскрыть', tone: 'dim' }]);
 
       // итог ритуала: рассвет пойман или день закрыт впустую
@@ -168,6 +181,7 @@ export function useSpread(session: TarotSession, whisper: TarotWhisper): TarotSp
           1100,
           API.spreadBegin(cards === 1 ? 'single' : 'three', question, characterId),
         );
+        preloadSpreadImages(res.cards);
 
         const positions = res.positions;
         const spreadId = res.spread_id ?? (cards === 1 ? 'single' : 'three');
@@ -225,6 +239,7 @@ export function useSpread(session: TarotSession, whisper: TarotWhisper): TarotSp
       try {
         await echoCmd(spread.cmd + (question ? ` "${question}"` : ''));
         const res = await progressWith('тасование колоды', 1100, API.spreadBegin(spreadId, question, characterId));
+        preloadSpreadImages(res.cards);
 
         const positions = res.positions;
         pushOut([
