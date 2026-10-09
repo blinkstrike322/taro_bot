@@ -83,6 +83,9 @@ function visibleFor(filter: LibFilter, query: string): DeckCard[] {
 }
 
 export default function LibraryBlock() {
+  // библиотека закрыта по умолчанию: сетка из 78 карт тяжеловесна,
+  // запись в транскрипте начинается со свёрнутой шапки
+  const [libOpen, setLibOpen] = useState(false);
   const [filter, setFilter] = useState<LibFilter>('all');
   const [query, setQuery] = useState('');
   // открытая карта и карта, которая ещё рендерится в панели
@@ -145,6 +148,18 @@ export default function LibraryBlock() {
     haptic('tick');
     // даём панели схлопнуться, потом убираем содержимое
     setTimeout(() => setShownId(null), 240);
+  };
+
+  const openLib = () => {
+    setLibOpen(true);
+    sMenu();
+    haptic('tick');
+  };
+
+  const closeLib = () => {
+    setLibOpen(false);
+    sMenu();
+    haptic('tick');
   };
 
   const openCard = (card: DeckCard) => {
@@ -232,6 +247,28 @@ export default function LibraryBlock() {
     sCellTick();
   };
 
+  if (!libOpen) {
+    return (
+      <div className="lib-block" ref={rootRef}>
+        <div className="lib-head">
+          <span className="tl tl-bright tl-semibold lib-title">БИБЛИОТЕКА АРКАНОВ</span>
+          <span className="tl tl-faint lib-sub">
+            ── {DECK.length} арканов ──
+          </span>
+          <button
+            type="button"
+            className="lib-collapse"
+            onClick={openLib}
+            aria-expanded={false}
+            aria-label="открыть библиотеку арканов"
+          >
+            открыть библиотеку
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="lib-block" ref={rootRef}>
       {/* шапка — в тон меню-заголовкам */}
@@ -240,6 +277,15 @@ export default function LibraryBlock() {
         <span className="tl tl-faint lib-sub">
           ── {DECK.length} арканов · тапни карту — она расскажет о себе ──
         </span>
+        <button
+          type="button"
+          className="lib-collapse"
+          onClick={closeLib}
+          aria-expanded={true}
+          aria-label="скрыть библиотеку арканов"
+        >
+          ✕ скрыть библиотеку
+        </button>
       </div>
 
       {/* фильтры по мастям */}

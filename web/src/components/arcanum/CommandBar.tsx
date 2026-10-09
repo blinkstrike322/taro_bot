@@ -8,7 +8,7 @@
 // min-height 34px (38px на узких) — тач-таргеты. safe-area учтён.
 // ─────────────────────────────────────────────────────────────
 import { useEffect, useRef, useState } from 'react';
-import { CircleHelp, Compass, History, Sparkles, Volume2, VolumeX, X } from 'lucide-react';
+import { BookOpen, CircleHelp, Compass, History, Sparkles, Volume2, VolumeX, X } from 'lucide-react';
 import { shellUser, COMMAND_HINTS } from '@/lib/commands';
 import { sEnter, sKey, sMenu, haptic } from '@/lib/sound';
 
@@ -25,13 +25,14 @@ interface CommandBarProps {
 }
 
 // иконки — lucide (открытый банк, MIT): вопрос, расклады,
-// проводники, журнал-циферблат. Чип «день» убран по дизайн-ревью:
+// проводники, журнал-циферблат, библиотека-книга. Чип «день» убран по дизайн-ревью:
 // карта дня доступна из баннера ритуала и команды taro daily.
 const QUICK_CHIPS: { cmd: string; label: string; Icon: typeof CircleHelp }[] = [
   { cmd: 'taro ask', label: 'спроси', Icon: CircleHelp },
   { cmd: 'taro catalog', label: 'расклады', Icon: Sparkles },
   { cmd: 'taro guides', label: 'проводники', Icon: Compass },
   { cmd: 'taro history', label: 'журнал', Icon: History },
+  { cmd: 'taro library', label: 'библиотека', Icon: BookOpen },
 ];
 
 export default function CommandBar({
