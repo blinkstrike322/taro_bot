@@ -1,10 +1,11 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+
 import pytest
 import pytest_asyncio
+
 import storage.db as sdb
 from core.ritual import touch_daily_streak
 
-UTC = timezone.utc
 
 def _dt(s):
     return datetime.strptime(s, "%Y-%m-%d %H:%M:%S").replace(tzinfo=UTC)

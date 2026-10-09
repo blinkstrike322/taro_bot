@@ -10,7 +10,7 @@
 # gap-математика всегда по UTC, локальность учитывается только часом клиента.
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 _FMT = "%Y-%m-%d %H:%M:%S"
 
@@ -19,7 +19,7 @@ def _parse(ts: str | None) -> datetime | None:
     if not ts:
         return None
     try:
-        return datetime.strptime(ts.replace("T", " "), _FMT).replace(tzinfo=timezone.utc)
+        return datetime.strptime(ts.replace("T", " "), _FMT).replace(tzinfo=UTC)
     except ValueError:
         return None
 
@@ -29,12 +29,12 @@ def _start_of_day(d: datetime) -> datetime:
 
 
 def _fmt(d: datetime) -> str:
-    return d.astimezone(timezone.utc).strftime(_FMT)
+    return d.astimezone(UTC).strftime(_FMT)
 
 
 async def touch_daily_streak(db, user, local_hour: int | None, now: datetime | None = None) -> dict:
     """Обновить серии после карты дня; вернуть итог ритуала для клиента."""
-    now = now or datetime.now(timezone.utc)
+    now = now or datetime.now(UTC)
     morning = isinstance(local_hour, int) and 0 <= local_hour < 12
 
     last = _parse(user.last_daily_at)

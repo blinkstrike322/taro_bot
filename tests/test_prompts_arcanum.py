@@ -4,8 +4,8 @@
 #   • «позиция фильтрует карту» → «ПОЗИЦИЯ ФИЛЬТРУЕТ КАРТУ» (ремесло, приём 1)
 #   • «элементальные соответствия» → строка стихий Golden Dawn (приём 3)
 #   • «эмодзи» → «ЭМОДЗИ» (NO_EMOJI_RULE в SNAP3 капсом)
-from core.prompts import get_system_prompt, build_reading_prompt, build_day_forecast_prompt
 from core.llm import validate_interpretation
+from core.prompts import build_day_forecast_prompt, build_reading_prompt, get_system_prompt
 
 CARDS = [
     {"id": "the-fool", "name": "Шут", "orientation": "прямое", "upright": "н", "reversed": "п"},

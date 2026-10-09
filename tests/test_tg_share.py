@@ -10,8 +10,8 @@ from urllib.parse import quote, urlencode
 
 import pytest
 import pytest_asyncio
-from aiohttp.test_utils import TestClient, TestServer
 from aiogram.exceptions import AiogramError
+from aiohttp.test_utils import TestClient, TestServer
 
 import app as app_module
 import storage.db as sdb
