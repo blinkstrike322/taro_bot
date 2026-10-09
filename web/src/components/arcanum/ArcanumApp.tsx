@@ -539,10 +539,19 @@ export default function ArcanumApp() {
               applyTheme(want);
               return;
             }
-            // без аргумента (или уже активна) — список тем
+            // без аргумента (или уже активна) — список тем.
+            // повторный вызов не дублирует: остаётся последний,
+            // старые убираются, к нему мотаем со вспышкой
             await echoCmd('taro theme');
             SFX.sMenu();
-            push({ kind: 'theme' });
+            const themes = entriesRef.current.filter((e) => e.kind === 'theme');
+            if (themes.length === 0) {
+              push({ kind: 'theme' });
+            } else {
+              const latest = themes[themes.length - 1];
+              setEntries((prev) => prev.filter((e) => e.kind !== 'theme' || e.id === latest.id));
+              scrollToEntry(latest.id);
+            }
             setMode('МЕНЮ');
             return;
           }
