@@ -151,14 +151,17 @@ export async function pollInterpretation(
   }
 }
 
-export async function getCharacter(): Promise<string> {
+export async function getCharacter(): Promise<string | null> {
+  // null при любой ошибке сервера: вызывающий оставляет сохранённый
+  // выбор, а не затирает его дефолтом (бой 09.10: 500 character-колотил
+  // проводника в shadow_walker при каждом входе и портил localStorage)
   try {
     const res = await fetch(`/api/character?init_data=${encodeURIComponent(init_data())}`);
-    if (!res.ok) return 'shadow_walker';
+    if (!res.ok) return null;
     const data = await res.json();
-    return data.character_id || 'shadow_walker';
+    return data.character_id || null;
   } catch {
-    return 'shadow_walker';
+    return null;
   }
 }
 
