@@ -5551,10 +5551,13 @@ button {
   .rit-dawn-hint { font-size: 10px; }
 }
 
-/* ═════ 30. AMBIENT-СИГИЛ — оригинальная пентаграмма taro_bot ══ */
-/* (порт 1:1: позиция top -6% / right -10%, маска 82%/18%,
-   screen-blend, дрейф 38s). Слои — отдельные svg: вращения
-   на композитных слоях, растеризация один раз. */
+/* ═════ 30. AMBIENT-СИГИЛ — векторный гримуар-глиф ══════════ */
+/* Позиция top -6% / right -10%, маска 82%/18%, screen-blend,
+   дрейф 38s — сцена прежняя. Сам глиф шьётся в sigilGlyph.ts:
+   асимметричный псевдо-глиф (не «магический круг»), прозрачно-
+   сти ходов 0.04–0.10, цвет — только --guide-accent проводника.
+   Движение: вращение 110s + дыхание 12s — оба на одном svg-слое
+   (transform+opacity, композитные свойства), без JS-rAF. */
 .ambient-sigil {
   position: absolute;
   top: -6%;
@@ -5583,48 +5586,34 @@ button {
   opacity: 0.5;
   filter: blur(32px);
   /* двойное свечение: тесное яркое ядро + широкий тусклый ореол —
-     компенсирует drop-shadow, снятый с анимированных слоёв */
+     держит глиф над порогом видимости (ходы сами — едва-есть) */
   background:
     radial-gradient(circle at 50% 50%, var(--guide-accent, #b5a5e6) 0%, transparent 34%),
     radial-gradient(circle at 50% 50%, var(--smoke, rgba(181, 165, 230, 0.3)) 0%, transparent 60%);
 }
 
-/* слои: анимированные — без filter (drop-shadow на каждом кадре
- * слишком дорог; свечение линий держит ореол выше), статичные —
- * с лёгким свечением (растеризуется один раз и кэшится) */
+/* слой глифа: один svg — один композитный слой, растеризация
+   один раз; вращение и дыхание — независимые CSS-анимации */
 .amb-svg {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
-  image-rendering: pixelated;
 }
 
-.amb-svg--static {
-  filter: drop-shadow(0 0 8px color-mix(in srgb, var(--guide-accent, #b5a5e6) 30%, transparent));
-}
-
-.amb-svg--ring {
-  animation: sigil-rotate-cw 90s linear infinite;
-  will-change: transform;
-}
-
-.amb-svg--hex {
-  animation: sigil-rotate-ccw 70s linear infinite;
-  will-change: transform;
-}
-
-.amb-svg--pent {
-  animation: sigil-pulse 4s ease-in-out infinite;
+.amb-svg--glyph {
+  animation:
+    sigil-rotate 110s linear infinite,
+    sigil-breathe 12s ease-in-out infinite;
   will-change: transform, opacity;
 }
 
-/* мерцающие точки: HTML-спаны, каждый на своём слое */
-.sigil-dot {
-  position: absolute;
-  animation: sigil-dot-blink var(--dot-dur, 2s) ease-in-out var(--dot-delay, 0s) infinite;
-  opacity: var(--dot-op, 0.5);
-}
+/* чернила: accent — проводник (CSS-переменная), pale — лунное
+   серебро, вторая нить гримуара */
+.sig-ink-accent { stroke: var(--guide-accent, #b5a5e6); }
+.sig-ink-pale { stroke: rgba(226, 222, 240, 0.9); }
+.sig-ink-accent-fill { fill: var(--guide-accent, #b5a5e6); }
+.sig-ink-pale-fill { fill: rgba(226, 222, 240, 0.9); }
 
 @keyframes ambient-sigil-drift {
   0%, 100% { transform: translate(0, 0) rotate(0deg) scale(1); }
@@ -5633,46 +5622,29 @@ button {
   75%      { transform: translate(3px, 3px) rotate(0.2deg) scale(1.01); }
 }
 
-@keyframes sigil-rotate-cw {
+@keyframes sigil-rotate {
   from { transform: rotate(0deg); }
   to   { transform: rotate(360deg); }
 }
 
-@keyframes sigil-rotate-ccw {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(-360deg); }
-}
-
-@keyframes sigil-pulse {
-  0%, 100% { opacity: 0.85; transform: scale(1); }
-  50%      { opacity: 1;    transform: scale(1.02); }
-}
-
-@keyframes sigil-dot-blink {
-  0%, 100% { opacity: var(--dot-op, 0.5); }
-  50%      { opacity: 0; }
+/* дыхание глифа: тихая пульсация яркости, ходы 0.04–0.10
+   могут оставаться едва заметными */
+@keyframes sigil-breathe {
+  0%, 100% { opacity: 0.85; }
+  50%      { opacity: 1; }
 }
 
 /* печать/скролл → сигил на паузу (как весь ambient) */
 .crt[data-typing] .ambient-sigil,
-.crt[data-typing] .amb-svg--ring,
-.crt[data-typing] .amb-svg--hex,
-.crt[data-typing] .amb-svg--pent,
-.crt[data-typing] .sigil-dot,
+.crt[data-typing] .amb-svg--glyph,
 .crt[data-scrolling] .ambient-sigil,
-.crt[data-scrolling] .amb-svg--ring,
-.crt[data-scrolling] .amb-svg--hex,
-.crt[data-scrolling] .amb-svg--pent,
-.crt[data-scrolling] .sigil-dot {
+.crt[data-scrolling] .amb-svg--glyph {
   animation-play-state: paused;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .ambient-sigil,
-  .amb-svg--ring,
-  .amb-svg--hex,
-  .amb-svg--pent,
-  .sigil-dot { animation: none !important; }
+  .amb-svg--glyph { animation: none !important; }
   .boot-logo { animation: none !important; }
 }
 

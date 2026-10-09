@@ -27,6 +27,8 @@ interface CrtOverlayProps {
   showSigil?: boolean;
   /** в транскрипте есть чтение — сигил притушить */
   dimSigil?: boolean;
+  /** контекст чтения для сигила: «проводник · карта дня» */
+  sigilSeed?: string;
   children: React.ReactNode;
 }
 
@@ -112,7 +114,7 @@ const LunarGlyphsLayer = memo(function LunarGlyphsLayer({ accent }: { accent: st
   );
 });
 
-export default function CrtOverlay({ characterId, themeId, showSigil, dimSigil, children }: CrtOverlayProps) {
+export default function CrtOverlay({ characterId, themeId, showSigil, dimSigil, sigilSeed, children }: CrtOverlayProps) {
   const guide = getGuide(characterId);
   // тема = фильтр над всей трубкой; класс не подставляем при
   // classic-дефолте до гидрации — она и так стартовая
@@ -135,8 +137,10 @@ export default function CrtOverlay({ characterId, themeId, showSigil, dimSigil, 
         <div className="ritual-smoke__cloud ritual-smoke__cloud--tl" />
         <div className="ritual-smoke__cloud ritual-smoke__cloud--br" />
       </div>
-      {/* ambient-сигил — оригинальная пентаграмма (после бута, не на слабых) */}
-      {showSigil && <AmbientSigil accent={guide.accent} accentDim={guide.accentDim} dim={dimSigil} />}
+      {/* ambient-сигил — гримуар-глиф (после бута, не на слабых) */}
+      {showSigil && (
+        <AmbientSigil accent={guide.accent} accentDim={guide.accentDim} dim={dimSigil} seed={sigilSeed} />
+      )}
       {/* созвездие */}
       <ConstellationLayer />
       {/* лунные глифы */}

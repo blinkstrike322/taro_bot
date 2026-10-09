@@ -189,6 +189,16 @@ export default function Shell({
     [entries],
   );
 
+  // глиф сигила сшит из контекста чтения: проводник + карта дня
+  // (id и имя); карта ещё не вытянута — глиф держится на проводнике
+  const sigilSeed = useMemo(() => {
+    for (let i = entries.length - 1; i >= 0; i--) {
+      const e = entries[i];
+      if (e.kind === 'daily') return `${characterId}·${e.card.id}·${e.card.name}`;
+    }
+    return `${characterId}·ожидание`;
+  }, [entries, characterId]);
+
   // флаг активного скролла: фон замирает, контент получает бюджет
   useEffect(() => {
     const scroller = scrollRef.current;
@@ -592,7 +602,13 @@ export default function Shell({
   };
 
   return (
-    <CrtOverlay characterId={characterId} themeId={themeId} showSigil={sigilOk} dimSigil={dimSigil}>
+    <CrtOverlay
+      characterId={characterId}
+      themeId={themeId}
+      showSigil={sigilOk}
+      dimSigil={dimSigil}
+      sigilSeed={sigilSeed}
+    >
       <div
         className="shell-root"
         ref={rootRef}
