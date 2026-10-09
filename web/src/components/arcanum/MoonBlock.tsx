@@ -19,7 +19,7 @@ import {
   moonPhase,
 } from '@/lib/moon';
 import { getGuide } from '@/lib/guides';
-import { haptic, sRitual } from '@/lib/sound';
+import { haptic, sMenu, sRitual } from '@/lib/sound';
 
 interface MoonBlockProps {
   /** проводник: его шёпот — связка блока с голосом сеанса */
@@ -27,6 +27,8 @@ interface MoonBlockProps {
   /** прогноз дня: колбэк приходит только когда в транскрипте
    *  есть живая карта дня — нет карты, нет кнопки */
   onForecast?: () => void;
+  /** скрыть луну: убрать запись из транскрипта */
+  onHide?: () => void;
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -99,7 +101,7 @@ function MoonDisc({ illum, waning, size }: { illum: number; waning: boolean; siz
   );
 }
 
-export default function MoonBlock({ characterId, onForecast }: MoonBlockProps) {
+export default function MoonBlock({ characterId, onForecast, onHide }: MoonBlockProps) {
   // фаза и диск считаются один раз: день за сеанс не сменится
   const phase = useMemo(() => moonPhase(new Date()), []);
   const today = useMemo(() => formatMoonDate(new Date()), []);
@@ -124,6 +126,16 @@ export default function MoonBlock({ characterId, onForecast }: MoonBlockProps) {
       <header className="moon-head">
         <span className="moon-title">лунный канал</span>
         <span className="tl tl-faint moon-sub">сегодня · {today}</span>
+        {onHide && (
+          <button
+            type="button"
+            className="lib-collapse"
+            onClick={() => { sMenu(); haptic('tick'); onHide(); }}
+            aria-label="скрыть луну"
+          >
+            ✕ скрыть луну
+          </button>
+        )}
       </header>
 
       {/* векторный диск: декоративен, данные продублированы текстом ниже */}

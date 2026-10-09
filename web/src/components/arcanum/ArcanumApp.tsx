@@ -358,7 +358,8 @@ export default function ArcanumApp() {
 
   // ── покрытие фосфора: сменить тему ──
   // звук — «перекалибровка» (sTheme), запись ok — с именем темы;
-  // тема сохраняется в taro_theme и переживает перезагрузку
+  // тема сохраняется в taro_theme и переживает перезагрузку.
+  // список тем после выбора убирается из транскрипта — не мусорит
   const applyTheme = useCallback(
     (id: string) => {
       setThemeId(id);
@@ -366,13 +367,14 @@ export default function ArcanumApp() {
       SFX.sTheme(id);
       SFX.haptic('tap');
       const t = getTheme(id);
+      setEntries((prev) => prev.filter((e) => e.kind !== 'theme'));
       pushOut([
         { text: `покрытие фосфора: ${t.name} · ${t.stage}`, tone: 'ok' },
         { text: `# ${t.note}`, tone: 'faint' },
       ]);
       setMode('ОЖИДАНИЕ');
     },
-    [pushOut, setMode],
+    [pushOut, setMode, setEntries],
   );
 
   // ── диспетчер команд ──
@@ -1213,6 +1215,7 @@ export default function ArcanumApp() {
       onAskAgain={handleAskAgain}
       onShare={handleShare}
       onToggleLibrary={(id, v) => updateEntry(id, { open: v })}
+      onHideEntry={(id) => setEntries((prev) => prev.filter((e) => e.id !== id))}
       guideReadings={guideReadings}
       dailyDone={dailyDone}
       themeId={themeId}

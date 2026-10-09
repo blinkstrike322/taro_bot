@@ -39,7 +39,7 @@ export default function BootSequence({ characterId, onDone }: BootSequenceProps)
     // колбэк к старой шутке «луна вне досягаемости юрисдикции»:
     // теперь терминал знает луну (taro moon)
     {
-      text: `луна ............... принята в юрисдикцию · ${moon.phaseName}`,
+      text: `луна ............... ${moon.phaseName}`,
       tone: 'ok',
     },
   ];

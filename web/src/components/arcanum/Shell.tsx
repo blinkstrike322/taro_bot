@@ -97,6 +97,8 @@ interface ShellProps {
   onShare?: (entryId: number) => void;
   /** библиотека: свернуть/развернуть запись */
   onToggleLibrary?: (entryId: number, open: boolean) => void;
+  /** скрыть запись: убрать её из транскрипта */
+  onHideEntry?: (entryId: number) => void;
   onRestoreSession: () => void;
   onDiscardSession: () => void;
 }
@@ -139,6 +141,7 @@ export default function Shell({
   onAskAgain,
   onShare,
   onToggleLibrary,
+  onHideEntry,
   onRestoreSession,
   onDiscardSession,
 }: ShellProps) {
@@ -439,6 +442,7 @@ export default function Shell({
                   ? () => onForecast(dailyForecastEntry.id)
                   : undefined
               }
+              onHide={() => onHideEntry?.(entry.id)}
             />
           </div>
         );
