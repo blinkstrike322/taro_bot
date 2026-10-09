@@ -18,7 +18,7 @@ on:
       - 'web/src/**'
       - 'web/package.json'
       - 'web/package-lock.json'
-      - 'web/next.config.mjs'
+      - 'web/next.config.ts'
       - '.github/workflows/deploy.yml'
   # Manual rebuild from a FEATURE branch only: dispatching on main would try
   # to push to protected main and fail. Use it to refresh a stale PR bundle.
