@@ -695,7 +695,7 @@ export default function Shell({
               className="sl-moon"
               onClick={() => onRunCmd('taro moon')}
               onMouseEnter={sGlyph}
-              title={`фаза луны: ${moonSl.name} · taro moon`}
+              title={`луна: ${moonSl.name} · taro moon`}
               aria-label={`фаза луны: ${moonSl.name} — показать`}
             >
               <MoonGlyph
