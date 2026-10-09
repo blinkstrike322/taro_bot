@@ -2,6 +2,7 @@ import asyncio
 import hashlib
 import hmac
 import json
+import mimetypes
 import os
 import re
 import shutil
@@ -1042,7 +1043,26 @@ async def handle_share(request):
 COMPRESSIBLE_TYPES = (
     "application/javascript", "application/json", "text/css",
     "text/html", "text/plain", "image/svg+xml",
+    # Python ≥3.12 mimetypes отдаёт .js как text/javascript — без этой записи
+    # gzip молча не включался на главных чанках вебаппа (нашёл smoke Task 16).
+    "text/javascript",
 )
+
+
+def _resp_mime_type(resp: web.Response | web.FileResponse) -> str:
+    """MIME ответа на момент middleware, до начала отдачи.
+
+    FileResponse угадывает content_type только внутри prepare() — до того у
+    него дефолтный application/octet-stream, из-за чего gzip-ветка ниже не
+    срабатывала ни для одного статического файла (нашёл smoke Task 16).
+    Для файлов добываем тип из пути тем же способом, каким это делает сам
+    aiohttp (mimetypes); getattr — приватное поле aiohttp, при его отсутствии
+    просто откатываемся к текущему content_type (без сжатия, как раньше).
+    """
+    path = getattr(resp, "_path", None)
+    if isinstance(path, Path):
+        return mimetypes.guess_type(str(path))[0] or "application/octet-stream"
+    return resp.content_type
 
 
 @web.middleware
@@ -1059,7 +1079,7 @@ async def gzip_cache_middleware(request, handler):
         request.method == "GET"
         and resp.status == 200
         and "gzip" in request.headers.get("Accept-Encoding", "").lower()
-        and resp.content_type in COMPRESSIBLE_TYPES
+        and _resp_mime_type(resp) in COMPRESSIBLE_TYPES
     ):
         resp.headers["Vary"] = "Accept-Encoding"
         resp.enable_compression(web.ContentCoding.gzip)
