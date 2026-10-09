@@ -21,13 +21,13 @@ from config import logger, settings
 from core.fallbacks import (
     _clean_questions,
     _validate_counts,
+    clean_llm_answer,
     local_day_forecast,
     local_followup_fallback,
     local_month_reflection,
     local_pair_fallback,
     local_week_reflection,
     parse_forecast,
-    sanitize_llm_text,
 )
 from core.llm import call_llm_with_fallback, get_last_llm_hop, interpret_reading
 from core.prompts import (
@@ -807,7 +807,7 @@ async def handle_ask(request):
     answer = ""
     for _ in range(2):
         try:
-            raw = sanitize_llm_text(
+            raw = clean_llm_answer(
                 await _ask_llm(messages, max_tokens=900, temperature=0.85)
             )
         except Exception:
@@ -927,7 +927,7 @@ async def handle_week(request):
     answer = ""
     for _ in range(2):
         try:
-            raw = sanitize_llm_text(
+            raw = clean_llm_answer(
                 await _ask_llm(messages, max_tokens=900, temperature=0.85)
             )
         except Exception:
@@ -979,7 +979,7 @@ async def handle_month(request):
     answer = ""
     for _ in range(2):
         try:
-            raw = sanitize_llm_text(
+            raw = clean_llm_answer(
                 await _ask_llm(messages, max_tokens=900, temperature=0.85)
             )
         except Exception:

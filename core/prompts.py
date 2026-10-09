@@ -143,6 +143,13 @@ _NO_EMOJI_RULE = (
     "ЭМОДЗИ СТРОГО ЗАПРЕЩЕНЫ в любом месте ответа. Ни одного. Только кириллический текст."
 )
 
+# Утечка ризонинга в бою — парный пост-фильтр: strip_reasoning_dump в core/fallbacks.py.
+_ANSWER_DISCIPLINE = (
+    "В ответ уходи СРАЗУ готовым текстом ответа: без планирования вслух, "
+    "без самопроверки, без служебных заметок о правилах и без мета-комментариев. "
+    "Никаких «Мне нужно», «Проверю», «Напишу» — только сама речь проводника."
+)
+
 _NO_LATIN_RULE = (
     "ЯЗЫК: весь ответ — ТОЛЬКО на русском. Латинские слова 3+ буквы в прозе запрещены.\n"
     "ИСКЛЮЧЕНИЕ — КЛЮЧИ JSON (intro, short_answer, card_meaning, advice, позиции, карта, "
@@ -211,6 +218,7 @@ def get_system_prompt(
         _format_voice_examples(voice_examples),
         _NO_EMOJI_RULE,
         _NO_LATIN_RULE,
+        _ANSWER_DISCIPLINE,
     ]
     return _BLOCK_SEP.join(p for p in parts if p)
 

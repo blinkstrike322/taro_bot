@@ -33,6 +33,48 @@ def sanitize_llm_text(text: str) -> str:
     return text.strip()
 
 
+# ── Срез ризонинга модели ─────────────────────────────────────────
+# Reasoning-модели иногда пишут в ответ планирование и самопроверку
+# («Мне нужно…», «Проверю: 4 предложения…») — русский аналогов _LEAK_RE
+# из core/llm.py не ловит. Паттерн утечки из боя:
+# [рассуждение] Напишу: <ответ> Проверю: <самопроверка> [правила].
+_RU_REASONING_RE = re.compile(
+    r"(Проверю\b|Мне нужно\b|пользователь спрашивает|запрещённ\w+ слов\w+|"
+    r"правила запрещают|Не повторять|Не перечислять|Не начинать с|самопроверк\w*)"
+)
+_ANSWER_ANNOUNCE_RE = re.compile(r"Напишу\s*:\s*")
+_MIN_ANSWER_LEN = 20
+
+
+def strip_reasoning_dump(text: str) -> str:
+    """Отрезать ризонинг, оставить готовый ответ; ответа под мусором нет — «»."""
+    if not text or not _RU_REASONING_RE.search(text):
+        return text if isinstance(text, str) else ""
+    announced = _ANSWER_ANNOUNCE_RE.search(text)
+    if announced:
+        candidate = text[announced.end():]
+        cut = _RU_REASONING_RE.search(candidate)
+        if cut:
+            candidate = candidate[:cut.start()]
+        candidate = candidate.strip()
+        if len(candidate) >= _MIN_ANSWER_LEN and not _RU_REASONING_RE.search(candidate):
+            return candidate
+    lines = text.splitlines()
+    last_marker = max(
+        (i for i, line in enumerate(lines) if _RU_REASONING_RE.search(line)),
+        default=-1,
+    )
+    candidate = "\n".join(lines[last_marker + 1:]).strip()
+    if len(candidate) >= _MIN_ANSWER_LEN and not _RU_REASONING_RE.search(candidate):
+        return candidate
+    return ""
+
+
+def clean_llm_answer(text: str) -> str:
+    """Полная чистка прозы LLM: sanitize + срез ризонинга."""
+    return strip_reasoning_dump(sanitize_llm_text(text))
+
+
 # ── Голос проводника для фолбэков ────────────────────────────────
 def _voice(character_id: str | None) -> dict:
     characters = _load_characters()

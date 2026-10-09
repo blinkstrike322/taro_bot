@@ -82,3 +82,62 @@ async def test_forecast_clamps(db, monkeypatch):
 def test_sanitize_strips_fences_and_emoji():
     assert "```" not in fb.sanitize_llm_text("```x\nтекст\n```")
     assert "🌙" not in fb.sanitize_llm_text("текст 🌙")
+
+
+# ── Срез ризонинга модели (утечка из боя: taro ask, Тройка Мечей) ──
+
+def test_strip_reasoning_dump_extracts_answer():
+    dump = (
+        "Пользователь спрашивает, что значит Тройка Мечей в этом раскладе. "
+        "Мне нужно двигаться глубже, не повторяя то, что уже было. "
+        "Нужно 3-6 предложений, связная проза. "
+        "Напишу: В этой позиции внутри тебя есть рана, которую ты прячешь от себя — "
+        "мысли крутятся вокруг одной точки и каждый раз приходят к одному разрыву. "
+        "Проверю: 4 предложения, нет «эта карта означает». "
+        "Проверю запрещённые слова: контекст — нет."
+    )
+    out = fb.strip_reasoning_dump(dump)
+    assert out.startswith("В этой позиции")
+    assert "Проверю" not in out and "Мне нужно" not in out
+
+
+def test_strip_reasoning_dump_clean_text_unchanged():
+    clean = "Рана, которую ты прячешь, режет сильнее любой внешней преграды."
+    assert fb.strip_reasoning_dump(clean) == clean
+
+
+def test_strip_reasoning_dump_without_answer_returns_empty():
+    dump = "Мне нужно ответить кратко. Проверю: 3 предложения. Проверю запрещённые слова."
+    assert fb.strip_reasoning_dump(dump) == ""
+
+
+_ASK_BODY = {"init_data": _make_init_data(2001), "question": "q",
+             "card": {"name": "Луна", "position": "совет"}, "spread_name": "s",
+             "spread_question": None, "reading_summary": "r",
+             "character_id": "shadow_walker"}
+
+
+@pytest.mark.asyncio
+async def test_ask_extracts_answer_from_reasoning_dump(db, monkeypatch):
+    async def dump_llm(messages, **kw):
+        return ("Мне нужно ответить в духе теней. "
+                "Напишу: Тень говорит одно — этой ране надо имя, пока она режет сама. "
+                "Проверю: 2 предложения, без запрещённых слов.")
+
+    monkeypatch.setattr(app_module, "_ask_llm", dump_llm)
+    resp = await app_module.handle_ask(_FakeRequest({}, dict(_ASK_BODY)))
+    data = json.loads(resp.body)
+    assert resp.status == 200 and data["fallback"] is False
+    assert "Тень говорит одно" in data["answer"]
+    assert "Мне нужно" not in data["answer"] and "Проверю" not in data["answer"]
+
+
+@pytest.mark.asyncio
+async def test_ask_fallback_on_pure_reasoning(db, monkeypatch):
+    async def pure_reasoning(messages, **kw):
+        return "Мне нужно ответить кратко. Проверю: 3 предложения."
+
+    monkeypatch.setattr(app_module, "_ask_llm", pure_reasoning)
+    resp = await app_module.handle_ask(_FakeRequest({}, dict(_ASK_BODY)))
+    data = json.loads(resp.body)
+    assert data["fallback"] is True and len(data["answer"]) >= 20
