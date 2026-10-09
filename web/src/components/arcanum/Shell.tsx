@@ -99,6 +99,8 @@ interface ShellProps {
   onAskAgain?: (spreadId: string) => void;
   /** отправить в терминал: шаринг чтения в личку (токен/id строки) */
   onShare?: (entryId: number) => void;
+  /** библиотека: свернуть/развернуть запись */
+  onToggleLibrary?: (entryId: number, open: boolean) => void;
   onRestoreSession: () => void;
   onDiscardSession: () => void;
 }
@@ -141,6 +143,7 @@ export default function Shell({
   onChronicle,
   onAskAgain,
   onShare,
+  onToggleLibrary,
   onRestoreSession,
   onDiscardSession,
 }: ShellProps) {
@@ -564,8 +567,11 @@ export default function Shell({
 
       case 'library':
         return (
-          <div key={entry.id} className="entry-pad">
-            <LibraryBlock />
+          <div key={entry.id} data-eid={entry.id} className="entry-pad">
+            <LibraryBlock
+              open={entry.open ?? false}
+              onToggle={(v) => onToggleLibrary?.(entry.id, v)}
+            />
           </div>
         );
 

@@ -1789,6 +1789,7 @@ button {
   .sg-circle,
   .crt-distort,
   .st-rec-dot,
+  .lib-flash,
   .mr-lore-seg { animation: none !important; }
   .flip { animation-duration: 0.2s; }
   .flip-inner { transition-duration: 0.25s; }
@@ -2256,6 +2257,14 @@ button {
 /* ═════ 15. Библиотека арканов ════════════════════════════════ */
 
 .lib-block { padding: 2px 0; }
+
+/* повторный вызов команды: вспышка найденной записи */
+.lib-flash { animation: lib-flash 1.2s ease-out 1; border-radius: 2px; }
+
+@keyframes lib-flash {
+  0% { background: rgba(181, 165, 230, 0.16); }
+  100% { background: transparent; }
+}
 
 /* шапка — в тон меню-заголовкам */
 .lib-head {

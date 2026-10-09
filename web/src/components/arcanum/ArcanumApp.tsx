@@ -80,6 +80,22 @@ const MOON_PHASES = [
 const ARCANA_QUESTION =
   'что значит мой личный аркан — как его слышать в себе и где он проявляется сильнее всего?';
 
+/** мотнуть транскрипт к записи и подсветить её вспышкой —
+ *  повторный вызов команды вместо дублирования записи */
+function scrollToEntry(entryId: number): void {
+  const scroller = document.querySelector<HTMLElement>('.shell-scroll');
+  const node = scroller?.querySelector<HTMLElement>(`[data-eid="${entryId}"]`);
+  if (!scroller || !node) return;
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const relTop =
+    node.getBoundingClientRect().top - scroller.getBoundingClientRect().top + scroller.scrollTop;
+  scroller.scrollTo({ top: Math.max(relTop - 12, 0), behavior: reduced ? 'auto' : 'smooth' });
+  node.classList.remove('lib-flash');
+  void node.offsetWidth;
+  node.classList.add('lib-flash');
+  window.setTimeout(() => node.classList.remove('lib-flash'), 1300);
+}
+
 /** локальная дата юзера совпадает с датой из ISO-строки? */
 function isSameLocalDay(iso: string): boolean {
   const d = new Date(iso);
@@ -428,13 +444,24 @@ export default function ArcanumApp() {
             setMode('МЕНЮ');
             return;
 
-          // библиотека арканов: вся колода в транскрипте
-          case 'library':
+          // библиотека арканов: одна живая запись в транскрипте.
+          // повторный вызов не дублирует — оставляет последнюю,
+          // убирает старые, раскрывает её и мотает к ней
+          case 'library': {
             await echoCmd('taro library');
             SFX.sMenu();
-            push({ kind: 'library' });
+            const libs = entriesRef.current.filter((e) => e.kind === 'library');
+            if (libs.length === 0) {
+              push({ kind: 'library' });
+            } else {
+              const latest = libs[libs.length - 1];
+              setEntries((prev) => prev.filter((e) => e.kind !== 'library' || e.id === latest.id));
+              updateEntry(latest.id, { open: true });
+              scrollToEntry(latest.id);
+            }
             setMode('МЕНЮ');
             return;
+          }
 
           // статистика оператора: серия, чтения, расклады, голоса
           case 'stats':
@@ -1237,6 +1264,7 @@ export default function ArcanumApp() {
       onChronicle={handleChronicle}
       onAskAgain={handleAskAgain}
       onShare={handleShare}
+      onToggleLibrary={(id, v) => updateEntry(id, { open: v })}
       guideReadings={guideReadings}
       dailyDone={dailyDone}
       themeId={themeId}

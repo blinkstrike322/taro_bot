@@ -105,7 +105,7 @@ export type Entry =
       token?: string;
     }
   | { id: number; kind: 'menu'; menuId: 'catalog' | 'guides' }
-  | { id: number; kind: 'library' }
+  | { id: number; kind: 'library'; open?: boolean }
   | { id: number; kind: 'stats' }
   | { id: number; kind: 'history'; rows: HistoryRow[] }
   | { id: number; kind: 'restore'; count: number; savedAt: number }

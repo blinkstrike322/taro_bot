@@ -82,10 +82,17 @@ function visibleFor(filter: LibFilter, query: string): DeckCard[] {
   });
 }
 
-export default function LibraryBlock() {
-  // библиотека закрыта по умолчанию: сетка из 78 карт тяжеловесна,
-  // запись в транскрипте начинается со свёрнутой шапки
-  const [libOpen, setLibOpen] = useState(false);
+export default function LibraryBlock({ open, onToggle }: {
+  /** раскрыта ли (если не задан — внутреннее состояние, закрыта по умолчанию) */
+  open?: boolean;
+  onToggle?: (open: boolean) => void;
+} = {}) {
+  const [innerOpen, setInnerOpen] = useState(false);
+  const libOpen = open ?? innerOpen;
+  const setLibOpen = (v: boolean) => {
+    setInnerOpen(v);
+    onToggle?.(v);
+  };
   const [filter, setFilter] = useState<LibFilter>('all');
   const [query, setQuery] = useState('');
   // открытая карта и карта, которая ещё рендерится в панели
