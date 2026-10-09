@@ -849,6 +849,7 @@ export default function ArcanumApp() {
       })
         .then(() => {
           SFX.sSeal();
+          SFX.sSent();
           SFX.haptic('tick');
           pushOut([{ text: 'чтение ушло в терминал · свиток ждёт в личке', tone: 'ok' }]);
         })
