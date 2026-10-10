@@ -17,7 +17,7 @@ import app as app_module
 import storage.db as sdb
 from core.tg_share import (
     TelegramAPIError,
-    _build_caption,
+    _build_header,
     build_share_message,
     resolve_reading,
     send_share,
@@ -186,28 +186,28 @@ async def test_reserved_status_row_is_status_reserved(db):
 
 # ── build_share_message ──────────────────────────────────────────────
 
-def test_build_one_card_media_and_caption_escape():
+def test_build_one_card_media_no_caption_header_escape():
     evil = '<script>alert("x")</script>'
     row = _row([CARD_1], question=evil)
     media, parts = build_share_message(row, DECK_OK)
     assert media is not None and len(media) == 1
     assert media[0]["type"] == "photo"
-    caption = media[0]["caption"]
-    assert len(caption) <= 1024
-    assert "<script>" not in caption
-    assert "&lt;script&gt;" in caption
-    assert "Луна" in caption
+    assert "caption" not in media[0], "фото чистые, без подписей"
+    header = parts[0]
+    assert "<script>" not in header
+    assert "&lt;script&gt;" in header
+    assert "Луна" in header
     assert all(len(p) <= 3800 for p in parts)
     assert any("Доверься тишине" in p for p in parts)
 
 
-def test_build_three_cards_caption_on_first_only():
+def test_build_three_cards_no_captions_anywhere():
     row = _row([CARD_1, CARD_2, CARD_3])
     media, parts = build_share_message(row, DECK_OK)
     assert media is not None and len(media) == 3
-    assert media[0]["caption"], "caption обязан быть на первом элементе"
-    assert all(not item.get("caption") for item in media[1:])
-    assert all(len(item["caption"]) <= 1024 for item in media[:1])
+    assert all("caption" not in item for item in media)
+    header = parts[0]
+    assert "Луна" in header and "Солнце" in header and "Звезда" in header
     assert parts and all(len(p) <= 3800 for p in parts)
 
 
@@ -258,25 +258,49 @@ def test_build_media_paths_resolve_inside_cards_dir():
     assert CARDS_DIR.resolve() in p.resolve().parents
 
 
-# ── _build_caption: бюджет обрезки по ЭКРАНИРОВАННОЙ длине вопроса ───
+# ── _build_header: терминальная шапка без эмодзи ───
 
-def test_caption_escaped_expansion_never_exceeds_1024():
-    """&<>-тяжёлый вопрос: '&'*1100 — сырая длина проходит проверку
-    len(question) > q_budget, но escape раздувает ×5 → caption > 1024."""
-    row = _row([], question="&" * 1100)
-    caption = _build_caption(row, "shadow_walker", [])
-    assert len(caption) <= 1024
-    assert caption.endswith("…"), "вопрос обрезан, а не выброшен"
+def test_header_no_emoji_terminal_glyphs():
+    row = _row([CARD_1, CARD_2])
+    header = _build_header(row, "Искра Хаоса", [CARD_1, CARD_2])
+    assert "🔮" not in header and "❓" not in header and "🃏" not in header
+    assert "<b>Искра Хаоса</b>" in header
+    assert "<blockquote>Вопрос?</blockquote>" in header
+    assert "— Луна" in header and "— Солнце ↳ реверс" in header
 
 
-def test_caption_truncates_on_escaped_length_not_raw():
-    """Сырой len('&'*400) влезает в сырой бюджет, экранированная ×5 — нет:
-    старый код не добавлял обрезанный вариант и терял вопрос целиком."""
-    row = _row([CARD_1], question="&" * 400)
-    caption = _build_caption(row, "shadow_walker", [{"id": "the-moon", "name": "Луна"}])
-    assert len(caption) <= 1024
-    assert "&amp;" in caption, "часть вопроса сохранена"
-    assert "…\n\n🃏" in caption, "вопрос обрезан, а не выброшен"
+def test_header_positions_joined_from_interpretation():
+    interp = {
+        "intro": "и",
+        "short_answer": "с",
+        "позиции": [
+            {"позиция": "За", "карта": "Луна", "реверс": False, "трактовка": "т"},
+            {"позиция": "Против", "карта": "Солнце", "реверс": True, "трактовка": "т"},
+        ],
+    }
+    row = _row([CARD_1, CARD_2], interp=interp)
+    header = _build_header(row, "г", [CARD_1, CARD_2])
+    assert "· <i>За</i>" in header
+    assert "· <i>Против</i>" in header
+
+
+def test_header_spread_label_mapping():
+    assert "карта дня" in _build_header(_row([], question=""), "г", [])
+    row = dict(_row([], question=""), type="spread_yesno")
+    assert "да / нет" in _build_header(row, "г", [])
+    row3 = dict(_row([], question=""), type="spread_3")
+    assert "три карты" in _build_header(row3, "г", [])
+    human = dict(_row([], question=""), type="мои мысли")
+    assert "мои мысли" in _build_header(human, "г", [])
+    unknown = dict(_row([CARD_1], question=""), type="xyz")
+    assert "карта" in _build_header(unknown, "г", [CARD_1])
+
+
+def test_header_date_format():
+    row = _row([CARD_1])
+    header = _build_header(row, "г", [CARD_1])
+    assert "08.10.2026 12:00" in header
+    assert "2026-10-08" not in header
 
 
 # ── send_share (FakeBot) ─────────────────────────────────────────────
@@ -289,9 +313,10 @@ async def test_send_share_one_card_uses_send_photo():
     assert [c[0] for c in bot.calls] == ["photo"] + ["msg"] * len(parts)
     kind, chat_id, caption, parse_mode = bot.calls[0]
     assert kind == "photo" and chat_id == 555 and parse_mode == "HTML"
-    assert "О нём" not in caption or "&lt;" in caption or True  # caption HTML
+    assert caption is None, "фото чистые, шапка — первым msg"
     msg = bot.calls[1]
     assert msg[0] == "msg" and msg[3] == "HTML"
+    assert "О нём" in msg[2], "шапка идёт первым текстовым сообщением"
 
 
 @pytest.mark.asyncio
@@ -302,10 +327,9 @@ async def test_send_share_three_cards_group_plus_message():
     kinds = [c[0] for c in bot.calls]
     assert kinds[0] == "group"
     assert kinds[1] == "msg"
-    # caption в группе — на первом элементе
+    # фото без подписей вовсе
     group_media = bot.calls[0][2]
-    assert group_media[0].caption
-    assert not any(getattr(m, "caption", None) for m in group_media[1:])
+    assert not any(getattr(m, "caption", None) for m in group_media)
 
 
 @pytest.mark.asyncio

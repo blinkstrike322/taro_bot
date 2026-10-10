@@ -2,9 +2,10 @@
 """Шеринг расклада в личку Telegram через нашего бота (/api/share).
 
 resolve_reading → build_share_message → send_share: владелец и статус
-проверяются по БД, медиа — PNG карт из static/webapp/cards/ (путь guarded:
-regex + resolve внутрь каталога), текст уходит частями ≤3800 с
-parse_mode="HTML"; весь пользовательский текст экранирован html.escape.
+проверяются по БД, медиа — чистые PNG карт без подписей (guard пути:
+regex + resolve внутрь каталога), шапка и толкование уходят текстом
+частями ≤3800 с parse_mode="HTML"; терминальные глифы вместо эмодзи,
+весь пользовательский текст экранирован html.escape.
 """
 import html
 import json
@@ -16,13 +17,13 @@ import aiohttp
 from aiogram.exceptions import AiogramError
 from aiogram.types import FSInputFile, InputMediaPhoto
 
+from core.spreads import get_spread
 from core.tarot import load_cards
 from storage.db import STATUS_COMPLETED, get_reading_by_id, get_reading_by_token
 
 PROJECT_ROOT = Path(__file__).parent.parent
 CARDS_DIR = PROJECT_ROOT / "static" / "webapp" / "cards"
 
-MAX_CAPTION_LEN = 1024
 MAX_TEXT_PART = 3800
 
 
@@ -73,7 +74,7 @@ def _safe_card_path(filename: str) -> Path | None:
 
 def _orientation_suffix(card: dict) -> str:
     if card.get("is_reversed") or card.get("orientation") == "reversed":
-        return " <i>(перевёрнутая)</i>"
+        return " ↳ реверс"
     return ""
 
 
@@ -120,59 +121,74 @@ def _chunk_text(text: str, limit: int = MAX_TEXT_PART) -> list[str]:
     return parts
 
 
-def _escaped_fit(question: str, room: int) -> str:
-    """Самый длинный префикс вопроса, чья html-экранированная форма ≤ room."""
-    if room <= 0:
-        return ""
-    lo, hi = 0, len(question)
-    while lo < hi:
-        mid = (lo + hi + 1) // 2
-        if len(html.escape(question[:mid])) <= room:
-            lo = mid
-        else:
-            hi = mid - 1
-    return html.escape(question[:lo])
+def _spread_label(raw_type: object, count: int) -> str:
+    """Человеческое имя расклада: каталог (со срезом префикса spread_ и
+    легаси-числами), уже-человеческий текст как есть, иначе счётчик карт."""
+    raw = str(raw_type or "").strip()
+    short = raw[len("spread_"):] if raw.startswith("spread_") else raw
+    legacy = {"1": "single", "3": "three", "daily": "daily"}
+    spread = get_spread(legacy.get(short, short))
+    name = spread.get("name") if isinstance(spread, dict) else None
+    if isinstance(name, str) and name.strip():
+        return name.strip()
+    if raw and (" " in raw or re.search(r"[а-яё]", raw, re.IGNORECASE)):
+        return raw
+    if count == 1:
+        return "карта"
+    if 2 <= count <= 4:
+        return f"{count} карты"
+    return f"{count} карт"
 
 
-def _build_caption(reading_row: dict, guide: str, cards: list[dict]) -> str:
-    """HTML-подпись ≤1024: проводник/дата/вопрос/карты — всё экранировано.
+def _format_share_date(created_at: object) -> str:
+    """'2026-10-09 18:16:19' → '09.10.2026 18:16'; мусор — как есть (≤16)."""
+    text = str(created_at or "")
+    m = re.match(r"^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})", text)
+    if m:
+        return f"{m.group(3)}.{m.group(2)}.{m.group(1)} {m.group(4)}:{m.group(5)}"
+    return text[:16]
 
-    Варианты по убыванию детальности: полный вопрос → обрезанный вопрос →
-    без вопроса → только счётчик карт. Бюджет обрезки метрится по
-    экранированной длине: '& < >' раздуваются до ×5, и срез по сырой длине
-    вылетал за лимит Telegram. Если не влезает даже минимальный вариант —
-    возвращается последний, как и раньше.
-    """
-    header = f"<b>🔮 {html.escape(guide)}</b>"
-    date_line = f"<i>{html.escape(str(reading_row.get('created_at') or '')[:16])}</i>"
-    base = f"{header}\n{date_line}"
+
+def _position_by_card(interpretation: object) -> dict[str, str]:
+    """имя карты → позиция из interpretation['позиции'] (под срезом)."""
+    if not isinstance(interpretation, dict):
+        return {}
+    positions = interpretation.get("позиции")
+    if not isinstance(positions, list):
+        return {}
+    out: dict[str, str] = {}
+    for entry in positions:
+        if not isinstance(entry, dict):
+            continue
+        name = entry.get("карта")
+        pos = entry.get("позиция")
+        if isinstance(name, str) and name and isinstance(pos, str) and pos:
+            out.setdefault(name, pos)
+    return out
+
+
+def _build_header(reading_row: dict, guide: str, cards: list[dict]) -> str:
+    """Шапка отдельным сообщением: проводник/расклад/дата, вопрос цитатой,
+    карты с позициями и реверсами. Терминальные глифы вместо эмодзи, всё
+    пользовательское — через html.escape. Лимита 1024 здесь нет (обычный
+    текст чанкуется на отправке), поэтому лесенка обрезки не нужна."""
+    spread = _spread_label(reading_row.get("type"), len(cards))
+    date = _format_share_date(reading_row.get("created_at"))
+    lines = [f"<b>{html.escape(guide)}</b> · {html.escape(spread)} · <i>{html.escape(date)}</i>"]
     question = str(reading_row.get("question") or "").strip()
-    eq = html.escape(question)
-    card_lines = [
-        f"🃏 <b>{html.escape(str(c.get('name') or 'Карта'))}</b>{_orientation_suffix(c)}"
-        for c in cards
-    ]
-    cards_block = "\n".join(card_lines)
-
-    variants: list[str] = []
-    if cards_block:
-        if question:
-            variants.append(f"{base}\n\n❓ {eq}\n\n{cards_block}")
-            room = MAX_CAPTION_LEN - len(f"{base}\n\n❓ …\n\n{cards_block}")
-            if room > 50 and len(eq) > room:
-                variants.append(f"{base}\n\n❓ {_escaped_fit(question, room)}…\n\n{cards_block}")
-        variants.append(f"{base}\n\n{cards_block}")
-    else:
-        body = f"❓ {eq}" if question else "🃏 карта"
-        variants.append(f"{base}\n\n{body}")
-        if question:
-            room = MAX_CAPTION_LEN - len(f"{base}\n\n❓ …")
-            if room > 50 and len(eq) > room:
-                variants.append(f"{base}\n\n❓ {_escaped_fit(question, room)}…")
-    for variant in variants:
-        if len(variant) <= MAX_CAPTION_LEN:
-            return variant
-    return variants[-1]
+    if question:
+        lines += ["", f"<blockquote>{html.escape(question)}</blockquote>"]
+    if cards:
+        by_card = _position_by_card(reading_row.get("interpretation"))
+        lines.append("")
+        for c in cards:
+            name = str(c.get("name") or "Карта")
+            line = f"— {html.escape(name)}{_orientation_suffix(c)}"
+            pos = by_card.get(name)
+            if pos:
+                line += f" · <i>{html.escape(pos)}</i>"
+            lines.append(line)
+    return "\n".join(lines)
 
 
 async def resolve_reading(
@@ -205,12 +221,10 @@ def build_share_message(
     reading_row: dict,
     deck_index: dict[str, str],
 ) -> tuple[list[dict] | None, list[str]]:
-    """(media, text_parts): media — фото-сообщение(я) с caption ≤1024, либо None.
-
-    1 карта → один элемент (sendPhoto), 2–10 → группа (sendMediaGroup, caption
-    на первом). Хоть один невалидный/чужеродный filename → медиа нет вовсе,
-    весь контент уходит текстом (частями ≤3800).
-    """
+    """(media, text_parts): media — чисто фото (sendPhoto / sendMediaGroup
+    2–10) БЕЗ подписей; text_parts[0] — всегда шапка (_build_header),
+    дальше чанки толкования. Хоть один невалидный/чужеродный filename →
+    медиа нет вовсе, шапка несёт всю информацию (частями ≤3800)."""
     cards_data = reading_row.get("cards_data")
     cards = cards_data.get("cards") if isinstance(cards_data, dict) else None
     cards = [c for c in cards if isinstance(c, dict)] if isinstance(cards, list) else []
@@ -218,23 +232,16 @@ def build_share_message(
     guide = _guide_names().get(str(reading_row.get("character_id") or "")) or str(
         reading_row.get("character_id") or ""
     )
-    caption = _build_caption(reading_row, guide, cards)
+    header = _build_header(reading_row, guide, cards)
 
     paths = [_safe_card_path(deck_index.get(str(c.get("id")), "")) for c in cards]
     media: list[dict] | None = None
     if cards and all(p is not None for p in paths):
-        media = [
-            ({"type": "photo", "media": str(p)} if i else
-             {"type": "photo", "media": str(p), "caption": caption})
-            for i, p in enumerate(paths)
-        ]
+        media = [{"type": "photo", "media": str(p)} for p in paths]
 
     interp = _interpretation_text(reading_row.get("interpretation"))
-    if media is not None:
-        text = interp
-    else:
-        text = f"{caption}\n\n{interp}" if interp else caption
-    return media, _chunk_text(text)
+    parts = [header] if not interp else [header, *_chunk_text(interp)]
+    return media, parts
 
 
 async def send_share(bot, chat_id: int, media: list[dict] | None, text_parts: list[str]) -> None:
