@@ -298,6 +298,7 @@ def validate_interpretation(
     cards: list[dict],
     question: str | None,
     spread_type: object = 1,
+    reasons: list[str] | None = None,
 ) -> dict | None:
     """Схемная + семантическая проверка ответа LLM о фактических картах.
 
@@ -315,9 +316,16 @@ def validate_interpretation(
     на_что_смотреть / траектория) — иначе None.
 
     Возвращает починенный dict или None — тогда сработает фолбэк по БД карт.
+    Необязательный reasons-список собирает коды причин отказа
+    (диагностика провалов валидации в логах interpret_reading).
     """
-    if not isinstance(parsed, dict):
+    def _fail(code: str) -> None:
+        if reasons is not None:
+            reasons.append(code)
         return None
+
+    if not isinstance(parsed, dict):
+        return _fail("not-dict")
 
     repaired = {key: value for key, value in parsed.items() if key in _ALLOWED_TOP_KEYS}
     repaired.setdefault("advice", "")
@@ -343,24 +351,24 @@ def validate_interpretation(
     if _intro is None:
         repaired["intro"] = ""
     elif not isinstance(_intro, str) or not _intro.strip():
-        return None
+        return _fail("empty-intro")
 
     short_answer = repaired.get("short_answer")
     if not isinstance(short_answer, str) or not short_answer.strip():
-        return None
+        return _fail("empty-short-answer")
 
     if _has_reasoning_leak(" ".join(_iter_prose(repaired))):
-        return None
+        return _fail("reasoning-leak")
 
     is_three = str(spread_type) == "3" and len(cards) == 3
     is_daily = (not is_three) and not (question and str(question).strip())
     if is_daily and not _has_daily_field(repaired):
-        return None
+        return _fail("daily-no-field")
 
     if is_three:
         positions_raw = repaired.get("позиции")
         if not isinstance(positions_raw, list) or len(positions_raw) != len(cards):
-            return None
+            return _fail("three-positions-len")
 
         from core.prompts import _positions_for_question
         backend_positions = _positions_for_question(question)
@@ -370,7 +378,7 @@ def validate_interpretation(
         claimed: list[int | None] = []
         for item in positions_raw:
             if not isinstance(item, dict):
-                return None
+                return _fail("three-item-not-dict")
             idx = actual_names.get(_norm_name(item.get("карта")))
             claimed.append(idx)
 
@@ -385,7 +393,7 @@ def validate_interpretation(
             card = cards[card_idx]
             item_text = item.get("трактовка")
             if not isinstance(item_text, str) or not item_text.strip():
-                return None
+                return _fail("three-empty-traktovka")
             rebuilt.append({
                 "_card_idx": card_idx,
                 "позиция": backend_positions[card_idx],
@@ -404,7 +412,7 @@ def validate_interpretation(
         if "позиции" in repaired and not _positions_shape_valid(
             repaired.get("позиции"), cards
         ):
-            return None
+            return _fail("positions-shape")
 
         if len(cards) == 1:
             meaning = repaired.get("card_meaning")
@@ -474,7 +482,20 @@ async def call_llm(
                 "temperature": temperature,
             },
         )
-        response.raise_for_status()
+        try:
+            response.raise_for_status()
+        except httpx.HTTPStatusError as e:
+            # Тело ошибки — единственное, что отличает дохлый ключ,
+            # протухшую сессию и снятую с полки модель (бой 10.10:
+            # три синхронных Zen-400 без единой причины в логах).
+            # Секретов в теле нет (ключ едет только в заголовке).
+            try:
+                body = (await response.aread()).decode("utf-8", "replace")[:500]
+            except Exception:
+                body = "<unreadable>"
+            raise httpx.HTTPStatusError(
+                f"{e} — body: {body}", request=e.request, response=e.response
+            ) from e
         data = response.json()
         # Провайдер может вернуть 200 с error-конвертом вместо choices
         # (напр. upstream 502 от Nvidia): ловим явно, а не KeyError.
@@ -685,17 +706,21 @@ async def interpret_reading(
                 )
                 continue
             parsed = parse_llm_response(raw)
+            reasons: list[str] = []
             if parsed:
                 # схемная + семантическая проверка против фактических карт;
                 # валидатор понимает легаси-маркер "3" для трёхкарточной схемы
                 parsed = validate_interpretation(
                     parsed, cards, question,
                     "3" if spread["id"] == "three" else spread["id"],
+                    reasons=reasons,
                 )
+            else:
+                reasons.append("parse-failed")
             if not parsed:
                 logger.warning(
-                    "LLM response failed validation (attempt %d) — raw head: %r",
-                    attempt, raw[:300],
+                    "LLM response failed validation (attempt %d) reasons=%s — raw head: %r",
+                    attempt, reasons, raw[:300],
                 )
                 continue
             score, reasons = score_interpretation(parsed, character_id, avoid_texts)
