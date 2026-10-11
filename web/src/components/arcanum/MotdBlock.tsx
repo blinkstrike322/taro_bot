@@ -6,7 +6,7 @@
 // дня ещё не вытянута, скромная строка, если свершён.
 // ─────────────────────────────────────────────────────────────
 import { useEffect, useRef } from 'react';
-import { BookOpen, LayoutGrid, Sun } from 'lucide-react';
+import { BarChart3, CalendarDays, CalendarRange, Sun } from 'lucide-react';
 import { getGuide } from '@/lib/guides';
 import { sMenu, sRitual } from '@/lib/sound';
 import Typewriter from '@/components/arcanum/Typewriter';
@@ -101,14 +101,14 @@ export default function MotdBlock({ characterId, onRunCmd, streak, dailyDone, mo
       )}
 
       <div className="motd-actions">
-        <button type="button" className="motd-chip" onClick={() => run('taro daily')}>
-          <Sun size={13} strokeWidth={1.75} aria-hidden="true" /> карта дня
+        <button type="button" className="motd-chip" onClick={() => run('taro week')}>
+          <CalendarDays size={13} strokeWidth={1.75} aria-hidden="true" /> дайджест недели
         </button>
-        <button type="button" className="motd-chip" onClick={() => run('taro catalog')}>
-          <LayoutGrid size={13} strokeWidth={1.75} aria-hidden="true" /> расклады
+        <button type="button" className="motd-chip" onClick={() => run('taro month')}>
+          <CalendarRange size={13} strokeWidth={1.75} aria-hidden="true" /> месяц в картах
         </button>
-        <button type="button" className="motd-chip" onClick={() => run('taro library')}>
-          <BookOpen size={13} strokeWidth={1.75} aria-hidden="true" /> библиотека
+        <button type="button" className="motd-chip" onClick={() => run('taro stats')}>
+          <BarChart3 size={13} strokeWidth={1.75} aria-hidden="true" /> статистика
         </button>
         {streak != null && streak > 1 && (
           <span className="motd-streak tl tl-comment">нить дней: {streak}</span>
