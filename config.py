@@ -7,8 +7,12 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     BOT_TOKEN: str
     OPENROUTER_API_KEY: str
+    # Ling/DeepInfra passed a live JSON reading probe on 2026-10-13. Other
+    # allowlisted candidates require an explicit operator choice in this field.
+    OPENROUTER_MODELS: str = "inclusionai/ling-3.0-flash"
     OPENCODE_ZEN_KEY: str = ""
-    OPENCODE_ZEN_SESSION: str = ""  # заголовок x-session-id для Zen free tier
+    OPENCODE_ZEN_ENABLED: bool = False  # free tier rejects non-OpenCode apps (2026-10-13)
+    OPENCODE_ZEN_SESSION: str = ""  # explicit legitimate session, never fabricated by the bot
     DB_PATH: str = "/data/taro_bot.db"
     WEBAPP_URL: str = "http://localhost:8080"
     OFFER_URL: str = "http://localhost:8080/offer/"

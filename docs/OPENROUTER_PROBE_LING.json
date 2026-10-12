@@ -1,0 +1,46 @@
+{
+  "provider": "openrouter",
+  "tested_at": "2026-10-13T01:20:24.352716+03:00",
+  "completion_requests": 1,
+  "confirmed_cost_usd": "0",
+  "actual_cost_usd": null,
+  "results": [
+    {
+      "model": "inclusionai/ling-3.0-flash",
+      "pricing_per_token": {
+        "prompt": "0.000000021",
+        "completion": "0.000000063",
+        "input_cache_read": "0.0000000042"
+      },
+      "projected_ceiling_usd": "0.000209622",
+      "cost_guard": {
+        "input_token_upper_bound": 5182,
+        "max_price": {
+          "prompt": 0.021,
+          "completion": 0.063,
+          "request": 0.0
+        }
+      },
+      "response_format": "json_object",
+      "status": 404,
+      "latency_s": 0.39,
+      "ok": false,
+      "error_type": "404",
+      "message": "No endpoints found that can handle the requested parameters. To learn more about provider routing, visit: https://openrouter.ai/docs/guides/routing/provider-selection"
+    }
+  ],
+  "budget": {
+    "per_call_ceiling_usd": "0.03",
+    "cumulative_ceiling_usd": "0.10"
+  },
+  "key_metadata_status": 200,
+  "key_metadata": {
+    "limit": null,
+    "limit_remaining": null,
+    "usage": 0.088930717,
+    "is_free_tier": false
+  },
+  "stopped_reason": "actual_cost_unavailable_reservation_kept",
+  "ledger_charged_or_reserved_usd": "0.000650182",
+  "unresolved_cost_requests": 1
+}

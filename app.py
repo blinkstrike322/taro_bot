@@ -8,6 +8,7 @@ import re
 import shutil
 import time
 import uuid
+import weakref
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit, urlunsplit
 
@@ -54,6 +55,7 @@ from core.tg_share import (
 from storage.db import (
     STATUS_COMPLETED,
     STATUS_FAILED,
+    IdempotencyConflict,
     complete_reading,
     count_user_readings,
     count_user_readings_grouped,
@@ -61,6 +63,7 @@ from storage.db import (
     get_active_reading,
     get_db,
     get_or_create_user,
+    get_reading_by_id,
     get_reading_by_token,
     get_recent_texts,
     get_user_by_tg_id,
@@ -69,6 +72,7 @@ from storage.db import (
     get_user_readings_days,
     init_db,
     mark_reading_processing,
+    set_reading_cards,
     sweep_stale_reservations,
 )
 from storage.events import _EVENT_NAMES, log_event, safe_log_event
@@ -76,6 +80,15 @@ from storage.events import _EVENT_NAMES, log_event, safe_log_event
 # initData старше этого срока не принимается: подпись остаётся валидной
 # навсегда, а значит без проверки возраста старые данные можно переиспользовать.
 INIT_DATA_MAX_AGE = 24 * 3600
+
+
+def _request_init_data(request, body: dict | None = None) -> str:
+    """Read auth from the header; legacy body/query callers remain supported."""
+    return (
+        getattr(request, "headers", {}).get("X-Telegram-Init-Data", "")
+        or (body or {}).get("init_data", "")
+        or getattr(request, "query", {}).get("init_data", "")
+    )
 
 
 def verify_telegram_init_data(init_data: str) -> dict | None:
@@ -179,7 +192,7 @@ async def start_polling(bot: Bot, dp: Dispatcher) -> None:
 
 
 async def handle_readings(request):
-    init_data = request.query.get('init_data', '')
+    init_data = _request_init_data(request)
     user = verify_telegram_init_data(init_data)
     if not user:
         # Явный 401: фронт отличает «нет авторизации» от «нет данных за месяц»
@@ -219,7 +232,7 @@ async def handle_stats(request):
     Контракт клиента (SNAP3 api.ts) — camelCase. totalReadings/spreadCounts —
     истина из строк журнала, а не из денормализованных счётчиков.
     """
-    user = verify_telegram_init_data(request.query.get("init_data", ""))
+    user = verify_telegram_init_data(_request_init_data(request))
     if not user:
         return web.json_response({"error": "unauthorized"}, status=401)
     tg_id = user.get("id", 0)
@@ -239,7 +252,7 @@ async def handle_stats(request):
 async def handle_disk_usage(request):
     # Операционная информация (размер диска/БД/WAL) наружу не отдаётся —
     # только администраторам из ADMIN_IDS через валидный initData.
-    init_data = request.query.get('init_data', '')
+    init_data = _request_init_data(request)
     user = verify_telegram_init_data(init_data)
     if not user or user.get('id') not in _admin_tg_ids():
         return web.json_response({"error": "forbidden"}, status=403)
@@ -289,7 +302,7 @@ async def handle_disk_usage(request):
 async def handle_schema(request):
     # Диагностика схемы для админов (бой 09.10.2026: код с миграциями,
     # а в прод-БД нет колонок). Таблицы зашиты — инъекции некуда.
-    init_data = request.query.get('init_data', '')
+    init_data = _request_init_data(request)
     user = verify_telegram_init_data(init_data)
     if not user or user.get('id') not in _admin_tg_ids():
         return web.json_response({"error": "forbidden"}, status=403)
@@ -319,7 +332,7 @@ async def handle_character_set(request):
     character_id = body.get("character_id", "")
     if character_id not in CHARACTER_IDS:
         return web.json_response({"error": "unknown character"}, status=400)
-    user_data = verify_telegram_init_data(body.get("init_data", ""))
+    user_data = verify_telegram_init_data(_request_init_data(request, body))
     if not user_data or not user_data.get("id"):
         return web.json_response({"error": "unauthorized"}, status=403)
     db = await get_db()
@@ -330,7 +343,7 @@ async def handle_character_set(request):
 
 async def handle_character(request):
     """Return the user's active character/guide."""
-    init_data = request.query.get('init_data', '')
+    init_data = _request_init_data(request)
     user_data = verify_telegram_init_data(init_data)
     if not user_data:
         return web.json_response({"character_id": "shadow_walker"})
@@ -347,17 +360,13 @@ async def handle_character(request):
 # Источник правды — БД (readings.client_token → статус). Процессного словаря
 # _pending_spreads нет: поллинг и restart-recovery идут через DB-функции.
 #
-# _user_locks убран: квота резервируется атомарным INSERT...SELECT guard
-# (см. storage.db.reserve_reading) на единственном разделяемом aiosqlite-
-# соединении, поэтому межпроцессная (точнее, внутрипроцессная asyncio)
-# гонка между check_quota и INSERT невозможна — SQLite сериализует запись,
-# и проигравший конкурент получает отказ из guard'а (reserve_quota уже
-# делает повторную проверку и отдаёт корректный отказ). Проверено тестом
-# test_concurrent_begin_last_slot_single_winner.
+# SQLite enforces quota and operation-key uniqueness across all connections.
+# Short local locks also protect legacy callers and the claim-to-draw interval.
 
 # Сильные ссылки на фоновые шёпоты: create_task без сохранения может быть
 # собран GC до завершения.
 _whisper_tasks: set[asyncio.Task] = set()
+_spread_locks: weakref.WeakValueDictionary[int, asyncio.Lock] = weakref.WeakValueDictionary()
 
 
 async def _whisper_task(token: str, ctx: dict, cards: list[dict]) -> None:
@@ -443,6 +452,8 @@ async def handle_spread_begin(request):
         response = {
             "cards": ctx["cards"],
             "token": ctx["token"],
+            "reading_id": ctx["reading_id"],
+            "status": ctx["status"],
             "remaining": ctx["quota"].get("remaining"),
             "limit": ctx["quota"].get("limit"),
             "spread_id": ctx["spread_id"],
@@ -465,6 +476,8 @@ async def handle_spread_begin(request):
     response = {
         "cards": cards,
         "token": token,
+        "reading_id": ctx["reading_id"],
+        "status": "reserved",
         "remaining": ctx["quota"].get("remaining"),
         "limit": ctx["quota"].get("limit"),
         "spread_id": ctx["spread_id"],
@@ -483,7 +496,7 @@ async def handle_spread_begin(request):
 async def handle_spread_poll(request):
     """Phase 2: is the whisper ready? Requires valid initData + ownership."""
     token = request.query.get("token", "")
-    init_data = request.query.get("init_data", "")
+    init_data = _request_init_data(request)
     user = verify_telegram_init_data(init_data)
     if not user:
         return web.json_response({"error": "unauthorized"}, status=403)
@@ -510,33 +523,74 @@ async def handle_spread_poll(request):
     return web.json_response({"ready": False})
 
 
-async def _spread_request_context(request, client_token: str):
-    """Shared prelude for spread handlers: auth → reserve quota → draw.
+def _saved_spread_context(row: dict, quota: dict, spread: dict) -> dict | web.Response:
+    """Replay persisted cards and metadata without another draw or LLM call."""
+    saved = row.get("cards_data") or {}
+    cards = saved.get("cards") or []
+    if not cards:
+        if row.get("status") == STATUS_FAILED:
+            return web.json_response(
+                {"error": row.get("error") or "Не удалось подготовить карты. Начни новый сеанс."}, status=422
+            )
+        return web.json_response(
+            {"error": "Сеанс ещё создаётся. Повтори запрос с тем же ключом."}, status=503
+        )
+    positions = saved.get("positions") or (
+        _positions_for_question(row.get("question"))
+        if spread["id"] == "three" else [p["name"] for p in spread["positions"]]
+    )
+    ritual = saved.get("daily_ritual")
+    if ritual is not None:
+        # This request only reads the existing ritual; it does not count a day.
+        ritual = {**ritual, "counted": False}
+    return {
+        "deduped": True,
+        "token": row["client_token"],
+        "reading_id": row["reading_id"],
+        "status": row.get("status", "processing"),
+        "cards": cards,
+        "positions": positions if len(positions) == len(cards) else None,
+        "spread_id": spread["id"],
+        "spread_name": spread["name"],
+        "position_keys": saved.get("position_keys") or [p["key"] for p in spread["positions"]],
+        "daily_ritual": ritual,
+        "quota": quota,
+    }
 
-    Returns a context dict or a ready-to-send error Response.
-    """
+
+async def _spread_request_context(request, client_token: str):
+    """Authenticate and serialize local creation; DB keys protect all writers."""
     try:
         body = await request.json()
     except Exception:
         return web.json_response({"error": "invalid json"}, status=400)
-    init_data = body.get("init_data", "")
-    user_data = verify_telegram_init_data(init_data)
-    if not user_data:
+    if not isinstance(body, dict):
+        return web.json_response({"error": "invalid json"}, status=400)
+    user_data = verify_telegram_init_data(_request_init_data(request, body))
+    if not user_data or not user_data.get("id"):
         return web.json_response({"error": "unauthorized"}, status=403)
-    tg_id = user_data.get("id", 0)
+    tg_id = user_data["id"]
+    lock = _spread_locks.get(tg_id)
+    if lock is None:
+        lock = asyncio.Lock()
+        _spread_locks[tg_id] = lock
+    async with lock:
+        return await _create_spread_context(body, tg_id, client_token)
+
+
+async def _create_spread_context(body: dict, tg_id: int, client_token: str):
     spread_type = body.get("spread_type", 1)
     question = body.get("question")
-    if not tg_id:
-        return web.json_response({"error": "tg_id required"}, status=400)
-
+    if question is not None and (not isinstance(question, str) or len(question) > 2000):
+        return web.json_response({"error": "Вопрос должен быть текстом до 2000 символов."}, status=400)
+    question = question.strip() or None if question is not None else None
+    key = body.get("idempotency_key")
+    if key is not None and (not isinstance(key, str) or not re.fullmatch(r"[A-Za-z0-9_.:-]{8,128}", key)):
+        return web.json_response({"error": "invalid idempotency_key"}, status=400)
     db = await get_db()
     user = await get_or_create_user(db, tg_id)
-
-    # Quota — frontend sends spread_type=1 with no question for daily card
     spread = resolve_spread(spread_type, question)
     spread_id = spread["id"]
-    # легаси-типы сохраняют прежние reading_type (дедуп/журнал не ломаются):
-    # 1 → spread_1, 3 → spread_3; новые id — spread_<id>
     if spread_id == "daily":
         spread_type_str = "daily"
         reading_type = "daily"
@@ -546,130 +600,113 @@ async def _spread_request_context(request, client_token: str):
     else:
         spread_type_str = "non_daily"
         reading_type = f"spread_{spread_id}"
-
-    # Ритуал карты дня: считаем в момент начала расклада (семантика SNAP3:
-    # raw-проверка после resolve; легаси-числа считаются daily, если резолвятся
-    # в daily). Час присылает клиент — без валидного local_hour ритуал не трогаем.
-    # Пользователь перечитывается свежим запросом: get_or_create_user выше не
-    # выбирает streak-колонки.
-    local_hour_raw = body.get("local_hour")
-    try:
-        local_hour = int(local_hour_raw) if local_hour_raw is not None else None
-    except (TypeError, ValueError):
-        local_hour = None
-    if local_hour is not None and not (0 <= local_hour <= 23):
-        local_hour = None
-    daily_ritual = None
-    if spread_id == "daily" and local_hour is not None:
-        user_row = await get_user_by_tg_id(db, tg_id)
-        if user_row is not None:
-            daily_ritual = await touch_daily_streak(db, user_row, local_hour)
-
-    count = min(int(spread["count"]), 10)
-    needs_q = spread["needs_question"]
-    if needs_q and not (question and str(question).strip()):
+    if spread["needs_question"] and not question:
         return web.json_response({"error": "для этого расклада нужен вопрос"}, status=400)
-    if spread_id == "three":
-        positions = _positions_for_question(question)
-    else:
-        positions = [p["name"] for p in spread["positions"]]
+    positions = (_positions_for_question(question) if spread_id == "three"
+                 else [p["name"] for p in spread["positions"]])
     position_keys = [p["key"] for p in spread["positions"]]
-    cards = draw_cards(count)
-
-    # Проводника определяет сервер: Telegram identity → пользователь БД.
-    # Поле character_id из тела запроса — только UI-подсказка и не используется.
+    # The selected guide belongs to the authenticated user, never the body.
     character_id = user.character_id
+    fingerprint = hashlib.sha256(json.dumps(
+        {"spread_id": spread_id, "question": question, "character_id": character_id},
+        ensure_ascii=False, sort_keys=True, separators=(",", ":"),
+    ).encode()).hexdigest()
 
-    # Двойной /begin (двойной тап, повторный маунт): шёпот уже бежит —
-    # отдаём его токен и карты, не жжём слот квоты и круг по провайдерам.
-    # Дедуп только при совпадении типа: активный 3-карточный расклад не
-    # должен «отвечать» на запрос карты дня (и наоборот).
-    active = await get_active_reading(db, user.id)
-    if active and active["client_token"] and active["type"] == reading_type:
-        active_cards = (active["cards_data"] or {}).get("cards") or []
-        if active_cards:
-            quota_view = await check_quota(db, user.id, tg_id, spread_type_str)
-            # Позиции активного расклада — тем же способом, что для нового:
-            # three — динамические по вопросу, остальные — имена из каталога.
-            active_positions: list[str] | None = (
-                _positions_for_question(active["question"])
-                if spread_id == "three"
-                else positions
-            )
-            if active_positions is not None and len(active_positions) != len(active_cards):
-                active_positions = None
-            return {
-                "deduped": True,
-                "token": active["client_token"],
-                "cards": active_cards,
-                "positions": active_positions,
-                "spread_id": spread_id,
-                "spread_name": spread["name"],
-                "position_keys": position_keys,
-                "daily_ritual": daily_ritual,
-                "quota": {"remaining": quota_view.get("remaining"), "limit": quota_view.get("limit")},
-            }
+    # Older callers do not have durable operation keys. Match their full input
+    # only while the original generation is active; different questions proceed.
+    if key is None:
+        active = await get_active_reading(db, user.id)
+        if (active and active["client_token"] and active["type"] == reading_type
+                and active["question"] == question and active["character_id"] == character_id):
+            view = await check_quota(db, user.id, tg_id, spread_type_str)
+            return _saved_spread_context(active, view, spread)
 
-    # Резервируем слот квоты атомарно — до запуска LLM (см. reserve_quota).
-    # Без _user_lock: резерв атомарен на уровне SQL (см. комментарий выше).
-    cards_data = {"cards": cards, "spread_type": spread_id}
-    quota = await reserve_quota(
-        db,
-        user_id=user.id,
-        tg_id=tg_id,
-        spread_type=spread_type_str,
-        question=question,
-        cards_data=cards_data,
-        character_id=character_id,
-        reading_type=reading_type,
-        client_token=client_token,
-    )
-    if not quota["ok"]:
-        await safe_log_event(
-            db,
-            tg_id,
-            "quota_refused",
-            {
-                "guide": character_id,
-                "spread_type": spread_type,
-                "needs_subscription": bool(quota.get("needs_subscription")),
-            },
-            user_id=user.id,
+    # Claim the operation before drawing. The unique DB key picks exactly one
+    # creator even across connections/processes; losers never draw or charge.
+    cards_data = {"spread_type": spread_id, "positions": positions, "position_keys": position_keys}
+    try:
+        quota = await reserve_quota(
+            db, user_id=user.id, tg_id=tg_id, spread_type=spread_type_str,
+            question=question, cards_data=cards_data, character_id=character_id,
+            reading_type=reading_type, client_token=client_token,
+            idempotency_key=key, request_fingerprint=fingerprint if key else None,
         )
+    except IdempotencyConflict:
         return web.json_response(
-            {
-                "error": quota.get("reason", "Лимит исчерпан."),
-                "needs_subscription": bool(quota.get("needs_subscription")),
-            },
-            status=429,
+            {"error": "Этот ключ сеанса уже использован для другого вопроса или проводника."}, status=409
         )
+    if quota.get("replayed") is not None:
+        return _saved_spread_context(quota["replayed"], quota, spread)
+    if not quota["ok"]:
+        await safe_log_event(db, tg_id, "quota_refused", {
+            "guide": character_id, "spread_type": spread_type,
+            "needs_subscription": bool(quota.get("needs_subscription")),
+        }, user_id=user.id)
+        return web.json_response({
+            "error": quota.get("reason", "Лимит исчерпан."),
+            "needs_subscription": bool(quota.get("needs_subscription")),
+        }, status=429)
 
-    await safe_log_event(
-        db,
-        tg_id,
-        "spread_begin",
-        {"guide": character_id, "spread_type": spread_type},
-        user_id=user.id,
-    )
-
+    daily_ritual = None
+    try:
+        cards = draw_cards(min(int(spread["count"]), 10))
+        local_hour_raw = body.get("local_hour")
+        try:
+            local_hour = int(local_hour_raw) if local_hour_raw is not None else None
+        except (TypeError, ValueError):
+            local_hour = None
+        if spread_id == "daily" and local_hour is not None and 0 <= local_hour <= 23:
+            user_row = await get_user_by_tg_id(db, tg_id)
+            if user_row is not None:
+                daily_ritual = await touch_daily_streak(db, user_row, local_hour)
+        cards_data.update(cards=cards, daily_ritual=daily_ritual)
+        await set_reading_cards(db, quota["reading_id"], cards_data)
+    except Exception:
+        await fail_reading(db, quota["reading_id"], "Не удалось подготовить карты. Начни новый сеанс.")
+        raise
+    await safe_log_event(db, tg_id, "spread_begin", {
+        "guide": character_id, "spread_type": spread_type,
+    }, user_id=user.id)
     return {
-        "db": db,
-        "user_id": user.id,
-        "tg_id": tg_id,
-        "cards": cards,
-        "question": question,
-        "character_id": character_id,
-        "spread_type": spread_type,
-        "reading_type": reading_type,
-        "spread": spread,
-        "spread_id": spread_id,
-        "spread_name": spread["name"],
-        "positions": positions,
-        "position_keys": position_keys,
-        "daily_ritual": daily_ritual,
-        "reading_id": quota["reading_id"],
-        "quota": quota,
+        "db": db, "user_id": user.id, "tg_id": tg_id,
+        "cards": cards, "question": question, "character_id": character_id,
+        "spread_type": spread_type, "reading_type": reading_type, "spread": spread,
+        "spread_id": spread_id, "spread_name": spread["name"], "positions": positions,
+        "position_keys": position_keys, "daily_ritual": daily_ritual,
+        "reading_id": quota["reading_id"], "quota": quota,
     }
+
+
+async def handle_spread_session(request):
+    """Recover fixed cards and the current result after closing the Mini App."""
+    user = verify_telegram_init_data(_request_init_data(request))
+    if not user or not user.get("id"):
+        return web.json_response({"error": "unauthorized"}, status=403)
+    db = await get_db()
+    token = request.query.get("token", "")
+    found = await get_reading_by_token(db, token)
+    if found is None:
+        return web.json_response({"error": "unknown token"}, status=404)
+    if found["tg_id"] != user["id"]:
+        return web.json_response({"error": "forbidden"}, status=403)
+    row = await get_reading_by_id(db, found["reading_id"])
+    saved = row["cards_data"]
+    spread = resolve_spread(saved.get("spread_type", row["type"].removeprefix("spread_")), row["question"])
+    quota_kind = "daily" if spread["id"] == "daily" else "non_daily"
+    quota = await check_quota(db, row["user_id"], user["id"], quota_kind)
+    row["client_token"] = token
+    ctx = _saved_spread_context(row, quota, spread)
+    if isinstance(ctx, web.Response):
+        return ctx
+    return web.json_response({
+        "token": token, "reading_id": row["reading_id"], "status": row["status"],
+        "question": row["question"], "character_id": row["character_id"],
+        "cards": ctx["cards"], "positions": ctx["positions"],
+        "spread_id": ctx["spread_id"], "spread_name": ctx["spread_name"],
+        "position_keys": ctx["position_keys"], "daily_ritual": ctx["daily_ritual"],
+        "remaining": quota.get("remaining"), "limit": quota.get("limit"),
+        "interpretation": row["interpretation"], "error": row["error"],
+    })
 
 
 _BOT_TOKEN_RE = re.compile(r"\b\d{6,12}:[A-Za-z0-9_-]{30,}\b")
@@ -783,7 +820,7 @@ async def handle_ask(request):
         body = await request.json()
     except Exception:
         return web.json_response({"error": "invalid json"}, status=400)
-    user = verify_telegram_init_data(body.get("init_data", ""))
+    user = verify_telegram_init_data(_request_init_data(request, body))
     if not user:
         return web.json_response({"error": "unauthorized"}, status=401)
     question = _clean_str(body.get("question"), 500)
@@ -847,7 +884,7 @@ async def handle_forecast(request):
         body = await request.json()
     except Exception:
         return web.json_response({"error": "invalid json"}, status=400)
-    user = verify_telegram_init_data(body.get("init_data", ""))
+    user = verify_telegram_init_data(_request_init_data(request, body))
     if not user:
         return web.json_response({"error": "unauthorized"}, status=401)
     character_id = (
@@ -915,7 +952,7 @@ async def handle_week(request):
         body = await request.json()
     except Exception:
         return web.json_response({"error": "invalid json"}, status=400)
-    user = verify_telegram_init_data(body.get("init_data", ""))
+    user = verify_telegram_init_data(_request_init_data(request, body))
     if not user:
         return web.json_response({"error": "unauthorized"}, status=401)
     digest = body.get("digest")
@@ -963,7 +1000,7 @@ async def handle_month(request):
         body = await request.json()
     except Exception:
         return web.json_response({"error": "invalid json"}, status=400)
-    user = verify_telegram_init_data(body.get("init_data", ""))
+    user = verify_telegram_init_data(_request_init_data(request, body))
     if not user:
         return web.json_response({"error": "unauthorized"}, status=401)
     digest = body.get("digest")
@@ -1029,7 +1066,7 @@ async def handle_share(request):
         body = await request.json()
     except Exception:
         return web.json_response({"error": "invalid json"}, status=400)
-    user = verify_telegram_init_data(body.get("init_data", ""))
+    user = verify_telegram_init_data(_request_init_data(request, body))
     if not user:
         return web.json_response({"error": "unauthorized"}, status=401)
     tg_id = user.get("id") or 0
@@ -1120,6 +1157,7 @@ def create_webapp(bot: Bot | None = None) -> web.Application:
     app.router.add_post('/api/character', handle_character_set)
     app.router.add_post('/api/spread/begin', handle_spread_begin)
     app.router.add_get('/api/spread/poll', handle_spread_poll)
+    app.router.add_get('/api/spread/session', handle_spread_session)
     app.router.add_post('/api/log', handle_client_log)
     app.router.add_post('/api/events', handle_events)
     app.router.add_post('/api/ask', handle_ask)

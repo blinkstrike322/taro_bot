@@ -23,10 +23,13 @@ OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 ZEN_URL = "https://opencode.ai/zen/v1/chat/completions"
 
 def _zen_key() -> str | None:
+    if not settings.OPENCODE_ZEN_ENABLED:
+        return None
     return settings.OPENCODE_ZEN_KEY or None
 
-# Primary — Ling via OpenCode Zen. Free tier требует заголовок x-session-id
-# (см. call_llm), без него Zen возвращал 400 и тракт считался «мёртвым».
+# Legacy Zen configuration retained for explicit opt-in only. A live 2026-10-13
+# probe found this model unavailable and the current free tier restricted to
+# OpenCode clients. An API key alone must not enable this route.
 PRIMARY_MODEL = "ling-3.0-flash-fin-free"
 
 # Zen free-tier fallbacks (in order)
@@ -35,19 +38,28 @@ ZEN_FALLBACKS = [
     "hy3-free",
 ]
 
-# OpenRouter fallbacks: платное ядро впереди (бенч 2026-09-18:
-# mercury-2.5 — 5с/score 80-88, ling-flash — 10-20с/score 100),
-# дальше free (ling-fin, laguna-s), затем страховка (deepseek,
-# nemotron, auto). Gemma убрана: стабильный 429.
+# Narrow allowlist verified in OpenRouter's live public catalog on 2026-10-13.
+# The same two models were already first in the application's historical chain.
+# No unavailable IDs or random free router are selected implicitly.
 OPENROUTER_FALLBACKS = [
     "inception/mercury-2.5",
     "inclusionai/ling-3.0-flash",
-    "inclusionai/ling-3.0-flash-fin:free",
-    "poolside/laguna-s-2.1:free",
-    "deepseek/deepseek-v4-flash",
-    "nvidia/nemotron-3-super-120b-a12b:free",
-    "openrouter/free",
 ]
+
+
+def _configured_openrouter_models() -> list[str]:
+    """Explicit model order, limited to verified IDs; unknown IDs fail closed."""
+    models: list[str] = []
+    for raw in settings.OPENROUTER_MODELS.split(","):
+        model = raw.strip()
+        if not model:
+            continue
+        if model not in OPENROUTER_FALLBACKS:
+            logger.warning("Ignoring unverified OpenRouter model ID")
+            continue
+        if model not in models:
+            models.append(model)
+    return models
 
 # ── Таймауты на один вызов провайдера ─────────────────────────────
 # Вместо одного 180с-хэнга: connect должен быстро падать при недоступном
@@ -179,20 +191,15 @@ def _build_provider_list() -> list[tuple[str, str, str | None, str]]:
     # 3. OpenRouter fallbacks
     or_key = settings.OPENROUTER_API_KEY
     if or_key:
-        for m in OPENROUTER_FALLBACKS:
+        for m in _configured_openrouter_models():
             providers.append((m, OPENROUTER_URL, or_key, "or"))
 
     return providers
 
 
 def _get_primary_provider() -> tuple[str, str, str | None, str] | None:
-    key = _zen_key()
-    if key:
-        return (PRIMARY_MODEL, ZEN_URL, key, "zen")
-    or_key = settings.OPENROUTER_API_KEY
-    if or_key:
-        return (OPENROUTER_FALLBACKS[0], OPENROUTER_URL, or_key, "or")
-    return None
+    providers = _build_provider_list()
+    return providers[0] if providers else None
 
 
 EMOJI_PATTERN = re.compile(
@@ -457,6 +464,7 @@ async def call_llm(
     api_key: str,
     max_tokens: int = 2000,
     temperature: float = 0.8,
+    json_mode: bool = False,
 ) -> str:
     """Call a single LLM endpoint and return the text content.
 
@@ -468,19 +476,35 @@ async def call_llm(
             "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
         }
-        # Zen free tier требует непустой заголовок x-session-id, иначе
-        # провайдер возвращает 400 MissingSessionID. OpenRouter его игнорирует.
-        if base_url == ZEN_URL:
-            headers["x-session-id"] = settings.OPENCODE_ZEN_SESSION or "taro-bot"
+        # Only send a session explicitly supplied by the operator. A fabricated
+        # OpenCode session must not be used to bypass the free-tier restriction.
+        if base_url == ZEN_URL and settings.OPENCODE_ZEN_SESSION:
+            headers["x-session-id"] = settings.OPENCODE_ZEN_SESSION
+        payload = {
+            "model": model,
+            "messages": messages,
+            "max_tokens": max_tokens,
+            "temperature": temperature,
+        }
+        if base_url == OPENROUTER_URL and model == "inclusionai/ling-3.0-flash":
+            # The cheapest endpoint lacks JSON-mode support. DeepInfra produced
+            # a validated reading in the live probe; disable reasoning so it
+            # cannot consume the visible answer's token budget. Keep this
+            # wrapper format-neutral because it also serves plain-text whispers.
+            payload["reasoning"] = {"enabled": False}
+            payload["provider"] = {
+                "only": ["deepinfra"],
+                "allow_fallbacks": False,
+                "max_price": {"prompt": 0.06, "completion": 0.18},
+            }
+        if json_mode and base_url == OPENROUTER_URL:
+            payload["response_format"] = {"type": "json_object"}
+            if "provider" in payload:
+                payload["provider"]["require_parameters"] = True
         response = await client.post(
             base_url,
             headers=headers,
-            json={
-                "model": model,
-                "messages": messages,
-                "max_tokens": max_tokens,
-                "temperature": temperature,
-            },
+            json=payload,
         )
         try:
             response.raise_for_status()
@@ -547,6 +571,25 @@ async def call_llm_with_fallback(
     temperature: float = 0.8,
     preferred_models: list[str] | None = None,
     deadline_s: float | None = None,
+    json_mode: bool = False,
+) -> str:
+    """Bound the whole provider sweep, including network calls and retry delays."""
+    if deadline_s is not None and deadline_s <= 0:
+        _llm_hop.set(dict(_EMPTY_HOP))
+        raise TimeoutError("LLM generation deadline exhausted")
+    async with asyncio.timeout(deadline_s):
+        return await _call_llm_with_fallback(
+            messages, max_tokens=max_tokens, temperature=temperature,
+            preferred_models=preferred_models, json_mode=json_mode,
+        )
+
+
+async def _call_llm_with_fallback(
+    messages: list[dict],
+    max_tokens: int = 2000,
+    temperature: float = 0.8,
+    preferred_models: list[str] | None = None,
+    json_mode: bool = False,
 ) -> str:
     # Fresh per-request snapshot: if this request never succeeds, get_last_llm_hop
     # stays None instead of leaking a previous request's winning provider/model.
@@ -556,24 +599,17 @@ async def call_llm_with_fallback(
                                      preferred_models)
 
     if not provider_list:
-        raise RuntimeError("No LLM providers configured — set OPENCODE_ZEN_KEY or OPENROUTER_API_KEY")
+        raise RuntimeError(
+            "No LLM providers configured — set OPENROUTER_API_KEY and verified OPENROUTER_MODELS; "
+            "Zen requires explicit OPENCODE_ZEN_ENABLED opt-in"
+        )
 
     logger.info(
         "Attempting LLM call with %d provider(s) total",
         len(provider_list),
     )
 
-    started = time.monotonic()
     for model, base_url, api_key, label in provider_list:
-        if deadline_s is not None and time.monotonic() - started > deadline_s:
-            # Сворп провайдеров без общего потолка мог длиться минуты
-            # (10 провайдеров × 3 попытки × 70с), пока фронт ждёт ~180с.
-            logger.warning(
-                "LLM sweep deadline %.0fs exhausted before %s — %s",
-                deadline_s, label, model,
-            )
-            break
-
         if _is_cooled_down(label, model):
             logger.warning(
                 "Skipping %s — %s: circuit breaker open until %s",
@@ -584,16 +620,19 @@ async def call_llm_with_fallback(
 
         for attempt in range(3):
             try:
+                format_kwargs = {"json_mode": True} if json_mode else {}
                 if temperature == DEFAULT_TEMPERATURE:
                     result = await call_llm(
                         messages, model, base_url, api_key,
                         max_tokens=max_tokens,
+                        **format_kwargs,
                     )
                 else:
                     result = await call_llm(
                         messages, model, base_url, api_key,
                         max_tokens=max_tokens,
                         temperature=temperature,
+                        **format_kwargs,
                     )
                 _record_success(label, model)
                 _primary = _get_primary_provider()
@@ -694,6 +733,7 @@ async def interpret_reading(
             raw = await call_llm_with_fallback(
                 messages, max_tokens=token_base,
                 temperature=temperature, preferred_models=preferred_models,
+                json_mode=True,
                 deadline_s=max(0.0, QUALITY_TIME_BUDGET_S - elapsed_s))
             cleaned = strip_emojis(raw)
             if len(cleaned) != len(raw):

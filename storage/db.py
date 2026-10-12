@@ -34,6 +34,8 @@ CREATE TABLE IF NOT EXISTS readings (
     completed_at TEXT,
     error TEXT,
     client_token TEXT,
+    idempotency_key TEXT,
+    request_fingerprint TEXT,
     FOREIGN KEY (user_id) REFERENCES users(id)
 )
 """
@@ -44,12 +46,33 @@ CREATE TABLE IF NOT EXISTS payments (
     tg_id INTEGER NOT NULL,
     total_amount INTEGER NOT NULL,
     currency TEXT NOT NULL,
+    access_until TEXT,
+    first_month INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 )
 """
 
 
 _db_connection: aiosqlite.Connection | None = None
+
+# A receipt and its entitlement are one SQLite statement. Other coroutines on
+# the shared connection may commit between awaited calls, so a multi-call
+# transaction in a payment handler would not provide the same guarantee.
+_APPLY_PAYMENT_TRIGGER = """
+CREATE TRIGGER IF NOT EXISTS apply_payment_access
+AFTER INSERT ON payments WHEN NEW.access_until IS NOT NULL
+BEGIN
+    UPDATE users SET
+        subscription_end = max(COALESCE(subscription_end, ''), NEW.access_until),
+        first_month_done = max(COALESCE(first_month_done, 0), NEW.first_month)
+    WHERE tg_id = NEW.tg_id;
+    SELECT CASE WHEN changes() = 0 THEN RAISE(ABORT, 'payment user missing') END;
+END
+"""
+
+
+class IdempotencyConflict(ValueError):
+    """A client reused an operation key for different input."""
 
 # Маркер незавершённого резерва квоты: строка readings создана в момент
 # начала расклада, толкование допишет complete_reading(). Пока маркер стоит,
@@ -84,6 +107,8 @@ async def reserve_reading(
     unlimited: bool = False,
     limit: int = 1,
     client_token: str | None = None,
+    idempotency_key: str | None = None,
+    request_fingerprint: str | None = None,
 ) -> int | None:
     """Атомарно занять слот квоты, создав чтение с маркером-заглушкой.
 
@@ -98,10 +123,18 @@ async def reserve_reading(
     """
     cards_json = json.dumps(cards_data, ensure_ascii=False)
 
+    columns = "user_id, type, question, cards_data, interpretation, character_id, status, client_token"
+    values: tuple[object, ...] = (user_id, type, question, cards_json, _PENDING_MARKER, character_id, STATUS_RESERVED, client_token)
+    # Keep legacy callers with old isolated test schemas compatible.
+    if idempotency_key is not None:
+        columns += ", idempotency_key, request_fingerprint"
+        values += (idempotency_key, request_fingerprint)
+    placeholders = ", ".join("?" for _ in values)
+
     if unlimited:  # админ/тестер — без лимита, но запись всё равно создаём
         cursor = await db.execute(
-            "INSERT INTO readings (user_id, type, question, cards_data, interpretation, character_id, status, client_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-            (user_id, type, question, cards_json, _PENDING_MARKER, character_id, STATUS_RESERVED, client_token),
+            f"INSERT INTO readings ({columns}) VALUES ({placeholders})",
+            values,
         )
         await db.commit()
         return cursor.lastrowid
@@ -123,15 +156,38 @@ async def reserve_reading(
         guard_args = (user_id, STATUS_FAILED)
 
     cursor = await db.execute(
-        "INSERT INTO readings (user_id, type, question, cards_data, interpretation, character_id, status, client_token) "
-        "SELECT ?, ?, ?, ?, ?, ?, ?, ? "
+        f"INSERT INTO readings ({columns}) "
+        f"SELECT {placeholders} "
         f"WHERE ({guard}) < ?",
-        (user_id, type, question, cards_json, _PENDING_MARKER, character_id, STATUS_RESERVED, client_token, *guard_args, limit),
+        (*values, *guard_args, limit),
     )
     await db.commit()
     if cursor.rowcount and cursor.rowcount > 0:
         return cursor.lastrowid
     return None
+
+
+async def set_reading_cards(db: aiosqlite.Connection, reading_id: int, cards_data: dict) -> None:
+    """Persist the winning operation's draw before starting interpretation."""
+    await db.execute(
+        "UPDATE readings SET cards_data = ? WHERE id = ? AND status = ?",
+        (json.dumps(cards_data, ensure_ascii=False), reading_id, STATUS_RESERVED),
+    )
+    await db.commit()
+
+
+async def get_reading_by_key(db: aiosqlite.Connection, user_id: int, key: str) -> dict | None:
+    cursor = await db.execute(
+        "SELECT id, client_token, request_fingerprint FROM readings WHERE user_id = ? AND idempotency_key = ?",
+        (user_id, key),
+    )
+    row = await cursor.fetchone()
+    if row is None:
+        return None
+    reading = await get_reading_by_id(db, row[0])
+    if reading is not None:
+        reading.update(client_token=row[1], request_fingerprint=row[2])
+    return reading
 
 
 async def complete_reading(
@@ -141,8 +197,9 @@ async def complete_reading(
 ) -> None:
     """Дописать толкование в зарезервированное чтение (шёпот вернулся)."""
     await db.execute(
-        "UPDATE readings SET interpretation = ?, status = ?, completed_at = datetime('now'), error = NULL WHERE id = ?",
-        (json.dumps(interpretation, ensure_ascii=False), STATUS_COMPLETED, reading_id),
+        "UPDATE readings SET interpretation = ?, status = ?, completed_at = datetime('now'), error = NULL "
+        "WHERE id = ? AND status IN (?, ?)",
+        (json.dumps(interpretation, ensure_ascii=False), STATUS_COMPLETED, reading_id, STATUS_RESERVED, STATUS_PROCESSING),
     )
     await db.commit()
 
@@ -277,7 +334,7 @@ async def get_reading_by_id(
     """
     cursor = await db.execute(
         """SELECT r.id, r.user_id, r.status, r.type, r.question, r.cards_data,
-                  r.interpretation, r.character_id, r.created_at, u.tg_id
+                  r.interpretation, r.character_id, r.created_at, u.tg_id, r.error
            FROM readings r JOIN users u ON r.user_id = u.id
            WHERE r.id = ?""",
         (reading_id,),
@@ -308,6 +365,7 @@ async def get_reading_by_id(
         "character_id": row[7] or "shadow_walker",
         "created_at": row[8] or "",
         "tg_id": row[9],
+        "error": row[10],
     }
 
 
@@ -330,6 +388,10 @@ async def _migrate_schema(db: aiosqlite.Connection) -> None:
         "ALTER TABLE readings ADD COLUMN completed_at TEXT",
         "ALTER TABLE readings ADD COLUMN error TEXT",
         "ALTER TABLE readings ADD COLUMN client_token TEXT",
+        "ALTER TABLE readings ADD COLUMN idempotency_key TEXT",
+        "ALTER TABLE readings ADD COLUMN request_fingerprint TEXT",
+        "ALTER TABLE payments ADD COLUMN access_until TEXT",
+        "ALTER TABLE payments ADD COLUMN first_month INTEGER NOT NULL DEFAULT 0",
     ]
     for sql in migrations:
         try:
@@ -347,7 +409,7 @@ async def _migrate_schema(db: aiosqlite.Connection) -> None:
         ("users", ("streak_days", "last_daily_at", "morning_streak",
                    "last_morning_at", "subscription_end", "first_month_done",
                    "notifications_enabled")),
-        ("readings", ("status", "completed_at", "error", "client_token")),
+        ("readings", ("status", "completed_at", "error", "client_token", "idempotency_key", "request_fingerprint")),
     ):
         cursor = await db.execute(f"PRAGMA table_info({table})")
         have = {row[1] for row in await cursor.fetchall()}
@@ -361,6 +423,13 @@ async def _migrate_schema(db: aiosqlite.Connection) -> None:
         "UPDATE readings SET status = ? WHERE (status = ? OR status IS NULL) AND interpretation != ?",
         (STATUS_COMPLETED, STATUS_RESERVED, _PENDING_MARKER),
     )
+    await db.commit()
+
+    await db.execute(
+        "CREATE UNIQUE INDEX IF NOT EXISTS readings_user_operation_key "
+        "ON readings(user_id, idempotency_key) WHERE idempotency_key IS NOT NULL"
+    )
+    await db.execute(_APPLY_PAYMENT_TRIGGER)
     await db.commit()
 
     # Нормализация subscription_end: рекуррентные платежи писали isoformat с
@@ -855,6 +924,36 @@ async def record_payment(
         (charge_id, tg_id, total_amount, currency),
     )
     await db.commit()
+
+
+async def apply_payment(
+    db: aiosqlite.Connection,
+    charge_id: str,
+    tg_id: int,
+    total_amount: int,
+    currency: str,
+    *,
+    access_until: str | None = None,
+    first_month: bool = False,
+) -> bool:
+    """Atomically record a receipt and grant access; duplicate delivery is a no-op.
+
+    The trigger updates access in the same statement as the unique receipt.
+    Failure rolls both back, so Telegram's retry can safely apply the payment.
+    """
+    if not charge_id:
+        raise ValueError("payment charge_id required")
+    if currency != "XTR":
+        raise ValueError("Stars payments require XTR")
+    cursor = await db.execute(
+        "INSERT INTO payments (charge_id, tg_id, total_amount, currency, access_until, first_month) "
+        "VALUES (?, ?, ?, ?, COALESCE(?, datetime('now', '+30 days')), ?) "
+        "ON CONFLICT(charge_id) DO NOTHING",
+        (charge_id, tg_id, total_amount, currency, access_until, int(first_month)),
+    )
+    applied = cursor.rowcount == 1
+    await db.commit()
+    return applied
 
 
 async def update_first_month_done(db: aiosqlite.Connection, tg_id: int) -> None:

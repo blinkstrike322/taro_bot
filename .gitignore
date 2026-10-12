@@ -1,6 +1,6 @@
 .sisyphus/
 .env
-web/node_modules/
+web/node_modules
 .opencode/skills/impeccable/node_modules/
 .github/skills/impeccable/node_modules/
 web/.next/

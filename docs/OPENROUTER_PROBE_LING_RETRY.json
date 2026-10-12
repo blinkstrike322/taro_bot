@@ -1,0 +1,53 @@
+{
+  "provider": "openrouter",
+  "tested_at": "2026-10-13T01:22:31.270856+03:00",
+  "completion_requests": 1,
+  "confirmed_cost_usd": "0.000054054",
+  "actual_cost_usd": "0.000054054",
+  "results": [
+    {
+      "model": "inclusionai/ling-3.0-flash",
+      "pricing_per_token": {
+        "prompt": "0.000000021",
+        "completion": "0.000000063",
+        "input_cache_read": "0.0000000042"
+      },
+      "projected_ceiling_usd": "0.000109242",
+      "cost_guard": {
+        "input_token_upper_bound": 2802,
+        "max_price": {
+          "prompt": 0.021,
+          "completion": 0.063,
+          "request": 0.0
+        }
+      },
+      "response_format": "none",
+      "sample": "single-card",
+      "status": 200,
+      "latency_s": 3.65,
+      "usage": {
+        "prompt_tokens": 174,
+        "completion_tokens": 800,
+        "total_tokens": 974,
+        "cost": 5.4054e-05
+      },
+      "ok": false,
+      "reading": null,
+      "finish_reason": "length",
+      "error_type": "reading_shape_invalid"
+    }
+  ],
+  "budget": {
+    "per_call_ceiling_usd": "0.03",
+    "cumulative_ceiling_usd": "0.10"
+  },
+  "key_metadata_status": 200,
+  "key_metadata": {
+    "limit": null,
+    "limit_remaining": null,
+    "usage": 0.088930717,
+    "is_free_tier": false
+  },
+  "ledger_charged_or_reserved_usd": "0.000704236",
+  "unresolved_cost_requests": 0
+}

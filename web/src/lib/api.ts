@@ -14,6 +14,10 @@ function init_data(): string {
   return (process.env.NEXT_PUBLIC_DEV_MOCK_INITDATA as string | undefined) ?? '';
 }
 
+function authHeaders(): Record<string, string> {
+  return { 'X-Telegram-Init-Data': init_data() };
+}
+
 export interface TarotCardData {
   id: string;
   name: string;
@@ -65,6 +69,8 @@ export interface DailyRitualInfo {
 export interface SpreadBeginResponse {
   cards: TarotCardData[];
   token: string;
+  reading_id?: number;
+  status?: SpreadSessionStatus;
   remaining?: number;
   limit?: number;
   positions?: string[];
@@ -110,6 +116,7 @@ export async function spreadBegin(
   characterId: string = 'shadow_walker',
   /** локальный час оператора 0-23 — для серии рассветов */
   localHour?: number,
+  idempotencyKey?: string,
 ): Promise<SpreadBeginResponse> {
   const res = await fetch('/api/spread/begin', {
     method: 'POST',
@@ -119,6 +126,7 @@ export async function spreadBegin(
       spread_type: spreadType,
       question,
       character_id: characterId,
+      ...(idempotencyKey ? { idempotency_key: idempotencyKey } : {}),
       ...(typeof localHour === 'number' ? { local_hour: localHour } : {}),
     }),
   });
@@ -127,8 +135,28 @@ export async function spreadBegin(
 }
 
 export async function spreadPoll(token: string): Promise<SpreadPollResponse> {
-  const res = await fetch(`/api/spread/poll?token=${encodeURIComponent(token)}&init_data=${encodeURIComponent(init_data())}`);
+  const res = await fetch(`/api/spread/poll?token=${encodeURIComponent(token)}`, { headers: authHeaders() });
   if (!res.ok) throw new Error('канал прерван');
+  return res.json();
+}
+
+/** Recover the fixed draw and current generation state after returning to the app. */
+export type SpreadSessionStatus = 'reserved' | 'processing' | 'completed' | 'failed';
+
+export interface SpreadSessionResponse extends SpreadBeginResponse {
+  reading_id: number;
+  status: SpreadSessionStatus;
+  question: string | null;
+  character_id: string;
+  interpretation: Interpretation | null;
+  error: string | null;
+}
+
+export async function spreadSession(token: string): Promise<SpreadSessionResponse> {
+  const res = await fetch(`/api/spread/session?token=${encodeURIComponent(token)}`, {
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw await readErrorBody(res);
   return res.json();
 }
 
@@ -156,7 +184,7 @@ export async function getCharacter(): Promise<string | null> {
   // выбор, а не затирает его дефолтом (бой 09.10: 500 character-колотил
   // проводника в shadow_walker при каждом входе и портил localStorage)
   try {
-    const res = await fetch(`/api/character?init_data=${encodeURIComponent(init_data())}`);
+    const res = await fetch('/api/character', { headers: authHeaders() });
     if (!res.ok) return null;
     const data = await res.json();
     return data.character_id || null;
@@ -179,7 +207,8 @@ export async function setCharacter(id: string): Promise<string> {
 export async function getReadings(): Promise<ReadingEntry[]> {
   const now = new Date();
   const res = await fetch(
-    `/api/readings?year=${now.getFullYear()}&month=${now.getMonth() + 1}&init_data=${encodeURIComponent(init_data())}`,
+    `/api/readings?year=${now.getFullYear()}&month=${now.getMonth() + 1}`,
+    { headers: authHeaders() },
   );
   if (!res.ok) throw new Error('журнал недоступен');
   const data = await res.json();
@@ -189,7 +218,7 @@ export async function getReadings(): Promise<ReadingEntry[]> {
 /** журнал за последние N дней (1-30): без привязки к месяцу —
  *  ретро-окно от текущего момента, для дайджеста недели */
 export async function getReadingsDays(days: number): Promise<ReadingEntry[]> {
-  const res = await fetch(`/api/readings?days=${days}&init_data=${encodeURIComponent(init_data())}`);
+  const res = await fetch(`/api/readings?days=${days}`, { headers: authHeaders() });
   if (!res.ok) throw new Error('журнал недоступен');
   const data = await res.json();
   return data.readings ?? [];
@@ -210,7 +239,7 @@ export interface OperatorStats {
 }
 export async function getStats(): Promise<OperatorStats | null> {
   try {
-    const res = await fetch(`/api/stats?init_data=${encodeURIComponent(init_data())}`);
+    const res = await fetch('/api/stats', { headers: authHeaders() });
     if (!res.ok) return null;
     return await res.json();
   } catch {
@@ -393,7 +422,7 @@ export async function shareReading(payload: {
 
 /** весь журнал (до 500 строк) — хроника карты смотрит на всё */
 export async function getAllReadings(): Promise<ReadingEntry[]> {
-  const res = await fetch(`/api/readings?all=1&init_data=${encodeURIComponent(init_data())}`);
+  const res = await fetch('/api/readings?all=1', { headers: authHeaders() });
   if (!res.ok) throw new Error('журнал недоступен');
   const data = await res.json();
   return data.readings ?? [];

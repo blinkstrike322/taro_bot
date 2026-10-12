@@ -1,0 +1,276 @@
+{
+  "widths": [
+    {
+      "width": 320,
+      "screen": "home",
+      "viewport": 320,
+      "document": 320,
+      "body": 320,
+      "main": 318,
+      "brokenImages": []
+    },
+    {
+      "width": 360,
+      "screen": "home",
+      "viewport": 360,
+      "document": 360,
+      "body": 360,
+      "main": 358,
+      "brokenImages": []
+    },
+    {
+      "width": 390,
+      "screen": "home",
+      "viewport": 390,
+      "document": 390,
+      "body": 390,
+      "main": 388,
+      "brokenImages": []
+    },
+    {
+      "width": 430,
+      "screen": "home",
+      "viewport": 430,
+      "document": 430,
+      "body": 430,
+      "main": 428,
+      "brokenImages": []
+    },
+    {
+      "width": 320,
+      "screen": "reading",
+      "viewport": 320,
+      "document": 320,
+      "body": 320,
+      "main": 318,
+      "brokenImages": []
+    },
+    {
+      "width": 360,
+      "screen": "reading",
+      "viewport": 360,
+      "document": 360,
+      "body": 360,
+      "main": 358,
+      "brokenImages": []
+    },
+    {
+      "width": 390,
+      "screen": "reading",
+      "viewport": 390,
+      "document": 390,
+      "body": 390,
+      "main": 388,
+      "brokenImages": []
+    },
+    {
+      "width": 430,
+      "screen": "reading",
+      "viewport": 430,
+      "document": 430,
+      "body": 430,
+      "main": 428,
+      "brokenImages": []
+    },
+    {
+      "width": 320,
+      "screen": "ritual-daily",
+      "viewport": 320,
+      "document": 320,
+      "body": 320,
+      "main": 318,
+      "brokenImages": []
+    },
+    {
+      "width": 320,
+      "screen": "reading-daily",
+      "viewport": 320,
+      "document": 320,
+      "body": 320,
+      "main": 318,
+      "brokenImages": []
+    },
+    {
+      "width": 320,
+      "screen": "ritual-single",
+      "viewport": 320,
+      "document": 320,
+      "body": 320,
+      "main": 318,
+      "brokenImages": []
+    },
+    {
+      "width": 320,
+      "screen": "reading-single",
+      "viewport": 320,
+      "document": 320,
+      "body": 320,
+      "main": 318,
+      "brokenImages": []
+    },
+    {
+      "width": 320,
+      "screen": "ritual-three",
+      "viewport": 320,
+      "document": 320,
+      "body": 320,
+      "main": 318,
+      "brokenImages": []
+    },
+    {
+      "width": 320,
+      "screen": "reading-three",
+      "viewport": 320,
+      "document": 320,
+      "body": 320,
+      "main": 318,
+      "brokenImages": []
+    },
+    {
+      "width": 320,
+      "screen": "ritual-yesno",
+      "viewport": 320,
+      "document": 320,
+      "body": 320,
+      "main": 318,
+      "brokenImages": []
+    },
+    {
+      "width": 320,
+      "screen": "reading-yesno",
+      "viewport": 320,
+      "document": 320,
+      "body": 320,
+      "main": 318,
+      "brokenImages": []
+    },
+    {
+      "width": 320,
+      "screen": "ritual-mfd",
+      "viewport": 320,
+      "document": 320,
+      "body": 320,
+      "main": 318,
+      "brokenImages": []
+    },
+    {
+      "width": 320,
+      "screen": "reading-mfd",
+      "viewport": 320,
+      "document": 320,
+      "body": 320,
+      "main": 318,
+      "brokenImages": []
+    },
+    {
+      "width": 320,
+      "screen": "ritual-shadow",
+      "viewport": 320,
+      "document": 320,
+      "body": 320,
+      "main": 318,
+      "brokenImages": []
+    },
+    {
+      "width": 320,
+      "screen": "reading-shadow",
+      "viewport": 320,
+      "document": 320,
+      "body": 320,
+      "main": 318,
+      "brokenImages": []
+    },
+    {
+      "width": 320,
+      "screen": "ritual-pentagram",
+      "viewport": 320,
+      "document": 320,
+      "body": 320,
+      "main": 318,
+      "brokenImages": []
+    },
+    {
+      "width": 320,
+      "screen": "reading-pentagram",
+      "viewport": 320,
+      "document": 320,
+      "body": 320,
+      "main": 318,
+      "brokenImages": []
+    },
+    {
+      "width": 320,
+      "screen": "ritual-horseshoe",
+      "viewport": 320,
+      "document": 320,
+      "body": 320,
+      "main": 318,
+      "brokenImages": []
+    },
+    {
+      "width": 320,
+      "screen": "reading-horseshoe",
+      "viewport": 320,
+      "document": 320,
+      "body": 320,
+      "main": 318,
+      "brokenImages": []
+    }
+  ],
+  "preview": true,
+  "realAPI": true,
+  "reload": true,
+  "lostResponseRetry": true,
+  "followup": true,
+  "spreads": [
+    {
+      "id": "daily",
+      "cards": 1,
+      "guideIndex": 0,
+      "passed": true
+    },
+    {
+      "id": "single",
+      "cards": 1,
+      "guideIndex": 1,
+      "passed": true
+    },
+    {
+      "id": "three",
+      "cards": 3,
+      "guideIndex": 2,
+      "passed": true
+    },
+    {
+      "id": "yesno",
+      "cards": 3,
+      "guideIndex": 0,
+      "passed": true
+    },
+    {
+      "id": "mfd",
+      "cards": 3,
+      "guideIndex": 1,
+      "passed": true
+    },
+    {
+      "id": "shadow",
+      "cards": 6,
+      "guideIndex": 2,
+      "passed": true
+    },
+    {
+      "id": "pentagram",
+      "cards": 6,
+      "guideIndex": 0,
+      "passed": true
+    },
+    {
+      "id": "horseshoe",
+      "cards": 7,
+      "guideIndex": 1,
+      "passed": true
+    }
+  ],
+  "errors": []
+}

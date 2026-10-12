@@ -5,8 +5,10 @@ import aiosqlite
 
 from config import settings
 from storage.db import (
+    IdempotencyConflict,
     get_daily_card_count_today,
     get_monthly_non_daily_count,
+    get_reading_by_key,
     is_subscribed,
     reserve_reading,
 )
@@ -118,6 +120,8 @@ async def reserve_quota(
     character_id: str = "shadow_walker",
     reading_type: str = "spread_1",
     client_token: str | None = None,
+    idempotency_key: str | None = None,
+    request_fingerprint: str | None = None,
 ) -> dict:
     """Проверить квоту И атомарно занять слот (строка reading с маркером '{}').
 
@@ -133,26 +137,54 @@ async def reserve_quota(
       {"ok": True, "reading_id": int, "remaining": N|None, "limit": N|None}
       {"ok": False, "reason": str, "needs_subscription": bool, ...}
     """
+    async def replay() -> dict | None:
+        if idempotency_key is None:
+            return None
+        existing = await get_reading_by_key(db, user_id, idempotency_key)
+        if existing is None:
+            return None
+        if existing["request_fingerprint"] != request_fingerprint:
+            raise IdempotencyConflict("operation key input changed")
+        view = await check_quota(db, user_id, tg_id, spread_type)
+        return {"ok": True, "reading_id": existing["reading_id"], "replayed": existing,
+                "remaining": view.get("remaining"), "limit": view.get("limit")}
+
+    # Retries must work even after the original operation used the last slot.
+    existing = await replay()
+    if existing is not None:
+        return existing
     check = await check_quota(db, user_id, tg_id, spread_type)
     if not check["ok"]:
-        return check  # reason / needs_subscription уже внутри
+        return await replay() or check  # another process may have claimed the key
 
     unlimited = bool(check.get("admin") or check.get("tester"))
     limit = check.get("limit") or 1
 
-    reading_id = await reserve_reading(
-        db,
-        user_id=user_id,
-        type=reading_type,
-        question=question,
-        cards_data=cards_data or {},
-        character_id=character_id,
-        unlimited=unlimited,
-        limit=limit,
-        client_token=client_token,
-    )
+    try:
+        reading_id = await reserve_reading(
+            db,
+            user_id=user_id,
+            type=reading_type,
+            question=question,
+            cards_data=cards_data or {},
+            character_id=character_id,
+            unlimited=unlimited,
+            limit=limit,
+            client_token=client_token,
+            idempotency_key=idempotency_key,
+            request_fingerprint=request_fingerprint,
+        )
+    except aiosqlite.IntegrityError:
+        # DB uniqueness is the authority, including across independent workers.
+        existing = await replay()
+        if existing is None:
+            raise
+        return existing
 
     if reading_id is None:
+        existing = await replay()
+        if existing is not None:
+            return existing
         # Параллельный запрос успел занять последний слот между проверкой
         # и резервом — отдаём актуальный отказ.
         logger.warning("Quota race: user_id=%s lost the last slot", user_id)

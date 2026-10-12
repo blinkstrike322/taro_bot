@@ -1,0 +1,44 @@
+{
+  "provider": "openrouter",
+  "tested_at": "2026-10-13T01:14:26.575465+03:00",
+  "completion_requests": 1,
+  "actual_cost_usd": null,
+  "results": [
+    {
+      "model": "inception/mercury-2.5",
+      "pricing_per_token": {
+        "prompt": "0.00000004",
+        "completion": "0.00000015",
+        "input_cache_read": "0.000000004"
+      },
+      "projected_ceiling_usd": "0.00044056",
+      "cost_guard": {
+        "input_token_upper_bound": 5014,
+        "max_price": {
+          "prompt": 0.04,
+          "completion": 0.15,
+          "request": 0.0
+        }
+      },
+      "response_format": "json_schema",
+      "ok": false,
+      "error_type": "ReadTimeout",
+      "latency_s": 48.68
+    }
+  ],
+  "budget": {
+    "per_call_ceiling_usd": "0.03",
+    "cumulative_ceiling_usd": "0.10"
+  },
+  "key_metadata_status": 200,
+  "key_metadata": {
+    "limit": null,
+    "limit_remaining": null,
+    "usage": 0.088687227,
+    "is_free_tier": false
+  },
+  "stopped_reason": "actual_cost_unavailable_reservation_kept",
+  "ledger_charged_or_reserved_usd": "0.00044056",
+  "confirmed_cost_usd": "0",
+  "unresolved_cost_requests": 1
+}

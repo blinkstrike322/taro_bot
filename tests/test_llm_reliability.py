@@ -1,8 +1,10 @@
 # tests/test_llm_reliability.py
 # Circuit breaker (per (label, model): 3 сбоя → cooldown с backoff ×2 до 300с,
 # успех сбрасывает) + разделённые таймауты одного вызова LLM.
+import asyncio
 import time
 
+import httpx
 import pytest
 
 import core.llm as llm
@@ -117,3 +119,58 @@ async def test_call_llm_with_fallback_opens_breaker_after_three_visits(monkeypat
             await llm.call_llm_with_fallback([])
 
     assert llm._is_cooled_down("zen", "m1") is True
+
+
+@pytest.mark.asyncio
+async def test_generation_deadline_cancels_active_provider(monkeypatch):
+    monkeypatch.setattr(llm, "_build_provider_list", lambda: [
+        ("slow", "url", "key", "or"), ("unused", "url", "key", "or"),
+    ])
+    calls = []
+    cancelled = asyncio.Event()
+
+    async def slow_call(messages, model, base_url, api_key, **kwargs):
+        calls.append(model)
+        try:
+            await asyncio.Event().wait()
+        finally:
+            cancelled.set()
+
+    monkeypatch.setattr(llm, "call_llm", slow_call)
+    started = time.monotonic()
+    with pytest.raises(TimeoutError):
+        await llm.call_llm_with_fallback([], deadline_s=0.02)
+    assert time.monotonic() - started < 0.5
+    assert cancelled.is_set()
+    assert calls == ["slow"]
+    assert llm.get_last_llm_hop()["model"] is None
+
+
+@pytest.mark.asyncio
+async def test_generation_deadline_also_bounds_rate_limit_backoff(monkeypatch):
+    monkeypatch.setattr(llm, "_build_provider_list", lambda: [("limited", "url", "key", "or")])
+    calls = 0
+
+    async def limited_call(*args, **kwargs):
+        nonlocal calls
+        calls += 1
+        request = httpx.Request("POST", "https://example.invalid")
+        response = httpx.Response(429, request=request)
+        raise httpx.HTTPStatusError("rate limited", request=request, response=response)
+
+    monkeypatch.setattr(llm, "call_llm", limited_call)
+    started = time.monotonic()
+    with pytest.raises(TimeoutError):
+        await llm.call_llm_with_fallback([], deadline_s=0.02)
+    assert time.monotonic() - started < 0.5
+    assert calls == 1
+
+
+@pytest.mark.asyncio
+async def test_zero_generation_budget_does_not_start_a_provider(monkeypatch):
+    async def unexpected_call(*args, **kwargs):
+        raise AssertionError("A zero budget must not start a paid call")
+
+    monkeypatch.setattr(llm, "call_llm", unexpected_call)
+    with pytest.raises(TimeoutError):
+        await llm.call_llm_with_fallback([], deadline_s=0)

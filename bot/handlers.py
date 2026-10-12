@@ -22,15 +22,13 @@ from core.payments import (
     get_subscription_price,
 )
 from storage.db import (
-    activate_subscription,
+    apply_payment,
     get_db,
     get_monthly_non_daily_count,
     get_notifications_enabled,
     get_or_create_user,
     get_user_by_tg_id,
     is_subscribed,
-    payment_seen,
-    record_payment,
     set_notifications_enabled,
     update_character,
     update_last_active,
@@ -298,52 +296,35 @@ async def on_successful_payment(message: types.Message) -> None:
 
     if sp.currency != "XTR":
         logger.warning("successful_payment with unexpected currency %s from tg_id=%s", sp.currency, tg_id)
+        return
 
     db = await get_db()
     keyboard: InlineKeyboardMarkup
 
-    # Идемпотентность: повторная доставка successful_payment (рестарт посреди
-    # обработки) не должна продлевать подписку второй раз.
     charge_id = sp.telegram_payment_charge_id or sp.provider_payment_charge_id or ""
-    already_applied = bool(charge_id) and await payment_seen(db, charge_id)
-
-    if already_applied:
-        keyboard = await _main_menu_keyboard(db, message.from_user.id)
-    else:
-        if charge_id:
-            await record_payment(db, charge_id, tg_id, sp.total_amount, sp.currency)
-
-        user = await get_user_by_tg_id(db, tg_id)
-        if sp.subscription_expiration_date:
-            # Telegram subscription (with auto-renewal) — canonical SQLite-формат,
-            # продлеваем только если новый конец позже текущего.
-            end_iso = datetime.fromtimestamp(
-                sp.subscription_expiration_date, tz=UTC
-            ).strftime("%Y-%m-%d %H:%M:%S")
-            await db.execute(
-                "UPDATE users SET subscription_end = ? "
-                "WHERE tg_id = ? AND (subscription_end IS NULL OR subscription_end < ?)",
-                (end_iso, tg_id, end_iso),
-            )
-            # Mark first_month_done if this is the first recurring
-            if sp.is_first_recurring and user and not user.first_month_done:
-                await db.execute(
-                    "UPDATE users SET first_month_done = 1 WHERE tg_id = ?",
-                    (tg_id,),
-                )
-            await db.commit()
-        else:
-            # One-time payment (first month 100 Stars)
-            await activate_subscription(db, tg_id, first_month=True)
+    if not charge_id:
+        logger.error("successful_payment missing charge id for tg_id=%s", tg_id)
+        return
+    user = await get_user_by_tg_id(db, tg_id) or await get_or_create_user(db, tg_id)
+    access_until = (
+        datetime.fromtimestamp(sp.subscription_expiration_date, tz=UTC).strftime("%Y-%m-%d %H:%M:%S")
+        if sp.subscription_expiration_date else None
+    )
+    applied = await apply_payment(
+        db, charge_id, tg_id, sp.total_amount, sp.currency,
+        access_until=access_until,
+        first_month=bool(sp.is_first_recurring or not sp.subscription_expiration_date),
+    )
+    if applied:
         # analytics: subscription activated — shape only, no PII
         await safe_log_event(
             db,
             tg_id,
             "subscription_activated",
-            {"first_month": bool(user and user.first_month_done == 0)},
-            user_id=user.id if user else None,
+            {"first_month": bool(user.first_month_done == 0)},
+            user_id=user.id,
         )
-        keyboard = await _main_menu_keyboard(db, message.from_user.id)
+    keyboard = await _main_menu_keyboard(db, message.from_user.id)
 
     await message.answer(
         "Подписка активна!\n"
