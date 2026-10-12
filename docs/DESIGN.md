@@ -148,7 +148,7 @@ ProseType; каждая секция двигает стейдж своим `onD
 | Слой | Файл | Отключение |
 |---|---|---|
 | ритуальный дым (3 облачка) | `Shell.tsx` (`.ritual-smoke`) | `data-typing`/`data-scrolling` |
-| ambient-сигил (вращ. пентаграмма, ~6.8к SVG-нод) | `AmbientSigil.tsx` | маунт после бута; `sigil-dim` при чтении; `heavyMotion` |
+| печать v5 (гравюра гримуара, ~22 штриха, `sigilGlyph.ts`) + заставка SplashIntro с эстафетой word-land | `AmbientSigil.tsx` / `SplashIntro.tsx` | маунт после бута; dim-проп при чтении; сплэш раз за сеанс |
 | живое зерно ЭЛТ | `CrtNoise.tsx` | `heavyMotion`, `data-typing` |
 | созвездие + лунные глифы | `ConstellationLayer.tsx`, `LunarGlyphsLayer.tsx` | `heavyMotion` |
 

@@ -1,7 +1,9 @@
 // ─────────────────────────────────────────────────────────────
 // guides.ts — проводники ARCANUM: визуальная идентичность + голос.
 // Три проводника = три алхимические стадии. Палитра «Alchemical
-// Manuscript»: пигмент на пергаменте, не неон.
+// Manuscript»: пигмент на пергаменте, не неон. Премиальность —
+// в СДЕРЖАННОЙ хроме (насыщенность ≤50%, не неон-пастель) и
+// холодных тонах: каждый акцент — самоцвет при луне, не маркер.
 // ─────────────────────────────────────────────────────────────
 
 export interface GuideMeta {
@@ -49,12 +51,13 @@ export const GUIDES: Record<string, GuideMeta> = {
       'свеча горит, чай заварен. рассказывай.',
       'плед на кресле твой. садись ближе.',
     ],
-    // ALBEDO · серебро-лава
-    accent: '#b5a5e6',
-    accentDim: 'rgba(181,165,230,0.22)',
-    accentGlow: 'rgba(181,165,230,0.55)',
-    bgDeep: '#05040f',
-    glowCenter: 'rgba(181,165,230,0.06)',
+    // ALBEDO · лунный аметист (холодный violet 246°, хрома 43% —
+    // пыльный самоцвет, не неон-пастель; контраст ≈7.8:1 на чернильном)
+    accent: '#a29cd8',
+    accentDim: 'rgba(162,156,216,0.22)',
+    accentGlow: 'rgba(162,156,216,0.5)',
+    bgDeep: '#04040e',
+    glowCenter: 'rgba(162,156,216,0.06)',
     portrait: '/guides/shadow_walker.png',
     cardBack: '/cards/backs/back_shadow_walker.png',
     cardBackVersion: 3,
@@ -99,12 +102,13 @@ export const GUIDES: Record<string, GuideMeta> = {
       'очаг горит, время есть. выкладывай.',
       'руины не идут к людям. хорошо, что ты пришёл.',
     ],
-    // CITRINITAS · оксидированная латунь
-    accent: '#c8a368',
-    accentDim: 'rgba(200,163,104,0.22)',
-    accentGlow: 'rgba(200,163,104,0.5)',
-    bgDeep: '#0a0704',
-    glowCenter: 'rgba(200,163,104,0.06)',
+    // CITRINITAS · старое золото (холодная латунь 43°, хрома 45% —
+    // антикварная позолота, не янтарный маркер; контраст ≈9.2:1)
+    accent: '#c8af6e',
+    accentDim: 'rgba(200,175,110,0.22)',
+    accentGlow: 'rgba(200,175,110,0.5)',
+    bgDeep: '#070603',
+    glowCenter: 'rgba(200,175,110,0.06)',
     portrait: '/guides/ruin_keeper.png',
     cardBack: '/cards/backs/back_ruin_keeper.png',
     cardBackVersion: 3,
@@ -150,12 +154,13 @@ export const GUIDES: Record<string, GuideMeta> = {
       'ты вовремя. я как раз скучала по чужим драмам.',
       'костёр горит, вишня на закуску. выкладывай.',
     ],
-    // RUBEDO · кармин
-    accent: '#d65a6e',
-    accentDim: 'rgba(214,90,110,0.22)',
-    accentGlow: 'rgba(214,90,110,0.55)',
-    bgDeep: '#0a0406',
-    glowCenter: 'rgba(214,90,110,0.06)',
+    // RUBEDO · винный кармин (холодный розовый красный 345°, хрома 48% —
+    // запёкшаяся вишня/оксблад, не клубника; контраст ≈5.2:1)
+    accent: '#c7617a',
+    accentDim: 'rgba(199,97,122,0.22)',
+    accentGlow: 'rgba(199,97,122,0.5)',
+    bgDeep: '#070306',
+    glowCenter: 'rgba(199,97,122,0.06)',
     portrait: '/guides/spark_of_chaos.png',
     cardBack: '/cards/backs/back_spark_of_chaos.png',
     cardBackVersion: 3,

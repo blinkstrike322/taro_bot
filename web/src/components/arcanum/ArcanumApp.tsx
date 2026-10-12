@@ -6,6 +6,7 @@
 // ─────────────────────────────────────────────────────────────
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Shell, { ShellMode } from '@/components/arcanum/Shell';
+import SplashIntro from '@/components/arcanum/SplashIntro';
 import { parseCommand } from '@/lib/commands';
 import { SPREADS } from '@/lib/spreads';
 import * as API from '@/lib/api';
@@ -119,6 +120,11 @@ export default function ArcanumApp() {
 
   const [pendingQuestion, setPendingQuestion] = useState<PendingQuestion>(null);
   const pendingRef = useRef<PendingQuestion>(null);
+
+  // заставка открытия: шторка до первого POST-строго терминала.
+  // Раз за сеанс (sessionStorage) — повторный визит идёт сразу в бут
+  const [splashOn, setSplashOn] = useState(true);
+  const bootedRef = useRef(false);
 
   // лорометр проводников: id → число чтений голосом
   const [guideReadings, setGuideReadings] = useState<Record<string, number>>({});
@@ -1115,6 +1121,33 @@ export default function ArcanumApp() {
     [runGuideSet, setMode, busyRef],
   );
 
+  // ── заставка: выдох шторки → бут-запись под ней ──
+  // POST-строки начинают печататься, пока шторка растворяется.
+  // Повторный визит за сеанс: шторки нет, бут пушим сразу в init.
+  const handleSplashReveal = useCallback(() => {
+    if (bootedRef.current) return;
+    bootedRef.current = true;
+    push({ kind: 'boot' });
+  }, [push]);
+
+  const handleSplashVanish = useCallback(() => {
+    try {
+      sessionStorage.setItem('arcanum:splash:seen', '1');
+    } catch {}
+    setSplashOn(false);
+  }, []);
+
+  useEffect(() => {
+    let seen = false;
+    try {
+      seen = sessionStorage.getItem('arcanum:splash:seen') === '1';
+    } catch {}
+    if (seen) {
+      handleSplashVanish();
+      handleSplashReveal();
+    }
+  }, [handleSplashVanish, handleSplashReveal]);
+
   // ── конец загрузки → MOTD + предложение восстановления ──
   const handleBootDone = useCallback(() => {
     if (bootDone) return;
@@ -1179,6 +1212,15 @@ export default function ArcanumApp() {
   }, [bootDone, soundOn, characterId]);
 
   return (
+    <>
+      {splashOn && (
+        <SplashIntro
+          characterId={characterId}
+          themeId={themeId}
+          onReveal={handleSplashReveal}
+          onVanish={handleSplashVanish}
+        />
+      )}
     <Shell
       characterId={characterId}
       mode={mode}
@@ -1233,5 +1275,6 @@ export default function ArcanumApp() {
       onRestoreSession={handleRestoreSession}
       onDiscardSession={handleDiscardSession}
     />
+    </>
   );
 }

@@ -25,6 +25,28 @@ export default function BootSequence({ characterId, onDone }: BootSequenceProps)
   const [visible, setVisible] = useState(0);
   const doneRef = useRef(false);
 
+  // эстафета с заставкой: вордмарк сплэша летит в заголовок — держим
+  // его скрытым до прилёта (событие word-land) либо 2.4с страховки.
+  // Hold включается только в эффекте при живом .splash — первый кадр
+  // совпадает с SSR (гидрация сходится), повторный визит без сплэша
+  // сразу показывает лого со штатным включением ЭЛТ.
+  const [wordHold, setWordHold] = useState(false);
+  // был ли сплэш: только тогда прилёт играет arrive-анимацией,
+  // иначе — штатное включение ЭЛТ базовой анимацией
+  const heldRef = useRef(false);
+  useEffect(() => {
+    if (!document.querySelector('.splash')) return;
+    heldRef.current = true;
+    setWordHold(true);
+    const land = () => setWordHold(false);
+    window.addEventListener('arcanum:word-land', land);
+    const fallback = setTimeout(land, 2400);
+    return () => {
+      window.removeEventListener('arcanum:word-land', land);
+      clearTimeout(fallback);
+    };
+  }, []);
+
   // строки открываются только после маунта (visible=0 при SSR) —
   // фаза луны здесь гидрационно безопасна
   const moon = moonPhase(new Date());
@@ -77,8 +99,12 @@ export default function BootSequence({ characterId, onDone }: BootSequenceProps)
 
   return (
     <div className="boot-block">
-      {/* знак мастера: тяжёлая гарнитура, включение ЭЛТ */}
-      <div className="boot-logo" aria-label="АРКАНУМ">
+      {/* знак мастера: тяжёлая гарнитура, включение ЭЛТ.
+          Пока летит вордмарк заставки — заголовок на удержании */}
+      <div
+        className={`boot-logo${wordHold ? ' boot-logo--hold' : heldRef.current ? ' boot-logo--land' : ''}`}
+        aria-label="АРКАНУМ"
+      >
         <div className="boot-logo-word">АРКАНУМ</div>
         <div className="boot-logo-sub">
           <span className="boot-logo-rule" aria-hidden="true" />

@@ -1,32 +1,87 @@
 // ─────────────────────────────────────────────────────────────
-// sigilGlyph.ts — генератор векторного гримуар-глифа фонового
-// сигила ARCANUM. Детерминированный: один seed (проводник +
-// карта дня) → один и тот же глиф, сервер и клиент совпадают.
+// sigilGlyph.ts v5 — КАНОНИЧЕСКАЯ ПЕЧАТЬ ARCANUM.
 //
-// Композиция (спека §7): НЕ «магический круг», а авторский
-// псевдо-глиф:
-//   · хребет — 4–7 ходов, сшитых в незамкнутый контур: швы трёх
-//     почерков (провисающая дуга / прямой стежок / пологая дуга),
-//     часть швов обрывается — «недошито»;
-//   · 1–2 сломанные дуги-эха (отголоски колец, никогда не полные);
-//   · 1–2 засечки-штриха через случайный сустав;
-//   · 2–4 узла-точки на суставах.
-// Асимметрия заложена в углы (неровные шаги) и радиусы вершин.
-// Прозрачности 0.04–0.10 — глиф едва проступает из темноты;
-// цвет — только через CSS-переменную проводника (--guide-accent).
+// Сигил — самостоятельный оккультный знак (не литера): пентакль
+// в духе гравюр гримуаров, сшитый по ДНК лого проекта (hairline-
+// кольца, четырёхлучевые звёзды, монохром серебра + одна капля
+// акцента проводника):
+//
+//   · пентаграмма остриём вверх — один непрерывный ход
+//     (V0→V2→V4→V1→V3→V0), R=118;
+//   · вписанный пентагон (V0→V1→…→V4) — внешний корпус звезды,
+//     едет с ней в одном колесе;
+//   · пять семян стихий — микро-круги на вершинах ВНУТРЕННЕЙ
+//     пентаграммы звезды (R≈45, инверсные углы) — тоже в колесе;
+//   · пять ТРОЙНЫХ печатей стихий на вершинах: кольцо 10.5 +
+//     кольцо 6 + точка 1.8 (печать сидит на круге-замке);
+//   · двойной круг-замок: сплошной R=126 + пунктирный R=120;
+//   · пунктирный спутник R=132 с двумя бусинами-узлами —
+//     встречное вращение (механика небес);
+//   · внутренняя пара пунктирных колец: R=97 и R=88;
+//   · средняя двойная полоса: дуги R=156 с двумя разрывами +
+//     тонкая R=147 с разрывами со сдвигом (плетение);
+//   · ГРАДУИРОВАННЫЙ ЛИМБ: 72 деления каждые 5° (R 166→171),
+//     каждое шестое — главная риска через 30° (R 162→174);
+//   · перекрестие: горизонтальный + вертикальный диаметры;
+//   · внешняя ДВОЙНАЯ звёздная карта: бисер R=182 + мелкий
+//     бисер R=190;
+//   · полумесяц (∪, рога вверх) со звездой в чаше — корона
+//     Жрицы; четырёхлучевые звёзды: внизу (ось) и по бокам;
+//   · сердце печати: круг r=24 + пунктирное гало r=31 + тихое
+//     кольцо r=38 + звезда-искра ЦВЕТОМ ПРОВОДНИКА (единственная
+//     капля цвета, как на лого).
+//
+// ГЕОМЕТРИЯ КАНОНИЧНА: seed не меняет композицию — печать как
+// герб/логотип, один и тот же знак в заставке и в ambient-слое.
+// Это критично для бесшовной эстафеты: сигил заставки в конце
+// перетекает точно в ambient-сигил (та же геометрия, тот же
+// масштаб штрихов).
+//
+// ТАЙМИНГИ: новые штрихи раунда v5 наследуют СУЩЕСТВУЮЩИЕ биты
+// проявления (k: beads / ring-outer / ticks / ring-inner / penta /
+// ring-seal / ring-seal-dash / crescent / core-ring) — хронометраж
+// заставки не сдвинут ни на миллисекунду; счётчик 'vertex' держит
+// ровно пять печатей.
+//
+// Слои: 'orbit' — медленный оборот (бисер, кольца, лимб, риски);
+// 'rev' — встречное вращение (пунктирный спутник с узлами);
+// 'core' — вертикален навсегда, только дыхание (замки, луна,
+// звёзды, сердце). Пентаграмма, пентагон, семена и печати стихий
+// хранятся в 'core' (g-поле — данные), но рендер AmbientSigil
+// выделяет их (k 'penta'/'vertex') в отдельное колесо с медленным
+// поворотом: печати стихий едут на остриях звезды.
 // ─────────────────────────────────────────────────────────────
 
 export type SigilInk = 'accent' | 'pale';
+export type SigilLayer = 'orbit' | 'rev' | 'core';
 
 export interface SigilStroke {
   /** SVG path, абсолютные команды */
   d: string;
-  /** толщина хода в единицах viewBox (≈1–2px на экране после масштаба) */
+  /** толщина хода в единицах viewBox */
   w: number;
-  /** прозрачность хода 0.04–0.10 */
+  /** прозрачность хода 0.04–0.10 (ambient); рендерер множит на буст */
   o: number;
   /** чернила: accent — проводник (CSS-переменная), pale — лунное серебро */
   ink: SigilInk;
+  /** слой анимации: orbit / rev / core */
+  g: SigilLayer;
+  /** паттерн штриха (пунктир) в user units — нет = сплошной */
+  dash?: string;
+  /** форма концов: round — бусины, butt — плиты */
+  cap?: 'round' | 'butt';
+  /** вид хода — заставка ставит задержки проявления по этому полю */
+  k?: string;
+}
+
+/** залитая форма (сердце-звезда) */
+export interface SigilShape {
+  d: string;
+  /** прозрачность заливки 0.05–0.10 (ambient) */
+  o: number;
+  ink: SigilInk;
+  g: SigilLayer;
+  k?: string;
 }
 
 export interface SigilDot {
@@ -36,162 +91,353 @@ export interface SigilDot {
   /** прозрачность точки 0.04–0.10 */
   o: number;
   ink: SigilInk;
+  g: SigilLayer;
 }
 
 export interface SigilGlyph {
   strokes: SigilStroke[];
+  shapes: SigilShape[];
   dots: SigilDot[];
 }
 
-const TAU = Math.PI * 2;
 /** центр viewBox 400×400 */
 const C = 200;
-
-/** FNV-1a 32bit: строка контекста чтения → число-зерно */
-function fnv1a(str: string): number {
-  let h = 0x811c9dc5;
-  for (let i = 0; i < str.length; i++) {
-    h ^= str.charCodeAt(i);
-    h = Math.imul(h, 0x01000193);
-  }
-  return h >>> 0;
-}
-
-/** mulberry32 — компактный детерминированный PRNG [0..1) */
-function mulberry32(seed: number): () => number {
-  let a = seed >>> 0;
-  return () => {
-    a = (a + 0x6d2b79f5) >>> 0;
-    let t = a;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
+const TAU = Math.PI * 2;
 
 const f2 = (v: number): number => Math.round(v * 100) / 100;
-const lerp = (a: number, b: number, t: number): number => a + (b - a) * t;
 const polar = (r: number, a: number): [number, number] => [
   C + Math.cos(a) * r,
   C + Math.sin(a) * r,
 ];
-/** точка квадратичной кривой Безье (де Кастельжо) */
-const quadAt = (
-  p0: [number, number], c: [number, number], p1: [number, number], t: number,
-): [number, number] => [
-  (1 - t) * (1 - t) * p0[0] + 2 * (1 - t) * t * c[0] + t * t * p1[0],
-  (1 - t) * (1 - t) * p0[1] + 2 * (1 - t) * t * c[1] + t * t * p1[1],
-];
 
-export function buildSigilGlyph(seed: string): SigilGlyph {
-  const rnd = mulberry32(fnv1a(seed));
+/** дуга: полярный вход → полярный выход */
+function arc(r: number, a0: number, a1: number): string {
+  const sweep = Math.abs(a1 - a0);
+  const p0 = polar(r, a0);
+  const p1 = polar(r, a1);
+  return `M${f2(p0[0])} ${f2(p0[1])}A${f2(r)} ${f2(r)} 0 ${sweep > Math.PI ? 1 : 0} 1 ${f2(p1[0])} ${f2(p1[1])}`;
+}
+
+/** полное кольцо из двух полуарок (для dash-паттерна целиком) */
+function fullCircle(r: number, startAngle: number): string {
+  const a0 = startAngle;
+  const a1 = a0 + Math.PI;
+  const p0 = polar(r, a0);
+  const p1 = polar(r, a1);
+  return (
+    `M${f2(p0[0])} ${f2(p0[1])}A${f2(r)} ${f2(r)} 0 0 1 ${f2(p1[0])} ${f2(p1[1])}` +
+    `A${f2(r)} ${f2(r)} 0 0 1 ${f2(p0[0])} ${f2(p0[1])}`
+  );
+}
+
+/** малый круг одним path (печать стихии, сердце, бусина) */
+function circlePath(cx: number, cy: number, r: number): string {
+  return `M${f2(cx - r)} ${f2(cy)}A${f2(r)} ${f2(r)} 0 0 1 ${f2(cx + r)} ${f2(cy)}A${f2(r)} ${f2(r)} 0 0 1 ${f2(cx - r)} ${f2(cy)}`;
+}
+
+/** четырёхлучевая звезда с длинными острыми лучами (✦ как на лого):
+ *  ширина основания луча 0.16·s — острее, чем у обычной звезды */
+function star4(x: number, y: number, s: number): string {
+  const b = s * 0.16;
+  return (
+    `M${f2(x)} ${f2(y - s)}` +
+    `L${f2(x + b)} ${f2(y - b)}L${f2(x + s)} ${f2(y)}` +
+    `L${f2(x + b)} ${f2(y + b)}L${f2(x)} ${f2(y + s)}` +
+    `L${f2(x - b)} ${f2(y + b)}L${f2(x - s)} ${f2(y)}` +
+    `L${f2(x - b)} ${f2(y - b)}Z`
+  );
+}
+
+// ── геометрия пентакля ──
+/** радиус описанной окружности пентаграммы (вершины) */
+const PENTA_R = 118;
+/** круг-замок: классический пентакль — звезда, замкнутая кругом */
+const SEAL_R = 126;
+/** вершины внутреннего пятиугольника звезды (точки плетения) */
+const INNER_R = Math.round(PENTA_R * 0.382);
+
+/** вершины пентаграммы остриём вверх: верх + четыре по кругу */
+const VERTICES: [number, number][] = Array.from({ length: 5 }, (_, i) => {
+  const a = -Math.PI / 2 + (i * TAU) / 5;
+  return [f2(C + Math.cos(a) * PENTA_R), f2(C + Math.sin(a) * PENTA_R)];
+});
+
+/** семена стихий: вершины ВНУТРЕННЕЙ (инверсной) пентаграммы */
+const SEEDS: [number, number][] = Array.from({ length: 5 }, (_, i) => {
+  const a = -Math.PI / 2 + Math.PI / 5 + (i * TAU) / 5;
+  return [f2(C + Math.cos(a) * INNER_R), f2(C + Math.sin(a) * INNER_R)];
+});
+
+/**
+ * Печать канонична: seed сохранён в сигнатуре для совместимости
+ * call-сайтов (AmbientSigil/SplashIntro), но геометрия постоянна —
+ * как у герба. Проводник красит только сердце-звезду (CSS-переменная).
+ */
+export function buildSigilGlyph(_seed?: string): SigilGlyph {
   const strokes: SigilStroke[] = [];
+  const shapes: SigilShape[] = [];
   const dots: SigilDot[] = [];
-  /** суставы — кандидаты для узлов и засечек */
-  const joints: [number, number][] = [];
 
-  // ── хребет: 4–7 вершин, неровные угловые шаги и радиусы ──
-  const n = 4 + Math.floor(rnd() * 4); // 4..7 ходов
-  let ang = rnd() * TAU;
-  const verts: [number, number][] = [];
-  for (let i = 0; i < n; i++) {
-    ang += (TAU / n) * (0.55 + rnd() * 0.9); // шаги не равны — асимметрия
-    const r = 88 + rnd() * 84; // 88..172 — рваный силуэт
-    verts.push(polar(r, ang));
-  }
-  joints.push(...verts);
-
-  // ── швы хребта: три почерка, часть швов обрывается ──
-  let spine = '';
-  for (let i = 0; i < n; i++) {
-    const a = verts[i];
-    const b = verts[(i + 1) % n];
-    const broken = rnd() < 0.25;
-    const tEnd = broken ? 0.35 + rnd() * 0.35 : 1; // обрыв на 35–70% хода
-    const ex = lerp(a[0], b[0], tEnd);
-    const ey = lerp(a[1], b[1], tEnd);
-    const style = rnd();
-    if (style < 0.5) {
-      // провис: квадратичная дуга, контроль выдавлен перпендикуляром
-      const dx = b[0] - a[0];
-      const dy = b[1] - a[1];
-      const dist = Math.hypot(dx, dy) || 1;
-      const bow = (rnd() - 0.5) * dist * 0.7;
-      const c: [number, number] = [
-        (a[0] + b[0]) / 2 + (-dy / dist) * bow,
-        (a[1] + b[1]) / 2 + (dx / dist) * bow,
-      ];
-      // обрыв куска кривой — точно, де Кастельжо
-      const q = quadAt(a, c, b, tEnd);
-      const c1: [number, number] = [lerp(a[0], c[0], tEnd), lerp(a[1], c[1], tEnd)];
-      spine += `M${f2(a[0])} ${f2(a[1])}Q${f2(c1[0])} ${f2(c1[1])} ${f2(q[0])} ${f2(q[1])}`;
-      joints.push([q[0], q[1]]);
-    } else if (style < 0.8) {
-      // прямой стежок
-      spine += `M${f2(a[0])} ${f2(a[1])}L${f2(ex)} ${f2(ey)}`;
-      joints.push([ex, ey]);
-    } else {
-      // пологая дуга-«стежок» через A: радиус больше хорды
-      const dist = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
-      const rr = f2(dist * (0.65 + rnd() * 0.5));
-      spine += `M${f2(a[0])} ${f2(a[1])}A${rr} ${rr} 0 0 ${rnd() < 0.5 ? 0 : 1} ${f2(ex)} ${f2(ey)}`;
-      joints.push([ex, ey]);
-    }
-  }
+  // ── ORBIT · ДВОЙНАЯ звёздная карта: бисер R=182 + мелкий R=190 ──
   strokes.push({
-    d: spine,
-    w: f2(1.0 + rnd() * 0.2), // основной ход — толще прочих
-    o: f2(0.09 + rnd() * 0.01),
-    ink: 'accent',
+    d: fullCircle(182, -Math.PI / 2),
+    w: 1.4,
+    o: 0.06,
+    ink: 'pale',
+    g: 'orbit',
+    k: 'beads',
+    dash: '0.8 8.2',
+  });
+  strokes.push({
+    d: fullCircle(190, -Math.PI / 2 + 0.37),
+    w: 1.0,
+    o: 0.05,
+    ink: 'pale',
+    g: 'orbit',
+    k: 'beads',
+    dash: '0.7 5.4',
   });
 
-  // ── дуги-эха: 1–2 сломанных кольца-отголоска (никогда не полные) ──
-  const echoCount = 1 + Math.floor(rnd() * 2);
-  for (let k = 0; k < echoCount; k++) {
-    const r = 58 + rnd() * 118;
-    const start = rnd() * TAU;
-    const sweep = (40 + rnd() * 160) * (Math.PI / 180); // 40..200°
-    const ccw = rnd() < 0.5;
-    const s = polar(r, start);
-    const e = polar(r, ccw ? start - sweep : start + sweep);
+  // ── ORBIT · средняя двойная полоса: дуги R=156 (два разрыва) +
+  //    тонкая R=147 с разрывами со сдвигом — плетение гравюры ──
+  const ob1 = 0.42;                      // разрыв I
+  const ob2 = 0.42 + Math.PI * 1.12;     // разрыв II (≈202° дальше)
+  const ogap = 0.085;                    // ширина разрыва, рад
+  strokes.push({
+    d: arc(156, ob1 + ogap, ob2) + arc(156, ob2 + ogap, ob1),
+    w: 1.0,
+    o: 0.075,
+    ink: 'pale',
+    g: 'orbit',
+    k: 'ring-outer',
+  });
+  strokes.push({
+    d: arc(147, ob1 + ogap + 0.9, ob2 + 0.9) + arc(147, ob2 + ogap + 0.9, ob1 + 0.9),
+    w: 0.55,
+    o: 0.05,
+    ink: 'pale',
+    g: 'orbit',
+    k: 'ring-outer',
+  });
+
+  // ── ORBIT · ГРАДУИРОВАННЫЙ ЛИМБ: 72 деления через 5°; каждое
+  //    шестое — главная риска (30°), длиннее и отступает ближе.
+  //    В заставке лимб прочерчивается круговым росчерком (72
+  //    сабпути = последовательный обход, как стрелка прибора) ──
+  let dial = '';
+  for (let i = 0; i < 72; i++) {
+    const a = (i * TAU) / 72 - Math.PI / 2;
+    const major = i % 6 === 0;
+    const r0 = major ? 162 : 166;
+    const r1 = major ? 174 : 171;
+    const p0 = polar(r0, a);
+    const p1 = polar(r1, a);
+    dial += `M${f2(p0[0])} ${f2(p0[1])}L${f2(p1[0])} ${f2(p1[1])}`;
+  }
+  strokes.push({
+    d: dial,
+    w: 0.55,
+    o: 0.05,
+    ink: 'pale',
+    g: 'orbit',
+    k: 'ticks',
+  });
+
+  // ── ORBIT · перекрестие: оба диаметра, риски за лимбом ──
+  strokes.push({
+    d:
+      `M${f2(C - 190)} ${C}L${f2(C - 174)} ${C}` +
+      `M${f2(C + 174)} ${C}L${f2(C + 190)} ${C}` +
+      `M${C} ${f2(C - 190)}L${C} ${f2(C - 174)}` +
+      `M${C} ${f2(C + 174)}L${C} ${f2(C + 190)}`,
+    w: 1,
+    o: 0.05,
+    ink: 'pale',
+    g: 'orbit',
+    k: 'ticks',
+  });
+
+  // ── ORBIT · внутренняя пара пунктирных колец: R=97 + R=88 ──
+  strokes.push({
+    d: fullCircle(97, Math.PI / 3),
+    w: 0.7,
+    o: 0.045,
+    ink: 'pale',
+    g: 'orbit',
+    k: 'ring-inner',
+    dash: '3.5 5.5',
+  });
+  strokes.push({
+    d: fullCircle(88, Math.PI / 3 + 0.8),
+    w: 0.55,
+    o: 0.04,
+    ink: 'pale',
+    g: 'orbit',
+    k: 'ring-inner',
+    dash: '2.5 7',
+  });
+
+  // ── REV · пунктирный спутник круга-замка (R=132) с двумя
+  //    бусинами-узлами на орбите — встречный ход: в ambient
+  //    вращается против орбиты, механика глубины ──
+  strokes.push({
+    d: fullCircle(132, -Math.PI / 5),
+    w: 0.8,
+    o: 0.05,
+    ink: 'pale',
+    g: 'rev',
+    k: 'ring-seal-dash',
+    dash: '4 6',
+  });
+  const node0 = polar(132, -Math.PI / 5);
+  const node1 = polar(132, -Math.PI / 5 + Math.PI);
+  strokes.push({
+    d: circlePath(node0[0], node0[1], 2.4) + circlePath(node1[0], node1[1], 2.4),
+    w: 0.8,
+    o: 0.06,
+    ink: 'pale',
+    g: 'rev',
+    k: 'ring-seal-dash',
+    cap: 'round',
+  });
+
+  // ── CORE · ПЕНТАГРАММА: один непрерывный ход остриём вверх.
+  //    Порядок вершин «через одну» (V0→V2→V4→V1→V3→V0) даёт
+  //    классическое плетение; pathLength=1 → рисуется штрихом ──
+  const [v0, v1, v2, v3, v4] = VERTICES;
+  strokes.push({
+    d:
+      `M${v0[0]} ${v0[1]}L${v2[0]} ${v2[1]}L${v4[0]} ${v4[1]}` +
+      `L${v1[0]} ${v1[1]}L${v3[0]} ${v3[1]}Z`,
+    w: 2.4,
+    o: 0.09,
+    ink: 'pale',
+    g: 'core',
+    k: 'penta',
+  });
+
+  // ── CORE · вписанный пентагон: внешний корпус звезды (обвод
+  //    вершин по соседству) — едет в колесе пентаграммы ──
+  strokes.push({
+    d:
+      `M${v0[0]} ${v0[1]}L${v1[0]} ${v1[1]}L${v2[0]} ${v2[1]}` +
+      `L${v3[0]} ${v3[1]}L${v4[0]} ${v4[1]}Z`,
+    w: 0.9,
+    o: 0.05,
+    ink: 'pale',
+    g: 'core',
+    k: 'penta',
+  });
+
+  // ── CORE · семена стихий: микро-круги на вершинах внутренней
+  //    (инверсной) пентаграммы — пять искр в плетении звезды;
+  //    колесо пентаграммы несёт их вместе с ходом ──
+  strokes.push({
+    d: SEEDS.map(([sx, sy]) => circlePath(sx, sy, 1.6)).join(''),
+    w: 1.1,
+    o: 0.055,
+    ink: 'pale',
+    g: 'core',
+    k: 'penta',
+    cap: 'round',
+  });
+
+  // ── CORE · двойной круг-замок: сплошной R=126 + пунктир R=120 ──
+  strokes.push({
+    d: fullCircle(SEAL_R, -Math.PI / 2),
+    w: 1.4,
+    o: 0.08,
+    ink: 'pale',
+    g: 'core',
+    k: 'ring-seal',
+  });
+  strokes.push({
+    d: fullCircle(120, -Math.PI / 2 + 0.26),
+    w: 0.6,
+    o: 0.05,
+    ink: 'pale',
+    g: 'core',
+    k: 'ring-seal',
+    dash: '1.5 4',
+  });
+
+  // ── CORE · ТРОЙНЫЕ печати стихий: кольцо 10.5 + кольцо 6 +
+  //    точка 1.8 — печать сидит на круге-замке, как на гравюре ──
+  VERTICES.forEach(([vx, vy]) => {
     strokes.push({
-      d: `M${f2(s[0])} ${f2(s[1])}A${f2(r)} ${f2(r)} 0 ${sweep > Math.PI ? 1 : 0} ${ccw ? 0 : 1} ${f2(e[0])} ${f2(e[1])}`,
-      w: f2(0.6 + rnd() * 0.3),
-      o: f2(0.07 + rnd() * 0.02),
-      ink: rnd() < 0.4 ? 'accent' : 'pale',
+      d: circlePath(vx, vy, 10.5) + circlePath(vx, vy, 6) + circlePath(vx, vy, 1.8),
+      w: 1.0,
+      o: 0.065,
+      ink: 'pale',
+      g: 'core',
+      k: 'vertex',
     });
-    joints.push(s, e);
-  }
+  });
 
-  // ── засечки: 1–2 коротких штриха через случайный сустав ──
-  let ticks = '';
-  const tickCount = 1 + Math.floor(rnd() * 2);
-  for (let k = 0; k < tickCount; k++) {
-    const j = joints[Math.floor(rnd() * joints.length)];
-    const ta = rnd() * TAU;
-    const len = 12 + rnd() * 14;
-    ticks += `M${f2(j[0] - Math.cos(ta) * len)} ${f2(j[1] - Math.sin(ta) * len)}` +
-      `L${f2(j[0] + Math.cos(ta) * len * 0.45)} ${f2(j[1] + Math.sin(ta) * len * 0.45)}`;
-  }
-  strokes.push({ d: ticks, w: 0.7, o: f2(0.07 + rnd() * 0.02), ink: 'accent' });
+  // ── CORE · полумесяц со звездой в чаше (∪, корона Жрицы):
+  //    глубокий серп с тонкими рогами — безье даёт живое
+  //    утолщение к центру и острые рога, как гравюра; малая
+  //    четырёхлучевая звезда спрятана в чаше серпа ──
+  strokes.push({
+    d:
+      `M190 50C186.5 68 213.5 68 210 50C207 59.5 193 59.5 190 50Z` +
+      star4(200, 56.5, 2.6),
+    w: 1.1,
+    o: 0.07,
+    ink: 'pale',
+    g: 'core',
+    k: 'crescent',
+  });
 
-  // ── узлы: 2–4 точки, каждый сустав не больше одного раза ──
-  const order = joints.map((_, i) => i);
-  for (let i = order.length - 1; i > 0; i--) {
-    const j = Math.floor(rnd() * (i + 1));
-    [order[i], order[j]] = [order[j], order[i]];
-  }
-  const dotCount = Math.min(2 + Math.floor(rnd() * 3), order.length);
-  for (let k = 0; k < dotCount; k++) {
-    const j = joints[order[k]];
-    dots.push({
-      x: f2(j[0]),
-      y: f2(j[1]),
-      r: f2(2.2 + rnd() * 2),
-      o: f2(0.09 + rnd() * 0.01),
-      ink: rnd() < 0.65 ? 'accent' : 'pale',
-    });
-  }
+  // ── CORE · кардинальные четырёхлучевые звёзды: низ (ось) и бока ──
+  strokes.push({ d: star4(C, 347, 10), w: 0.9, o: 0.07, ink: 'pale', g: 'core', k: 'star-v' });
+  strokes.push({
+    d: star4(89, 200, 6.5) + star4(311, 200, 6.5),
+    w: 0.9,
+    o: 0.06,
+    ink: 'pale',
+    g: 'core',
+    k: 'star-h',
+  });
 
-  return { strokes, dots };
+  // ── CORE · сердце: круг r=24 + пунктирное гало r=31 + тихое
+  //    кольцо r=38 + вертикальная ось точками ──
+  strokes.push({
+    d: circlePath(C, C, 24),
+    w: 0.9,
+    o: 0.055,
+    ink: 'pale',
+    g: 'core',
+    k: 'core-ring',
+  });
+  strokes.push({
+    d: circlePath(C, C, 31),
+    w: 0.6,
+    o: 0.05,
+    ink: 'pale',
+    g: 'core',
+    k: 'core-ring',
+    dash: '2 4.5',
+  });
+  strokes.push({
+    d: circlePath(C, C, 38),
+    w: 0.5,
+    o: 0.04,
+    ink: 'pale',
+    g: 'core',
+    k: 'core-ring',
+  });
+  dots.push({ x: C, y: 166, r: 1.5, o: 0.05, ink: 'pale', g: 'core' });
+  dots.push({ x: C, y: 234, r: 1.5, o: 0.05, ink: 'pale', g: 'core' });
+
+  // ── CORE · сердце-искра: единственная капля цвета проводника ──
+  shapes.push({
+    d: star4(C, C, 11),
+    o: 0.1,
+    ink: 'accent',
+    g: 'core',
+    k: 'core-star',
+  });
+
+  return { strokes, shapes, dots };
 }

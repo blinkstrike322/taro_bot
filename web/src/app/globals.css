@@ -11,10 +11,10 @@
 
 :root {
   --font-mono-crt: var(--font-mono-crt), ui-monospace, monospace;
-  --t-info: #9ecfd8;
-  --t-ok: #93c9a0;
-  --t-err: #e07a7a;
-  --t-warn: #d9b26a;
+  --t-info: #9cc4cf;
+  --t-ok: #9cbfa9;
+  --t-err: #cf7f87;
+  --t-warn: #cbb073;
   --crt-line: rgba(255, 255, 255, 0.14);
   --crt-line-soft: rgba(255, 255, 255, 0.08);
 }
@@ -29,7 +29,7 @@ body {
   margin: 0;
   padding: 0;
   overflow: hidden;
-  background: #05040f;
+  background: #04040e;
 }
 
 body {
@@ -54,7 +54,7 @@ button {
   height: 100dvh;
   max-height: 100dvh;
   overflow: hidden;
-  background: var(--t-bg, #05040f);
+  background: var(--t-bg, #04040e);
   isolation: isolate;
 }
 
@@ -63,7 +63,7 @@ button {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(ellipse 120% 90% at 50% 30%, var(--glow-center, rgba(181, 165, 230, 0.06)) 0%, transparent 60%),
+    radial-gradient(ellipse 120% 90% at 50% 30%, var(--glow-center, rgba(162, 156, 216, 0.06)) 0%, transparent 60%),
     radial-gradient(ellipse 160% 120% at 50% 110%, rgba(0, 0, 0, 0.5) 0%, transparent 55%);
   pointer-events: none;
   z-index: 0;
@@ -121,7 +121,7 @@ button {
   height: 65vw;
   border-radius: 50%;
   filter: blur(60px);
-  background: radial-gradient(circle, var(--smoke, rgba(181, 165, 230, 0.22)) 0%, transparent 70%);
+  background: radial-gradient(circle, var(--smoke, rgba(162, 156, 216, 0.22)) 0%, transparent 70%);
   opacity: 0.5;
 }
 
@@ -223,7 +223,7 @@ button {
 
 .st-tab {
   font-weight: 700;
-  color: var(--guide-accent, #b5a5e6);
+  color: var(--guide-accent, #a29cd8);
   text-shadow: 0 0 10px var(--guide-accent-dim, transparent);
   white-space: nowrap;
 }
@@ -240,14 +240,14 @@ button {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  color: #e07a7a;
+  color: #cf7f87;
 }
 
 .st-rec-dot {
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: #e07a7a;
+  background: #cf7f87;
   animation: rec-blink 1.6s steps(1) infinite;
 }
 
@@ -274,14 +274,14 @@ button {
   overflow-x: hidden;
   padding: 10px 12px 18px;
   scrollbar-width: thin;
-  scrollbar-color: var(--guide-accent-dim, rgba(181, 165, 230, 0.22)) transparent;
+  scrollbar-color: var(--guide-accent-dim, rgba(162, 156, 216, 0.22)) transparent;
   overscroll-behavior: contain;
 }
 
 .shell-scroll::-webkit-scrollbar { width: 4px; }
 .shell-scroll::-webkit-scrollbar-track { background: transparent; }
 .shell-scroll::-webkit-scrollbar-thumb {
-  background: var(--guide-accent-dim, rgba(181, 165, 230, 0.22));
+  background: var(--guide-accent-dim, rgba(162, 156, 216, 0.22));
   border-radius: 2px;
 }
 
@@ -312,8 +312,8 @@ button {
   align-items: center;
   padding: 0 10px;
   font-weight: 700;
-  color: var(--guide-accent, #b5a5e6);
-  background: var(--guide-accent-dim, rgba(181, 165, 230, 0.22));
+  color: var(--guide-accent, #a29cd8);
+  background: var(--guide-accent-dim, rgba(162, 156, 216, 0.22));
   white-space: nowrap;
 }
 
@@ -329,7 +329,7 @@ button {
 }
 
 .sl-busy {
-  color: var(--guide-accent, #b5a5e6);
+  color: var(--guide-accent, #a29cd8);
   animation: busy-pulse 1.4s ease-in-out infinite;
 }
 
@@ -343,7 +343,7 @@ button {
   align-items: center;
   gap: 3px;
   padding: 0 8px;
-  color: #d9b26a;
+  color: #cbb073;
   border-left: 1px solid var(--crt-line-soft);
   white-space: nowrap;
 }
@@ -384,7 +384,7 @@ button {
   font-size: 12px;
 }
 
-.cd-user { color: var(--guide-accent, #b5a5e6); font-weight: 500; white-space: nowrap; }
+.cd-user { color: var(--guide-accent, #a29cd8); font-weight: 500; white-space: nowrap; }
 .cd-path { color: rgba(255, 255, 255, 0.4); white-space: nowrap; }
 .cd-question { color: var(--t-warn); font-weight: 500; white-space: nowrap; }
 .cd-cards { color: rgba(255, 255, 255, 0.3); font-size: 10px; white-space: nowrap; }
@@ -398,15 +398,15 @@ button {
   color: #fff;
   font-family: inherit;
   font-size: 13px;
-  caret-color: var(--guide-accent, #b5a5e6);
+  caret-color: var(--guide-accent, #a29cd8);
   padding: 4px 2px;
 }
 
 .cmd-input::placeholder { color: rgba(255, 255, 255, 0.22); }
 .cmd-input:disabled { opacity: 0.4; }
 
-.cd-cursor { color: var(--guide-accent, #b5a5e6); }
-.cd-spinner { color: var(--guide-accent, #b5a5e6); animation: spin 1s steps(8) infinite; }
+.cd-cursor { color: var(--guide-accent, #a29cd8); }
+.cd-spinner { color: var(--guide-accent, #a29cd8); animation: spin 1s steps(8) infinite; }
 
 @keyframes spin {
   from { transform: rotate(0deg); }
@@ -416,7 +416,7 @@ button {
 .cmd-sound {
   border: none;
   background: none;
-  color: var(--guide-accent, #b5a5e6);
+  color: var(--guide-accent, #a29cd8);
   font-size: 13px;
   padding: 4px 6px;
   cursor: pointer;
@@ -444,8 +444,8 @@ button {
 }
 
 .cmd-hint:hover {
-  color: var(--guide-accent, #b5a5e6);
-  border-color: var(--guide-accent-dim, rgba(181, 165, 230, 0.22));
+  color: var(--guide-accent, #a29cd8);
+  border-color: var(--guide-accent-dim, rgba(162, 156, 216, 0.22));
 }
 
 /* ЧИПЫ: фикс масштабирования — flex:1 1 0, равная ширина,
@@ -484,9 +484,9 @@ button {
 }
 
 .chip:hover:not(:disabled) {
-  border-color: var(--guide-accent, #b5a5e6);
+  border-color: var(--guide-accent, #a29cd8);
   color: #fff;
-  background: var(--guide-accent-dim, rgba(181, 165, 230, 0.22));
+  background: var(--guide-accent-dim, rgba(162, 156, 216, 0.22));
 }
 
 .chip:active:not(:disabled) { transform: scale(0.96); }
@@ -500,8 +500,8 @@ button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: var(--guide-accent, #b5a5e6);
-  filter: drop-shadow(0 0 5px color-mix(in srgb, var(--guide-accent, #b5a5e6) 45%, transparent));
+  color: var(--guide-accent, #a29cd8);
+  filter: drop-shadow(0 0 5px color-mix(in srgb, var(--guide-accent, #a29cd8) 45%, transparent));
   flex: 0 0 auto;
 }
 
@@ -518,17 +518,17 @@ button {
 .chip--cancel {
   flex: 0 0 auto;
   border-color: rgba(224, 122, 122, 0.4);
-  color: #e07a7a;
+  color: #cf7f87;
   padding: 0 12px;
 }
 
 .chip--cancel:hover:not(:disabled) {
   border-color: rgba(224, 122, 122, 0.7);
-  color: #f3b3b3;
+  color: #dba4ab;
   background: rgba(224, 122, 122, 0.08);
 }
 
-.chip--cancel > svg { color: #e07a7a; }
+.chip--cancel > svg { color: #cf7f87; }
 
 .chip-hint { font-size: 10px; }
 
@@ -547,7 +547,7 @@ button {
 .tl-err     { color: var(--t-err); }
 .tl-warn    { color: var(--t-warn); }
 .tl-info    { color: var(--t-info); }
-.tl-accent  { color: var(--guide-accent, #b5a5e6); }
+.tl-accent  { color: var(--guide-accent, #a29cd8); }
 .tl-bright  { color: #fff; font-weight: 500; }
 .tl-comment { color: rgba(255, 255, 255, 0.4); font-style: italic; }
 .tl-semibold { font-weight: 700; }
@@ -590,6 +590,27 @@ button {
   animation: boot-logo-in 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
+/* эстафета с заставкой: место заголовка занимает летящий
+   вордмарк — настоящий скрыт до прилёта (событие word-land);
+   прилёт → мягкое проявление вместо включения ЭЛТ */
+.boot-logo--hold {
+  animation: none;
+}
+
+.boot-logo--hold .boot-logo-word,
+.boot-logo--hold .boot-logo-sub {
+  opacity: 0;
+}
+
+.boot-logo--land {
+  animation: boot-logo-arrive 0.26s ease-out both;
+}
+
+@keyframes boot-logo-arrive {
+  from { opacity: 0; transform: translateY(3px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
 .boot-logo-word {
   font-family: var(--font-serif), serif;
   font-weight: 900;
@@ -599,8 +620,8 @@ button {
   line-height: 1.05;
   color: #fff;
   text-shadow:
-    0 0 22px var(--guide-glow, rgba(181, 165, 230, 0.6)),
-    0 0 60px var(--guide-accent-dim, rgba(181, 165, 230, 0.35)),
+    0 0 22px var(--guide-glow, rgba(162, 156, 216, 0.6)),
+    0 0 60px var(--guide-accent-dim, rgba(162, 156, 216, 0.35)),
     0 2px 0 rgba(0, 0, 0, 0.7);
 }
 
@@ -615,11 +636,11 @@ button {
 .boot-logo-rule {
   width: clamp(28px, 10vw, 64px);
   height: 1px;
-  background: linear-gradient(90deg, transparent, var(--guide-accent, #b5a5e6));
+  background: linear-gradient(90deg, transparent, var(--guide-accent, #a29cd8));
 }
 
 .boot-logo-sub .boot-logo-rule:last-child {
-  background: linear-gradient(270deg, transparent, var(--guide-accent, #b5a5e6));
+  background: linear-gradient(270deg, transparent, var(--guide-accent, #a29cd8));
 }
 
 .boot-logo-subtext {
@@ -652,7 +673,7 @@ button {
 .motd-block {
   padding: 8px 2px 4px;
   margin: 6px 0;
-  border-left: 2px solid var(--guide-accent-dim, rgba(181, 165, 230, 0.22));
+  border-left: 2px solid var(--guide-accent-dim, rgba(162, 156, 216, 0.22));
   padding-left: 10px;
 }
 
@@ -666,28 +687,30 @@ button {
   align-items: center;
 }
 
+/* чип-призрак: без рамки и фона, только текст с иконкой;
+   касание проявляет мягкую акцентную плёнку — терминальное
+   меню, а не пульт кнопок */
 .motd-chip {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  min-height: 38px;
-  padding: 0 12px;
-  border: 1px solid var(--crt-line);
+  gap: 7px;
+  min-height: 40px;
+  padding: 0 10px;
+  border: none;
   background: none;
-  color: rgba(255, 255, 255, 0.75);
+  color: rgba(255, 255, 255, 0.68);
   font-size: 11px;
   cursor: pointer;
-  transition: border-color 0.25s, background 0.25s, color 0.25s;
+  transition: background 0.25s, color 0.25s;
 }
 
 .motd-chip:hover {
-  border-color: var(--guide-accent, #b5a5e6);
-  background: var(--guide-accent-dim, rgba(181, 165, 230, 0.22));
+  background: color-mix(in srgb, var(--guide-accent, #a29cd8) 9%, transparent);
   color: #fff;
 }
 
-.mc-glyph { color: var(--guide-accent, #b5a5e6); }
-.motd-streak { font-size: 10.5px; color: #d9b26a; }
+.mc-glyph { color: var(--guide-accent, #a29cd8); }
+.motd-streak { font-size: 10.5px; color: #cbb073; }
 
 /* прогресс / ожидание */
 .progress-line {
@@ -711,7 +734,7 @@ button {
 .pl-fill {
   position: absolute;
   inset: 0 auto 0 0;
-  background: var(--guide-accent, #b5a5e6);
+  background: var(--guide-accent, #a29cd8);
   box-shadow: 0 0 8px var(--guide-accent-dim, transparent);
   transition: width 0.12s linear;
 }
@@ -738,20 +761,20 @@ button {
 /* следующая в очереди — кольцо-пульс акцента */
 .card-float--next .flip {
   box-shadow:
-    0 0 0 1px var(--guide-accent, #b5a5e6),
-    0 0 18px var(--guide-accent-dim, rgba(181, 165, 230, 0.22));
+    0 0 0 1px var(--guide-accent, #a29cd8),
+    0 0 18px var(--guide-accent-dim, rgba(162, 156, 216, 0.22));
   animation: next-pulse 1.8s ease-in-out infinite;
 }
 
 @keyframes next-pulse {
   0%, 100% {
     box-shadow:
-      0 0 0 1px var(--guide-accent, #b5a5e6),
+      0 0 0 1px var(--guide-accent, #a29cd8),
       0 0 14px var(--guide-accent-dim, transparent);
   }
   50% {
     box-shadow:
-      0 0 0 1.5px var(--guide-accent, #b5a5e6),
+      0 0 0 1.5px var(--guide-accent, #a29cd8),
       0 0 26px var(--guide-accent-dim, transparent);
   }
 }
@@ -946,7 +969,7 @@ button {
   inset: 0;
   z-index: 5;
   pointer-events: none;
-  border: 1.5px solid var(--guide-accent, #b5a5e6);
+  border: 1.5px solid var(--guide-accent, #a29cd8);
   opacity: 0;
 }
 
@@ -1007,7 +1030,7 @@ button {
 }
 
 .card-label .cl-punct { color: rgba(255, 255, 255, 0.35); }
-.card-label .cl-key { color: var(--guide-accent, #b5a5e6); font-weight: 700; }
+.card-label .cl-key { color: var(--guide-accent, #a29cd8); font-weight: 700; }
 
 .card-name-json {
   font-family: var(--font-serif), serif;
@@ -1020,7 +1043,7 @@ button {
 .cn-rev {
   font-family: var(--font-mono-crt), monospace;
   font-size: 9px;
-  color: var(--guide-accent, #b5a5e6);
+  color: var(--guide-accent, #a29cd8);
 }
 
 @keyframes caption-in {
@@ -1076,7 +1099,7 @@ button {
 
 .sg-circle {
   fill: none;
-  stroke: var(--guide-accent, #b5a5e6);
+  stroke: var(--guide-accent, #a29cd8);
   stroke-width: 0.4;
   opacity: 0.22;
   stroke-dasharray: 2.4 1.6;
@@ -1085,7 +1108,7 @@ button {
 }
 
 .sg-line {
-  stroke: var(--guide-accent, #b5a5e6);
+  stroke: var(--guide-accent, #a29cd8);
   stroke-width: 0.32;
   opacity: 0.3;
 }
@@ -1105,8 +1128,8 @@ button {
   background: linear-gradient(
     to bottom,
     transparent,
-    var(--guide-accent-dim, rgba(181, 165, 230, 0.22)) 18%,
-    var(--guide-accent-dim, rgba(181, 165, 230, 0.22)) 82%,
+    var(--guide-accent-dim, rgba(162, 156, 216, 0.22)) 18%,
+    var(--guide-accent-dim, rgba(162, 156, 216, 0.22)) 82%,
     transparent
   );
 }
@@ -1123,7 +1146,7 @@ button {
 .arc-trace {
   position: absolute;
   inset: 10% 6% 56%;
-  border: 1px dashed var(--guide-accent-dim, rgba(181, 165, 230, 0.22));
+  border: 1px dashed var(--guide-accent-dim, rgba(162, 156, 216, 0.22));
   border-bottom: none;
   border-radius: 50% 50% 0 0 / 100% 100% 0 0;
   opacity: 0.7;
@@ -1150,7 +1173,7 @@ button {
 .sp-fill {
   position: absolute;
   inset: 0 auto 0 0;
-  background: var(--guide-accent, #b5a5e6);
+  background: var(--guide-accent, #a29cd8);
   box-shadow: 0 0 6px var(--guide-accent-dim, transparent);
   transition: width 0.3s ease-out;
 }
@@ -1163,7 +1186,7 @@ button {
 }
 
 .spread-hint--ready {
-  color: var(--guide-accent, #b5a5e6);
+  color: var(--guide-accent, #a29cd8);
   text-shadow: 0 0 9px var(--guide-accent-dim, transparent);
   animation: hint-ready-in 0.7s ease-out;
 }
@@ -1195,14 +1218,14 @@ button {
   border: 1px solid var(--crt-line);
   background:
     linear-gradient(rgba(0, 0, 0, 0.25), rgba(0, 0, 0, 0.45)),
-    var(--t-bg, #05040f);
+    var(--t-bg, #04040e);
   overflow: hidden;
 }
 
 .corner {
   position: absolute;
   font-size: 12px;
-  color: var(--guide-accent, #b5a5e6);
+  color: var(--guide-accent, #a29cd8);
   opacity: 0.75;
   line-height: 1;
   z-index: 5;
@@ -1231,7 +1254,7 @@ button {
   background: linear-gradient(
     90deg,
     transparent,
-    color-mix(in srgb, var(--guide-accent, #b5a5e6) 55%, transparent)
+    color-mix(in srgb, var(--guide-accent, #a29cd8) 55%, transparent)
   );
 }
 
@@ -1239,7 +1262,7 @@ button {
   background: linear-gradient(
     270deg,
     transparent,
-    color-mix(in srgb, var(--guide-accent, #b5a5e6) 55%, transparent)
+    color-mix(in srgb, var(--guide-accent, #a29cd8) 55%, transparent)
   );
 }
 
@@ -1252,7 +1275,7 @@ button {
   color: #fff;
   text-align: center;
   text-shadow:
-    0 0 18px var(--guide-glow, rgba(181, 165, 230, 0.55)),
+    0 0 18px var(--guide-glow, rgba(162, 156, 216, 0.55)),
     0 1px 0 rgba(0, 0, 0, 0.6);
 }
 
@@ -1267,7 +1290,7 @@ button {
 }
 
 .reading-meta-key {
-  color: var(--guide-accent, #b5a5e6);
+  color: var(--guide-accent, #a29cd8);
   letter-spacing: 0.14em;
   text-transform: uppercase;
   font-size: 9px;
@@ -1350,9 +1373,9 @@ button {
   font-weight: 700;
   letter-spacing: 0.08em;
   line-height: 1.5;
-  color: var(--guide-accent, #b5a5e6);
+  color: var(--guide-accent, #a29cd8);
   background: rgba(0, 0, 0, 0.72);
-  border: 1px solid color-mix(in srgb, var(--guide-accent, #b5a5e6) 45%, transparent);
+  border: 1px solid color-mix(in srgb, var(--guide-accent, #a29cd8) 45%, transparent);
   padding: 1px 5px;
 }
 
@@ -1362,7 +1385,7 @@ button {
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: rgba(255, 255, 255, 0.45);
-  border-bottom: 1px solid color-mix(in srgb, var(--guide-accent, #b5a5e6) 30%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--guide-accent, #a29cd8) 30%, transparent);
   padding-bottom: 2px;
   margin-bottom: 1px;
   max-width: 110px;
@@ -1424,9 +1447,9 @@ button {
 }
 
 .reading-card-tag--rev {
-  border-color: color-mix(in srgb, var(--guide-accent, #b5a5e6) 55%, transparent);
-  color: var(--guide-accent, #b5a5e6);
-  background: color-mix(in srgb, var(--guide-accent, #b5a5e6) 10%, transparent);
+  border-color: color-mix(in srgb, var(--guide-accent, #a29cd8) 55%, transparent);
+  color: var(--guide-accent, #a29cd8);
+  background: color-mix(in srgb, var(--guide-accent, #a29cd8) 10%, transparent);
 }
 
 .reading-card-upright, .reading-card-rev { display: none; }
@@ -1460,8 +1483,8 @@ button {
   content: '';
   width: 10px;
   height: 2px;
-  background: var(--guide-accent, #b5a5e6);
-  box-shadow: 0 0 6px var(--guide-accent-dim, rgba(181, 165, 230, 0.4));
+  background: var(--guide-accent, #a29cd8);
+  box-shadow: 0 0 6px var(--guide-accent-dim, rgba(162, 156, 216, 0.4));
   flex-shrink: 0;
 }
 
@@ -1473,7 +1496,7 @@ button {
 }
 
 .reading-section-label--signal {
-  color: var(--guide-accent, #b5a5e6);
+  color: var(--guide-accent, #a29cd8);
   justify-content: center;
   letter-spacing: 0.4em;
 }
@@ -1483,12 +1506,12 @@ button {
   flex: 1 1 0;
   width: auto;
   height: 1px;
-  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--guide-accent, #b5a5e6) 60%, transparent));
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--guide-accent, #a29cd8) 60%, transparent));
   box-shadow: none;
 }
 
 .reading-section-label--signal::after {
-  background: linear-gradient(270deg, transparent, color-mix(in srgb, var(--guide-accent, #b5a5e6) 60%, transparent));
+  background: linear-gradient(270deg, transparent, color-mix(in srgb, var(--guide-accent, #a29cd8) 60%, transparent));
 }
 
 .reading-whisper {
@@ -1500,8 +1523,8 @@ button {
 .reading-signal {
   position: relative;
   padding: 8px 10px;
-  border-left: 2px solid var(--guide-accent, #b5a5e6);
-  background: linear-gradient(90deg, var(--guide-accent-dim, rgba(181, 165, 230, 0.22)), transparent 70%);
+  border-left: 2px solid var(--guide-accent, #a29cd8);
+  background: linear-gradient(90deg, var(--guide-accent-dim, rgba(162, 156, 216, 0.22)), transparent 70%);
 }
 
 .reading-signal-text {
@@ -1538,7 +1561,7 @@ button {
 .reading-det-summary {
   cursor: pointer;
   font-size: 11.5px;
-  color: var(--guide-accent, #b5a5e6);
+  color: var(--guide-accent, #a29cd8);
   list-style: none;
   display: flex;
   align-items: center;
@@ -1558,7 +1581,7 @@ button {
 .reading-advice-box {
   position: relative;
   padding: 10px 12px;
-  border: 1px solid var(--guide-accent-dim, rgba(181, 165, 230, 0.22));
+  border: 1px solid var(--guide-accent-dim, rgba(162, 156, 216, 0.22));
 }
 
 .reading-advice {
@@ -1618,18 +1641,18 @@ button {
 .menu-row:last-child { border-bottom: none; }
 
 .menu-row:hover {
-  background: var(--guide-accent-dim, rgba(181, 165, 230, 0.22));
+  background: var(--guide-accent-dim, rgba(162, 156, 216, 0.22));
   color: #fff;
 }
 
 .menu-row--active {
-  background: var(--guide-accent-dim, rgba(181, 165, 230, 0.22));
+  background: var(--guide-accent-dim, rgba(162, 156, 216, 0.22));
   color: #fff;
 }
 
 .mr-glyph {
   font-size: 12px;
-  color: var(--guide-accent, #b5a5e6);
+  color: var(--guide-accent, #a29cd8);
   min-width: 26px;
   text-align: center;
 }
@@ -1676,7 +1699,7 @@ button {
   text-overflow: ellipsis;
 }
 
-.mr-marker { color: var(--guide-accent, #b5a5e6); }
+.mr-marker { color: var(--guide-accent, #a29cd8); }
 .mr-marker--on { text-shadow: 0 0 8px var(--guide-accent-dim, transparent); }
 
 .mr-desc {
@@ -1697,9 +1720,9 @@ button {
 }
 
 .mr-count { white-space: nowrap; }
-.mr-tag { color: var(--guide-accent, #b5a5e6); }
+.mr-tag { color: var(--guide-accent, #a29cd8); }
 
-.mr-chev { color: var(--guide-accent, #b5a5e6); }
+.mr-chev { color: var(--guide-accent, #a29cd8); }
 
 .tui-hint { padding: 6px 0 0; font-size: 10.5px; }
 
@@ -1733,7 +1756,7 @@ button {
   transition: background 0.2s;
 }
 
-.history-row:hover { background: var(--guide-accent-dim, rgba(181, 165, 230, 0.22)); }
+.history-row:hover { background: var(--guide-accent-dim, rgba(162, 156, 216, 0.22)); }
 
 .hr-guide-glyph { font-size: 11px; flex-shrink: 0; }
 
@@ -1747,7 +1770,7 @@ button {
 .hr-date { color: rgba(255, 255, 255, 0.35); }
 .hr-guide { color: rgba(255, 255, 255, 0.25); }
 
-.hr-chev { color: var(--guide-accent, #b5a5e6); flex-shrink: 0; }
+.hr-chev { color: var(--guide-accent, #a29cd8); flex-shrink: 0; }
 
 .hb-hint { padding: 6px 0 0; font-size: 10.5px; }
 
@@ -1811,18 +1834,18 @@ button {
 }
 
 .reading-fu-chip--ask {
-  border-color: color-mix(in srgb, var(--guide-accent, #b5a5e6) 45%, transparent);
+  border-color: color-mix(in srgb, var(--guide-accent, #a29cd8) 45%, transparent);
   color: rgba(255, 255, 255, 0.85);
 }
 
 .reading-fu-chip--ask:hover:not(:disabled) {
-  box-shadow: 0 0 14px color-mix(in srgb, var(--guide-accent, #b5a5e6) 25%, transparent);
+  box-shadow: 0 0 14px color-mix(in srgb, var(--guide-accent, #a29cd8) 25%, transparent);
 }
 
 /* режим выбора карты: артефакты подсвечиваются */
 .reading-artifacts--ask {
-  border-color: color-mix(in srgb, var(--guide-accent, #b5a5e6) 40%, transparent);
-  background: color-mix(in srgb, var(--guide-accent, #b5a5e6) 6%, transparent);
+  border-color: color-mix(in srgb, var(--guide-accent, #a29cd8) 40%, transparent);
+  background: color-mix(in srgb, var(--guide-accent, #a29cd8) 6%, transparent);
 }
 
 .reading-artifact-btn {
@@ -1836,19 +1859,19 @@ button {
 
 .reading-artifact-btn:hover,
 .reading-artifact-btn:focus-visible {
-  border-color: color-mix(in srgb, var(--guide-accent, #b5a5e6) 60%, transparent);
-  background: color-mix(in srgb, var(--guide-accent, #b5a5e6) 10%, transparent);
+  border-color: color-mix(in srgb, var(--guide-accent, #a29cd8) 60%, transparent);
+  background: color-mix(in srgb, var(--guide-accent, #a29cd8) 10%, transparent);
   transform: translateY(-3px);
 }
 
 .reading-artifact-btn:hover .reading-artifact-img,
 .reading-artifact-btn:focus-visible .reading-artifact-img {
-  border-color: var(--guide-accent, #b5a5e6);
-  box-shadow: 0 0 16px color-mix(in srgb, var(--guide-accent, #b5a5e6) 35%, transparent);
+  border-color: var(--guide-accent, #a29cd8);
+  box-shadow: 0 0 16px color-mix(in srgb, var(--guide-accent, #a29cd8) 35%, transparent);
 }
 
 .reading-artifact-btn:focus-visible {
-  outline: 2px solid var(--guide-accent, #b5a5e6);
+  outline: 2px solid var(--guide-accent, #a29cd8);
   outline-offset: 2px;
 }
 
@@ -1863,10 +1886,10 @@ button {
   justify-content: center;
   font-size: 10px;
   font-weight: 700;
-  color: #05040f;
-  background: var(--guide-accent, #b5a5e6);
+  color: #04040e;
+  background: var(--guide-accent, #a29cd8);
   border-radius: 50%;
-  box-shadow: 0 0 10px color-mix(in srgb, var(--guide-accent, #b5a5e6) 50%, transparent);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--guide-accent, #a29cd8) 50%, transparent);
   animation: ask-mark-pulse 1.6s ease-in-out infinite;
 }
 
@@ -1897,8 +1920,8 @@ button {
   font-family: var(--font-serif), serif;
   font-size: 15px;
   font-weight: 600;
-  color: var(--guide-accent, #b5a5e6);
-  text-shadow: 0 0 12px color-mix(in srgb, var(--guide-accent, #b5a5e6) 30%, transparent);
+  color: var(--guide-accent, #a29cd8);
+  text-shadow: 0 0 12px color-mix(in srgb, var(--guide-accent, #a29cd8) 30%, transparent);
   letter-spacing: 0.02em;
 }
 
@@ -1916,7 +1939,7 @@ button {
   color: rgba(255, 255, 255, 0.66);
   margin-bottom: 10px;
   padding-left: 10px;
-  border-left: 2px solid color-mix(in srgb, var(--guide-accent, #b5a5e6) 55%, transparent);
+  border-left: 2px solid color-mix(in srgb, var(--guide-accent, #a29cd8) 55%, transparent);
   line-height: 1.5;
 }
 
@@ -1958,8 +1981,8 @@ button {
 }
 
 .mr-lore-seg--on {
-  color: var(--guide-accent, #b5a5e6);
-  text-shadow: 0 0 6px color-mix(in srgb, var(--guide-accent, #b5a5e6) 50%, transparent);
+  color: var(--guide-accent, #a29cd8);
+  text-shadow: 0 0 6px color-mix(in srgb, var(--guide-accent, #a29cd8) 50%, transparent);
 }
 
 .mr-lore-seg--off {
@@ -1973,13 +1996,13 @@ button {
 
 /* голос активного проводника светится сильнее */
 .menu-row--active .mr-lore-seg--on {
-  text-shadow: 0 0 9px var(--guide-glow, rgba(181, 165, 230, 0.55)),
-    0 0 3px var(--guide-accent, #b5a5e6);
+  text-shadow: 0 0 9px var(--guide-glow, rgba(162, 156, 216, 0.55)),
+    0 0 3px var(--guide-accent, #a29cd8);
 }
 
 /* ховер строки: полоса оживает */
 .menu-row:hover .mr-lore-seg--on {
-  text-shadow: 0 0 9px color-mix(in srgb, var(--guide-accent, #b5a5e6) 80%, transparent);
+  text-shadow: 0 0 9px color-mix(in srgb, var(--guide-accent, #a29cd8) 80%, transparent);
 }
 
 .menu-row:hover .mr-lore-seg--off {
@@ -2006,49 +2029,53 @@ button {
 
 /* ═════ 13. Восстановление сеанса ════════════════════════════ */
 
+/* ── восстановление сеанса: тихая строка-мета + два текстовых
+   действия, без рамки-свитка и углов. Терминал помнит молча ── */
 .restore-offer {
   animation: reading-line-in 0.45s ease-out backwards;
-}
-
-.restore-head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 10px;
-  margin-bottom: 6px;
-}
-
-.restore-title {
-  font-family: var(--font-serif), serif;
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--guide-accent, #b5a5e6);
-  letter-spacing: 0.02em;
-  text-shadow: 0 0 12px color-mix(in srgb, var(--guide-accent, #b5a5e6) 30%, transparent);
+  margin: 2px 0;
 }
 
 .restore-meta {
-  font-size: 10.5px;
+  font-size: 11px;
   color: rgba(255, 255, 255, 0.45);
-}
-
-.restore-hint {
-  margin-bottom: 10px;
 }
 
 .restore-actions {
   display: flex;
   flex-wrap: wrap;
+  gap: 2px;
+  margin-top: 2px;
+}
+
+.restore-btn {
+  display: inline-flex;
+  align-items: center;
   gap: 6px;
+  min-height: 44px;
+  padding: 0 10px;
+  border: none;
+  background: none;
+  font-size: 11.5px;
+  font-family: inherit;
+  color: rgba(255, 255, 255, 0.55);
+  cursor: pointer;
+  transition: color 0.25s, text-shadow 0.25s;
 }
 
-.restore-chip--main {
-  border-color: color-mix(in srgb, var(--guide-accent, #b5a5e6) 45%, transparent);
-  color: rgba(255, 255, 255, 0.9);
+.restore-btn:hover { color: #fff; }
+
+.restore-btn:focus-visible {
+  outline: 1px solid var(--guide-accent, #a29cd8);
+  outline-offset: 2px;
+  border-radius: 2px;
 }
 
-.restore-chip--main:hover:not(:disabled) {
-  box-shadow: 0 0 14px color-mix(in srgb, var(--guide-accent, #b5a5e6) 25%, transparent);
+.restore-btn--main { color: var(--guide-accent, #a29cd8); }
+
+.restore-btn--main:hover {
+  color: #fff;
+  text-shadow: 0 0 12px var(--guide-glow, rgba(162, 156, 216, 0.45));
 }
 
 /* ═════ 14. Детальная полировка (фаза 2-d) ═══════════════════ */
@@ -2067,7 +2094,7 @@ button {
   top: 0;
   bottom: 0;
   width: 2px;
-  background: var(--guide-accent, #b5a5e6);
+  background: var(--guide-accent, #a29cd8);
   transform: scaleY(0);
   transform-origin: center;
   transition: transform 0.22s ease-out;
@@ -2085,11 +2112,11 @@ button {
 
 .menu-row:hover .mr-glyph {
   transform: scale(1.22);
-  text-shadow: 0 0 12px color-mix(in srgb, var(--guide-accent, #b5a5e6) 55%, transparent);
+  text-shadow: 0 0 12px color-mix(in srgb, var(--guide-accent, #a29cd8) 55%, transparent);
 }
 
 .menu-row:focus-visible {
-  outline: 1px solid color-mix(in srgb, var(--guide-accent, #b5a5e6) 65%, transparent);
+  outline: 1px solid color-mix(in srgb, var(--guide-accent, #a29cd8) 65%, transparent);
   outline-offset: -1px;
 }
 
@@ -2106,7 +2133,7 @@ button {
   background: linear-gradient(
     100deg,
     transparent 20%,
-    color-mix(in srgb, var(--guide-accent, #b5a5e6) 10%, transparent) 42%,
+    color-mix(in srgb, var(--guide-accent, #a29cd8) 10%, transparent) 42%,
     transparent 64%
   );
   background-size: 240% 100%;
@@ -2146,7 +2173,7 @@ button {
 }
 
 .chip:focus-visible {
-  outline: 1px solid color-mix(in srgb, var(--guide-accent, #b5a5e6) 70%, transparent);
+  outline: 1px solid color-mix(in srgb, var(--guide-accent, #a29cd8) 70%, transparent);
   outline-offset: 1px;
 }
 
@@ -2166,7 +2193,7 @@ button {
   background: linear-gradient(
     90deg,
     transparent,
-    color-mix(in srgb, var(--guide-accent, #b5a5e6) 55%, transparent),
+    color-mix(in srgb, var(--guide-accent, #a29cd8) 55%, transparent),
     transparent
   );
   opacity: 0;
@@ -2184,7 +2211,7 @@ button {
 /* ── статус-лайн: режим дышит свечением ── */
 
 .sl-mode {
-  text-shadow: 0 0 10px color-mix(in srgb, var(--guide-accent, #b5a5e6) 35%, transparent);
+  text-shadow: 0 0 10px color-mix(in srgb, var(--guide-accent, #a29cd8) 35%, transparent);
 }
 
 /* ── скролл-эндер: мягкая пульсация каретки ── */
@@ -2205,7 +2232,7 @@ button {
 }
 
 @keyframes tui-head-glow {
-  from { text-shadow: 0 0 18px var(--guide-accent, #b5a5e6); }
+  from { text-shadow: 0 0 18px var(--guide-accent, #a29cd8); }
   to { text-shadow: 0 0 6px transparent; }
 }
 
@@ -2262,7 +2289,7 @@ button {
 .lib-flash { animation: lib-flash 1.2s ease-out 1; border-radius: 2px; }
 
 @keyframes lib-flash {
-  0% { background: rgba(181, 165, 230, 0.16); }
+  0% { background: rgba(162, 156, 216, 0.16); }
   100% { background: transparent; }
 }
 
@@ -2283,7 +2310,7 @@ button {
 }
 
 @keyframes lib-head-glow {
-  from { text-shadow: 0 0 18px var(--guide-accent, #b5a5e6); }
+  from { text-shadow: 0 0 18px var(--guide-accent, #a29cd8); }
   to { text-shadow: 0 0 6px transparent; }
 }
 
@@ -2315,13 +2342,13 @@ button {
 }
 
 .lib-tab:hover {
-  border-color: var(--guide-accent-dim, rgba(181, 165, 230, 0.22));
+  border-color: var(--guide-accent-dim, rgba(162, 156, 216, 0.22));
   color: rgba(255, 255, 255, 0.9);
 }
 
 .lib-tab--active {
-  border-color: var(--guide-accent, #b5a5e6);
-  background: var(--guide-accent-dim, rgba(181, 165, 230, 0.22));
+  border-color: var(--guide-accent, #a29cd8);
+  background: var(--guide-accent-dim, rgba(162, 156, 216, 0.22));
   color: #fff;
   text-shadow: 0 0 8px var(--guide-accent-dim, transparent);
   box-shadow:
@@ -2330,14 +2357,14 @@ button {
 }
 
 .lib-tab-glyph {
-  color: var(--guide-accent, #b5a5e6);
+  color: var(--guide-accent, #a29cd8);
   font-size: 11px;
 }
 
 .lib-tab:focus-visible,
 .lib-search-clear:focus-visible,
 .lib-collapse:focus-visible {
-  outline: 1px solid color-mix(in srgb, var(--guide-accent, #b5a5e6) 70%, transparent);
+  outline: 1px solid color-mix(in srgb, var(--guide-accent, #a29cd8) 70%, transparent);
   outline-offset: 1px;
 }
 
@@ -2355,12 +2382,12 @@ button {
 }
 
 .lib-search:focus-within {
-  border-color: var(--guide-accent-dim, rgba(181, 165, 230, 0.22));
+  border-color: var(--guide-accent-dim, rgba(162, 156, 216, 0.22));
   box-shadow: 0 0 12px rgba(0, 0, 0, 0.4), inset 0 0 8px rgba(0, 0, 0, 0.45);
 }
 
 .lib-search-glyph {
-  color: var(--guide-accent, #b5a5e6);
+  color: var(--guide-accent, #a29cd8);
   font-size: 13px;
   flex-shrink: 0;
 }
@@ -2374,7 +2401,7 @@ button {
   color: #fff;
   font-family: inherit;
   font-size: 12px;
-  caret-color: var(--guide-accent, #b5a5e6);
+  caret-color: var(--guide-accent, #a29cd8);
   padding: 6px 2px;
 }
 
@@ -2392,7 +2419,7 @@ button {
   transition: color 0.2s;
 }
 
-.lib-search-clear:hover { color: #e07a7a; }
+.lib-search-clear:hover { color: #cf7f87; }
 
 /* сетка арканов: 3 → 5 → 7 колонок */
 .lib-grid {
@@ -2432,7 +2459,7 @@ button {
 
 .lib-cell:hover {
   transform: translateY(-3px);
-  border-color: var(--guide-accent, #b5a5e6);
+  border-color: var(--guide-accent, #a29cd8);
   background: rgba(0, 0, 0, 0.32);
   box-shadow:
     0 5px 16px rgba(0, 0, 0, 0.5),
@@ -2440,13 +2467,13 @@ button {
 }
 
 .lib-cell:focus-visible {
-  outline: 1px solid color-mix(in srgb, var(--guide-accent, #b5a5e6) 70%, transparent);
+  outline: 1px solid color-mix(in srgb, var(--guide-accent, #a29cd8) 70%, transparent);
   outline-offset: 1px;
 }
 
 .lib-cell--open {
-  border-color: var(--guide-accent, #b5a5e6);
-  background: var(--guide-accent-dim, rgba(181, 165, 230, 0.22));
+  border-color: var(--guide-accent, #a29cd8);
+  background: var(--guide-accent-dim, rgba(162, 156, 216, 0.22));
   box-shadow: 0 0 12px var(--guide-accent-dim, transparent);
 }
 
@@ -2492,7 +2519,7 @@ button {
 .lib-cell-glyph {
   font-size: 9px;
   line-height: 1;
-  color: var(--guide-accent, #b5a5e6);
+  color: var(--guide-accent, #a29cd8);
   opacity: 0.8;
 }
 
@@ -2563,7 +2590,7 @@ button {
     box-shadow:
       0 4px 18px rgba(0, 0, 0, 0.55),
       0 0 22px var(--guide-accent-dim, transparent),
-      0 0 5px color-mix(in srgb, var(--guide-accent, #b5a5e6) 45%, transparent);
+      0 0 5px color-mix(in srgb, var(--guide-accent, #a29cd8) 45%, transparent);
   }
 }
 
@@ -2580,7 +2607,7 @@ button {
   font-size: 16.5px;
   font-weight: 600;
   letter-spacing: 0.08em;
-  text-shadow: 0 0 14px var(--guide-glow, rgba(181, 165, 230, 0.55));
+  text-shadow: 0 0 14px var(--guide-glow, rgba(162, 156, 216, 0.55));
 }
 
 .lib-detail-meta {
@@ -2622,7 +2649,7 @@ button {
 
 .lib-collapse:hover {
   border-color: rgba(224, 122, 122, 0.5);
-  color: #e07a7a;
+  color: #cf7f87;
   background: rgba(224, 122, 122, 0.07);
 }
 
@@ -2655,8 +2682,8 @@ button {
 
 /* режим выбора пары: артефакты выбираемы, контейнер в тоне ask-режима */
 .reading-artifacts--pair {
-  border-color: color-mix(in srgb, var(--guide-accent, #b5a5e6) 40%, transparent);
-  background: color-mix(in srgb, var(--guide-accent, #b5a5e6) 6%, transparent);
+  border-color: color-mix(in srgb, var(--guide-accent, #a29cd8) 40%, transparent);
+  background: color-mix(in srgb, var(--guide-accent, #a29cd8) 6%, transparent);
 }
 
 /* выбираемая карта: та же механика, что ask-кнопка, но без знака «?» */
@@ -2671,19 +2698,19 @@ button {
 
 .reading-artifact-btn--pair:hover,
 .reading-artifact-btn--pair:focus-visible {
-  border-color: color-mix(in srgb, var(--guide-accent, #b5a5e6) 60%, transparent);
-  background: color-mix(in srgb, var(--guide-accent, #b5a5e6) 10%, transparent);
+  border-color: color-mix(in srgb, var(--guide-accent, #a29cd8) 60%, transparent);
+  background: color-mix(in srgb, var(--guide-accent, #a29cd8) 10%, transparent);
   transform: translateY(-3px);
 }
 
 .reading-artifact-btn--pair:hover .reading-artifact-img,
 .reading-artifact-btn--pair:focus-visible .reading-artifact-img {
-  border-color: var(--guide-accent, #b5a5e6);
-  box-shadow: 0 0 16px color-mix(in srgb, var(--guide-accent, #b5a5e6) 35%, transparent);
+  border-color: var(--guide-accent, #a29cd8);
+  box-shadow: 0 0 16px color-mix(in srgb, var(--guide-accent, #a29cd8) 35%, transparent);
 }
 
 .reading-artifact-btn--pair:focus-visible {
-  outline: 2px solid var(--guide-accent, #b5a5e6);
+  outline: 2px solid var(--guide-accent, #a29cd8);
   outline-offset: 2px;
 }
 
@@ -2691,31 +2718,31 @@ button {
    двойная специфика — чтобы :hover не перекрывал выбор */
 .reading-artifact-btn--pair.reading-artifact-btn--picked {
   border-style: solid;
-  border-color: color-mix(in srgb, var(--guide-accent, #b5a5e6) 75%, transparent);
-  background: color-mix(in srgb, var(--guide-accent, #b5a5e6) 13%, transparent);
+  border-color: color-mix(in srgb, var(--guide-accent, #a29cd8) 75%, transparent);
+  background: color-mix(in srgb, var(--guide-accent, #a29cd8) 13%, transparent);
   transform: translateY(-5px);
   box-shadow:
     0 6px 18px rgba(0, 0, 0, 0.55),
-    0 0 18px color-mix(in srgb, var(--guide-accent, #b5a5e6) 30%, transparent);
+    0 0 18px color-mix(in srgb, var(--guide-accent, #a29cd8) 30%, transparent);
 }
 
 .reading-artifact-btn--pair.reading-artifact-btn--picked .reading-artifact-img {
-  border-color: var(--guide-accent, #b5a5e6);
-  box-shadow: 0 0 18px color-mix(in srgb, var(--guide-accent, #b5a5e6) 45%, transparent);
+  border-color: var(--guide-accent, #a29cd8);
+  box-shadow: 0 0 18px color-mix(in srgb, var(--guide-accent, #a29cd8) 45%, transparent);
 }
 
 /* выбранный не теряет свечения и под курсором */
 .reading-artifact-btn--pair.reading-artifact-btn--picked:hover,
 .reading-artifact-btn--pair.reading-artifact-btn--picked:focus-visible {
-  border-color: color-mix(in srgb, var(--guide-accent, #b5a5e6) 75%, transparent);
-  background: color-mix(in srgb, var(--guide-accent, #b5a5e6) 13%, transparent);
+  border-color: color-mix(in srgb, var(--guide-accent, #a29cd8) 75%, transparent);
+  background: color-mix(in srgb, var(--guide-accent, #a29cd8) 13%, transparent);
   transform: translateY(-5px);
 }
 
 .reading-artifact-btn--pair.reading-artifact-btn--picked:hover .reading-artifact-img,
 .reading-artifact-btn--pair.reading-artifact-btn--picked:focus-visible .reading-artifact-img {
-  border-color: var(--guide-accent, #b5a5e6);
-  box-shadow: 0 0 18px color-mix(in srgb, var(--guide-accent, #b5a5e6) 45%, transparent);
+  border-color: var(--guide-accent, #a29cd8);
+  box-shadow: 0 0 18px color-mix(in srgb, var(--guide-accent, #a29cd8) 45%, transparent);
 }
 
 /* бейдж «1»/«2» на выбранном артефакте: круг 18px, тёмный глиф */
@@ -2730,10 +2757,10 @@ button {
   justify-content: center;
   font-size: 10.5px;
   font-weight: 700;
-  color: #05040f;
-  background: var(--guide-accent, #b5a5e6);
+  color: #04040e;
+  background: var(--guide-accent, #a29cd8);
   border-radius: 50%;
-  box-shadow: 0 0 12px color-mix(in srgb, var(--guide-accent, #b5a5e6) 60%, transparent);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--guide-accent, #a29cd8) 60%, transparent);
   animation: fu-pair-mark-in 0.28s ease-out backwards, fu-pair-mark-pulse 1.8s ease-in-out 0.28s infinite;
 }
 
@@ -2743,18 +2770,18 @@ button {
 }
 
 @keyframes fu-pair-mark-pulse {
-  0%, 100% { box-shadow: 0 0 10px color-mix(in srgb, var(--guide-accent, #b5a5e6) 45%, transparent); }
-  50% { box-shadow: 0 0 18px color-mix(in srgb, var(--guide-accent, #b5a5e6) 75%, transparent); }
+  0%, 100% { box-shadow: 0 0 10px color-mix(in srgb, var(--guide-accent, #a29cd8) 45%, transparent); }
+  50% { box-shadow: 0 0 18px color-mix(in srgb, var(--guide-accent, #a29cd8) 75%, transparent); }
 }
 
 /* чип парного вопроса — второй акцентный в ряду follow-up */
 .reading-fu-chip--pair {
-  border-color: color-mix(in srgb, var(--guide-accent, #b5a5e6) 45%, transparent);
+  border-color: color-mix(in srgb, var(--guide-accent, #a29cd8) 45%, transparent);
   color: rgba(255, 255, 255, 0.85);
 }
 
 .reading-fu-chip--pair:hover:not(:disabled) {
-  box-shadow: 0 0 14px color-mix(in srgb, var(--guide-accent, #b5a5e6) 25%, transparent);
+  box-shadow: 0 0 14px color-mix(in srgb, var(--guide-accent, #a29cd8) 25%, transparent);
 }
 
 /* панель пары в followup-ответе: два арта + глиф связи */
@@ -2766,7 +2793,7 @@ button {
   margin: 2px 0 10px;
   padding: 12px 8px 14px;
   border: 1px solid var(--crt-line-soft);
-  background: color-mix(in srgb, var(--guide-accent, #b5a5e6) 4%, transparent);
+  background: color-mix(in srgb, var(--guide-accent, #a29cd8) 4%, transparent);
 }
 
 .followup-pair-art {
@@ -2792,10 +2819,10 @@ button {
 .followup-pair-link {
   font-size: 17px;
   line-height: 1;
-  color: var(--guide-accent, #b5a5e6);
+  color: var(--guide-accent, #a29cd8);
   text-shadow:
-    0 0 10px color-mix(in srgb, var(--guide-accent, #b5a5e6) 55%, transparent),
-    0 0 24px color-mix(in srgb, var(--guide-accent, #b5a5e6) 30%, transparent);
+    0 0 10px color-mix(in srgb, var(--guide-accent, #a29cd8) 55%, transparent),
+    0 0 24px color-mix(in srgb, var(--guide-accent, #a29cd8) 30%, transparent);
   animation: fu-pair-link-breathe 2.6s ease-in-out infinite;
 }
 
@@ -2837,22 +2864,22 @@ button {
   gap: 10px 14px;
   margin: 8px 0 10px;
   padding: 10px 12px;
-  border: 1px solid color-mix(in srgb, var(--guide-accent, #b5a5e6) 35%, transparent);
-  background: color-mix(in srgb, var(--guide-accent, #b5a5e6) 5%, transparent);
+  border: 1px solid color-mix(in srgb, var(--guide-accent, #a29cd8) 35%, transparent);
+  background: color-mix(in srgb, var(--guide-accent, #a29cd8) 5%, transparent);
   animation: rit-breathe 2.8s ease-in-out infinite;
 }
 
 /* дыхание: рамка и свечение медленно набирают и отпускают силу */
 @keyframes rit-breathe {
   0%, 100% {
-    box-shadow: 0 0 9px color-mix(in srgb, var(--guide-accent, #b5a5e6) 12%, transparent);
-    border-color: color-mix(in srgb, var(--guide-accent, #b5a5e6) 30%, transparent);
+    box-shadow: 0 0 9px color-mix(in srgb, var(--guide-accent, #a29cd8) 12%, transparent);
+    border-color: color-mix(in srgb, var(--guide-accent, #a29cd8) 30%, transparent);
   }
   50% {
     box-shadow:
-      0 0 22px color-mix(in srgb, var(--guide-accent, #b5a5e6) 26%, transparent),
-      inset 0 0 16px color-mix(in srgb, var(--guide-accent, #b5a5e6) 7%, transparent);
-    border-color: color-mix(in srgb, var(--guide-accent, #b5a5e6) 55%, transparent);
+      0 0 22px color-mix(in srgb, var(--guide-accent, #a29cd8) 26%, transparent),
+      inset 0 0 16px color-mix(in srgb, var(--guide-accent, #a29cd8) 7%, transparent);
+    border-color: color-mix(in srgb, var(--guide-accent, #a29cd8) 55%, transparent);
   }
 }
 
@@ -2860,10 +2887,10 @@ button {
 .rit-glyph {
   font-size: 20px;
   line-height: 1;
-  color: var(--guide-accent, #b5a5e6);
+  color: var(--guide-accent, #a29cd8);
   text-shadow:
-    0 0 12px color-mix(in srgb, var(--guide-accent, #b5a5e6) 55%, transparent),
-    0 0 28px color-mix(in srgb, var(--guide-accent, #b5a5e6) 25%, transparent);
+    0 0 12px color-mix(in srgb, var(--guide-accent, #a29cd8) 55%, transparent),
+    0 0 28px color-mix(in srgb, var(--guide-accent, #a29cd8) 25%, transparent);
   animation: rit-glyph-flicker 3.6s ease-in-out infinite;
 }
 
@@ -2898,8 +2925,8 @@ button {
   gap: 8px;
   min-height: 44px;
   padding: 0 18px;
-  border: 1px solid color-mix(in srgb, var(--guide-accent, #b5a5e6) 60%, transparent);
-  background: color-mix(in srgb, var(--guide-accent, #b5a5e6) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--guide-accent, #a29cd8) 60%, transparent);
+  background: color-mix(in srgb, var(--guide-accent, #a29cd8) 12%, transparent);
   color: rgba(255, 255, 255, 0.95);
   font-size: 12.5px;
   font-family: inherit;
@@ -2910,25 +2937,25 @@ button {
 }
 
 .rit-chip:hover {
-  background: color-mix(in srgb, var(--guide-accent, #b5a5e6) 22%, transparent);
-  border-color: var(--guide-accent, #b5a5e6);
+  background: color-mix(in srgb, var(--guide-accent, #a29cd8) 22%, transparent);
+  border-color: var(--guide-accent, #a29cd8);
   color: #fff;
   transform: translateY(-1px);
 }
 
 .rit-chip:focus-visible {
-  outline: 2px solid var(--guide-accent, #b5a5e6);
+  outline: 2px solid var(--guide-accent, #a29cd8);
   outline-offset: 2px;
 }
 
 .rit-chip-glyph {
-  color: var(--guide-accent, #b5a5e6);
-  text-shadow: 0 0 10px color-mix(in srgb, var(--guide-accent, #b5a5e6) 60%, transparent);
+  color: var(--guide-accent, #a29cd8);
+  text-shadow: 0 0 10px color-mix(in srgb, var(--guide-accent, #a29cd8) 60%, transparent);
 }
 
 @keyframes rit-chip-pulse {
-  0%, 100% { box-shadow: 0 0 8px color-mix(in srgb, var(--guide-accent, #b5a5e6) 15%, transparent); }
-  50% { box-shadow: 0 0 18px color-mix(in srgb, var(--guide-accent, #b5a5e6) 38%, transparent); }
+  0%, 100% { box-shadow: 0 0 8px color-mix(in srgb, var(--guide-accent, #a29cd8) 15%, transparent); }
+  50% { box-shadow: 0 0 18px color-mix(in srgb, var(--guide-accent, #a29cd8) 38%, transparent); }
 }
 
 /* свершённый ритуал: скромная строка без свечения */
@@ -2963,7 +2990,7 @@ button {
   font-weight: 600;
   line-height: 1;
   color: rgba(255, 255, 255, 0.96);
-  text-shadow: 0 0 16px color-mix(in srgb, var(--guide-accent, #b5a5e6) 30%, transparent);
+  text-shadow: 0 0 16px color-mix(in srgb, var(--guide-accent, #a29cd8) 30%, transparent);
   animation: stats-num-in 0.5s ease-out backwards;
 }
 
@@ -3017,8 +3044,8 @@ button {
 }
 
 .stats-seg--on {
-  color: var(--guide-accent, #b5a5e6);
-  text-shadow: 0 0 6px color-mix(in srgb, var(--guide-accent, #b5a5e6) 50%, transparent);
+  color: var(--guide-accent, #a29cd8);
+  text-shadow: 0 0 6px color-mix(in srgb, var(--guide-accent, #a29cd8) 50%, transparent);
 }
 
 .stats-seg--off {
@@ -3057,13 +3084,13 @@ button {
 }
 
 .stats-chip:hover {
-  border-color: var(--guide-accent, #b5a5e6);
-  background: var(--guide-accent-dim, rgba(181, 165, 230, 0.22));
+  border-color: var(--guide-accent, #a29cd8);
+  background: var(--guide-accent-dim, rgba(162, 156, 216, 0.22));
   color: #fff;
 }
 
 .stats-chip:focus-visible {
-  outline: 2px solid var(--guide-accent, #b5a5e6);
+  outline: 2px solid var(--guide-accent, #a29cd8);
   outline-offset: 2px;
 }
 
@@ -3096,13 +3123,13 @@ button {
 
 /* выделение текста — акцент проводника, не браузерный синий */
 ::selection {
-  background: color-mix(in srgb, var(--guide-accent, #b5a5e6) 38%, transparent);
+  background: color-mix(in srgb, var(--guide-accent, #a29cd8) 38%, transparent);
   color: #fff;
-  text-shadow: 0 0 12px var(--guide-glow, rgba(181, 165, 230, 0.45));
+  text-shadow: 0 0 12px var(--guide-glow, rgba(162, 156, 216, 0.45));
 }
 .cmd-input::selection,
 .lib-search-input::selection {
-  background: color-mix(in srgb, var(--guide-accent, #b5a5e6) 55%, transparent);
+  background: color-mix(in srgb, var(--guide-accent, #a29cd8) 55%, transparent);
 }
 
 /* ── MOTD: каскадный вход чипов + поздний вдох подсказки ── */
@@ -3129,11 +3156,11 @@ button {
 }
 .reading-artifacts:not(.reading-artifacts--ask) .reading-artifact:hover {
   transform: translateY(-3px);
-  filter: drop-shadow(0 6px 14px var(--guide-glow, rgba(181, 165, 230, 0.35)));
+  filter: drop-shadow(0 6px 14px var(--guide-glow, rgba(162, 156, 216, 0.35)));
 }
 .reading-artifacts:not(.reading-artifacts--ask) .reading-artifact:hover .reading-artifact-img {
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--guide-accent, #b5a5e6) 65%, transparent),
-              0 0 18px var(--guide-glow, rgba(181, 165, 230, 0.4));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--guide-accent, #a29cd8) 65%, transparent),
+              0 0 18px var(--guide-glow, rgba(162, 156, 216, 0.4));
 }
 .reading-artifacts:not(.reading-artifacts--ask) .reading-artifact .reading-artifact-img {
   transition: box-shadow 0.22s ease;
@@ -3141,12 +3168,12 @@ button {
 
 /* ── ошибки: левая черта + короткий глитч-вход ── */
 .err-block {
-  border-left: 2px solid color-mix(in srgb, var(--t-err, #ff6b6b) 62%, transparent);
+  border-left: 2px solid color-mix(in srgb, var(--t-err, #cf7f87) 62%, transparent);
   padding: 4px 0 4px 10px;
   margin: 3px 0;
   animation: err-in 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
-.err-block .tl-err { text-shadow: 0 0 14px color-mix(in srgb, var(--t-err, #ff6b6b) 35%, transparent); }
+.err-block .tl-err { text-shadow: 0 0 14px color-mix(in srgb, var(--t-err, #cf7f87) 35%, transparent); }
 @keyframes err-in {
   0%   { opacity: 0; transform: translateX(-5px); }
   55%  { opacity: 1; transform: translateX(1.5px); }
@@ -3155,20 +3182,20 @@ button {
 
 /* ── подтверждения: тихая зелёная нить ── */
 .ok-block {
-  border-left: 2px solid color-mix(in srgb, var(--t-ok, #9ddba0) 45%, transparent);
+  border-left: 2px solid color-mix(in srgb, var(--t-ok, #9cbfa9) 45%, transparent);
   padding: 3px 0 3px 10px;
   margin: 3px 0;
   animation: motd-hint-in 0.35s ease-out both;
 }
-.ok-block .tl-ok { text-shadow: 0 0 12px color-mix(in srgb, var(--t-ok, #9ddba0) 28%, transparent); }
+.ok-block .tl-ok { text-shadow: 0 0 12px color-mix(in srgb, var(--t-ok, #9cbfa9) 28%, transparent); }
 
 /* ── единый фокус-ринг для мелких кнопок терминала ── */
 .motd-chip:focus-visible,
 .chip:focus-visible,
 .history-row:focus-visible {
-  outline: 1px solid var(--guide-accent, #b5a5e6);
+  outline: 1px solid var(--guide-accent, #a29cd8);
   outline-offset: 2px;
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--guide-accent, #b5a5e6) 22%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--guide-accent, #a29cd8) 22%, transparent);
   border-radius: 2px;
 }
 
@@ -3177,7 +3204,7 @@ button {
   animation: motd-hint-in 0.7s ease-out both;
 }
 .reading-close .reading-close-tag {
-  text-shadow: 0 0 12px var(--guide-glow, rgba(181, 165, 230, 0.4));
+  text-shadow: 0 0 12px var(--guide-glow, rgba(162, 156, 216, 0.4));
 }
 
 /* ── polировка: каскад строк чтения при instant-восстановлении ── */
@@ -3252,12 +3279,12 @@ button {
 
 .arc-memory:hover {
   opacity: 1;
-  color: var(--guide-accent, #b5a5e6);
-  text-shadow: 0 0 10px color-mix(in srgb, var(--guide-accent, #b5a5e6) 35%, transparent);
+  color: var(--guide-accent, #a29cd8);
+  text-shadow: 0 0 10px color-mix(in srgb, var(--guide-accent, #a29cd8) 35%, transparent);
 }
 
 .arc-memory:focus-visible {
-  outline: 1px solid color-mix(in srgb, var(--guide-accent, #b5a5e6) 70%, transparent);
+  outline: 1px solid color-mix(in srgb, var(--guide-accent, #a29cd8) 70%, transparent);
   outline-offset: 2px;
   border-radius: 2px;
 }
@@ -3275,7 +3302,7 @@ button {
   font-family: var(--font-serif), serif;
   font-size: 15px;
   letter-spacing: 0.12em;
-  text-shadow: 0 0 14px var(--guide-glow, rgba(181, 165, 230, 0.55));
+  text-shadow: 0 0 14px var(--guide-glow, rgba(162, 156, 216, 0.55));
 }
 
 .arc-sub {
@@ -3316,8 +3343,8 @@ button {
 .arc-chain-final {
   font-size: 18px;
   font-weight: 600;
-  color: var(--guide-accent, #b5a5e6);
-  text-shadow: 0 0 16px color-mix(in srgb, var(--guide-accent, #b5a5e6) 70%, transparent);
+  color: var(--guide-accent, #a29cd8);
+  text-shadow: 0 0 16px color-mix(in srgb, var(--guide-accent, #a29cd8) 70%, transparent);
 }
 
 /* карта: большой арт в рамке со свечением + имя громко */
@@ -3330,7 +3357,7 @@ button {
 .arc-art {
   flex-shrink: 0;
   width: 158px;
-  border: 1px solid color-mix(in srgb, var(--guide-accent, #b5a5e6) 38%, transparent);
+  border: 1px solid color-mix(in srgb, var(--guide-accent, #a29cd8) 38%, transparent);
   border-radius: 2px;
   overflow: hidden;
   background: #000;
@@ -3364,7 +3391,7 @@ button {
     box-shadow:
       0 4px 18px rgba(0, 0, 0, 0.55),
       0 0 26px var(--guide-accent-dim, transparent),
-      0 0 6px color-mix(in srgb, var(--guide-accent, #b5a5e6) 45%, transparent);
+      0 0 6px color-mix(in srgb, var(--guide-accent, #a29cd8) 45%, transparent);
     filter: brightness(1.07);
   }
 }
@@ -3381,7 +3408,7 @@ button {
   font-weight: 600;
   letter-spacing: 0.05em;
   color: rgba(255, 255, 255, 0.95);
-  text-shadow: 0 0 20px var(--guide-glow, rgba(181, 165, 230, 0.55));
+  text-shadow: 0 0 20px var(--guide-glow, rgba(162, 156, 216, 0.55));
 }
 
 .arc-meta {
@@ -3409,7 +3436,7 @@ button {
 .arc-whisper {
   margin-top: 15px;
   padding: 6px 0 2px 12px;
-  border-left: 2px solid color-mix(in srgb, var(--guide-accent, #b5a5e6) 55%, transparent);
+  border-left: 2px solid color-mix(in srgb, var(--guide-accent, #a29cd8) 55%, transparent);
   animation: arc-part-in 0.45s ease-out backwards;
 }
 
@@ -3423,7 +3450,7 @@ button {
 .arc-whisper-zone {
   margin-top: 12px;
   padding-left: 12px;
-  border-left: 2px solid color-mix(in srgb, var(--guide-accent, #b5a5e6) 30%, transparent);
+  border-left: 2px solid color-mix(in srgb, var(--guide-accent, #a29cd8) 30%, transparent);
 }
 
 /* мобильный 390: арт ~120px, цепочка переносится, значения столбцом */
@@ -3590,8 +3617,8 @@ button {
 }
 
 .moon-forecast:hover:not(:disabled) {
-  border-color: color-mix(in srgb, var(--guide-accent, #b5a5e6) 55%, transparent);
-  background: color-mix(in srgb, var(--guide-accent, #b5a5e6) 10%, transparent);
+  border-color: color-mix(in srgb, var(--guide-accent, #a29cd8) 55%, transparent);
+  background: color-mix(in srgb, var(--guide-accent, #a29cd8) 10%, transparent);
   color: rgba(226, 230, 240, 0.98);
   text-shadow: 0 0 8px rgba(226, 230, 240, 0.45);
 }
@@ -3659,8 +3686,8 @@ button {
 }
 
 .sl-moon:hover {
-  border-color: color-mix(in srgb, var(--guide-accent, #b5a5e6) 55%, transparent);
-  background: color-mix(in srgb, var(--guide-accent, #b5a5e6) 10%, transparent);
+  border-color: color-mix(in srgb, var(--guide-accent, #a29cd8) 55%, transparent);
+  background: color-mix(in srgb, var(--guide-accent, #a29cd8) 10%, transparent);
   color: rgba(226, 230, 240, 0.98);
   text-shadow: 0 0 8px rgba(226, 230, 240, 0.45);
 }
@@ -3673,7 +3700,7 @@ button {
 /* векторный диск фазы красится почти-белым и дышит акцентом */
 .sl-moon-glyph-svg {
   color: rgba(226, 230, 240, 0.92);
-  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--guide-accent, #b5a5e6) 40%, transparent));
+  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--guide-accent, #a29cd8) 40%, transparent));
 }
 
 .sl-moon:hover .sl-moon-glyph-svg { color: #fff; }
@@ -3742,17 +3769,17 @@ button {
 .reading-advice-box > .corner-br { animation-delay: 0.24s; }
 @keyframes corner-in {
   from { opacity: 0; transform: scale(0.45); text-shadow: none; }
-  to   { opacity: 0.75; transform: scale(1); text-shadow: 0 0 10px var(--guide-glow, rgba(181, 165, 230, 0.35)); }
+  to   { opacity: 0.75; transform: scale(1); text-shadow: 0 0 10px var(--guide-glow, rgba(162, 156, 216, 0.35)); }
 }
 
 /* скроллбар: палец светлеет и чуть тяжелеет при наведении на скроллбэк */
 .shell-scroll:hover::-webkit-scrollbar-thumb {
-  background: color-mix(in srgb, var(--guide-accent, #b5a5e6) 55%, transparent);
+  background: color-mix(in srgb, var(--guide-accent, #a29cd8) 55%, transparent);
 }
 .shell-scroll:hover::-webkit-scrollbar { width: 5px; }
 
 /* бут: строка луны чуть сияет — она теперь своя */
-.boot-line.tl-ok:last-child { text-shadow: 0 0 12px var(--guide-glow, rgba(181, 165, 230, 0.3)); }
+.boot-line.tl-ok:last-child { text-shadow: 0 0 12px var(--guide-glow, rgba(162, 156, 216, 0.3)); }
 
 /* reduced-motion: углы без каскада */
 @media (prefers-reduced-motion: reduce) {
@@ -3773,12 +3800,12 @@ button {
 /* чип «☾ отголосок из журнала» — брат свитка, но глиф лунный:
    серебристое свечение вместо акцентного, «память просыпается» */
 .reading-fu-chip--echo {
-  border-color: color-mix(in srgb, var(--guide-accent, #b5a5e6) 45%, transparent);
+  border-color: color-mix(in srgb, var(--guide-accent, #a29cd8) 45%, transparent);
   color: rgba(255, 255, 255, 0.85);
 }
 
 .reading-fu-chip--echo:hover:not(:disabled) {
-  box-shadow: 0 0 14px color-mix(in srgb, var(--guide-accent, #b5a5e6) 25%, transparent);
+  box-shadow: 0 0 14px color-mix(in srgb, var(--guide-accent, #a29cd8) 25%, transparent);
 }
 
 .reading-fu-chip--echo .chip-glyph {
@@ -3854,10 +3881,10 @@ button {
   animation-delay: var(--er-delay, 0ms);
 }
 
-.echo-row:hover { background: var(--guide-accent-dim, rgba(181, 165, 230, 0.22)); }
+.echo-row:hover { background: var(--guide-accent-dim, rgba(162, 156, 216, 0.22)); }
 
 .echo-row:focus-visible {
-  outline: 1px solid color-mix(in srgb, var(--guide-accent, #b5a5e6) 70%, transparent);
+  outline: 1px solid color-mix(in srgb, var(--guide-accent, #a29cd8) 70%, transparent);
   outline-offset: 2px;
 }
 
@@ -3916,8 +3943,8 @@ button {
 }
 
 .echo-card {
-  color: var(--guide-accent, #b5a5e6);
-  text-shadow: 0 0 9px color-mix(in srgb, var(--guide-accent, #b5a5e6) 35%, transparent);
+  color: var(--guide-accent, #a29cd8);
+  text-shadow: 0 0 9px color-mix(in srgb, var(--guide-accent, #a29cd8) 35%, transparent);
   white-space: nowrap;
 }
 
@@ -3948,7 +3975,7 @@ button {
 }
 
 .echo-chev {
-  color: var(--guide-accent, #b5a5e6);
+  color: var(--guide-accent, #a29cd8);
   flex-shrink: 0;
   transition: transform 0.2s ease-out;
 }
@@ -4010,12 +4037,12 @@ button {
 }
 
 .week-title-glyph {
-  color: var(--guide-accent, #b5a5e6);
-  text-shadow: 0 0 10px color-mix(in srgb, var(--guide-accent, #b5a5e6) 45%, transparent);
+  color: var(--guide-accent, #a29cd8);
+  text-shadow: 0 0 10px color-mix(in srgb, var(--guide-accent, #a29cd8) 45%, transparent);
 }
 
 @keyframes week-title-glow {
-  from { text-shadow: 0 0 18px var(--guide-glow, rgba(181, 165, 230, 0.55)); }
+  from { text-shadow: 0 0 18px var(--guide-glow, rgba(162, 156, 216, 0.55)); }
   to   { text-shadow: 0 0 6px transparent; }
 }
 
@@ -4046,7 +4073,7 @@ button {
 .week-art {
   flex-shrink: 0;
   width: 62px;
-  border: 1px solid color-mix(in srgb, var(--guide-accent, #b5a5e6) 38%, transparent);
+  border: 1px solid color-mix(in srgb, var(--guide-accent, #a29cd8) 38%, transparent);
   border-radius: 2px;
   overflow: hidden;
   background: #000;
@@ -4078,7 +4105,7 @@ button {
     box-shadow:
       0 4px 16px rgba(0, 0, 0, 0.55),
       0 0 22px var(--guide-accent-dim, transparent),
-      0 0 6px color-mix(in srgb, var(--guide-accent, #b5a5e6) 45%, transparent);
+      0 0 6px color-mix(in srgb, var(--guide-accent, #a29cd8) 45%, transparent);
     filter: brightness(1.07);
   }
 }
@@ -4091,7 +4118,7 @@ button {
   font-weight: 600;
   letter-spacing: 0.04em;
   color: rgba(255, 255, 255, 0.95);
-  text-shadow: 0 0 14px var(--guide-glow, rgba(181, 165, 230, 0.55));
+  text-shadow: 0 0 14px var(--guide-glow, rgba(162, 156, 216, 0.55));
   overflow-wrap: anywhere;
 }
 
@@ -4152,7 +4179,7 @@ button {
 .week-reflex-zone,
 .week-reflex-answer {
   padding: 4px 0 2px 12px;
-  border-left: 2px solid color-mix(in srgb, var(--guide-accent, #b5a5e6) 40%, transparent);
+  border-left: 2px solid color-mix(in srgb, var(--guide-accent, #a29cd8) 40%, transparent);
 }
 
 .week-reflex-answer {
@@ -4218,22 +4245,22 @@ button {
 
 /* строка ожидания шёпота — акцентная нить слева, текст дышит */
 .pending-line {
-  border-left: 2px solid color-mix(in srgb, var(--guide-accent, #b5a5e6) 40%, transparent);
+  border-left: 2px solid color-mix(in srgb, var(--guide-accent, #a29cd8) 40%, transparent);
   padding-left: 8px;
   margin: 2px 0;
 }
-.pending-line .cd-spinner { text-shadow: 0 0 8px var(--guide-glow, rgba(181, 165, 230, 0.4)); }
+.pending-line .cd-spinner { text-shadow: 0 0 8px var(--guide-glow, rgba(162, 156, 216, 0.4)); }
 
 /* режим в статус-лайне вспыхивает при смене (key={mode}) */
 .sl-mode { animation: mode-in 0.6s cubic-bezier(0.22, 1, 0.36, 1); }
 @keyframes mode-in {
-  0%   { opacity: 0.35; text-shadow: 0 0 16px var(--guide-glow, rgba(181, 165, 230, 0.8)); }
-  100% { opacity: 1; text-shadow: 0 0 10px var(--guide-glow, rgba(181, 165, 230, 0.0)); }
+  0%   { opacity: 0.35; text-shadow: 0 0 16px var(--guide-glow, rgba(162, 156, 216, 0.8)); }
+  100% { opacity: 1; text-shadow: 0 0 10px var(--guide-glow, rgba(162, 156, 216, 0.0)); }
 }
 
 /* полоса тасования: заливка светится, кончик ярче */
 .pl-fill {
-  box-shadow: 0 0 8px color-mix(in srgb, var(--guide-accent, #b5a5e6) 45%, transparent);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--guide-accent, #a29cd8) 45%, transparent);
 }
 .pl-fill::after {
   content: '';
@@ -4322,8 +4349,8 @@ button {
 }
 
 .sl-theme:hover {
-  border-color: color-mix(in srgb, var(--guide-accent, #b5a5e6) 55%, transparent);
-  background: color-mix(in srgb, var(--guide-accent, #b5a5e6) 10%, transparent);
+  border-color: color-mix(in srgb, var(--guide-accent, #a29cd8) 55%, transparent);
+  background: color-mix(in srgb, var(--guide-accent, #a29cd8) 10%, transparent);
   color: rgba(226, 230, 240, 0.98);
   text-shadow: 0 0 8px rgba(226, 230, 240, 0.45);
 }
@@ -4336,7 +4363,7 @@ button {
 .sl-theme-glyph {
   display: inline-block;
   font-size: 10px;
-  color: var(--guide-accent, #b5a5e6);
+  color: var(--guide-accent, #a29cd8);
   transition: transform 0.5s cubic-bezier(0.3, 1.4, 0.4, 1);
 }
 
@@ -4433,8 +4460,8 @@ button {
 }
 
 .theme-row:hover {
-  border-left-color: var(--guide-accent, #b5a5e6);
-  background: color-mix(in srgb, var(--guide-accent, #b5a5e6) 7%, transparent);
+  border-left-color: var(--guide-accent, #a29cd8);
+  background: color-mix(in srgb, var(--guide-accent, #a29cd8) 7%, transparent);
   transform: translateX(2px);
 }
 
@@ -4445,9 +4472,9 @@ button {
 
 /* активное покрытие: нить-акцент, тёплая подложка, дыхание */
 .theme-row--active {
-  border-left-color: var(--guide-accent, #b5a5e6);
-  background: color-mix(in srgb, var(--guide-accent, #b5a5e6) 9%, transparent);
-  box-shadow: inset 0 0 18px color-mix(in srgb, var(--guide-accent, #b5a5e6) 6%, transparent);
+  border-left-color: var(--guide-accent, #a29cd8);
+  background: color-mix(in srgb, var(--guide-accent, #a29cd8) 9%, transparent);
+  box-shadow: inset 0 0 18px color-mix(in srgb, var(--guide-accent, #a29cd8) 6%, transparent);
 }
 
 .theme-row--active:hover {
@@ -4464,8 +4491,8 @@ button {
 }
 
 .theme-row--active .theme-glyph {
-  color: var(--guide-accent, #b5a5e6);
-  text-shadow: 0 0 10px var(--guide-glow, rgba(181, 165, 230, 0.55));
+  color: var(--guide-accent, #a29cd8);
+  text-shadow: 0 0 10px var(--guide-glow, rgba(162, 156, 216, 0.55));
 }
 
 .theme-name {
@@ -4476,7 +4503,7 @@ button {
 
 .theme-row--active .theme-name {
   color: rgba(255, 255, 255, 1);
-  text-shadow: 0 0 12px var(--guide-glow, rgba(181, 165, 230, 0.4));
+  text-shadow: 0 0 12px var(--guide-glow, rgba(162, 156, 216, 0.4));
 }
 
 /* живой свотч: три тона покрытия */
@@ -4496,9 +4523,9 @@ button {
 }
 
 /* тона покрытий: как лягут акцент/инфо/предупреждение */
-.th-swatch--classic span:nth-child(1) { background: #b5a5e6; }
-.th-swatch--classic span:nth-child(2) { background: #9ecfd8; }
-.th-swatch--classic span:nth-child(3) { background: #d9b26a; }
+.th-swatch--classic span:nth-child(1) { background: #a29cd8; }
+.th-swatch--classic span:nth-child(2) { background: #9cc4cf; }
+.th-swatch--classic span:nth-child(3) { background: #cbb073; }
 
 .th-swatch--silver span:nth-child(1) { background: #cdd9e8; }
 .th-swatch--silver span:nth-child(2) { background: #a9bfd2; }
@@ -4530,8 +4557,8 @@ button {
   font-size: 9.5px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--guide-accent, #b5a5e6);
-  text-shadow: 0 0 8px var(--guide-glow, rgba(181, 165, 230, 0.5));
+  color: var(--guide-accent, #a29cd8);
+  text-shadow: 0 0 8px var(--guide-glow, rgba(162, 156, 216, 0.5));
 }
 
 .theme-foot {
@@ -4616,16 +4643,16 @@ button {
   gap: 10px;
   margin: 6px 0 4px;
   padding: 6px 10px;
-  border-left: 2px solid color-mix(in srgb, var(--guide-accent, #b5a5e6) 55%, transparent);
-  background: color-mix(in srgb, var(--guide-accent, #b5a5e6) 5%, transparent);
+  border-left: 2px solid color-mix(in srgb, var(--guide-accent, #a29cd8) 55%, transparent);
+  background: color-mix(in srgb, var(--guide-accent, #a29cd8) 5%, transparent);
   font-size: 12px;
 }
 
 .fc-pending-spin {
   display: inline-block;
   font-size: 14px;
-  color: var(--guide-accent, #b5a5e6);
-  text-shadow: 0 0 10px var(--guide-glow, rgba(181, 165, 230, 0.5));
+  color: var(--guide-accent, #a29cd8);
+  text-shadow: 0 0 10px var(--guide-glow, rgba(162, 156, 216, 0.5));
   animation: fc-spin 2.4s linear infinite;
 }
 
@@ -4646,7 +4673,7 @@ button {
   font-weight: 600;
   line-height: 1.4;
   color: rgba(255, 255, 255, 0.95);
-  text-shadow: 0 0 14px var(--guide-glow, rgba(181, 165, 230, 0.45));
+  text-shadow: 0 0 14px var(--guide-glow, rgba(162, 156, 216, 0.45));
   animation: fc-part-in 0.5s ease-out 140ms backwards, fc-slogan-breathe 6s ease-in-out 1.5s infinite;
 }
 
@@ -4656,7 +4683,7 @@ button {
 }
 
 .fc-slogan-quote {
-  color: var(--guide-accent, #b5a5e6);
+  color: var(--guide-accent, #a29cd8);
   margin: 0 2px;
 }
 
@@ -4672,7 +4699,7 @@ button {
   width: 74px;
   height: auto;
   border: 1px solid var(--crt-line);
-  box-shadow: 0 0 14px rgba(0, 0, 0, 0.5), 0 0 10px color-mix(in srgb, var(--guide-accent, #b5a5e6) 18%, transparent);
+  box-shadow: 0 0 14px rgba(0, 0, 0, 0.5), 0 0 10px color-mix(in srgb, var(--guide-accent, #a29cd8) 18%, transparent);
 }
 
 .fc-art-img--rev {
@@ -4702,8 +4729,8 @@ button {
   font-size: 11px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--guide-accent, #b5a5e6);
-  text-shadow: 0 0 8px var(--guide-glow, rgba(181, 165, 230, 0.4));
+  color: var(--guide-accent, #a29cd8);
+  text-shadow: 0 0 8px var(--guide-glow, rgba(162, 156, 216, 0.4));
 }
 
 .fc-time-label::after {
@@ -4725,8 +4752,8 @@ button {
   gap: 10px;
   margin: 0 0 12px;
   padding: 8px 12px;
-  border-left: 2px solid var(--guide-accent, #b5a5e6);
-  background: color-mix(in srgb, var(--guide-accent, #b5a5e6) 7%, transparent);
+  border-left: 2px solid var(--guide-accent, #a29cd8);
+  background: color-mix(in srgb, var(--guide-accent, #a29cd8) 7%, transparent);
   animation: fc-part-in 0.45s ease-out backwards;
 }
 
@@ -4735,7 +4762,7 @@ button {
   font-size: 10.5px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--guide-accent, #b5a5e6);
+  color: var(--guide-accent, #a29cd8);
 }
 
 .fc-focus-text {
@@ -4811,7 +4838,7 @@ button {
 
 /* чип прогноза: тёплое солнце — золотистый оттенок, брат эхо */
 .reading-fu-chip--fc {
-  --fc-chip: #d9b26a;
+  --fc-chip: #cbb073;
 }
 .reading-fu-chip--fc .chip-glyph {
   color: var(--fc-chip);
@@ -4921,8 +4948,8 @@ button {
   font-size: 26px;
   font-weight: 700;
   line-height: 1;
-  color: var(--guide-accent, #b5a5e6);
-  text-shadow: 0 0 14px var(--guide-glow, rgba(181, 165, 230, 0.55));
+  color: var(--guide-accent, #a29cd8);
+  text-shadow: 0 0 14px var(--guide-glow, rgba(162, 156, 216, 0.55));
 }
 
 .cr-count-word {
@@ -4969,8 +4996,8 @@ button {
   height: 100%;
   background: linear-gradient(
     to right,
-    color-mix(in srgb, var(--guide-accent, #b5a5e6) 75%, transparent),
-    color-mix(in srgb, var(--guide-accent, #b5a5e6) 45%, transparent)
+    color-mix(in srgb, var(--guide-accent, #a29cd8) 75%, transparent),
+    color-mix(in srgb, var(--guide-accent, #a29cd8) 45%, transparent)
   );
   animation: cr-fill-in 0.7s ease-out 320ms backwards;
 }
@@ -5049,9 +5076,9 @@ button {
   text-align: center;
   font-size: 9px;
   line-height: 1.4;
-  color: var(--guide-accent, #b5a5e6);
-  text-shadow: 0 0 6px var(--guide-glow, rgba(181, 165, 230, 0.5));
-  background: var(--t-bg, #05040f);
+  color: var(--guide-accent, #a29cd8);
+  text-shadow: 0 0 6px var(--guide-glow, rgba(162, 156, 216, 0.5));
+  background: var(--t-bg, #04040e);
 }
 
 .cr-event-dot:first-letter { margin: 0; }
@@ -5129,7 +5156,7 @@ button {
 }
 
 .cr-event:hover {
-  background: color-mix(in srgb, var(--guide-accent, #b5a5e6) 6%, transparent);
+  background: color-mix(in srgb, var(--guide-accent, #a29cd8) 6%, transparent);
 }
 
 .cr-event:hover .cr-event-q {
@@ -5140,7 +5167,7 @@ button {
 }
 
 .cr-event:hover .cr-event-dot {
-  text-shadow: 0 0 10px var(--guide-glow, rgba(181, 165, 230, 0.8));
+  text-shadow: 0 0 10px var(--guide-glow, rgba(162, 156, 216, 0.8));
 }
 
 /* bust-28c */
@@ -5152,18 +5179,18 @@ button {
    акцента проводника ask-режима. ☰ — знак свитка-оглавления. */
 
 .reading-fu-chip--chron {
-  border-color: color-mix(in srgb, #d9b26a 45%, transparent);
+  border-color: color-mix(in srgb, #cbb073 45%, transparent);
   color: rgba(238, 226, 200, 0.9);
 }
 
 .reading-fu-chip--chron:hover:not(:disabled) {
-  box-shadow: 0 0 14px color-mix(in srgb, #d9b26a 25%, transparent);
+  box-shadow: 0 0 14px color-mix(in srgb, #cbb073 25%, transparent);
 }
 
 /* режим выбора карты для хроники: поле журнала */
 .reading-artifacts--chron {
-  border-color: color-mix(in srgb, #d9b26a 38%, transparent);
-  background: color-mix(in srgb, #d9b26a 5%, transparent);
+  border-color: color-mix(in srgb, #cbb073 38%, transparent);
+  background: color-mix(in srgb, #cbb073 5%, transparent);
 }
 
 .reading-artifact-btn--chron {
@@ -5177,19 +5204,19 @@ button {
 
 .reading-artifact-btn--chron:hover,
 .reading-artifact-btn--chron:focus-visible {
-  border-color: color-mix(in srgb, #d9b26a 60%, transparent);
-  background: color-mix(in srgb, #d9b26a 10%, transparent);
+  border-color: color-mix(in srgb, #cbb073 60%, transparent);
+  background: color-mix(in srgb, #cbb073 10%, transparent);
   transform: translateY(-3px);
 }
 
 .reading-artifact-btn--chron:hover .reading-artifact-img,
 .reading-artifact-btn--chron:focus-visible .reading-artifact-img {
-  border-color: #d9b26a;
-  box-shadow: 0 0 16px color-mix(in srgb, #d9b26a 32%, transparent);
+  border-color: #cbb073;
+  box-shadow: 0 0 16px color-mix(in srgb, #cbb073 32%, transparent);
 }
 
 .reading-artifact-btn--chron:focus-visible {
-  outline: 2px solid #d9b26a;
+  outline: 2px solid #cbb073;
   outline-offset: 2px;
 }
 
@@ -5208,11 +5235,11 @@ button {
   font-weight: 700;
   letter-spacing: 0.02em;
   color: #171008;
-  background: linear-gradient(160deg, #e8c47e, #d9b26a);
+  background: linear-gradient(160deg, #d6bd82, #cbb073);
   border-radius: 4px;
   box-shadow:
     0 2px 8px rgba(0, 0, 0, 0.5),
-    0 0 10px color-mix(in srgb, #d9b26a 40%, transparent);
+    0 0 10px color-mix(in srgb, #cbb073 40%, transparent);
 }
 
 /* появление глифа при входе в режим — мягкий отблеск */
@@ -5258,13 +5285,13 @@ button {
 }
 
 .month-title-glyph {
-  color: var(--guide-accent, #b5a5e6);
-  text-shadow: 0 0 10px color-mix(in srgb, var(--guide-accent, #b5a5e6) 45%, transparent);
+  color: var(--guide-accent, #a29cd8);
+  text-shadow: 0 0 10px color-mix(in srgb, var(--guide-accent, #a29cd8) 45%, transparent);
   font-size: 12px;
 }
 
 @keyframes month-title-glow {
-  from { text-shadow: 0 0 18px var(--guide-glow, rgba(181, 165, 230, 0.55)); }
+  from { text-shadow: 0 0 18px var(--guide-glow, rgba(162, 156, 216, 0.55)); }
   to   { text-shadow: 0 0 6px transparent; }
 }
 
@@ -5316,23 +5343,23 @@ button {
 }
 
 .mo-cell--on {
-  color: color-mix(in srgb, var(--guide-accent, #b5a5e6) 85%, white);
-  border-color: color-mix(in srgb, var(--guide-accent, #b5a5e6) 30%, transparent);
-  background: color-mix(in srgb, var(--guide-accent, #b5a5e6) 7%, transparent);
-  text-shadow: 0 0 8px color-mix(in srgb, var(--guide-accent, #b5a5e6) 45%, transparent);
+  color: color-mix(in srgb, var(--guide-accent, #a29cd8) 85%, white);
+  border-color: color-mix(in srgb, var(--guide-accent, #a29cd8) 30%, transparent);
+  background: color-mix(in srgb, var(--guide-accent, #a29cd8) 7%, transparent);
+  text-shadow: 0 0 8px color-mix(in srgb, var(--guide-accent, #a29cd8) 45%, transparent);
 }
 
 /* ◆ — день был густым: ярче и тяжелее (явный класс, не title) */
 .mo-cell--loud {
-  background: color-mix(in srgb, var(--guide-accent, #b5a5e6) 16%, transparent);
-  text-shadow: 0 0 12px color-mix(in srgb, var(--guide-accent, #b5a5e6) 70%, transparent);
-  box-shadow: inset 0 0 6px color-mix(in srgb, var(--guide-accent, #b5a5e6) 20%, transparent);
+  background: color-mix(in srgb, var(--guide-accent, #a29cd8) 16%, transparent);
+  text-shadow: 0 0 12px color-mix(in srgb, var(--guide-accent, #a29cd8) 70%, transparent);
+  box-shadow: inset 0 0 6px color-mix(in srgb, var(--guide-accent, #a29cd8) 20%, transparent);
 }
 
 /* сегодня: рамка-курсор, даже если день тихий */
 .mo-cell--today {
-  border-color: color-mix(in srgb, var(--guide-accent, #b5a5e6) 75%, transparent);
-  box-shadow: 0 0 10px color-mix(in srgb, var(--guide-accent, #b5a5e6) 25%, transparent);
+  border-color: color-mix(in srgb, var(--guide-accent, #a29cd8) 75%, transparent);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--guide-accent, #a29cd8) 25%, transparent);
 }
 
 @keyframes mo-cell-in {
@@ -5360,8 +5387,8 @@ button {
   font-size: 20px;
   font-weight: 700;
   line-height: 1;
-  color: var(--guide-accent, #b5a5e6);
-  text-shadow: 0 0 12px var(--guide-glow, rgba(181, 165, 230, 0.5));
+  color: var(--guide-accent, #a29cd8);
+  text-shadow: 0 0 12px var(--guide-glow, rgba(162, 156, 216, 0.5));
 }
 
 .mo-arcana-word {
@@ -5377,7 +5404,7 @@ button {
 .mo-arcana-suit .mo-arcana-num {
   font-size: 16px;
   color: rgba(238, 226, 200, 0.92);
-  text-shadow: 0 0 10px rgba(217, 178, 106, 0.4);
+  text-shadow: 0 0 10px rgba(203, 176, 115, 0.4);
 }
 
 .mo-arcana-sep {
@@ -5409,10 +5436,10 @@ button {
 
 /* число рассветов в статистике: янтарь вместо фиолетового */
 .stats-num--dawn {
-  color: #e8c47e;
+  color: #d6bd82;
   text-shadow:
-    0 0 14px rgba(217, 178, 106, 0.55),
-    0 0 34px rgba(217, 178, 106, 0.25);
+    0 0 14px rgba(203, 176, 115, 0.55),
+    0 0 34px rgba(203, 176, 115, 0.25);
 }
 
 /* статуск-лайн: рассветы рядом с серией дней */
@@ -5427,14 +5454,14 @@ button {
 
 .sl-dawn-glyph {
   font-size: 10px;
-  color: #e8c47e;
-  text-shadow: 0 0 8px rgba(217, 178, 106, 0.6);
+  color: #d6bd82;
+  text-shadow: 0 0 8px rgba(203, 176, 115, 0.6);
 }
 
 /* MOTD: ритуал свершён на рассвете — тёплая строка с ореолом */
 .rit-done--dawn {
   color: rgba(238, 226, 200, 0.85);
-  text-shadow: 0 0 10px rgba(217, 178, 106, 0.35);
+  text-shadow: 0 0 10px rgba(203, 176, 115, 0.35);
 }
 
 /* bust-31: на узких экранах рассвет-строка MOTD не рвётся */
@@ -5448,7 +5475,7 @@ button {
   margin-top: 3px;
   font-size: 11px;
   color: rgba(238, 226, 200, 0.75);
-  text-shadow: 0 0 8px rgba(217, 178, 106, 0.25);
+  text-shadow: 0 0 8px rgba(203, 176, 115, 0.25);
   animation: rit-dawn-breathe 3.2s ease-in-out infinite;
 }
 
@@ -5466,69 +5493,119 @@ button {
   .rit-dawn-hint { font-size: 10px; }
 }
 
-/* ═════ 30. AMBIENT-СИГИЛ — векторный гримуар-глиф ══════════ */
-/* Позиция top -6% / right -10%, маска 82%/18%, screen-blend,
-   дрейф 38s — сцена прежняя. Сам глиф шьётся в sigilGlyph.ts:
-   асимметричный псевдо-глиф (не «магический круг»), прозрачно-
-   сти ходов 0.04–0.10, цвет — только --guide-accent проводника.
-   Движение: вращение 110s + дыхание 12s — оба на одном svg-слое
-   (transform+opacity, композитные свойства), без JS-rAF. */
+/* ═════ 30. AMBIENT-СИГИЛ — каноническая печать (пентакль) ════
+   v4 · водяной знак в центре трубки: та же печать, что в заставке
+   (эстафета: сигил заставки перетекает в этот слой). Небесная
+   механика: орбита 120s, пунктирный спутник замка — встречный
+   ход 200s, ядро дышит. Без рывков и глитчей — только плавные
+   вращения, дыхание и дрейф пламени свечи. */
 .ambient-sigil {
   position: absolute;
-  top: -6%;
-  right: -10%;
-  width: min(720px, 92vw);
-  height: min(720px, 92vw);
+  top: 50%;
+  left: 50%;
+  width: min(640px, 96vw);
+  height: min(640px, 96vw);
+  /* центрирование без transform — transform занят дрейфом */
+  translate: -50% -50%;
   pointer-events: none;
   z-index: 1;
-  /* мягкая маска — ядро у верхнего правого угла, края растворяются */
-  -webkit-mask-image: radial-gradient(ellipse at 82% 18%, #000 0%, #000 50%, transparent 90%);
-  mask-image: radial-gradient(ellipse at 82% 18%, #000 0%, #000 50%, transparent 90%);
-  opacity: 0.8;
+  /* мягкая маска: центр печатает, к краям растворяется */
+  -webkit-mask-image: radial-gradient(ellipse 82% 82% at 50% 48%, #000 0%, #000 52%, transparent 88%);
+  mask-image: radial-gradient(ellipse 82% 82% at 50% 48%, #000 0%, #000 52%, transparent 88%);
+  opacity: 0.62;
   mix-blend-mode: screen;
-  /* медленный дрейф как у парящего пламени (только transform) */
-  animation: ambient-sigil-drift 38s ease-in-out infinite;
   transition: opacity 0.8s ease;
+  /* рождение: печать проявляется в момент эстафеты с заставки —
+     от слабого отпечатка к полному водяному знаку */
+  animation: ambient-sigil-in 1.15s cubic-bezier(0.22, 1, 0.36, 1) backwards;
 }
 
-/* чтение на столе — сигил уходит в фон */
-.ambient-sigil--dim { opacity: 0.45; }
+/* индивидуальное scale-свойство — не трогает translate-центр */
+@keyframes ambient-sigil-in {
+  from { opacity: 0; scale: 1.07; }
+}
 
+/* чтение на столе — печать уходит глубже в фон */
+.ambient-sigil--dim { opacity: 0.4; }
+
+/* блум-ореол: серебро доминирует, акцент — лишь тесное ядро у
+   сердца-искры; тройной слой, как засвеченная печать на лого */
 .ambient-sigil__halo {
   position: absolute;
-  inset: -10%;
+  inset: -12%;
   pointer-events: none;
-  opacity: 0.5;
-  filter: blur(32px);
-  /* двойное свечение: тесное яркое ядро + широкий тусклый ореол —
-     держит глиф над порогом видимости (ходы сами — едва-есть) */
+  opacity: 0.42;
+  filter: blur(34px);
   background:
-    radial-gradient(circle at 50% 50%, var(--guide-accent, #b5a5e6) 0%, transparent 34%),
-    radial-gradient(circle at 50% 50%, var(--smoke, rgba(181, 165, 230, 0.3)) 0%, transparent 60%);
+    radial-gradient(circle at 50% 50%, var(--guide-accent, #a29cd8) 0%, transparent 18%),
+    radial-gradient(circle at 50% 50%, rgba(226, 222, 240, 0.32) 0%, transparent 46%),
+    radial-gradient(circle at 50% 50%, rgba(226, 222, 240, 0.15) 0%, transparent 68%);
+  animation: sigil-halo-breathe 16s ease-in-out infinite;
 }
 
-/* слой глифа: один svg — один композитный слой, растеризация
-   один раз; вращение и дыхание — независимые CSS-анимации */
+/* печать: дрейф-слой (пламя свечи) → внутри svg с тремя группами */
+.ambient-sigil__drift {
+  position: absolute;
+  inset: 0;
+  animation: ambient-sigil-drift 38s ease-in-out infinite;
+  will-change: transform;
+}
+
 .amb-svg {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
+  /* блум штрихов: тесное серебро + широкий шёпот акцента */
+  filter:
+    drop-shadow(0 0 10px rgba(226, 222, 240, 0.22))
+    drop-shadow(0 0 34px var(--smoke, rgba(162, 156, 216, 0.2)));
 }
 
-.amb-svg--glyph {
-  animation:
-    sigil-rotate 110s linear infinite,
-    sigil-breathe 12s ease-in-out infinite;
-  will-change: transform, opacity;
+/* орбита (бисер, кольца, риски) — медленный оборот небес */
+.amb-orbit {
+  animation: sigil-rotate 120s linear infinite;
+  transform-origin: 200px 200px;
+  will-change: transform;
 }
 
-/* чернила: accent — проводник (CSS-переменная), pale — лунное
-   серебро, вторая нить гримуара */
-.sig-ink-accent { stroke: var(--guide-accent, #b5a5e6); }
+/* пунктирный спутник круга-замка — встречный ход: механика
+   глубины, как шестерни небесной сферы */
+.amb-rev {
+  animation: sigil-rotate-rev 200s linear infinite;
+  transform-origin: 200px 200px;
+  will-change: transform;
+}
+
+/* ядро (замок, луна, звёзды, сердце) — вертикаль навсегда,
+   только дыхание */
+.amb-core {
+  animation: sigil-breathe 14s ease-in-out infinite;
+  will-change: opacity;
+}
+
+/* колесо пентаграммы: сам звёздный ход + печати стихий на его
+   вершинах (едут вместе — иначе сойдут с острий). Медленный
+   поворот тяжелее колец: звезда — главная масса печати, её ход
+   спокойнее и глубже орбит; встречный спутник остаётся
+   единственным противоходом */
+.amb-penta {
+  animation: sigil-rotate 180s linear infinite;
+  transform-origin: 200px 200px;
+  will-change: transform;
+}
+
+/* чернила: accent — проводник (сердце-искра), pale — лунное
+   серебро */
+.sig-ink-accent { stroke: var(--guide-accent, #a29cd8); }
 .sig-ink-pale { stroke: rgba(226, 222, 240, 0.9); }
-.sig-ink-accent-fill { fill: var(--guide-accent, #b5a5e6); }
+.sig-ink-accent-fill { fill: var(--guide-accent, #a29cd8); }
 .sig-ink-pale-fill { fill: rgba(226, 222, 240, 0.9); }
+.sig-fill-accent { fill: var(--guide-accent, #a29cd8); }
+.sig-fill-pale { fill: rgba(226, 222, 240, 0.94); }
+
+/* пунктирные ходы (бисер, ось, спутник): круглые концы — бусины */
+.sig-dashed { stroke-linecap: round; }
 
 @keyframes ambient-sigil-drift {
   0%, 100% { transform: translate(0, 0) rotate(0deg) scale(1); }
@@ -5542,27 +5619,51 @@ button {
   to   { transform: rotate(360deg); }
 }
 
-/* дыхание глифа: тихая пульсация яркости, ходы 0.04–0.10
-   могут оставаться едва заметными */
+@keyframes sigil-rotate-rev {
+  from { transform: rotate(360deg); }
+  to   { transform: rotate(0deg); }
+}
+
+/* дыхание ядра: тихая пульсация яркости — печать проступает,
+   не кричит */
 @keyframes sigil-breathe {
   0%, 100% { opacity: 0.85; }
   50%      { opacity: 1; }
 }
 
+/* ореол дышит в противофазе ядру — свечение «втягивается» */
+@keyframes sigil-halo-breathe {
+  0%, 100% { opacity: 0.42; }
+  50%      { opacity: 0.6; }
+}
+
 /* печать/скролл → сигил на паузу (как весь ambient) */
-.crt[data-typing] .ambient-sigil,
-.crt[data-typing] .amb-svg--glyph,
-.crt[data-scrolling] .ambient-sigil,
-.crt[data-scrolling] .amb-svg--glyph {
+.crt[data-typing] .ambient-sigil__drift,
+.crt[data-typing] .amb-orbit,
+.crt[data-typing] .amb-rev,
+.crt[data-typing] .amb-penta,
+.crt[data-typing] .amb-core,
+.crt[data-typing] .ambient-sigil__halo,
+.crt[data-scrolling] .ambient-sigil__drift,
+.crt[data-scrolling] .amb-orbit,
+.crt[data-scrolling] .amb-rev,
+.crt[data-scrolling] .amb-penta,
+.crt[data-scrolling] .amb-core,
+.crt[data-scrolling] .ambient-sigil__halo {
   animation-play-state: paused;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .ambient-sigil,
-  .amb-svg--glyph { animation: none !important; }
+  .ambient-sigil__drift,
+  .ambient-sigil__halo,
+  .amb-orbit,
+  .amb-rev,
+  .amb-penta,
+  .amb-core { animation: none !important; }
   .boot-logo { animation: none !important; }
+  .boot-logo--land { animation: none !important; opacity: 1; }
 }
-
 /* ═════ 31. ЗЕРНО ПЛЁНКИ + СТРОКА РАЗВЁРТКИ — терминал обрастает
    материей: analog-шум поверх интерфейса (едва заметный, читаемость
    не страдает даже на дешёвых экранах), редкая светящаяся полоса
@@ -5663,7 +5764,7 @@ button {
 }
 
 .sl-streak-flame > svg {
-  filter: drop-shadow(0 0 4px rgba(217, 178, 106, 0.6));
+  filter: drop-shadow(0 0 4px rgba(203, 176, 115, 0.6));
 }
 
 /* нить связи пары в уточнении: иконка вместо глифа */
@@ -5677,7 +5778,7 @@ button {
 /* MOTD-чипы и баннер ритуала: иконка акцентом */
 .motd-chip > svg,
 .rit-chip > svg {
-  color: var(--guide-accent, #b5a5e6);
+  color: var(--guide-accent, #a29cd8);
   flex-shrink: 0;
   transition: color 0.25s, filter 0.25s;
 }
@@ -5685,7 +5786,7 @@ button {
 .motd-chip:hover > svg,
 .rit-chip:hover > svg {
   color: #fff;
-  filter: drop-shadow(0 0 5px var(--guide-accent-dim, rgba(181, 165, 230, 0.55)));
+  filter: drop-shadow(0 0 5px var(--guide-accent-dim, rgba(162, 156, 216, 0.55)));
 }
 
 /* ═════ 34. Каталог: «недавний» расклад ═══════════════════════ */
@@ -5700,32 +5801,32 @@ button {
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: #d9b26a;
-  border: 1px solid color-mix(in srgb, #d9b26a 40%, transparent);
-  background: color-mix(in srgb, #d9b26a 8%, transparent);
+  color: #cbb073;
+  border: 1px solid color-mix(in srgb, #cbb073 40%, transparent);
+  background: color-mix(in srgb, #cbb073 8%, transparent);
   vertical-align: 1px;
   white-space: nowrap;
 }
 
-.mr-recent > svg { color: #d9b26a; }
+.mr-recent > svg { color: #cbb073; }
 
-.menu-row--recent .mr-chev { color: #d9b26a; }
+.menu-row--recent .mr-chev { color: #cbb073; }
 
 /* ═════ 35. Чип «спросить снова» — первый в ряду ══════════════ */
 
 .reading-fu-chip--again {
-  border-color: color-mix(in srgb, var(--guide-accent, #b5a5e6) 65%, transparent);
+  border-color: color-mix(in srgb, var(--guide-accent, #a29cd8) 65%, transparent);
   color: #fff;
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--guide-accent, #b5a5e6) 16%, transparent), rgba(0, 0, 0, 0.12));
+    linear-gradient(180deg, color-mix(in srgb, var(--guide-accent, #a29cd8) 16%, transparent), rgba(0, 0, 0, 0.12));
 }
 
 .reading-fu-chip--again:hover:not(:disabled) {
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--guide-accent, #b5a5e6) 26%, transparent), rgba(0, 0, 0, 0.12));
+    linear-gradient(180deg, color-mix(in srgb, var(--guide-accent, #a29cd8) 26%, transparent), rgba(0, 0, 0, 0.12));
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    0 0 18px color-mix(in srgb, var(--guide-accent, #b5a5e6) 30%, transparent),
+    0 0 18px color-mix(in srgb, var(--guide-accent, #a29cd8) 30%, transparent),
     0 2px 6px rgba(0, 0, 0, 0.35);
 }
 
@@ -5757,3 +5858,906 @@ button {
 .fu-pair-mark { top: -9px; left: -8px; right: auto; }
 
 /* cache-bust-36 */
+
+/* ═════ 40. ЗАСТАВКА ОТКРЫТИЯ — SplashIntro (порт пакета GLM) ════ */
+/* Оригинальная секция §40 форка — перенесена как есть; нумерация
+   наша (§40 свободен). Селекторы :root[data-splash-theme] — пара
+   к PHOSPHOR_BOOT в layout.tsx. ════ */
+/* ═════ 26. Покрытие фосфора: темы терминала ════════════════
+   Тема — фильтр над всей ЭЛТ (.crt): проводник сохраняет свои
+   краски, но трубка «видит» в своём фосфоре. Переход 1.3с —
+   перекалибровка на глазах; звуковая пара — sTheme (дегаусс).
+   classic = отсутствие фильтра; интерполяция none↔списка
+   поддерживается всеми движками. */
+
+/* плавная перекалибровка покрытия */
+.crt {
+  transition: filter 1.3s cubic-bezier(0.3, 0.7, 0.2, 1);
+}
+
+/* серебро (альбедо): grayscale снимает цвет → sepia даёт
+   тёплую базу → hue-rotate(170°) разворачивает её в циан.
+   Заставка включается в ТОМ ЖЕ фосфоре, что и терминал.
+   Два пути, один фильтр: (1) :root[data-splash-theme] —
+   блокирующий инлайн-скрипт layout'а ставит атрибут
+   ДО первой краски (anti-FOUC, паттерн next-themes) — закрывает
+   фиолетовую вспышку окна SSR→гидрация; (2) .splash.theme-* —
+   класс от React в rAF-дефере (дубль для надёжности; заодно
+   им же живёт .crt). Эстафета перетекает в отфильтрованный
+   терминал без тонового шва */
+.crt.theme-silver,
+.splash.theme-silver,
+:root[data-splash-theme='silver'] .splash {
+  filter: grayscale(0.6) sepia(0.32) hue-rotate(170deg) saturate(1.6) brightness(1.08);
+}
+
+/* костёр (игнидио): сепия в тёплую амбру, лёгкий контраст */
+.crt.theme-ember,
+.splash.theme-ember,
+:root[data-splash-theme='ember'] .splash {
+  filter: sepia(0.55) saturate(1.7) hue-rotate(-14deg) brightness(1.03) contrast(1.04);
+}
+
+/* пепел (кальцинация): чистый монохром, старый монитор */
+.crt.theme-ash,
+.splash.theme-ash,
+:root[data-splash-theme='ash'] .splash {
+  filter: grayscale(1) brightness(0.95) contrast(1.12);
+}
+
+/* характерные поправки слоёв: серебро чуть прозрачнее в
+   скан-линиях, пепел — плотнее (трубка старше); зерно пепла
+   и в заставке уходит в soft-light — overlay на монохроме
+   слишком контрастен (та же причина, что у .crt-grain) */
+.theme-silver .crt-scanlines { opacity: 0.48; }
+.theme-ash .crt-scanlines { opacity: 0.68; }
+.theme-ash .sp-grain,
+:root[data-splash-theme='ash'] .sp-grain { mix-blend-mode: soft-light; }
+
+/* глиф темы в статус-лайне — брат луны: пилюля с именем покрытия,
+   вход в список покрытий; тап-зона ≥32px — тот же невидимый хвост,
+   что у луны (вверх и вбок) */
+
+/* ═════ 40. ЗАСТАВКА ОТКРЫТИЯ — SplashIntro v3 ════════════════
+   Каноническая печать (пентакль) + вордмарк «АРКАНУМ» исходной
+   гарнитуры. Хореография без рывков: печать изготавливается
+   (бисер → кольца → пентаграмма одним штрихом с кометой-пером →
+   замок → печати стихий → луна → сердце-искра акцентом), вордмарк
+   сходится трекингом — и ЭСТАФЕТА: печать расширяется и гаснет
+   ровно в ambient-сигил терминала, вордмарк летит в заголовок
+   бут-записи (FLIP-переменные --wx/--wy/--ws), пелена тает.
+   Монохром лого: серебро + одна капля акцента. */
+.splash {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: var(--t-bg, #04040e);
+  animation: sp-warm 0.35s ease-out forwards;
+  cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* прогрев кинескопа: включение из чистой тьмы */
+@keyframes sp-warm {
+  from { background: #000; }
+  to   { background: var(--t-bg, #04040e); }
+}
+
+/* вспышка включения: горизонтальная нить на разворачивание трубки */
+.sp-flash {
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  top: 50%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.9), transparent);
+  filter: blur(0.5px);
+  animation: sp-flash 0.42s cubic-bezier(0.3, 0, 0.2, 1) forwards;
+  pointer-events: none;
+}
+
+@keyframes sp-flash {
+  0%   { opacity: 0; transform: scaleX(0.05); }
+  22%  { opacity: 1; transform: scaleX(0.35); }
+  60%  { opacity: 0.55; transform: scaleX(1); }
+  100% { opacity: 0; transform: scaleX(1.06); }
+}
+
+/* ── СЦЕНА · ритуальная камера ночью, сквозь стекло ──
+   Три плана глубины: дальний (чернильная база + угловые смывы
+   глубокого индио — не чистая тьма), средний (источник света
+   за печатью — sp-glow, screen), ближний (серебряный горизонт
+   в нижней трети — sp-horizon). Свет не «лежит» поверх фона —
+   он ОСВЕЩАЕТ его: screen-смешение добавляет свет к глубине. */
+.sp-bg {
+  position: absolute;
+  inset: 0;
+  background:
+    /* потолок камеры: затемнение сверху сажает сцену в кадр */
+    linear-gradient(to bottom, rgba(2, 1, 8, 0.42) 0%, transparent 30%),
+    /* угловые смывы: фиолетовое индио — углы дышат цветом, не тьмой;
+       пигмент плотнее прежнего (глубже насыщенность, не молочность) */
+    radial-gradient(ellipse 62% 55% at 4% 2%, rgba(40, 34, 92, 0.44) 0%, transparent 70%),
+    radial-gradient(ellipse 58% 52% at 98% 8%, rgba(33, 29, 79, 0.40) 0%, transparent 70%),
+    radial-gradient(ellipse 68% 60% at 2% 100%, rgba(26, 23, 65, 0.46) 0%, transparent 72%),
+    radial-gradient(ellipse 62% 56% at 98% 98%, rgba(23, 21, 60, 0.40) 0%, transparent 72%),
+    var(--t-bg, #04040e);
+  transition: opacity 0.7s ease;
+}
+
+/* средний план — источник света за печатью: серебряное ядро +
+   широкий акцент-дым (свет, рассеянный в пыльной комнате).
+   Ядро ТУГОЕ и контрастное (36vmin, пик 0.20) — читается как
+   ИСТОЧНИК, а не как размазня; дым остаётся широким и тихим.
+   Оба дышат с разной фазой (8с / 9с, ±5%) — комната живая;
+   дыхание на псевдоэлементах, чтобы opacity родителя остался
+   свободным для эстафеты (пелена тает без конфликтов каскада) */
+.sp-glow {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  transition: opacity 0.7s ease;
+}
+
+.sp-glow::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle 30vmin at 50% 44%,
+    rgba(247, 246, 253, 0.24) 0%,
+    rgba(247, 246, 253, 0.10) 40%,
+    transparent 70%
+  );
+  filter: blur(44px);
+  animation: sp-glow-core 8s ease-in-out infinite;
+  will-change: opacity;
+}
+
+.sp-glow::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle 100vmin at 50% 44%,
+    color-mix(in srgb, var(--guide-accent, #a29cd8) 8.5%, transparent) 0%,
+    transparent 72%
+  );
+  filter: blur(90px);
+  animation: sp-glow-haze 9s ease-in-out infinite;
+  will-change: opacity;
+}
+
+@keyframes sp-glow-core {
+  0%, 100% { opacity: 0.9; }
+  50%      { opacity: 1; }
+}
+
+@keyframes sp-glow-haze {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.9; }
+}
+
+/* воздух камеры: ультранизкочастотный фрактал-шум (0.004) на весь
+   кадр, soft-light — лёгкая мозаичность глубины без подъёма чёрного;
+   «туманность» вместо идеального градиента */
+.sp-haze {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.6;
+  mix-blend-mode: soft-light;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1000' height='1000'%3E%3Cfilter id='h'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.004' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='1000' height='1000' filter='url(%23h)'/%3E%3C/svg%3E");
+  background-size: 1000px 1000px;
+  transition: opacity 1.05s ease;
+}
+
+/* ближний план — горизонт: серебряная ПОЛОСА света в нижней
+   трети — бугор с резким подъёмом и спадом (63→100% высоты),
+   пик 0.14: полоса читается как ГОРИЗОНТ уже в статичном кадре,
+   задавая сцене вертикальную ось и глубину */
+.sp-horizon {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  filter: blur(50px);
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    transparent 66%,
+    rgba(228, 225, 240, 0.17) 74%,
+    rgba(228, 225, 240, 0.13) 80%,
+    rgba(228, 225, 240, 0.04) 90%,
+    transparent 100%
+  );
+  transition: opacity 0.7s ease;
+}
+
+/* дым ритуальной камеры: крупный фрактал-шум (feTurbulence 0.008)
+   в маске луча света — пыль, пойманная светом. Ломает однородность
+   фона (объёмная среда, а не чистый градиент), стоит ЗА печатью */
+.sp-smoke {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.19;
+  mix-blend-mode: screen;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='900' height='900'%3E%3Cfilter id='s'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.008' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0.33 0.33 0.33 0 0 0.33 0.33 0.33 0 0 0.33 0.33 0.33 0 0 0.33 0.33 0.33 0 0'/%3E%3C/filter%3E%3Crect width='900' height='900' filter='url(%23s)'/%3E%3C/svg%3E");
+  background-size: 900px 900px;
+  -webkit-mask-image: radial-gradient(circle 90vmin at 50% 44%, #000 0%, transparent 85%);
+  mask-image: radial-gradient(circle 90vmin at 50% 44%, #000 0%, transparent 85%);
+  /* воздух уходит медленнее света: дым покидает кадр вслед
+     за печатью, а не мгновенно с пеленой */
+  transition: opacity 1.25s ease;
+}
+
+/* пылинки в луче: шум маршрутизируется в АЛЬФУ (feColorMatrix
+   matrix: RGB=белому, α=шуму) и квантуется в два уровня (feFuncA
+   discrete 9 бинов: >0.78 → 0.5, >0.89 → 0.85) — белые точки
+   4–6px (плитка 640px) ДВУХ яркостей, в маске луча, мерцают 11с.
+   Стоит ЗА печатью (z1 < stage): не рассекает её; слой 0.70–0.84
+   screen — пыль ВИДНА в статике (изолированный замер: ~2800 точек,
+   яркие до sum≈480) */
+.sp-motes {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.62;
+  mix-blend-mode: screen;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='500' height='500'%3E%3Cfilter id='m'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.3' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 1 0 0 0 0'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='discrete' tableValues='0 0 0 0 0 0 0 0.5 0.85'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='500' height='500' filter='url(%23m)'/%3E%3C/svg%3E");
+  background-size: 640px 640px;
+  -webkit-mask-image: radial-gradient(circle 82vmin at 50% 44%, #000 0%, transparent 80%);
+  mask-image: radial-gradient(circle 82vmin at 50% 44%, #000 0%, transparent 80%);
+  animation: sp-motes 11s ease-in-out infinite;
+  transition: opacity 0.7s ease;
+}
+
+/* ПЛАВНЫЙ ВЫХОД ПЫЛИ: бесконечное мерцание живёт на opacity и
+   ПЕРЕБИВАЕТ transition — из-за этого пыль раньше не таяла,
+   а срезалась демонтажем заставки. Эстафета заменяет мерцание
+   на собственный УХО: пыль всплывает и разрежается 1.6с
+   (успевает до demount ~4.5с) — воздух покидает луч света,
+   а не выключается */
+.splash--out .sp-motes {
+  animation: sp-motes-exit 1.6s cubic-bezier(0.4, 0, 0.4, 1) forwards;
+}
+
+@keyframes sp-motes-exit {
+  0%   { opacity: 0.78; transform: translate(0, 0) scale(1); }
+  28%  { opacity: 0.62; }
+  62%  { opacity: 0.3; }
+  100% { opacity: 0; transform: translate(0, -2.6vh) scale(1.05); }
+}
+
+/* после доскока уход тоже короче — но остаётся УХОМ,
+   не срезом */
+.splash--skip.splash--out .sp-motes {
+  animation-duration: 0.7s;
+}
+
+@keyframes sp-motes {
+  0%, 100% { opacity: 0.70; }
+  50%      { opacity: 0.84; }
+}
+
+/* сцена: печать + вордмарк в оптическом центре */
+.sp-stage {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 2;
+}
+
+/* ── печать ──
+   +10% к раунду 17: на мобильных печать была «совсем маленькой» —
+   теперь 57vmin/330px (моб: 64vmin/286px); FLIP-эстафета меряет
+   цель живьём (getBoundingClientRect), масштаб авто-подстроится */
+.sp-sigil {
+  position: relative;
+  width: min(57vmin, 330px);
+  height: min(57vmin, 330px);
+}
+
+.sp-sigil > svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  /* блум штрихов: тесное серебро + широкий акцент-шёпот */
+  filter:
+    drop-shadow(0 0 12px rgba(226, 222, 240, 0.18))
+    drop-shadow(0 0 42px var(--guide-accent-dim, rgba(162, 156, 216, 0.18)));
+}
+
+/* световой обхват: зеркальная копия штрихов — размытая
+   (blur 15px — ТУГО, как раскалённый металл), приглушённая
+   (эффективно ×0.7 альфы: 0.84 слоя × 0.5 атрибута) и уширенная
+   (×2.6 хода), screen — свет ПОВТОРЯЕТ ФОРМУ печати и обнимает
+   геометрию; проявляется синхронно со штрихами (те же
+   задержки), так что каждый нарисованный ход сразу же «дышит
+   светом» и ВИДЕН в статичном кадре середины рисования */
+.sp-sigil > svg.sp-bloom {
+  filter: blur(15px);
+  opacity: 0.95;
+  mix-blend-mode: screen;
+}
+
+/* ореол за печатью: дышит с первым кольцом; серебро доминирует,
+   акцент — тесное ядро у сердца-искры. Спад пятистоповый и
+   постепенный — без видимых кромок колец. Короб шире геометрии
+   (inset -34%) + blur 90px = «световой обхват»: печать освещает
+   воздух ВОКРУГ себя, а не только свои штрихи — свет в пыли,
+   не наклейка */
+.sp-halo {
+  position: absolute;
+  inset: -34%;
+  opacity: 0;
+  filter: blur(90px);
+  background:
+    radial-gradient(circle at 50% 50%,
+      rgba(247, 246, 253, 0.55) 0%,
+      transparent 10%),
+    radial-gradient(circle at 50% 50%,
+      var(--guide-accent, #a29cd8) 0%,
+      color-mix(in srgb, var(--guide-accent, #a29cd8) 30%, transparent) 9%,
+      transparent 17%),
+    radial-gradient(circle at 50% 50%,
+      rgba(226, 222, 240, 0.30) 0%,
+      rgba(226, 222, 240, 0.16) 24%,
+      rgba(226, 222, 240, 0.07) 44%,
+      rgba(226, 222, 240, 0.025) 62%,
+      rgba(226, 222, 240, 0.012) 74%,
+      transparent 86%);
+  animation: sp-halo 1.2s cubic-bezier(0.22, 1, 0.36, 1) 0.1s forwards;
+}
+
+@keyframes sp-halo {
+  from { opacity: 0; transform: scale(0.92); }
+  to   { opacity: 0.6; transform: scale(1); }
+}
+
+/* вспышка блума: возжигание сердца-искры — пик 0.95,
+   «опасно, а не декоративно» */
+.sp-haloflash {
+  position: absolute;
+  inset: -18%;
+  opacity: 0;
+  filter: blur(28px);
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(244, 242, 238, 0.5) 0%, transparent 30%),
+    radial-gradient(circle at 50% 50%, var(--guide-accent-dim, rgba(162, 156, 216, 0.4)) 0%, transparent 48%);
+  animation: sp-haloflash 0.42s ease-out 1.93s forwards;
+}
+
+@keyframes sp-haloflash {
+  0%   { opacity: 0; transform: scale(0.75); }
+  28%  { opacity: 0.95; }
+  100% { opacity: 0; transform: scale(1.22); }
+}
+
+/* сплошные ходы: рисуются штрихом (dashoffset), последовательно */
+.sp-draw {
+  stroke-dasharray: 1 1;
+  stroke-dashoffset: 1;
+  opacity: 0;
+  animation: sp-draw var(--dur, 650ms) cubic-bezier(0.45, 0, 0.25, 1) var(--del, 0ms) forwards;
+}
+
+@keyframes sp-draw {
+  from { stroke-dashoffset: 1; opacity: 0; }
+  8%   { opacity: 1; }
+  to   { stroke-dashoffset: 0; opacity: 1; }
+}
+
+/* бисерное кольцо: бусины «втекают» по кругу — фаза течёт */
+.sp-beadsin {
+  opacity: 0;
+  animation: sp-beadsin var(--dur, 750ms) ease var(--del, 0ms) forwards;
+}
+
+@keyframes sp-beadsin {
+  from { opacity: 0; stroke-dashoffset: 318; }
+  14%  { opacity: 0.9; }
+  to   { opacity: 1; stroke-dashoffset: 0; }
+}
+
+/* пунктирные ходы: втекают — fade + сдвиг фазы */
+.sp-dashin {
+  opacity: 0;
+  animation: sp-dashin var(--dur, 1000ms) ease var(--del, 0ms) forwards;
+}
+
+@keyframes sp-dashin {
+  from { opacity: 0; stroke-dashoffset: 240; }
+  12%  { opacity: 0.85; }
+  to   { opacity: 1; stroke-dashoffset: 0; }
+}
+
+/* печати стихий: распускаются из точек вершин */
+.sp-pop {
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: sp-pop var(--dur, 240ms) cubic-bezier(0.22, 1, 0.36, 1) var(--del, 0ms) forwards;
+}
+
+@keyframes sp-pop {
+  0%   { opacity: 0; transform: scale(0.2); }
+  55%  { opacity: 1; transform: scale(1.12); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+/* тихое проявление (луна, звёзды, точки-терминалы) */
+.sp-fade {
+  opacity: 0;
+  animation: sp-fade var(--dur, 450ms) ease var(--del, 0ms) forwards;
+}
+
+@keyframes sp-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* свечение-шлейф пентаграммы: тот же ход шире и мягче */
+.sp-penta-glow {
+  filter: blur(3px);
+  stroke-opacity: 0.3;
+}
+
+/* комета-перо: искра бежит по ходу пентаграммы за штрихом */
+.sp-comet {
+  fill: #fff;
+  opacity: 0;
+  offset-rotate: 0deg;
+  filter:
+    drop-shadow(0 0 5px rgba(255, 255, 255, 0.95))
+    drop-shadow(0 0 13px var(--guide-accent, #a29cd8));
+  animation: sp-comet var(--dur, 880ms) cubic-bezier(0.45, 0, 0.25, 1) var(--del, 0ms) forwards;
+}
+
+@keyframes sp-comet {
+  0%   { offset-distance: 0%; opacity: 0; }
+  8%   { opacity: 1; }
+  84%  { opacity: 1; }
+  100% { offset-distance: 100%; opacity: 0; }
+}
+
+/* сердце-искра: вспышка акцента — единственная капля цвета */
+.sp-ignite {
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: sp-ignite var(--dur, 340ms) cubic-bezier(0.22, 1, 0.36, 1) var(--del, 0ms) forwards;
+}
+
+@keyframes sp-ignite {
+  0%   { opacity: 0; transform: scale(0.2); }
+  55%  { opacity: 1; transform: scale(1.25); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+/* ── вордмарк: гарнитура и стиль 1:1 заголовок бут-записи ── */
+.sp-wordwrap {
+  position: relative;
+  margin-top: 2vmin;
+}
+
+.sp-word {
+  font-family: var(--font-serif), serif;
+  font-weight: 900;
+  font-size: clamp(30px, 9vw, 46px);
+  letter-spacing: 0.3em;
+  padding-left: 0.3em;
+  line-height: 1.05;
+  color: #fff;
+  text-align: center;
+  text-shadow:
+    0 0 2px rgba(247, 246, 253, 0.28),
+    0 0 16px rgba(244, 243, 250, 0.35),
+    0 0 54px color-mix(in srgb, var(--guide-accent, #a29cd8) 25%, transparent);
+  opacity: 0;
+  animation: sp-word 0.62s cubic-bezier(0.22, 1, 0.36, 1) 2.05s forwards;
+  white-space: nowrap;
+}
+
+@keyframes sp-word {
+  from {
+    opacity: 0;
+    letter-spacing: 0.46em;
+    filter: blur(9px);
+    transform: translateY(6px);
+  }
+  60% { filter: blur(0.5px); }
+  to   {
+    opacity: 1;
+    letter-spacing: 0.3em;
+    filter: blur(0);
+    transform: translateY(0);
+  }
+}
+
+/* подзаголовок с линейками */
+.sp-sub {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 2.4vmin;
+  opacity: 0;
+  animation: sp-sub 0.5s ease 2.28s forwards;
+}
+
+@keyframes sp-sub {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.sp-rule {
+  display: block;
+  width: clamp(26px, 9vw, 72px);
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(226, 222, 240, 0.75));
+  animation: sp-rule 0.6s cubic-bezier(0.22, 1, 0.36, 1) 2.3s both;
+  transform-origin: right center;
+}
+
+.sp-rule:last-child {
+  background: linear-gradient(270deg, transparent, rgba(226, 222, 240, 0.75));
+  transform-origin: left center;
+}
+
+@keyframes sp-rule {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+
+.sp-subtext {
+  font-size: clamp(8.5px, 2.6vw, 11px);
+  letter-spacing: 0.46em;
+  padding-left: 0.46em;
+  text-transform: uppercase;
+  color: rgba(226, 222, 240, 0.62);
+  white-space: nowrap;
+}
+
+/* ── материя плёнки ──
+   Зерно 35мм: feTurbulence-плитка 200×200 (fractalNoise 0.9),
+   статичная, 0.05, overlay. ГЛАВНЫЙ инструмент против бандинга:
+   шум дизерит 8-битные ступени каждого мягкого градиента сцены.
+   Единственное, что разрешено поверх печати — шёпот зерна */
+.sp-grain {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  opacity: 0.05;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeComponentTransfer%3E%3CfeFuncR type='linear' slope='2.3' intercept='-0.65'/%3E%3CfeFuncG type='linear' slope='2.3' intercept='-0.65'/%3E%3CfeFuncB type='linear' slope='2.3' intercept='-0.65'/%3E%3C/feComponentTransfer%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23g)'/%3E%3C/svg%3E");
+  background-size: 200px 200px;
+  transition: opacity 0.7s ease;
+}
+
+/* виньетка: глубокое индио (#0b0714), не плоская тьма — цветная
+   виньетка даёт «богатые чёрные»; спад мягкий, с 55%, двухосевой
+   (сверху чуть сильнее — линейная добавка) */
+.sp-vignette {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 75% 78% at 50% 47%,
+      transparent 55%,
+      rgba(11, 7, 20, 0.18) 74%,
+      rgba(11, 7, 20, 0.40) 88%,
+      rgba(11, 7, 20, 0.68) 100%),
+    linear-gradient(to bottom, rgba(11, 7, 20, 0.30) 0%, transparent 28%);
+  transition: opacity 0.7s ease;
+}
+
+/* ── доскок: тап — все проявления мгновенно доигрывают ── */
+.splash--skip .sp-draw,
+.splash--skip .sp-beadsin,
+.splash--skip .sp-dashin,
+.splash--skip .sp-pop,
+.splash--skip .sp-fade,
+.splash--skip .sp-ignite,
+.splash--skip .sp-word,
+.splash--skip .sp-sub,
+.splash--skip .sp-rule,
+.splash--skip .sp-halo,
+.splash--skip .sp-haloflash {
+  animation-duration: 1ms;
+  animation-delay: 0ms;
+}
+
+/* ── ЭСТАФЕТА: заставка ПЕРЕТЕКАЕТ в терминал ──
+   1) пелена (фон, свет, горизонт, зерно, виньетка) тает — под
+      ней уже печатается бут; 2) печать расширяется ровно в габарит
+      ambient-сигила (та же геометрия — кроссфейд двух отпечатков
+      читается как одно непрерывное «оседание» в фон); 3) вордмарк
+      летит в заголовок бут-записи и по прилёте передаёт эстафету
+      событием word-land (настоящий заголовок проявляется на месте) */
+.splash--out {
+  pointer-events: none;
+  cursor: default;
+  animation: none;
+  background: transparent;
+  transition: background-color 0.7s ease;
+}
+
+.splash--out .sp-bg,
+.splash--out .sp-glow,
+.splash--out .sp-haze,
+.splash--out .sp-horizon,
+.splash--out .sp-smoke,
+.splash--out .sp-motes,
+.splash--out .sp-grain,
+.splash--out .sp-vignette {
+  opacity: 0;
+}
+
+.splash--out .sp-flash {
+  display: none;
+}
+
+/* печать оседает в ambient-слой: расширение + затухание */
+.splash--out .sp-sigil {
+  animation: sp-sigil-settle 1.15s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes sp-sigil-settle {
+  from { transform: translate(0, 0) scale(1); opacity: 1; }
+  to   { transform: translate(var(--sx, 0px), var(--sy, 0px)) scale(var(--ss, 1.9)); opacity: 0; }
+}
+
+/* вордмарк летит в заголовок бут-записи (FLIP) */
+.splash--out .sp-wordwrap {
+  animation: sp-word-fly 1.05s cubic-bezier(0.7, 0, 0.18, 1) forwards;
+}
+
+@keyframes sp-word-fly {
+  from { transform: translate(0, 0) scale(1); }
+  to   { transform: translate(var(--wx, 0px), var(--wy, -30vh)) scale(var(--ws, 1)); }
+}
+
+/* подзаголовок тихо уходит вниз */
+.splash--out .sp-sub {
+  animation: sp-sub-out 0.55s ease forwards;
+}
+
+@keyframes sp-sub-out {
+  to { opacity: 0; transform: translateY(10px); }
+}
+
+/* прилёт: слово гаснет — на его месте уже настоящий заголовок */
+.splash--landed .sp-wordwrap {
+  opacity: 0;
+  transition: opacity 0.16s linear;
+}
+
+/* быстрый темп после доскока */
+.splash--skip.splash--out .sp-sigil {
+  animation-duration: 0.64s;
+}
+
+.splash--skip.splash--out .sp-wordwrap {
+  animation-duration: 0.52s;
+}
+
+/* «слово не должно быть доступно» — reduced motion: всё мгновенно */
+@media (prefers-reduced-motion: reduce) {
+  .splash,
+  .sp-flash,
+  .sp-halo,
+  .sp-haloflash,
+  .sp-draw,
+  .sp-beadsin,
+  .sp-dashin,
+  .sp-pop,
+  .sp-fade,
+  .sp-ignite,
+  .sp-comet,
+  .sp-word,
+  .sp-sub,
+  .sp-rule,
+  .sp-glow::before,
+  .sp-glow::after,
+  .sp-motes,
+  .splash--out .sp-sigil,
+  .splash--out .sp-wordwrap,
+  .splash--out .sp-sub { animation: none !important; }
+  .sp-draw,
+  .sp-beadsin,
+  .sp-dashin,
+  .sp-pop,
+  .sp-fade,
+  .sp-ignite,
+  .sp-word,
+  .sp-sub { opacity: 1; stroke-dashoffset: 0; }
+  .sp-comet { opacity: 0; }
+  .splash--out {
+    background: transparent;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+  .splash--out .sp-bg,
+  .splash--out .sp-glow,
+  .splash--out .sp-haze,
+  .splash--out .sp-horizon,
+  .splash--out .sp-smoke,
+  .splash--out .sp-motes,
+  .splash--out .sp-grain,
+  .splash--out .sp-vignette { opacity: 0; }
+}
+
+/* узкие экраны: печать компактнее, вордмарк не упирается в борта
+   (+10% к прошлому раунду — 58→64vmin, кэп 260→286px) */
+@media (max-width: 479px) {
+  .sp-sigil { width: min(64vmin, 286px); height: min(64vmin, 286px); }
+  .sp-sub { gap: 8px; }
+}
+
+
+/* ═══ Round 14 · любимцы стихии · колонка карт · печати пути ═══ */
+
+/* любимцы ведущей стихии: продолжение вердикта — тихая строка
+   без рамки, отступ повторяет текст вердикта (граница + паддинг);
+   ×N — только с повторов, акцентом с мягким свечением */
+.suits-fav {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 2px 10px;
+  margin: -2px 0 10px;
+  padding: 0 2px 0 14px;
+  animation: suits-lead-in 0.5s ease-out 0.08s backwards;
+}
+
+.suits-fav-label {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.46);
+  white-space: nowrap;
+}
+
+.suits-fav-cards {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 2px 0;
+  min-width: 0;
+}
+
+.suits-fav-card {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.suits-fav-sep { color: rgba(255, 255, 255, 0.22); }
+
+.suits-fav-x {
+  color: var(--guide-accent, #a29cd8);
+  font-variant-numeric: tabular-nums;
+  font-size: 10px;
+  text-shadow: 0 0 8px color-mix(in srgb, var(--guide-accent, #a29cd8) 45%, transparent);
+}
+
+/* колонка «карты» журнала: N карт сеанса — бейдж перед шевроном;
+   появляется каскадом (индекс строки — задержка в JSX не нужна:
+   переход сортировки и так переставляет список), максимум
+   сеанса — акцентная рамка со свечением */
+.hr-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: rgba(255, 255, 255, 0.55);
+  padding: 2px 6px;
+  border: 1px solid var(--crt-line-soft);
+  border-radius: 3px;
+  animation: hr-count-in 0.35s ease-out backwards;
+}
+
+@keyframes hr-count-in {
+  from { opacity: 0; transform: translateX(4px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.hr-count-glyph {
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.32);
+}
+
+.hr-count--max {
+  color: var(--guide-accent, #a29cd8);
+  border-color: color-mix(in srgb, var(--guide-accent, #a29cd8) 38%, transparent);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--guide-accent, #a29cd8) 16%, transparent);
+}
+
+.hr-count--max .hr-count-glyph {
+  color: color-mix(in srgb, var(--guide-accent, #a29cd8) 70%, white);
+}
+
+/* печати пути: ряд сигилов-вех статистики; снятая — сплошная
+   рамка, тонкая заливка и дыхание глифа; грядущая — глухой
+   пунктир (путь виден, но не пройден). Каскад — по индексу */
+.stats-seals { margin: 0 0 10px; }
+
+.seals-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 2px 0;
+}
+
+.seal {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 1px dashed rgba(255, 255, 255, 0.16);
+  border-radius: 3px;
+  cursor: default;
+  animation: seal-in 0.4s ease-out backwards;
+}
+
+@keyframes seal-in {
+  from { opacity: 0; transform: translateY(4px) scale(0.9); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.seal-glyph {
+  font-size: 14px;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.22);
+}
+
+.seal--on {
+  border: 1px solid color-mix(in srgb, var(--guide-accent, #a29cd8) 42%, transparent);
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--guide-accent, #a29cd8) 7%, transparent);
+  box-shadow:
+    0 0 12px color-mix(in srgb, var(--guide-accent, #a29cd8) 14%, transparent),
+    inset 0 0 8px color-mix(in srgb, var(--guide-accent, #a29cd8) 8%, transparent);
+}
+
+.seal--on .seal-glyph {
+  color: color-mix(in srgb, var(--guide-accent, #a29cd8) 82%, white);
+  text-shadow: 0 0 9px color-mix(in srgb, var(--guide-accent, #a29cd8) 60%, transparent);
+  animation: dejavu-glyph-breathe 2.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .suits-fav { animation: none; }
+  .hr-count { animation: none; }
+  .seal { animation: none; }
+  .seal--on .seal-glyph { animation: none; }
+}
+
+@media (max-width: 479px) {
+  .suits-fav { padding-left: 10px; gap: 1px 8px; }
+  .suits-fav-card { font-size: 10.5px; }
+  .hr-count { padding: 1px 5px; font-size: 10.5px; }
+  .seal { width: 27px; height: 27px; }
+  .seal-glyph { font-size: 12.5px; }
+}
+
+
+

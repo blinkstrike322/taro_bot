@@ -39,7 +39,9 @@ export interface TarotSession {
 }
 
 export function useTarotSession(): TarotSession {
-  const [entries, setEntries] = useState<Entry[]>([{ id: 0, kind: 'boot' }]);
+  // бут-запись привозит эстафета заставки (onReveal) — до неё
+  // транскрипт пуст; повторный визит (splash seen) пушит бут сразу
+  const [entries, setEntries] = useState<Entry[]>([]);
   const [bootDone, setBootDone] = useState(false);
   const [characterId, setCharacterId] = useState('shadow_walker');
   const [busy, setBusy] = useState(false);
