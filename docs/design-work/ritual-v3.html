@@ -1,0 +1,422 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>АРКАНУМ — Макет ритуала · v3</title>
+<style>
+@font-face{font-family:Forum;src:url('mockup-assets/fonts/Forum-Regular.ttf') format('truetype');font-display:swap}@font-face{font-family:Plex;src:url('mockup-assets/fonts/IBMPlexMono-Regular.ttf') format('truetype');font-display:swap}
+:root{--void:#050505;--surface:#0B0A09;--text:#E8E3D9;--secondary:#B1A89A;--structure:#6F5B3D;--gold:#B99965;--guide:#C7A369;--line:rgba(111,91,61,.5)}*{box-sizing:border-box}body{margin:0;background:var(--void);color:var(--text);font:13px/1.65 Plex,monospace}button,textarea,input{font:inherit}button{cursor:pointer;color:inherit;touch-action:manipulation}button:focus-visible,textarea:focus-visible,input:focus-visible{outline:1px solid var(--guide);outline-offset:5px}button{background:none;border:0}button:disabled{opacity:.4;cursor:default}svg{display:block}h1,h2,h3,p{margin:0}h1,h2,h3{font-family:Forum,serif;font-weight:400}h1{font-size:31px;line-height:1.15}h2{font-size:28px;line-height:1.25}.workbench{display:grid;grid-template-columns:390px minmax(360px,660px);gap:100px;max-width:1210px;margin:48px auto 80px;padding:0 30px;align-items:start}.prototype-label{display:flex;justify-content:space-between;align-items:center;color:var(--secondary);font-size:11px;margin-bottom:16px}.prototype-label span:last-child{font-size:10px;color:var(--gold)}.phone{width:390px;height:844px;border:1px solid #3a3125;border-radius:34px;position:relative;isolation:isolate;overflow:hidden;box-shadow:inset 0 0 0 5px #0b0a09,0 0 0 3px #0b0a09;background:var(--void)}.phone:after{content:'';position:absolute;bottom:10px;left:calc(50% - 48px);width:96px;height:3px;background:#37312b;border-radius:4px;pointer-events:none;z-index:15}.inner{position:absolute;inset:7px;border-radius:27px;overflow:hidden;background:var(--void)}.grain{position:absolute;inset:0;background:url('mockup-assets/grain.svg');opacity:.042;pointer-events:none;z-index:1;mix-blend-mode:screen}.scene{position:absolute;top:128px;left:0;width:100%;height:360px;pointer-events:none;transition:top .55s cubic-bezier(.22,1,.36,1),height .55s cubic-bezier(.22,1,.36,1),opacity .4s;opacity:1;z-index:0}.scene svg{width:100%;height:100%;overflow:visible}.scene .geometry{stroke:var(--structure);opacity:.43;transition:opacity .3s}.scene .relic{color:var(--guide)}.scene .light{color:var(--guide);opacity:.68;transition:opacity .3s}.scene .mote{fill:var(--guide);opacity:.55}.scene .beam{animation:breathe 9s ease-in-out infinite}.phone[data-screen=question] .scene{top:95px;height:105px}.phone[data-screen=question] .scene .geometry{opacity:.24}.phone[data-screen=table] .scene{top:106px;height:390px;opacity:.68}.phone[data-screen=table] .scene .relic{opacity:.16}.phone[data-screen=table] .scene .light{opacity:.2}.phone[data-screen=detail] .scene,.phone[data-screen=synthesis] .scene{top:15px;height:400px;opacity:.14}.phone[data-screen=catalog] .scene,.phone[data-screen=journal] .scene{opacity:.08;top:40px}.phone[data-screen=guides] .scene{top:100px;height:240px}.phone[data-screen=deck] .scene{top:240px;height:170px;opacity:.35}.without-grain .grain{display:none}.without-geometry .geometry{display:none}.without-light .light,.without-light .mote{display:none}.wordmark{position:absolute;top:47px;width:100%;text-align:center;font:30px Forum,serif;letter-spacing:.24em;padding-left:.24em;color:var(--text);z-index:3}.wordmark:after{content:'';display:block;margin:23px auto 0;width:1px;height:15px;background:linear-gradient(transparent,var(--structure))}.screen{position:absolute;inset:0;z-index:2;overflow-y:auto;scrollbar-width:none}.screen::-webkit-scrollbar{display:none}.home-content{min-height:100%;position:relative;padding:0 24px}.home-actions{position:absolute;left:24px;right:24px;bottom:103px;text-align:center}.home-caption{font-size:12px;line-height:1.85;color:var(--secondary);margin-bottom:26px}.primary{min-height:56px;width:100%;border:1px solid var(--gold);border-radius:3px;background:linear-gradient(180deg,rgba(185,153,101,.055),transparent);display:flex;justify-content:center;align-items:center;gap:14px;font-size:13px;letter-spacing:.04em;box-shadow:inset 0 0 14px rgba(185,153,101,.025);transition:background .2s}.primary:hover{background:rgba(185,153,101,.09)}.primary svg{width:17px;height:17px;color:var(--gold)}.quiet{min-height:44px;color:var(--secondary);font-size:12px}.home-actions .quiet{margin-top:12px}.nav{position:absolute;bottom:22px;left:10px;right:10px;height:73px;border-top:1px solid rgba(111,91,61,.22);display:flex;z-index:6;background:var(--void)}.nav button{flex:1;font-size:10px;color:var(--secondary);display:flex;flex-direction:column;gap:7px;align-items:center;justify-content:center;min-width:0}.nav svg{width:23px;height:23px;color:var(--structure);stroke-width:1}.nav button[aria-current=page]{color:var(--text)}.nav button[aria-current=page] svg{color:var(--gold)}.topbar{height:80px;display:flex;align-items:center;justify-content:space-between;padding:22px 17px 0;position:relative;z-index:3}.topbar button{min-width:44px;min-height:44px;display:flex;align-items:center;gap:9px;color:var(--secondary);font-size:11px}.topbar svg{width:19px;height:19px;stroke:var(--gold)}.topbar .miniword{font:14px Forum;letter-spacing:.17em;color:var(--gold)}.topbar .icon{justify-content:center}.question-content{padding:136px 24px 155px}.question-content h1{text-align:center;font-size:31px;margin-bottom:22px}.invitation{text-align:center;color:var(--secondary);font-size:12px;line-height:1.8;margin-bottom:42px}.question-input{width:100%;height:200px;padding:0 0 20px;resize:none;color:var(--text);background:transparent;border:0;border-bottom:1px solid var(--line);outline:none;font:16px/1.8 Plex;caret-color:var(--guide)}.question-input::placeholder{color:#7f776a}.question-input:focus{border-bottom-color:var(--guide)}.question-footer{position:absolute;bottom:43px;left:24px;right:24px}.spread-change{width:100%;text-align:left;min-height:48px;display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;font-size:12px;color:var(--secondary)}.spread-change strong{font-weight:400;color:var(--text)}.spread-change span:last-child{color:var(--gold)}.table-title{text-align:center;padding:22px 25px 0}.table-title h1{font-size:29px;letter-spacing:.025em}.table-title small{display:block;margin-top:12px;color:var(--secondary);font:11px Plex}.table-space{position:relative;width:100%;height:393px;margin-top:25px}.table-space .card-slot{position:absolute;transform:translate(-50%,-50%) rotate(var(--rotate,0deg));width:var(--width);left:var(--x);top:var(--y);min-width:44px;text-align:center;padding:0}.card-slot .position-name{display:block;font-size:10px;line-height:1.45;color:var(--secondary);margin:13px -3px 0;min-height:28px}.card-slot .roman-slot{display:block;font:13px Forum;color:var(--gold);margin-top:7px}.card-object{position:relative;width:100%;aspect-ratio:2/3;border:1px solid var(--gold);border-radius:6px;padding:5px;overflow:hidden;background:var(--void);box-shadow:0 0 0 2px var(--void),0 8px 25px #0009;transform-style:preserve-3d}.card-object:after{content:'';position:absolute;inset:4px;border:1px solid #6f5b3d88;border-radius:3px;pointer-events:none}.card-object:before{content:'';position:absolute;inset:0;z-index:2;pointer-events:none;background:linear-gradient(90deg,#b999651a,transparent 7%,transparent 93%,#b999651a)}.card-object.back svg{width:100%;height:100%;color:var(--gold)}.card-object.back{background:radial-gradient(ellipse at 50% 55%,#17120d 0,#070706 45%,#050505 80%)}.card-corners{position:absolute;inset:7px;pointer-events:none;color:var(--gold);z-index:3}.card-corners i{position:absolute;font-style:normal;font:12px Forum}.card-corners i:nth-child(1){top:0;left:0}.card-corners i:nth-child(2){top:0;right:0}.card-corners i:nth-child(3){bottom:0;left:0}.card-corners i:nth-child(4){bottom:0;right:0}.card-number{position:absolute;top:9px;left:0;width:100%;text-align:center;font:13px Forum;letter-spacing:.12em;color:var(--gold);z-index:4}.art-window{position:absolute;left:11px;right:11px;top:29px;bottom:33px;overflow:hidden;background:#080808}.art-window img{width:100%;height:119%;position:absolute;top:-8%;left:0;object-fit:cover;filter:sepia(.7) brightness(.51) contrast(1.3)}.art-window img.study{height:100%;top:0;filter:none;object-fit:cover}.card-name{position:absolute;left:7px;right:7px;bottom:9px;font:13px Forum;letter-spacing:.08em;text-align:center;z-index:4;color:var(--text)}.table-space .card-number{font-size:9px;top:7px}.table-space .art-window{left:7px;right:7px;top:20px;bottom:22px}.table-space .card-name{font-size:10px;bottom:6px}.card-slot:hover .card-object{box-shadow:0 0 0 1px var(--guide),0 0 22px color-mix(in srgb,var(--guide) 12%,transparent)}.table-question{padding:23px 25px 0;border-top:1px solid rgba(111,91,61,.28);margin:0 24px}.table-question p{font:14px/1.8 Plex;margin-bottom:16px}.table-question .quiet{color:var(--gold);padding:0}.table-complete{padding:17px 24px 35px}.table-space[data-layout=single]{height:383px}.table-space[data-layout=spine]{height:463px;margin-top:8px}.table-space[data-layout=spine]:before{content:'';position:absolute;left:50%;top:5%;bottom:0;width:1px;background:linear-gradient(transparent,var(--structure),transparent);opacity:.4}.table-space[data-layout=spine] .position-name{font-size:9px;max-width:110px;margin:9px auto 0}.table-space[data-layout=pentagram]{height:390px}.table-space[data-layout=pentagram] .position-name,.table-space[data-layout=arc] .position-name{font-size:9px;margin-top:8px}.table-space[data-layout=arc]{height:400px}.table-space[data-layout=arc] .roman-slot,.table-space[data-layout=pentagram] .roman-slot{display:none}.detail-card-area{position:relative;display:flex;justify-content:center;padding:18px 0 28px}.detail-card{width:201px;view-transition-name:opened-card}.detail-card .card-number{font-size:15px;top:12px}.detail-card .art-window{top:37px;bottom:37px;left:13px;right:13px}.detail-card .card-name{font-size:19px;bottom:9px;letter-spacing:.12em}.position-rail{display:flex;justify-content:center;align-items:center;gap:5px;min-height:44px;margin:0 17px 12px}.position-rail button{width:44px;min-height:44px;padding:5px;display:flex;align-items:center;justify-content:center;color:var(--structure);font:15px Forum}.position-rail .dot{width:6px;height:6px;border:1px solid var(--structure);border-radius:50%;display:block}.position-rail button.opened .dot{background:var(--gold);border-color:var(--gold)}.position-rail button.active .dot{width:8px;height:8px;background:var(--guide);border-color:var(--guide);box-shadow:0 0 13px color-mix(in srgb,var(--guide) 50%,transparent)}.detail-copy{padding:0 25px 34px}.position-label{font-size:11px;color:var(--gold);margin-bottom:8px}.detail-copy h1{font-size:29px;letter-spacing:.09em;margin-bottom:20px}.reading-text{font-size:15px;line-height:1.75;color:var(--text)}.guide-note{border-top:1px solid var(--line);margin-top:25px;padding-top:22px}.guide-note-label{display:flex;align-items:center;gap:11px;font-size:11px;color:var(--secondary);margin-bottom:12px}.guide-note-label svg{width:19px;height:19px;color:var(--guide)}.guide-note p{font-size:14px;line-height:1.8;color:var(--guide)}.detail-next{margin-top:29px;display:flex;align-items:center;justify-content:space-between;border:1px solid var(--line);min-height:56px;padding:12px 17px;width:100%;text-align:left;font-size:12px;color:var(--text)}.detail-next svg{width:17px;height:17px;stroke:var(--gold)}.catalog-content,.journal-content{padding:22px 24px 110px}.catalog-content h1,.journal-content h1{margin:0 0 30px}.catalog-row{min-height:99px;width:100%;border-bottom:1px solid rgba(111,91,61,.35);display:flex;align-items:center;gap:18px;padding:18px 0;text-align:left}.catalog-row .diagram{width:52px;flex-shrink:0;color:var(--gold);opacity:.85}.catalog-row .diagram svg{width:52px;height:55px}.catalog-row h2{font-size:24px;margin-bottom:5px}.catalog-row p{font-size:10px;line-height:1.7;color:var(--secondary)}.catalog-row .count{display:block;font-size:10px;color:var(--gold);margin-top:7px}.catalog-row .chevron{margin-left:auto;color:var(--structure);font-size:18px}.overlay{position:absolute;inset:0;z-index:20;background:#0009;display:flex;align-items:flex-end;backdrop-filter:blur(4px)}.sheet{position:relative;width:100%;max-height:88%;overflow:auto;background:#0B0A09;border-top:1px solid var(--gold);padding:23px 24px 28px;scrollbar-width:thin;scrollbar-color:var(--structure) transparent;border-radius:18px 18px 0 0}.sheet-head{display:flex;justify-content:space-between;align-items:center;padding:0 0 12px}.sheet-head button{min-width:44px;min-height:44px;color:var(--secondary);font-size:23px}.sheet .catalog-row{min-height:107px}.sheet .selected h2{color:var(--guide)}.sheet .selected .diagram{color:var(--guide)}.sheet .catalog-row:last-child{border-bottom:0}.deck-content{min-height:100%;display:flex;align-items:center;justify-content:center;position:relative}.deck-stack{width:108px;position:relative;animation:deckForm .6s ease-out both}.deck-stack:before,.deck-stack:after{content:'';position:absolute;inset:0;border:1px solid var(--structure);background:var(--void);border-radius:5px;transform:rotate(-5deg) translate(-4px,4px)}.deck-stack:after{transform:rotate(4deg) translate(4px,-3px)}.deck-stack .card-object{z-index:2}.synthesis-content{padding:12px 24px 50px}.compact-tableau{display:flex;justify-content:center;gap:6px;padding:12px 0 32px}.compact-tableau button{width:54px;padding:0;min-height:80px}.compact-tableau .card-number{font-size:8px;top:6px}.compact-tableau .card-name{font-size:8px;bottom:6px}.compact-tableau .art-window{top:17px;bottom:17px;left:6px;right:6px}.compact-tableau .card-corners{inset:6px}.compact-tableau .card-corners i{font-size:7px}.synthesis-content h1{font-size:31px;margin-bottom:19px}.synthesis-content .reading-text p{margin-bottom:19px}.synthesis-question{color:var(--secondary);font-size:12px;line-height:1.8;margin:5px 0 26px;padding-left:13px;border-left:1px solid var(--structure)}.discussion-composer{border-top:1px solid var(--line);padding-top:23px;margin-top:27px}.discussion-composer h2{font-size:26px;margin-bottom:19px}.discussion-composer textarea{width:100%;background:transparent;color:var(--text);border:0;border-bottom:1px solid var(--line);padding:10px 0;resize:vertical;font-size:14px;line-height:1.8;min-height:95px}.discussion-composer textarea::placeholder{color:var(--secondary)}.discussion-composer .primary{margin-top:18px}.message{margin-top:25px;font-size:14px;line-height:1.85}.message.user{color:var(--secondary);padding-left:12px;border-left:1px solid var(--structure)}.message.reply{color:var(--text)}.message-name{display:block;color:var(--guide);font-size:10px;margin-bottom:10px}.journal-row{border-bottom:1px solid var(--line);padding:20px 0;display:block;width:100%;text-align:left}.journal-row time{font-size:10px;color:var(--gold)}.journal-row h2{font-size:25px;margin:10px 0}.journal-row p{font-size:12px;line-height:1.8;color:var(--secondary)}.journal-progress{display:flex;gap:6px;align-items:center;margin-top:14px}.journal-progress i{width:5px;height:5px;border:1px solid var(--structure);border-radius:50%}.journal-progress i.opened{background:var(--gold);border-color:var(--gold)}.empty{padding-top:55px;text-align:center}.empty svg{width:38px;height:38px;color:var(--gold);margin:0 auto 25px}.empty p{color:var(--secondary);margin:20px 0 28px;font-size:13px;line-height:1.8}.guides-content{padding:0 24px 118px}.guides-heading{margin:22px 0 0;text-align:center}.guide-focus{padding-top:248px;text-align:center}.guide-focus h2{font-size:30px;margin-bottom:19px}.guide-focus p{font-size:13px;line-height:1.85;color:var(--guide);min-height:73px}.guide-options{margin-top:31px;border-top:1px solid var(--line)}.guide-option{width:100%;display:flex;align-items:center;text-align:left;padding:16px 0;gap:14px;border-bottom:1px solid var(--line);min-height:65px;color:var(--secondary)}.guide-option svg{width:24px;height:24px;flex-shrink:0;color:var(--local-guide)}.guide-option strong{font:23px Forum;color:var(--text)}.guide-option .selection{margin-left:auto;width:5px;height:5px;border:1px solid var(--structure);border-radius:50%}.guide-option[aria-pressed=true] .selection{background:var(--local-guide);border-color:var(--local-guide);box-shadow:0 0 12px color-mix(in srgb,var(--local-guide) 30%,transparent)}.guide-context{color:var(--secondary);font-size:11px;line-height:1.8;margin-top:22px}.design-map{padding-top:34px}.design-map .folio{font-size:11px;color:var(--gold);letter-spacing:.06em;margin-bottom:24px}.design-map>h1{font:43px/1.1 Forum;max-width:500px;margin-bottom:22px;letter-spacing:.01em}.design-map>p{color:var(--secondary);font-size:12px;line-height:1.9;max-width:505px}.map-path{margin-top:38px;border-top:1px solid var(--line);padding-top:27px}.map-path h2,.layers h2,.decisions h2{font-size:26px;margin-bottom:20px}.flow{display:grid;grid-template-columns:1fr 36px 1fr 36px 1fr;align-items:center;gap:9px 0}.flow button{border:1px solid var(--line);min-height:49px;font-size:11px;background:#090807;padding:10px 7px}.flow button.current{border-color:var(--gold);color:var(--gold)}.flow .connector{text-align:center;color:var(--gold)}.flow .span3{grid-column:1/4}.flow .branch-note{grid-column:1/6;color:var(--secondary);font-size:10px;margin:9px 0 2px}.flow .guide-node{grid-column:1/6;border:0;text-align:left;padding:9px 0;font-size:11px;color:var(--secondary)}.layers{margin-top:31px;border-top:1px solid var(--line);padding-top:24px}.layer-controls{display:flex;gap:9px;flex-wrap:wrap}.layer-controls button{border:1px solid var(--line);min-height:44px;display:flex;align-items:center;gap:10px;font-size:11px;padding:8px 13px;color:var(--secondary)}.layer-controls button[aria-pressed=true]{border-color:var(--structure);color:var(--text)}.layer-controls i{width:5px;height:5px;border-radius:50%;background:var(--gold)}.layer-controls button[aria-pressed=false] i{background:transparent;border:1px solid var(--structure)}.layers p{font-size:10px;line-height:1.9;color:var(--secondary);margin-top:15px}.swatches{display:flex;gap:8px;margin-top:25px}.swatch{flex:1;font-size:9px;color:var(--secondary)}.swatch i{height:20px;display:block;border:1px solid var(--line);margin-bottom:9px}.decisions{margin-top:29px;border-top:1px solid var(--line);padding-top:24px}.decision-list{display:grid;grid-template-columns:110px 1fr;gap:15px;font-size:11px;line-height:1.8}.decision-list dt{color:var(--gold)}.decision-list dd{margin:0;color:var(--secondary)}.prepared-note{margin-top:28px;font-size:10px;line-height:1.85;color:var(--secondary);border-left:1px solid var(--structure);padding-left:15px}.prepared-note strong{font-weight:400;color:var(--text);display:block;margin-bottom:6px}.board-footer{margin-top:24px;display:flex;gap:20px;align-items:center}.board-footer button{font-size:10px;text-decoration:underline;color:var(--secondary);min-height:44px}.board-footer span{font-size:10px;color:var(--secondary)}.error{font-size:11px;color:var(--guide);margin:0 0 9px}.toast{position:absolute;bottom:32px;left:24px;right:24px;background:#12100e;border:1px solid var(--structure);padding:13px;text-align:center;z-index:30;font-size:11px;box-shadow:0 9px 35px #000b}.flow-preview{padding-top:30px;color:var(--secondary);font-size:11px;line-height:1.8}@keyframes breathe{0%,100%{opacity:.65}50%{opacity:.85}}@keyframes deckForm{0%{transform:translateY(-55px) scale(.7);opacity:0}50%{opacity:1}100%{transform:none;opacity:1}}::view-transition-old(opened-card),::view-transition-new(opened-card){animation-duration:.48s}::view-transition-group(opened-card){animation-duration:.48s;animation-timing-function:cubic-bezier(.22,1,.36,1)}@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}::view-transition-group(*){animation-duration:0s!important}}@media(max-width:1000px){.workbench{gap:50px;padding:0 22px;grid-template-columns:390px minmax(300px,1fr)}}@media(max-width:790px){.workbench{display:block;padding:0;max-width:500px;margin:0 auto}.prototype-label{padding:15px 20px;margin:0}.phone{width:100%;height:calc(100svh - 49px);min-height:720px;border:0;border-radius:0;box-shadow:none}.inner{inset:0;border-radius:0}.phone:after{display:none}.design-map{padding:48px 24px 60px}.home-actions{bottom:102px}.nav{bottom:12px}.question-footer{bottom:32px}}@media(max-width:350px){.phone{min-height:680px}.wordmark{font-size:28px;top:37px}.scene{top:110px;height:340px}.home-caption{font-size:11px}.home-actions{left:21px;right:21px;bottom:91px}.nav button{font-size:9px}.nav{bottom:8px;height:69px}.question-content{padding:130px 22px 155px}.question-input{font-size:15px;height:170px}.table-title h1{font-size:26px}.table-space{height:360px;margin-top:18px}.table-space[data-layout=spine]{height:434px}.table-space[data-layout=pentagram],.table-space[data-layout=arc]{height:375px}.table-space .position-name{font-size:9px}.detail-card{width:185px}.detail-copy{padding:0 22px 34px}.position-rail{gap:0}.position-rail button{width:40px;min-width:40px}.reading-text{font-size:15px}.catalog-content{padding-left:22px;padding-right:22px}.catalog-row{gap:12px}.catalog-row h2{font-size:22px}.compact-tableau{gap:4px}.compact-tableau button{width:35px;min-height:58px}.compact-tableau .card-name{display:none}.compact-tableau .art-window{bottom:7px;left:5px;right:5px}}
+
+#phone[data-transition] .screen{pointer-events:none}
+/* Prototype refinements: usable touch targets, dense spreads, shared card motion. */
+.position-rail{margin-left:6px;margin-right:6px;gap:0}.position-rail button{width:44px;min-width:44px;flex-shrink:0}
+.compact-tableau{flex-wrap:wrap;max-width:290px;margin:auto;gap:10px}.compact-tableau button{width:54px;min-width:44px;min-height:80px}
+.reading-text{font-size:16px;line-height:1.75}
+@media(max-width:350px){.compact-tableau button{width:48px}.compact-tableau .card-name{display:block}.compact-tableau .art-window{bottom:17px}.phone{min-height:680px}}
+@media(prefers-reduced-motion:no-preference){::view-transition-old(root),::view-transition-new(root){animation-duration:160ms}::view-transition-old(opened-card),::view-transition-new(opened-card){mix-blend-mode:normal;animation-duration:480ms}::view-transition-group(opened-card){animation-duration:480ms}}
+</style>
+</head>
+<body>
+<svg style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true"><defs>
+<symbol id="sigil" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width=".75"><path d="M12 1v22M1 12h22M4 4l16 16M4 20L20 4M12 5l2 5 5 2-5 2-2 5-2-5-5-2 5-2z"/><circle cx="12" cy="12" r="4.5"/></g></symbol>
+<symbol id="arrow" viewBox="0 0 24 24"><path d="M4 12h15m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="1"/></symbol>
+<symbol id="back-arrow" viewBox="0 0 24 24"><path d="M20 12H5m6-6-6 6 6 6" fill="none" stroke="currentColor" stroke-width="1"/></symbol>
+<symbol id="nav-cards" viewBox="0 0 24 24"><g fill="none" stroke="currentColor"><rect x="8" y="3" width="11" height="17" rx="1"/><path d="m6 5-4 1 4 16 7-2M13.5 7v9M10 11.5h7"/></g></symbol>
+<symbol id="nav-journal" viewBox="0 0 24 24"><g fill="none" stroke="currentColor"><path d="M5 6a9 9 0 1 1-2 6M5 2v5H1M12 5v7l4 2"/></g></symbol>
+<symbol id="nav-guide" viewBox="0 0 24 24"><g fill="none" stroke="currentColor"><path d="m12 2 10 18H2zM12 7l5 9H7z"/><circle cx="12" cy="13" r="1"/><path d="M12 20v3"/></g></symbol>
+<symbol id="shadow-sigil" viewBox="0 0 24 24"><g fill="none" stroke="currentColor"><path d="M17 3a9 9 0 1 0 4 14 8 8 0 0 1-4-14Z"/><path d="M19 2v5m-2-2h5"/></g></symbol>
+<symbol id="spark-sigil" viewBox="0 0 24 24"><g fill="none" stroke="currentColor"><path d="m13 1-3 9-7-2 6 7-2 8 7-7 7 2-5-7 2-7z"/></g></symbol>
+<symbol id="card-back" viewBox="0 0 180 270"><g fill="none" stroke="currentColor" stroke-width=".6"><rect x="8" y="8" width="164" height="254" rx="3" opacity=".6"/><path d="M90 15v240M15 135h150M20 28l140 214M20 242 160 28" opacity=".2"/><ellipse cx="90" cy="135" rx="61" ry="107" opacity=".4"/><ellipse cx="90" cy="135" rx="43" ry="107" opacity=".45"/><circle cx="90" cy="135" r="60" opacity=".5"/><circle cx="90" cy="135" r="47" opacity=".55"/><path d="m90 28 65 176H25zM90 242 65 66h130z" opacity=".23"/><path d="M90 77v116M33 135h114M50 95l80 80M50 175l80-80"/><path d="m90 108 5 20 22 7-22 6-5 21-5-21-22-6 22-7z" fill="currentColor" fill-opacity=".38"/><circle cx="90" cy="135" r="5" fill="currentColor" fill-opacity=".8"/><circle cx="90" cy="28" r="3"/><circle cx="90" cy="242" r="3"/><path d="M21 19h8m-4-4v8M151 19h8m-4-4v8M21 251h8m-4-4v8M151 251h8m-4-4v8"/></g></symbol>
+</defs></svg>
+<main class="workbench">
+<div class="prototype-column"><div class="prototype-label"><span>Макет ритуала · v3</span><span>WebApp</span></div>
+<div class="phone" id="phone" data-screen="home"><div class="inner">
+<div class="grain" aria-hidden="true"></div>
+<div class="scene" aria-hidden="true"><svg viewBox="0 0 376 360"><defs>
+<radialGradient id="pinlight"><stop stop-color="currentColor" stop-opacity=".4"/><stop offset=".19" stop-color="currentColor" stop-opacity=".08"/><stop offset="1" stop-color="currentColor" stop-opacity="0"/></radialGradient>
+<linearGradient id="beam" x1="0" y1="0" x2="0" y2="1"><stop stop-color="currentColor" stop-opacity="0"/><stop offset=".28" stop-color="currentColor" stop-opacity=".55"/><stop offset=".73" stop-color="currentColor" stop-opacity=".5"/><stop offset="1" stop-color="currentColor" stop-opacity="0"/></linearGradient>
+<linearGradient id="moonmetal" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#e4d4b5"/><stop offset=".4" stop-color="#b99965"/><stop offset="1" stop-color="#5e4d34"/></linearGradient>
+<filter id="soft"><feGaussianBlur stdDeviation="6"/></filter><filter id="tight"><feGaussianBlur stdDeviation="1.4"/></filter></defs>
+<g class="geometry" fill="none" stroke-width=".65"><circle cx="188" cy="176" r="145"/><circle cx="188" cy="176" r="115" opacity=".45"/><ellipse cx="188" cy="176" rx="57" ry="145" opacity=".55"/><path d="M39 176h298M188 16v312M62 247 188 31l126 216ZM62 106l126 217 126-217Z" opacity=".35"/><path d="M43 172v8M329 172v8M184 31h8M184 321h8"/><circle cx="188" cy="237" r="12"/><circle cx="188" cy="237" r="3"/></g>
+<g class="light"><ellipse cx="188" cy="298" rx="85" ry="38" fill="url(#pinlight)"/><ellipse cx="188" cy="87" rx="41" ry="60" fill="url(#pinlight)"/><path class="beam" d="M188 13V338" stroke="url(#beam)" stroke-width="1"/><path class="beam" d="M185 77h6v238h-6z" fill="url(#beam)" filter="url(#soft)"/><path d="M188 65v45m-22-22h44m-37-15 30 30m-30 0 30-30" stroke="currentColor" stroke-width=".6"/><path d="m188 73 3 12 13 3-13 3-3 12-3-12-13-3 13-3z" fill="currentColor" fill-opacity=".6"/><circle cx="188" cy="88" r="2" fill="#e8e3d9"/><path d="M188 281v34m-28-16h56m-43-8 31 16m-31 0 31-16" stroke="currentColor" stroke-width=".6"/><ellipse cx="188" cy="302" rx="40" ry="3" fill="currentColor" opacity=".13" filter="url(#tight)"/><circle cx="188" cy="299" r="2" fill="#e8e3d9"/></g>
+<g class="relic"><path d="M164 160a31 31 0 1 0 48 0 26 26 0 1 1-48 0Z" fill="url(#moonmetal)"/><path d="M164 160a31 31 0 1 0 48 0" fill="none" stroke="currentColor" stroke-width=".8"/><path d="M188 147v72" stroke="currentColor" stroke-width=".6" opacity=".75"/><path d="m188 181 2 5 5 2-5 2-2 5-2-5-5-2 5-2z" fill="currentColor"/></g>
+<g class="mote"><circle cx="146" cy="121" r=".7"/><circle cx="211" cy="136" r=".6"/><circle cx="205" cy="264" r=".7"/><circle cx="162" cy="277" r=".6"/><circle cx="196" cy="108" r=".6"/><circle cx="238" cy="236" r=".4"/></g></svg></div>
+<div id="screen" class="screen"></div><nav id="nav" class="nav" aria-label="Основная навигация"></nav><div id="overlay-root"></div>
+</div></div></div>
+<aside class="design-map">
+<p class="folio">АРКАНУМ / исследование ритуала</p><h1>Сначала тишина.<br>Потом — одна карта.</h1><p>Чёрное пространство держит внимание. Одна световая ось становится печатью вопроса, затем — колодой. Карта открывается прямо в чтение и возвращается на своё место.</p>
+<section class="map-path"><h2>Непрерывный сеанс</h2><div class="flow">
+<button data-preview="home">Главная</button><span class="connector">→</span><button data-preview="question">Вопрос</button><span class="connector">→</span><button data-preview="deck">Колода</button>
+<p class="branch-note">Карта дня идёт сразу к колоде. Выбор расклада — нижний лист внутри вопроса.</p>
+<button data-preview="table">Стол</button><span class="connector">↔</span><button data-preview="detail">Одна карта</button><span class="connector">→</span><button data-preview="synthesis">Общее чтение</button>
+<p class="branch-note">Любой порядок открытия. Точные карты и прочитанные позиции сохраняются.</p>
+<button data-preview="journal">Журнал</button><span class="connector">↔</span><button data-preview="discussion">Обсуждение</button><span class="connector">↔</span><button data-preview="synthesis">Общее чтение</button>
+<button class="guide-node" data-preview="guides">Проводник: четвёртая вкладка → голос будущих сеансов</button>
+</div></section>
+<section class="layers"><h2>Слои, которые живут отдельно</h2><div class="layer-controls"><button data-layer="grain" aria-pressed="true"><i></i>Материал</button><button data-layer="geometry" aria-pressed="true"><i></i>Геометрия</button><button data-layer="light" aria-pressed="true"><i></i>Свет</button></div><p>Пустота → слабое зерно → дальние линии → небольшой реликт → узкий луч → карта и текст. Здесь нет фоновой картинки, содержащей весь экран.</p>
+<div class="swatches"><div class="swatch"><i style="background:#050505"></i>#050505</div><div class="swatch"><i style="background:#0B0A09"></i>#0B0A09</div><div class="swatch"><i style="background:#6F5B3D"></i>#6F5B3D</div><div class="swatch"><i style="background:#B99965"></i>#B99965</div><div class="swatch"><i style="background:#E8E3D9"></i>#E8E3D9</div></div></section>
+<section class="decisions"><h2>Точность вместо украшений</h2><dl class="decision-list"><dt>Надпись</dt><dd>Forum — интерпретация характера референса. Точный шрифт исходного изображения не установлен.</dd><dt>Чтение</dt><dd>IBM Plex Mono, 15–16 px / 1,75. Кириллица и локальные файлы шрифтов с лицензией OFL.</dd><dt>Проводник</dt><dd>Три цвета только в свете, знаке и выбранном состоянии. Металл конструкции остаётся прежним.</dd><dt>Колода</dt><dd>Луна — новый стилевой этюд. Другие изображения — временные классические карты. Рамка, номер и русское название набраны отдельно.</dd></dl></section>
+<div class="prepared-note"><strong>Тексты и карты в этом макете подготовлены</strong>Это интерактивный визуальный макет. Ответ в обсуждении также подготовлен; здесь нет живого гадания или сетевого запроса. Данные сохраняются только в отдельном локальном хранилище макета.<br><br>После визуального согласования: единый стиль 78 карт, подтверждённая сервером раздача, реальные тексты и состояния ошибок, проверка доступности на устройствах.</div>
+<div class="board-footer"><button id="reset-prototype">Очистить сеансы макета</button><span id="session-count">0 сеансов</span></div>
+</aside></main>
+<script>
+const SPREADS={
+  "daily": {
+    "id": "daily",
+    "name": "карта дня",
+    "aliases": [
+      "день",
+      "daily",
+      "дневная",
+      "карта"
+    ],
+    "cmd": "taro daily",
+    "count": 1,
+    "layout": "column1",
+    "needsQuestion": false,
+    "flipOrder": [
+      "p1"
+    ],
+    "positions": [
+      {
+        "key": "p1",
+        "name": "энергия дня",
+        "desc": "главный сигнал сегодняшнего дня"
+      }
+    ],
+    "about": "одна карта — сигнал на весь день"
+  },
+  "single": {
+    "id": "single",
+    "name": "одна карта",
+    "aliases": [
+      "одна",
+      "one",
+      "ask1"
+    ],
+    "cmd": "taro ask1",
+    "count": 1,
+    "layout": "column1",
+    "needsQuestion": true,
+    "flipOrder": [
+      "p1"
+    ],
+    "positions": [
+      {
+        "key": "p1",
+        "name": "суть ответа",
+        "desc": "прямой ответ на вопрос"
+      }
+    ],
+    "about": "точечный ответ на конкретный вопрос"
+  },
+  "yesno": {
+    "id": "yesno",
+    "name": "да / нет",
+    "aliases": [
+      "данет",
+      "да-нет",
+      "yesno"
+    ],
+    "cmd": "taro yesno",
+    "count": 3,
+    "layout": "trio",
+    "needsQuestion": true,
+    "flipOrder": [
+      "p1",
+      "p2",
+      "p3"
+    ],
+    "positions": [
+      {
+        "key": "p1",
+        "name": "за",
+        "desc": "что говорит «да»"
+      },
+      {
+        "key": "p2",
+        "name": "против",
+        "desc": "что говорит «нет»"
+      },
+      {
+        "key": "p3",
+        "name": "совет",
+        "desc": "как поступить с этим"
+      }
+    ],
+    "about": "вердикт: за · против · совет"
+  },
+  "three": {
+    "id": "three",
+    "name": "три карты",
+    "aliases": [
+      "три",
+      "ask",
+      "спроси"
+    ],
+    "cmd": "taro ask",
+    "count": 3,
+    "layout": "pyramid",
+    "needsQuestion": false,
+    "flipOrder": [
+      "p1",
+      "p2",
+      "p3"
+    ],
+    "positions": [
+      {
+        "key": "p1",
+        "name": "позиция 1",
+        "desc": "вычисляется по вопросу"
+      },
+      {
+        "key": "p2",
+        "name": "позиция 2",
+        "desc": "вычисляется по вопросу"
+      },
+      {
+        "key": "p3",
+        "name": "позиция 3",
+        "desc": "вычисляется по вопросу"
+      }
+    ],
+    "about": "динамический расклад — позиции подстраиваются под вопрос"
+  },
+  "mfd": {
+    "id": "mfd",
+    "name": "мысли · чувства · действия",
+    "aliases": [
+      "чувства",
+      "мчд",
+      "mfd"
+    ],
+    "cmd": "taro mfd",
+    "count": 3,
+    "layout": "trio",
+    "needsQuestion": true,
+    "flipOrder": [
+      "p1",
+      "p2",
+      "p3"
+    ],
+    "positions": [
+      {
+        "key": "p1",
+        "name": "мысли",
+        "desc": "что этот человек думает — вслух и про себя"
+      },
+      {
+        "key": "p2",
+        "name": "чувства",
+        "desc": "что он чувствует на самом деле, под словами"
+      },
+      {
+        "key": "p3",
+        "name": "действия",
+        "desc": "как это выйдет наружу — что он будет делать"
+      }
+    ],
+    "about": "что он думает · чувствует · сделает"
+  },
+  "shadow": {
+    "id": "shadow",
+    "name": "тень",
+    "aliases": [
+      "тень-расклад",
+      "shadow-work",
+      "shadow"
+    ],
+    "cmd": "taro shadow",
+    "count": 6,
+    "layout": "spine",
+    "needsQuestion": false,
+    "flipOrder": [
+      "p1",
+      "p2",
+      "p3",
+      "p4",
+      "p5",
+      "p6"
+    ],
+    "positions": [
+      {
+        "key": "p1",
+        "name": "что я скрываю",
+        "desc": "что во мне прячется за этой темой"
+      },
+      {
+        "key": "p2",
+        "name": "почему я это скрываю",
+        "desc": "где и когда прятать стало безопаснее"
+      },
+      {
+        "key": "p3",
+        "name": "что скрывание защищает",
+        "desc": "какую выгоду оно всё ещё даёт"
+      },
+      {
+        "key": "p4",
+        "name": "что оно стоит",
+        "desc": "цена в энергии, честности, отношениях"
+      },
+      {
+        "key": "p5",
+        "name": "путь интеграции",
+        "desc": "какое внутреннее разрешение вернёт это к свету"
+      },
+      {
+        "key": "p6",
+        "name": "следующий шаг",
+        "desc": "одно маленькое конкретное действие на неделю"
+      }
+    ],
+    "about": "шесть карт вглубь: от скрытого — к шагу"
+  },
+  "pentagram": {
+    "id": "pentagram",
+    "name": "пентаграмма",
+    "aliases": [
+      "пента",
+      "пентаграмма",
+      "pent"
+    ],
+    "cmd": "taro pentagram",
+    "count": 6,
+    "layout": "pentagram",
+    "needsQuestion": true,
+    "flipOrder": [
+      "earth",
+      "air",
+      "water",
+      "fire",
+      "spirit",
+      "center"
+    ],
+    "positions": [
+      {
+        "key": "center",
+        "name": "сигнификатор",
+        "desc": "суть ситуации; кто ты в ней"
+      },
+      {
+        "key": "spirit",
+        "name": "дух",
+        "desc": "сквозная линия, объединяющая все элементы"
+      },
+      {
+        "key": "fire",
+        "name": "огонь",
+        "desc": "воля, импульс, что рвётся вперёд"
+      },
+      {
+        "key": "water",
+        "name": "вода",
+        "desc": "чувства, интуиция, невысказанное"
+      },
+      {
+        "key": "earth",
+        "name": "земля",
+        "desc": "тело, деньги, дом, опора"
+      },
+      {
+        "key": "air",
+        "name": "воздух",
+        "desc": "мысль, слово, ясность"
+      }
+    ],
+    "about": "пять стихий вокруг сигнификатора"
+  },
+  "horseshoe": {
+    "id": "horseshoe",
+    "name": "подкова",
+    "aliases": [
+      "подкова",
+      "shoe",
+      "horseshoe"
+    ],
+    "cmd": "taro horseshoe",
+    "count": 7,
+    "layout": "arc",
+    "needsQuestion": true,
+    "flipOrder": [
+      "p1",
+      "p2",
+      "p3",
+      "p4",
+      "p5",
+      "p6",
+      "p7"
+    ],
+    "positions": [
+      {
+        "key": "p1",
+        "name": "ситуация",
+        "desc": "что происходит сейчас, на чём стоишь"
+      },
+      {
+        "key": "p2",
+        "name": "скрытое",
+        "desc": "чего не видно изнутри ситуации"
+      },
+      {
+        "key": "p3",
+        "name": "препятствие",
+        "desc": "что встаёт на пути"
+      },
+      {
+        "key": "p4",
+        "name": "внешнее",
+        "desc": "люди и обстоятельства со стороны"
+      },
+      {
+        "key": "p5",
+        "name": "твоя позиция",
+        "desc": "твой ресурс и твоя роль в этом"
+      },
+      {
+        "key": "p6",
+        "name": "чужая позиция",
+        "desc": "другая сторона: что у них на уме"
+      },
+      {
+        "key": "p7",
+        "name": "исход",
+        "desc": "куда ведёт текущая линия, если ничего не менять"
+      }
+    ],
+    "about": "семь карт дугой: от ситуации — к исходу"
+  }
+};
+const KEY='arcanum-disposable-ritual-v3';
+const GUIDES={keeper:{name:'Хранитель Руин',accent:'#C7A369',sigil:'nav-guide',sample:'Камень помнит то, что спешка стирает. Посмотри на вопрос медленно — у него уже есть опора.',note:'Не торопи решение. Отдели то, что ты знаешь, от того, чего боишься. На этом камне можно строить.'},shadow:{name:'Странница Теней',accent:'#ADA5D3',sigil:'shadow-sigil',sample:'Тихо. Иногда ответ ещё не стал словами. Останься рядом с тем, что чувствуешь, — и дай ему очертания.',note:'Побудь с тем, что пока неясно. Тень не требует немедленного ответа: она просит заметить то, от чего ты отворачиваешься.'},spark:{name:'Искра Хаоса',accent:'#C87879',sigil:'spark-sigil',sample:'А если не идти по старому кругу? Давай посмотрим, где твой вопрос слишком тесен для тебя.',note:'Проверь привычную версию событий. Что изменится, если сделать один честный шаг вместо ещё одного красивого объяснения?'}};
+const CARDS=[{id:'the-moon',name:'Луна',roman:'XVIII',text:'Луна показывает промежуток между ощущением и ясностью. Пока картина неполна, знакомые страхи могут звучать убедительнее фактов. Не требуй от себя мгновенного решения: сначала назови то, что действительно чувствуешь.'},{id:'the-hermit',name:'Отшельник',roman:'IX',text:'Отшельник предлагает вернуть себе право на собственный темп. Отойди от чужих ожиданий настолько, чтобы услышать свой ответ. Небольшой ясный шаг сейчас важнее большой уверенности.'},{id:'the-star',name:'Звезда',roman:'XVII',text:'Звезда возвращает перспективу. Ты можешь не знать весь путь, но уже различать направление. Поддержи то, что даёт тебе силы: доверие растёт из маленьких действий, повторённых без спешки.'},{id:'strength',name:'Сила',roman:'VIII',text:'Сила говорит о контакте с собой, а не о давлении. Обрати внимание, где напряжение заменило заботу. Мягкая граница может защитить тебя точнее, чем попытка всё удержать.'},{id:'temperance',name:'Умеренность',roman:'XIV',text:'Умеренность ищет меру между противоположностями. Дай двум сторонам твоего вопроса место рядом. Ответ может появиться в сочетании, которое раньше казалось невозможным.'},{id:'the-high-priestess',name:'Жрица',roman:'II',text:'Жрица оставляет пространство для того, что ещё не сказано. Не всё требует немедленного объяснения. Прислушайся к повторяющемуся ощущению и проверь его спокойным наблюдением.'},{id:'the-fool',name:'Шут',roman:'0',text:'Шут приглашает к началу без обещания полной безопасности. Любопытство не отменяет осторожности. Выбери небольшой опыт, который позволит узнать больше, не отдавая всё сразу.'}];
+const $=s=>document.querySelector(s);let loaded;try{loaded=JSON.parse(localStorage.getItem(KEY)||'null')}catch{}let state=loaded&&loaded.version===3?loaded:{version:3,guide:'keeper',draft:'',selected:'three',screen:'home',active:null,sessions:[],layers:{grain:true,geometry:true,light:true}};let sheetOpen=false,deckTimer=null;
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));const title=s=>s.charAt(0).toUpperCase()+s.slice(1);const icon=id=>`<svg aria-hidden="true"><use href="#${id}"></use></svg>`;const roman=i=>['I','II','III','IV','V','VI','VII'][i];const active=()=>state.sessions.find(s=>s.id===state.active);const guide=()=>GUIDES[['table','detail','synthesis','deck'].includes(state.screen)&&active()?active().guide:state.guide];const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(state))}catch{}};
+function topbar(back='home',label=''){return `<div class="topbar"><button data-action="back" data-to="${back}" aria-label="${label||'Назад'}">${icon('back-arrow')}${label?`<span>${label}</span>`:''}</button><span class="miniword">АРКАНУМ</span><button class="icon" data-action="close" aria-label="На главную">×</button></div>`}
+function positions(s){const ps=SPREADS[s.spreadId].positions.map(p=>({...p})); if(s.spreadId==='three')ps.forEach((p,i)=>p.name=['Что привело сюда','Что происходит сейчас','Куда направить внимание'][i]); return ps;}
+function cardFront(s,i,detail=false){let c=CARDS[s.cards[i]];let moon=c.id==='the-moon';return `<div class="card-object front ${detail?'detail-card':''}" style="${detail?'':'view-transition-name:none'}"><span class="card-number">${c.roman}</span><div class="art-window"><img class="${moon?'study':''}" src="mockup-assets/${moon?'moon-study.webp':'cards/'+c.id+'.png'}" ${moon?'onerror="this.onerror=null;this.classList.remove(\'study\');this.src=\'mockup-assets/cards/the-moon.png\'"':''} alt="${esc(c.name)}" draggable="false"></div><span class="card-name">${esc(c.name)}</span><span class="card-corners" aria-hidden="true"><i>✧</i><i>✧</i><i>✧</i><i>✧</i></span></div>`}
+function backCard(){return `<div class="card-object back">${icon('card-back')}<span class="card-corners" aria-hidden="true"><i>✧</i><i>✧</i><i>✧</i><i>✧</i></span></div>`}
+function geometry(id){let count=SPREADS[id].count;if(count===1)return {layout:'single',slots:[[50,47,43,0]]};if(count===3)return {layout:'trio',slots:[[19,46,25.5,-1.5],[50,45,27.5,0],[81,46,25.5,1.5]]};if(id==='shadow')return {layout:'spine',slots:[[28,17,25,0],[72,17,25,0],[28,49,25,0],[72,49,25,0],[28,81,25,0],[72,81,25,0]]};if(id==='pentagram')return {layout:'pentagram',slots:[[50,51,23,0],[50,15,18,0],[18,40,18,0],[72,82,18,0],[28,82,18,0],[82,40,18,0]]};return {layout:'arc',slots:[[12,20,19,-6],[15,53,19,-4],[28,80,19,-2],[50,89,19,0],[72,80,19,2],[85,53,19,4],[88,20,19,6]]}}
+function diagram(id){let g=geometry(id);return `<svg viewBox="0 0 100 100" aria-hidden="true">${id==='pentagram'?'<path d="M50 15 18 40 72 82 82 40 28 82Z" fill="none" stroke="currentColor" stroke-width=".6" opacity=".4"/>':''}${g.slots.map(([x,y,w])=>`<rect x="${x-w*.28}" y="${y-w*.4}" width="${w*.56}" height="${w*.8}" rx="1" fill="none" stroke="currentColor" stroke-width="1"/>`).join('')}</svg>`}
+function catalogRows(inSheet=false){return Object.values(SPREADS).map(s=>`<button class="catalog-row ${inSheet&&state.selected===s.id?'selected':''}" data-action="select-spread" data-id="${s.id}" ${inSheet&&state.selected===s.id?'aria-current="true"':''}><span class="diagram">${diagram(s.id)}</span><span><h2>${esc(title(s.name))}</h2><p>${esc(s.about)}</p><span class="count">${s.count} ${s.count===1?'карта':s.count<5?'карты':'карт'}</span></span><span class="chevron" aria-hidden="true">›</span></button>`).join('')}
+function rail(s){return `<nav class="position-rail" aria-label="Позиции расклада">${positions(s).map((p,i)=>`<button data-action="open-card" data-index="${i}" class="${s.opened.includes(i)?'opened':''} ${s.lastDetail===i?'active':''}" aria-label="${esc(title(p.name))}${s.opened.includes(i)?', открыта':', закрыта'}" ${s.lastDetail===i?'aria-current="true"':''}><span class="dot"></span></button>`).join('')}</nav>`}
+function table(s){let spread=SPREADS[s.spreadId],g=geometry(s.spreadId);return `${topbar('home','Назад')}<div class="table-title"><h1>${esc(title(spread.name))}</h1><small>${s.daily?new Date(s.created).toLocaleDateString('ru-RU',{day:'numeric',month:'long'}):'Открой карту, которая зовёт первой'}</small></div><div class="table-space" data-layout="${g.layout}">${positions(s).map((p,i)=>{let [x,y,w,r]=g.slots[i];return `<button class="card-slot" style="--x:${x}%;--y:${y}%;--width:${w}%;--rotate:${r}deg" data-action="open-card" data-index="${i}" aria-label="${esc(title(p.name))}${s.opened.includes(i)?': '+CARDS[s.cards[i]].name:', открыть карту'}">${s.opened.includes(i)?cardFront(s,i):backCard()}<span class="position-name">${esc(title(p.name))}</span><span class="roman-slot">${roman(i)}</span></button>`}).join('')}</div><div class="table-question"><p>${esc(s.question||'Что во мне просит внимания сегодня?')}</p>${!s.daily?'<button class="quiet" data-action="edit-question">Новый вопрос</button>':''}</div>${s.opened.length===spread.count?'<div class="table-complete"><button class="primary" data-action="synthesis">Общее чтение</button></div>':''}`}
+function detail(s){let i=s.lastDetail??0,c=CARDS[s.cards[i]],p=positions(s)[i],next=positions(s).findIndex((_,n)=>!s.opened.includes(n)),gd=GUIDES[s.guide];return `${topbar('table','К раскладу')}<div class="detail-card-area">${cardFront(s,i,true)}</div>${rail(s)}<article class="detail-copy"><p class="position-label">${esc(title(p.name))}</p><h1>${esc(c.name)}</h1><p class="reading-text">${esc(c.text)}</p><div class="guide-note"><p class="guide-note-label">${icon(gd.sigil)}${esc(gd.name)}</p><p>${esc(gd.note)}</p></div><button class="detail-next" data-action="${next>=0?'open-card':'synthesis'}" ${next>=0?`data-index="${next}"`:''}><span>${next>=0?'Далее: '+title(positions(s)[next].name):'Увидеть расклад целиком'}</span>${icon('arrow')}</button></article>`}
+function synthesis(s){let gd=GUIDES[s.guide];return `${topbar('table','К раскладу')}<div class="synthesis-content"><div class="compact-tableau">${positions(s).map((p,i)=>`<button data-action="open-card" data-index="${i}" aria-label="${esc(title(p.name))}: ${esc(CARDS[s.cards[i]].name)}">${cardFront(s,i)}</button>`).join('')}</div><h1>Нить расклада</h1><p class="synthesis-question">${esc(s.question||'Что во мне просит внимания сегодня?')}</p><div class="reading-text"><p>В этом раскладе неясность встречается с возможностью услышать себя. Луна просит заметить чувства, которые ещё не получили имени. Не принимай тревожную догадку за окончательную картину.</p><p>${SPREADS[s.spreadId].count===1?'Сегодня достаточно одного наблюдения: в какой момент твоё тело знает о ситуации больше, чем слова? Дай этому ощущению место, затем вернись к фактам.':'Остальные карты предлагают не ускорять ответ, а собрать опору. Что в твоей ситуации уже известно? Что принадлежит тебе, а что пришло из чужих ожиданий? Между этими вопросами появляется место для собственного решения.'}</p><p>Выбери один небольшой шаг: уточнить факт, назвать границу или оставить себе вечер без решения. Смысл чтения — в том, что ты сможешь с ним сделать.</p></div><div id="discussion" class="discussion-composer"><h2>Обсудить расклад</h2>${(s.discussion||[]).map(m=>`<div class="message ${m.role}">${m.role==='reply'?`<span class="message-name">${esc(gd.name)}</span>`:''}${esc(m.text)}</div>`).join('')}<form id="discussion-form"><textarea id="followup-input" placeholder="Что хочется понять глубже?" aria-label="Вопрос о раскладе">${esc(s.followupDraft||'')}</textarea><button class="primary" type="submit">Продолжить разговор ${icon('arrow')}</button></form></div></div>`}
+function journal(){return `${topbar('home')}<div class="journal-content"><h1>Журнал</h1>${state.sessions.length?state.sessions.slice().reverse().map(s=>`<button class="journal-row" data-action="restore-session" data-id="${s.id}"><time>${new Date(s.created).toLocaleDateString('ru-RU',{day:'numeric',month:'long'})}</time><h2>${esc(title(SPREADS[s.spreadId].name))}</h2><p>${esc(s.question||'Что во мне просит внимания сегодня?')}</p><div class="journal-progress" aria-label="Прочитано ${s.opened.length} из ${SPREADS[s.spreadId].count}">${positions(s).map((_,i)=>`<i class="${s.opened.includes(i)?'opened':''}"></i>`).join('')}</div></button>`).join(''):`<div class="empty">${icon('nav-journal')}<h2>Здесь останется твой путь</h2><p>Начни с вопроса, к которому<br>хочется вернуться.</p><button class="primary" data-action="question">Задать вопрос</button></div>`}</div>`}
+function guides(){let gd=GUIDES[state.guide];return `${topbar('home')}<div class="guides-content"><h1 class="guides-heading">Проводники</h1><div class="guide-focus"><h2>${esc(gd.name)}</h2><p>${esc(gd.sample)}</p></div><div class="guide-options">${Object.entries(GUIDES).map(([id,g])=>`<button class="guide-option" data-action="choose-guide" data-id="${id}" aria-pressed="${state.guide===id}" style="--local-guide:${g.accent}">${icon(g.sigil)}<strong>${g.name}</strong><span class="selection"></span></button>`).join('')}</div><p class="guide-context">Выбранный голос будет рядом в следующем чтении. Уже открытый расклад сохраняет своего проводника.</p></div>`}
+function render(){let s=active();if(['table','detail','synthesis'].includes(state.screen)&&!s)state.screen='home';$('#phone').dataset.screen=state.screen;$('#phone').style.setProperty('--guide',guide().accent);document.documentElement.style.setProperty('--guide',GUIDES[state.guide].accent);Object.entries(state.layers).forEach(([l,on])=>{ $('#phone').classList.toggle('without-'+l,!on);let b=$(`[data-layer="${l}"]`);b.setAttribute('aria-pressed',on)});let html='';switch(state.screen){case'home':html=`<div class="wordmark">АРКАНУМ</div><div class="home-content"><div class="home-actions"><p class="home-caption">Иногда ответ приходит<br>не в словах, а в образах.</p><button class="primary" data-action="question">${icon('sigil')}Задать вопрос ${icon('arrow')}</button><button class="quiet" data-action="daily">Карта дня</button></div></div>`;break;case'question':html=`${topbar(state.editing?'table':'home')}<div class="question-content"><h1>Что тебя занимает?</h1><p class="invitation">Оставь здесь то, что просит внимания.</p><textarea id="question-input" class="question-input" aria-label="Твой вопрос" placeholder="Напиши свой вопрос…">${esc(state.draft)}</textarea></div><div class="question-footer"><p class="error" id="question-error" hidden></p><button class="spread-change" data-action="spread-sheet"><span><strong>${esc(title(SPREADS[state.selected].name))}</strong></span><span>изменить</span></button><button class="primary" data-action="${state.editing?'save-question':'draw'}">${state.editing?'Сохранить вопрос':'Разложить карты'} ${icon('arrow')}</button></div>`;break;case'deck':html=`<div class="deck-content"><div class="deck-stack">${backCard()}</div></div>`;break;case'table':html=table(s);break;case'detail':html=detail(s);break;case'synthesis':html=synthesis(s);break;case'catalog':html=`${topbar('home')}<div class="catalog-content"><h1>Расклады</h1>${catalogRows()}</div>`;break;case'journal':html=journal();break;case'guides':html=guides();break;}$('#screen').innerHTML=html;$('#screen').scrollTop=0;let atRest=['home','catalog','journal','guides'].includes(state.screen);$('#nav').hidden=!atRest;$('#nav').style.display=atRest?'flex':'none';$('#nav').innerHTML=[['home','Главная','sigil'],['catalog','Расклады','nav-cards'],['journal','Журнал','nav-journal'],['guides','Проводники','nav-guide']].map(([id,name,glyph])=>`<button data-action="navigate" data-to="${id}" ${state.screen===id?'aria-current="page"':''}>${icon(glyph)}${name}</button>`).join('');$('#overlay-root').innerHTML=sheetOpen?`<div class="overlay" id="spread-overlay"><section class="sheet" role="dialog" aria-modal="true" aria-label="Выбор расклада"><div class="sheet-head"><h2>Как посмотреть на вопрос?</h2><button data-action="close-sheet" aria-label="Закрыть выбор расклада">×</button></div>${catalogRows(true)}</section></div>`:'';document.querySelectorAll('[data-preview]').forEach(b=>b.classList.toggle('current',b.dataset.preview===state.screen));$('#session-count').textContent=state.sessions.length+' '+(state.sessions.length===1?'сеанс':state.sessions.length>1&&state.sessions.length<5?'сеанса':'сеансов');save();if(sheetOpen)$('#overlay-root [data-action="close-sheet"]').focus({preventScroll:true});}
+function go(screen,transition=false){window.scrollTo({top:0,behavior:'instant'});if(deckTimer&&screen!=='deck'){clearTimeout(deckTimer);deckTimer=null}sheetOpen=false;state.screen=screen;if(active()&&['table','detail','synthesis'].includes(screen)){active().lastView=screen;active().scrollTop=0}if(transition&&document.startViewTransition&&!matchMedia('(prefers-reduced-motion: reduce)').matches){$('#phone').dataset.transition='running';const motion=document.startViewTransition(render);motion.finished.finally(()=>{delete $('#phone').dataset.transition;});}else render()}
+function startQuestion(id=state.selected){state.editing=false;state.selected=id;go('question')}
+function draw(daily=false){let id=daily?'daily':state.selected;if(!daily&&!state.draft.trim()&&SPREADS[id].needsQuestion){let e=$('#question-error');e.hidden=false;e.textContent='Сформулируй вопрос перед раскладом.';$('#question-input').focus();return}let today=new Date().toLocaleDateString('en-CA');if(daily){let existing=state.sessions.find(s=>s.daily===today);if(existing){restore(existing.id);return}}let now=new Date().toISOString();let s={id:'s'+Date.now()+'-'+Math.random().toString(36).slice(2,5),spreadId:id,question:daily?'':state.draft.trim(),guide:state.guide,cards:Array.from({length:SPREADS[id].count},(_,i)=>i),opened:[],lastDetail:0,lastView:'table',created:now,daily:daily?today:null,discussion:[]};state.sessions.push(s);state.active=s.id;state.editing=false;go('deck');deckTimer=setTimeout(()=>{deckTimer=null;go('table')},650)}
+function openCard(i){if($('#phone').dataset.transition)return;const source=document.querySelector(`.card-slot[data-index="${i}"] .card-object`);if(source)source.style.viewTransitionName='opened-card';let s=active();if(!s)return;let count=SPREADS[s.spreadId].count;if(i<0||i>=count)return;if(!s.opened.includes(i))s.opened.push(i);s.lastDetail=i;s.lastView='detail';go('detail',true)}
+function restore(id){state.active=id;state.editing=false;let s=active();let y=s.scrollTop||0;go(s.lastView||'table');requestAnimationFrame(()=>{$('#screen').scrollTop=y})}
+function preview(screen){if(screen==='question'){startQuestion();return}if(['home','catalog','journal','guides'].includes(screen)){go(screen);return}if(!active()){let s={id:'sample-'+Date.now(),spreadId:'three',question:'Как услышать себя в момент перемен?',guide:state.guide,cards:[0,1,2],opened:[],lastDetail:0,lastView:'table',created:new Date().toISOString(),discussion:[]};state.sessions.push(s);state.active=s.id}if(screen==='deck'){go('deck');deckTimer=setTimeout(()=>go('table'),650);return}if(screen==='detail'){openCard(active().lastDetail||0);return}if(['synthesis','discussion'].includes(screen)){let s=active();s.opened=positions(s).map((_,i)=>i);go('synthesis');if(screen==='discussion')requestAnimationFrame(()=>$('#discussion').scrollIntoView({block:'start',behavior:'smooth'}));return}go(screen)}
+document.addEventListener('click',event=>{let b=event.target.closest('button');if(!b){if(event.target.id==='spread-overlay'){sheetOpen=false;render()}return}if(b.dataset.layer){let l=b.dataset.layer;state.layers[l]=!state.layers[l];render();return}if(b.dataset.preview){preview(b.dataset.preview);return}if(b.id==='reset-prototype'){state={version:3,guide:state.guide,draft:'',selected:'three',screen:'home',active:null,sessions:[],layers:state.layers};render();return}let a=b.dataset.action;if(!a)return;switch(a){case'navigate':go(b.dataset.to);break;case'close':state.editing=false;go('home');break;case'back':if(state.editing){state.editing=false;go('table')}else go(b.dataset.to||'home');break;case'question':startQuestion();break;case'daily':draw(true);break;case'draw':draw(false);break;case'spread-sheet':sheetOpen=true;render();break;case'close-sheet':sheetOpen=false;render();requestAnimationFrame(()=>$('.spread-change')?.focus());break;case'select-spread':if(sheetOpen){state.selected=b.dataset.id;sheetOpen=false;render()}else if(b.dataset.id==='daily')draw(true);else startQuestion(b.dataset.id);break;case'open-card':openCard(Number(b.dataset.index));break;case'synthesis':go('synthesis');break;case'edit-question':state.draft=active().question;startQuestion(active().spreadId);break;case'save-question':active().question=state.draft.trim();if(state.selected!==active().spreadId){draw(false)}else{state.editing=false;go('table')}break;case'restore-session':restore(b.dataset.id);break;case'choose-guide':state.guide=b.dataset.id;render();break;}});
+document.addEventListener('input',e=>{if(e.target.id==='question-input'){state.draft=e.target.value;save();let error=$('#question-error');if(error)error.hidden=true}if(e.target.id==='followup-input'&&active()){active().followupDraft=e.target.value;save()}});
+document.addEventListener('submit',e=>{if(e.target.id!=='discussion-form')return;e.preventDefault();let s=active(),text=$('#followup-input').value.trim();if(!text)return;s.discussion.push({role:'user',text},{role:'reply',text:s.guide==='shadow'?'Попробуй назвать чувство без объяснения его причины. Где оно ощущается? Рядом с этим чувством может быть потребность, которую ты пока прячешь даже от себя.':s.guide==='spark'?'Выбери один факт, который можно проверить сегодня. Не всю историю сразу. Что ты спросишь прямо, если на минуту перестанешь угадывать чужой ответ?':'Начни с устойчивого: запиши, что тебе уже известно. Рядом оставь место для того, что ещё требует разговора. Один спокойный вопрос может дать больше опоры, чем долгие догадки.'});s.followupDraft='';render();requestAnimationFrame(()=>$('#discussion').scrollIntoView({block:'start',behavior:'smooth'}))});
+$('#screen').addEventListener('scroll',()=>{if(active()&&['detail','synthesis'].includes(state.screen)){active().scrollTop=$('#screen').scrollTop;save()}},{passive:true});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&sheetOpen){sheetOpen=false;render()}if(e.key==='Tab'&&sheetOpen){let targets=[...$('#overlay-root').querySelectorAll('button')],first=targets[0],last=targets.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus()}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus()}}});
+if(state.screen==='deck')state.screen='table';let initialScroll=active()?.scrollTop||0;render();if(active()&&['detail','synthesis'].includes(state.screen)){requestAnimationFrame(()=>{$('#screen').scrollTop=initialScroll})}
+</script>
+</body></html>

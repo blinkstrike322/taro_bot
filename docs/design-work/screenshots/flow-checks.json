@@ -1,0 +1,50 @@
+[
+  {
+    "id": "daily",
+    "count": 1,
+    "reading": true,
+    "badImages": 0
+  },
+  {
+    "id": "single",
+    "count": 1,
+    "reading": true,
+    "badImages": 0
+  },
+  {
+    "id": "three",
+    "count": 3,
+    "reading": true,
+    "badImages": 0
+  },
+  {
+    "id": "yesno",
+    "count": 3,
+    "reading": true,
+    "badImages": 0
+  },
+  {
+    "id": "mfd",
+    "count": 3,
+    "reading": true,
+    "badImages": 0
+  },
+  {
+    "id": "shadow",
+    "count": 6,
+    "reading": true,
+    "badImages": 0
+  },
+  {
+    "id": "pentagram",
+    "count": 6,
+    "reading": true,
+    "badImages": 0
+  },
+  {
+    "id": "horseshoe",
+    "count": 7,
+    "reading": true,
+    "badImages": 0
+  }
+]

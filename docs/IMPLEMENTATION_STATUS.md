@@ -1,5 +1,7 @@
 # ARCANUM — статус первого рабочего среза
 
+> Обновление 13 октября: владелец отклонил визуальную реализацию первого среза и потребовал полный локальный WebApp. Подготовлены новый интерактивный макет `design-work/ritual-v3.html` и `superpowers/specs/2026-10-13-ritual-v3-design.md`. Это дизайн для рассмотрения; описанный ниже код первого среза ещё не заменён. Фактическая проверка макета: `design-work/mockup-report.md`.
+
 13 октября 2026. Ветка `codex/arcanum-redesign`, worktree `/Users/omr/Documents/ChatGPT/ARCANUM/app`. Production не обновлялся.
 
 ## Реализовано

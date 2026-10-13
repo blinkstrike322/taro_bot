@@ -1,4 +1,7 @@
 .sisyphus/
+.superpowers/
+.agents/skills/
+.claude/skills/
 .env
 web/node_modules
 .opencode/skills/impeccable/node_modules/
