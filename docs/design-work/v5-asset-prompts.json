@@ -1,0 +1,21 @@
+{
+  "tool": "built-in imagegen",
+  "date": "2026-10-14",
+  "records": [
+    {
+      "id": "moon",
+      "prompt": "Use case: text-localization. Edit target: the supplied tarot illustration. Change ONLY the bottom Cyrillic caption to exactly \"THE MOON\" in matching classical engraved serif letters, centered at exactly the existing caption location near y96%. Keep top \"XVIII\" untouched. Preserve EVERY illustration detail, composition, black paper texture, colours, proportions and full 2:3 canvas unchanged. Do not redraw scene or add any frame. No new border, ornaments, labels or text. Bottom English caption should have roughly same height as existing caption and fit comfortably, clear of edges. This is a localization edit only.",
+      "source": "/Users/omr/.codex/generated_images/01a1321b-d61f-7e22-a251-ffdb4a994339/exec-89aede5a-07e3-4799-8d8d-baa7c0a03a87.png"
+    },
+    {
+      "id": "hermit",
+      "prompt": "Use case: text-localization. Edit target: the supplied tarot illustration. Change ONLY the bottom Cyrillic caption to exactly \"THE HERMIT\" in matching classical engraved serif letters, centered at exactly the existing caption location near y96%. Keep top \"IX\" untouched. Preserve EVERY illustration detail, composition, black paper texture, colours, proportions and full 2:3 canvas unchanged. Do not redraw scene or add any frame. No new border, ornaments, labels or text. Bottom English caption should have roughly same height as existing caption and fit comfortably, clear of edges. This is a localization edit only.",
+      "source": "/Users/omr/.codex/generated_images/01a1321b-d61f-7e22-a251-ffdb4a994339/exec-1cd897d8-a1e2-4020-8909-6ee38fe40906.png"
+    },
+    {
+      "id": "fool",
+      "prompt": "Use case: text-localization. Edit target: the supplied tarot illustration. Change ONLY the bottom Cyrillic caption to exactly \"THE FOOL\" in matching classical engraved serif letters, centered at exactly the existing caption location near y96%. Keep top \"0\" untouched. Preserve EVERY illustration detail, composition, black paper texture, colours, proportions and full 2:3 canvas unchanged. Do not redraw scene or add any frame. No new border, ornaments, labels or text. Bottom English caption should have roughly same height as existing caption and fit comfortably, clear of edges. This is a localization edit only.",
+      "source": "/Users/omr/.codex/generated_images/01a1321b-d61f-7e22-a251-ffdb4a994339/exec-a1de1c53-e739-4279-9787-0dcad56bde21.png"
+    }
+  ]
+}

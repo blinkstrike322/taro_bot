@@ -23,3 +23,31 @@ The prototype scene uses separate DOM/SVG layers: void, `grain.svg`, geometrical
 `IBMPlexMono-Regular.ttf`: https://github.com/google/fonts/tree/main/ofl/ibmplexmono — IBM, accompanying `ibmplexmono-OFL.txt`.
 
 Both files are bundled locally. Exact typeface of the raster concept is unknown; this pairing is an interpretation.
+
+## v4 — whole artwork with inscriptions, separate frame
+
+Latest user correction supersedes v3 above: generate the number at top and Cyrillic title at bottom INSIDE the image; use a separate shared frame asset. No cropping or duplicate DOM inscriptions. Three generated candidates now used in v4:
+
+- `mockup-assets/moon-complete.v004.webp`: XVIII / ЛУНА.
+- `mockup-assets/hermit-complete.v004.webp`: IX / ОТШЕЛЬНИК.
+- `mockup-assets/fool-complete.v004.webp`: 0 / ШУТ.
+- `mockup-assets/card-frame.v004.png`: common transparent overlay. Applied only to new images; old art already contains its own frame.
+- `mockup-assets/scene-far.v004.webp`: distant stone recess material; no crescent/geometry/interface baked in.
+- `mockup-assets/scene-near.v004.png`: transparent foreground fragments for independent overlap.
+
+All six were generated with built-in ImageGen, not OpenRouter. Exact prompts and original output paths: `v4-asset-prompts.json`. Each original is retained beside delivery files as `*.v004.master.png`. Delivery versions are resized to768px width and encoded with Sharp (WebP quality90 or alpha-preserving PNG), with no artistic retouching. Source artwork is1024×1536. Frame and near plane have real alpha verified in metadata and pixel statistics. Visual symbol/text inspection performed on full images; mobile composite inspection recorded in the v4 report. These are style probes, not a finished78-card deck. Remaining four distinct illustrations are legacy placeholders.
+
+The v4 scene uses these two raster planes plus independent vector geometry/relic, light, material veils, surface, contact shadows, card groups and static UI. No claim that every scene layer is a separately generated image.
+
+
+## v4 frame refinement / v5 English captions — 14 October 2026
+
+Mobile composition showed the first frame too close to the caption. `card-frame.v004b.png` is the revised common overlay, with smaller corner ornament, rendered at104% around the intact artwork. Its source is `card-frame.v004b.master.png`; exact edit prompt/source are in `v4-frame-refinement.json`. This supersedes the first v004 frame, which is retained as a study.
+
+Latest user direction: captions on the artwork are English regardless of future app locale. New selected assets:
+
+- `mockup-assets/moon-complete.v005.webp` — XVIII / THE MOON.
+- `mockup-assets/hermit-complete.v005.webp` — IX / THE HERMIT.
+- `mockup-assets/fool-complete.v005.webp` — 0 / THE FOOL.
+
+Each has a1024×1536 original `*.v005.master.png` beside it; delivery is768px WebP quality90, no crop or artistic pixel editing. Built-in ImageGen localized the captions from the v004 art. Exact prompts/source paths are recorded in `v5-asset-prompts.json`. Art was inspected for caption accuracy and overall symbol preservation; image-generation edits are not a pixel-identical guarantee. Four legacy placeholders already have English captions. The generated78-card deck and a language selector remain future implementation, not delivered here.

@@ -1,0 +1,36 @@
+{
+  "tool": "built-in imagegen",
+  "status": "design candidates",
+  "records": [
+    {
+      "key": "moonV4Bare",
+      "prompt": "Use case: precise-object-edit. Edit this tarot card: REMOVE ONLY the entire decorative border, edge frame, corner ornaments, little horizontal dividers and all ornament beside the two inscriptions. Preserve the complete central Moon illustration exactly, every depicted symbol, its composition and original scale. Preserve only plain engraved text XVIII centered near top (y about 4%) and ЛУНА centered near bottom (y about 96%), same type style and sizing. Fill the removed border area with nearly black subtle paper matching existing background. Keep the two inscriptions legible, untouched. Full canvas portrait 2:3, front-on, no crop. Leave outer 2% plain dark safe margin for a separately composited frame. No new frame, no stars as corner ornaments, no extra text. This is the artwork + inscriptions layer of a modular tarot card; frame will be separate.",
+      "source": "/Users/omr/.codex/generated_images/01a1321b-d61f-7e22-a251-ffdb4a994339/exec-b4a0e410-3ad4-4d8f-b22c-4f2eaba9dee2.png"
+    },
+    {
+      "key": "hermitV4",
+      "prompt": "Use case: style-transfer. Reference image defines a tarot deck's exact etched mezzotint style, dark paper, antique brass and faded ivory palette, full 2:3 canvas and integrated inscriptions. Generate a DIFFERENT card in precisely that deck: classic Rider-Waite Hermit composition, solitary elderly robed bearded figure on cold crag/snow summit, head inclined downward, raised lantern containing a six-point star, long staff in the other hand. Whole figure and summit visible. Calm introspective charcoal slate atmosphere, finest copperplate hatch marks and rare old brass illumination from lantern. Top centered numeral IX at y4%, bottom Cyrillic title ОТШЕЛЬНИК at y96%, exactly spelled О Т Ш Е Л Ь Н И К, classical engraved serif matching reference. Only those two texts. No border/frame/decorative edge or corners; separate frame will be overlaid. Outer 2% dark safe margin. Opaque nearly black background, no crop, no perspective, full-bleed illustration including integrated title and numeral.",
+      "source": "/Users/omr/.codex/generated_images/01a1321b-d61f-7e22-a251-ffdb4a994339/exec-0293544e-f145-4278-b909-adc1625e288b.png"
+    },
+    {
+      "key": "foolV4",
+      "prompt": "Use case: style-transfer. Reference image defines a tarot deck's exact etched mezzotint style, dark paper, antique brass and faded ivory palette, full 2:3 canvas and integrated inscriptions. Generate a DIFFERENT card in precisely that deck: classic Rider-Waite Fool composition, young traveler stepping towards brink of cliff, upward gaze, patterned tunic, bundle on stick over shoulder, small white rose held in free hand, small white dog at heel, sharp distant mountains and discreet pale sun upper corner. Entire person, dog and cliff edge visible; heroic yet delicate late-medieval copperplate illustration with strong classical silhouette. Muted parchment highlights, charcoal background and weathered brass, no bright yellows. Top centered numeral 0 at y4%, bottom Cyrillic title ШУТ at y96%, exactly spelled Ш У Т, engraved serif matching reference. Only those two texts. NO border/frame/edge ornaments, outer 2% dark safe margin for separate overlay. Opaque near-black background, no crop, no perspective.",
+      "source": "/Users/omr/.codex/generated_images/01a1321b-d61f-7e22-a251-ffdb4a994339/exec-b43606e2-0d93-4236-9057-751af44f4987.png"
+    },
+    {
+      "key": "frameV4",
+      "prompt": "Use case: stylized-concept. Asset: a separate tarot-card FRAME overlay on genuine transparent background. Canvas portrait 2:3, exactly front-on, no perspective or cast shadow. ONLY a delicate double-line rectangular frame very close to outside edge (inside outer 1.5% of canvas), tiny restrained geometric crescent and star engravings at corners confined to outer 3%. Old tarnished brass and grey gold, finely etched and worn, matching this illustration's gold. Entire center 94% width and all spaces truly transparent. NO illustration, NO text, NO numerals, NO title panels, NO black fill or paper, no opaque center. Must overlay a full-canvas tarot illustration without covering its baked top numeral and bottom caption. Very fine and elegant, avoid bulky ornate scrolls.",
+      "source": "/Users/omr/.codex/generated_images/01a1321b-d61f-7e22-a251-ffdb4a994339/exec-8dd2e3ff-c8e8-4b21-a25d-20a2bef7e02b.png"
+    },
+    {
+      "key": "v4Far",
+      "prompt": "Use case: stylized-concept. Asset: BACKGROUND ENVIRONMENT PLANE for a layered 2D ritual interface, portrait 2:3. This is only the far environmental layer, not a finished UI or a complete composition. Near-black antique limestone and blackened vellum chamber, an extremely quiet irregular hollow oval recess receding into darkness, delicate drypoint/mezzotint worn scratches and material transitions visible only near far side edges and lower third. Center 60% of canvas is largely empty black space for separately composited moon, astrolabe and card objects. A low broad horizontal stone ledge around 80% height barely catches a muted antique brass reflection. Far sides have smoke-gray mineral texture and a hint of dry olive oxidation, very low saturation. Colors #050505 void, #0B0A09 shadow, charcoal #171613, rare stone gray #35342D and faint tarnished brass #6F5B3D. Deep transparent-looking air, tangible lithographic materials, painterly shadow planes, cool stone versus very restrained warm trace. BLACK MUST DOMINATE, avoid lifting overall exposure. No moon, no sun, no light beam, no rays, no stars or particles, no symbols, no circles/astrolabe geometry, no typography, no border or UI, no character. No generic ornate temple, no game screenshot, no brown sepia fog, no lensflare, no glossy 3D. Need atmosphere with depth to sit behind crisp UI.",
+      "source": "/Users/omr/.codex/generated_images/01a1321b-d61f-7e22-a251-ffdb4a994339/exec-c73faa97-b1e4-46bb-b92d-4656bac25196.png"
+    },
+    {
+      "key": "nearV4",
+      "prompt": "Use case: stylized-concept. A separate foreground occlusion sprite for a premium near-black tarot interface, portrait canvas 2:3. Two irregular very dark basalt fragments confined to lower left and lower right edges plus a very low bottom lip. All central 80% and upper half genuinely TRANSPARENT. Black body with restrained worn antique-bronze flecks only at thin jagged inner edges, minute pits, sophisticated physically textured 2D game environment plate. Light upper-left. No architectural pillars, no backdrop, no scene, no symbols, letters, stars, moon, circles or beam. Very low contrast, almost-black stone. The lower fragments must cover a small part of far background when layered, so their actual bodies should be opaque charcoal-black while the rest is alpha transparent. Front-on stage composition, clear empty center.",
+      "source": "/Users/omr/.codex/generated_images/01a1321b-d61f-7e22-a251-ffdb4a994339/exec-f681d8d1-9047-44e3-b5f8-238d70691ac6.png"
+    }
+  ]
+}

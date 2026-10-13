@@ -1,0 +1,74 @@
+[
+  {
+    "spreadId": "daily",
+    "count": 1,
+    "broken": 0,
+    "overflow": false,
+    "progress": "Позиции1 из 1 открыты",
+    "scroll": 0,
+    "summary": true
+  },
+  {
+    "spreadId": "single",
+    "count": 1,
+    "broken": 0,
+    "overflow": false,
+    "progress": "Позиции1 из 1 открыты",
+    "scroll": 0,
+    "summary": true
+  },
+  {
+    "spreadId": "three",
+    "count": 3,
+    "broken": 0,
+    "overflow": false,
+    "progress": "Позиции3 из 3 открыты",
+    "scroll": 0,
+    "summary": true
+  },
+  {
+    "spreadId": "yesno",
+    "count": 3,
+    "broken": 0,
+    "overflow": false,
+    "progress": "Позиции3 из 3 открыты",
+    "scroll": 0,
+    "summary": true
+  },
+  {
+    "spreadId": "mfd",
+    "count": 3,
+    "broken": 0,
+    "overflow": false,
+    "progress": "Позиции3 из 3 открыты",
+    "scroll": 0,
+    "summary": true
+  },
+  {
+    "spreadId": "shadow",
+    "count": 6,
+    "broken": 0,
+    "overflow": false,
+    "progress": "Позиции6 из 6 открыты",
+    "scroll": 0,
+    "summary": true
+  },
+  {
+    "spreadId": "pentagram",
+    "count": 6,
+    "broken": 0,
+    "overflow": false,
+    "progress": "Позиции6 из 6 открыты",
+    "scroll": 0,
+    "summary": true
+  },
+  {
+    "spreadId": "horseshoe",
+    "count": 7,
+    "broken": 0,
+    "overflow": false,
+    "progress": "Позиции7 из 7 открыты",
+    "scroll": 0,
+    "summary": true
+  }
+]

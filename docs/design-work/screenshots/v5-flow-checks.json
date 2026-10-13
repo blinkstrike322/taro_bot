@@ -1,0 +1,131 @@
+{
+  "spreads": [
+    {
+      "spreadId": "daily",
+      "count": 1,
+      "broken": 0,
+      "dots": 1,
+      "lastCardText": true,
+      "menuAbsent": true,
+      "noFurtherCard": true,
+      "scroll": 0,
+      "summary": true
+    },
+    {
+      "spreadId": "single",
+      "count": 1,
+      "broken": 0,
+      "dots": 1,
+      "lastCardText": true,
+      "menuAbsent": true,
+      "noFurtherCard": true,
+      "scroll": 0,
+      "summary": true
+    },
+    {
+      "spreadId": "three",
+      "count": 3,
+      "broken": 0,
+      "dots": 3,
+      "lastCardText": true,
+      "menuAbsent": true,
+      "noFurtherCard": true,
+      "scroll": 0,
+      "summary": true
+    },
+    {
+      "spreadId": "yesno",
+      "count": 3,
+      "broken": 0,
+      "dots": 3,
+      "lastCardText": true,
+      "menuAbsent": true,
+      "noFurtherCard": true,
+      "scroll": 0,
+      "summary": true
+    },
+    {
+      "spreadId": "mfd",
+      "count": 3,
+      "broken": 0,
+      "dots": 3,
+      "lastCardText": true,
+      "menuAbsent": true,
+      "noFurtherCard": true,
+      "scroll": 0,
+      "summary": true
+    },
+    {
+      "spreadId": "shadow",
+      "count": 6,
+      "broken": 0,
+      "dots": 6,
+      "lastCardText": true,
+      "menuAbsent": true,
+      "noFurtherCard": true,
+      "scroll": 0,
+      "summary": true
+    },
+    {
+      "spreadId": "pentagram",
+      "count": 6,
+      "broken": 0,
+      "dots": 6,
+      "lastCardText": true,
+      "menuAbsent": true,
+      "noFurtherCard": true,
+      "scroll": 0,
+      "summary": true
+    },
+    {
+      "spreadId": "horseshoe",
+      "count": 7,
+      "broken": 0,
+      "dots": 7,
+      "lastCardText": true,
+      "menuAbsent": true,
+      "noFurtherCard": true,
+      "scroll": 0,
+      "summary": true
+    }
+  ],
+  "widths": [
+    {
+      "dots": 7,
+      "frameFit": "contain",
+      "overflow": false,
+      "railWithin": true,
+      "smallestTarget": 44,
+      "width": 320
+    },
+    {
+      "dots": 7,
+      "frameFit": "contain",
+      "overflow": false,
+      "railWithin": true,
+      "smallestTarget": 44,
+      "width": 360
+    },
+    {
+      "dots": 7,
+      "frameFit": "contain",
+      "overflow": false,
+      "railWithin": true,
+      "smallestTarget": 44,
+      "width": 390
+    },
+    {
+      "dots": 7,
+      "frameFit": "contain",
+      "overflow": false,
+      "railWithin": true,
+      "smallestTarget": 44,
+      "width": 430
+    }
+  ],
+  "intro": {
+    "duration": "1s",
+    "present": true,
+    "underlying": "reading"
+  }
+}
