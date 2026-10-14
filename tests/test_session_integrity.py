@@ -139,7 +139,8 @@ async def test_key_conflicts_on_changed_input_and_is_scoped_to_user(db, monkeypa
             assert response.status == 409
         await update_character(conn, 703, "spark_of_chaos")
         response = await client.post("/api/spread/begin", headers=headers, json=payload)
-        assert response.status == 409
+        assert response.status == 200
+        assert (await response.json())["character_id"] == "shadow_walker"
         other = await client.post("/api/spread/begin", headers={"X-Telegram-Init-Data": auth(704)}, json=payload)
         assert other.status == 200
         assert (await other.json())["token"] != (await first.json())["token"]

@@ -454,6 +454,8 @@ async def init_db(db_path: str = "taro_bot.db") -> aiosqlite.Connection:
     await conn.execute(_CREATE_READINGS_TABLE)
     await conn.execute(_CREATE_EVENTS_TABLE)
     await conn.execute(_CREATE_PAYMENTS_TABLE)
+    from .conversations import SCHEMA
+    await conn.executescript(SCHEMA)
     await _migrate_schema(conn)
     await conn.commit()
     _db_connection = conn
@@ -641,11 +643,12 @@ def _reading_row_to_dict(row) -> dict:
         "interpretation": interpretation,
         "character_id": row[5] or "shadow_walker",
         "created_at": row[6] or "",
+        "token": row[7] if len(row)>7 else None,
     }
 
 
 _READINGS_SELECT = """SELECT r.id, r.type, r.question, r.cards_data, r.interpretation,
-              r.character_id, r.created_at
+              r.character_id, r.created_at, r.client_token
            FROM readings r
            JOIN users u ON r.user_id = u.id"""
 
@@ -767,8 +770,8 @@ async def count_user_readings_grouped(
 async def update_character(db: aiosqlite.Connection, tg_id: int, character_id: str) -> None:
     """Update the selected character for a user."""
     await db.execute(
-        "UPDATE users SET character_id = ? WHERE tg_id = ?",
-        (character_id, tg_id),
+        "INSERT INTO users(tg_id, character_id) VALUES (?, ?) ON CONFLICT(tg_id) DO UPDATE SET character_id=excluded.character_id",
+        (tg_id, character_id),
     )
     await db.commit()
 

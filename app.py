@@ -64,6 +64,7 @@ from storage.db import (
     get_db,
     get_or_create_user,
     get_reading_by_id,
+    get_reading_by_key,
     get_reading_by_token,
     get_recent_texts,
     get_user_by_tg_id,
@@ -464,6 +465,8 @@ async def handle_spread_begin(request):
             response["positions"] = ctx["positions"]
         if ctx.get("daily_ritual"):
             response["daily_ritual"] = ctx["daily_ritual"]
+        row = await get_reading_by_id(await get_db(), ctx["reading_id"])
+        response.update(character_id=row["character_id"], question=row["question"], created_at=row["created_at"])
         return web.json_response(response)
     cards = ctx["cards"]
 
@@ -490,6 +493,8 @@ async def handle_spread_begin(request):
         response["positions"] = ctx["positions"]
     if ctx.get("daily_ritual"):
         response["daily_ritual"] = ctx["daily_ritual"]
+    row = await get_reading_by_id(await get_db(), ctx["reading_id"])
+    response.update(character_id=row["character_id"], question=row["question"], created_at=row["created_at"])
     return web.json_response(response)
 
 
@@ -589,6 +594,14 @@ async def _create_spread_context(body: dict, tg_id: int, client_token: str):
         return web.json_response({"error": "invalid idempotency_key"}, status=400)
     db = await get_db()
     user = await get_or_create_user(db, tg_id)
+    from core.spreads import get_spread
+    if not isinstance(spread_type, (str, int)) or isinstance(spread_type, bool):
+        return web.json_response({"error": "Неизвестный расклад."}, status=400)
+    canonical = get_spread(str(spread_type))
+    if canonical is None and str(spread_type) not in ("1", "3"):
+        return web.json_response({"error": "Неизвестный расклад."}, status=400)
+    if canonical and canonical["needs_question"] and not question:
+        return web.json_response({"error": "Для этого расклада нужен вопрос."}, status=400)
     spread = resolve_spread(spread_type, question)
     spread_id = spread["id"]
     if spread_id == "daily":
@@ -607,6 +620,23 @@ async def _create_spread_context(body: dict, tg_id: int, client_token: str):
     position_keys = [p["key"] for p in spread["positions"]]
     # The selected guide belongs to the authenticated user, never the body.
     character_id = user.character_id
+    if key:
+        existing = await get_reading_by_key(db, user.id, key)
+        if existing:
+            # Replay identity precedes the latest guide preference.
+            saved_type = existing["cards_data"].get("spread_type")
+            if saved_type != spread_id or existing["question"] != question:
+                return web.json_response({"error": "Ключ уже использован для другого вопроса."}, status=409)
+            view = await check_quota(db, user.id, tg_id, spread_type_str)
+            return _saved_spread_context(existing, view, spread)
+    if spread_id == "daily":
+        cursor = await db.execute("SELECT id,client_token FROM readings WHERE user_id=? AND type='daily' AND date(created_at)=date('now') AND client_token IS NOT NULL ORDER BY id DESC LIMIT 1", (user.id,))
+        today = await cursor.fetchone()
+        if today:
+            saved_row = await get_reading_by_id(db, today[0])
+            saved_row["client_token"] = today[1]
+            if saved_row["cards_data"].get("cards"):
+                return _saved_spread_context(saved_row, await check_quota(db,user.id,tg_id,"daily"),spread)
     fingerprint = hashlib.sha256(json.dumps(
         {"spread_id": spread_id, "question": question, "character_id": character_id},
         ensure_ascii=False, sort_keys=True, separators=(",", ":"),
@@ -684,7 +714,15 @@ async def handle_spread_session(request):
         return web.json_response({"error": "unauthorized"}, status=403)
     db = await get_db()
     token = request.query.get("token", "")
-    found = await get_reading_by_token(db, token)
+    if request.query.get("reading_id"):
+        try: rid = int(request.query["reading_id"])
+        except ValueError: return web.json_response({"error":"invalid reading_id"},status=400)
+        found = await get_reading_by_id(db, rid)
+        if found:
+            cur = await db.execute("SELECT client_token FROM readings WHERE id=?",(rid,))
+            token = (await cur.fetchone())[0]
+    else:
+        found = await get_reading_by_token(db, token)
     if found is None:
         return web.json_response({"error": "unknown token"}, status=404)
     if found["tg_id"] != user["id"]:
@@ -698,7 +736,9 @@ async def handle_spread_session(request):
     ctx = _saved_spread_context(row, quota, spread)
     if isinstance(ctx, web.Response):
         return ctx
+    from storage.conversations import followups
     return web.json_response({
+        "created_at": row["created_at"], "followups": await followups(db,row["reading_id"]),
         "token": token, "reading_id": row["reading_id"], "status": row["status"],
         "question": row["question"], "character_id": row["character_id"],
         "cards": ctx["cards"], "positions": ctx["positions"],
@@ -1149,6 +1189,12 @@ def create_webapp(bot: Bot | None = None) -> web.Application:
     # Бот для /api/share (отправка расклада в личку); None в тестах вебаппа.
     app["bot"] = bot
     app.middlewares.append(gzip_cache_middleware)
+    from core.session_api import handle_followups, handle_retry, handle_preferences
+    app.router.add_get('/api/readings/{reading_id}/followups', handle_followups)
+    app.router.add_post('/api/readings/{reading_id}/followups', handle_followups)
+    app.router.add_post('/api/spread/retry', handle_retry)
+    app.router.add_get('/api/preferences', handle_preferences)
+    app.router.add_post('/api/preferences', handle_preferences)
     app.router.add_get('/api/readings', handle_readings)
     app.router.add_get('/api/stats', handle_stats)
     app.router.add_get('/api/disk', handle_disk_usage)
