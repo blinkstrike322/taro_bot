@@ -1,6 +1,6 @@
 # ARCANUM Ritual v5 Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Replace the first product UI with the accepted v5 ritual, connected to durable sessions and a complete local studio, including the owner's additional calendar, persona gallery and backward reading gesture.
 
@@ -36,11 +36,11 @@
 
 **Interfaces:** Existing begin/poll/session stay compatible. Begin/session add character_id, question, created_at, reading_id. Session accepts token or reading_id with ownership. POST /api/readings/{reading_id}/followups consumes {operation_key, question, card_index:number|null}; GET same path lists persisted rows {operation_key,question,card_index,character_id,status,answer,error,created_at}. POST /api/spread/retry consumes {token,operation_key}; returns same token/status. GET/POST /api/preferences exposes notifications_enabled, reusing existing reminder setting. No context from browser accepted by new followup endpoint.
 
-- [ ] RED: fresh user POST character then GET returns chosen; replay begin after changing preference returns old guide/cards; unknown spread and blank required question400; same-day daily returns same reading. Write API tests and run pytest tests/test_ritual_sessions.py.
-- [ ] GREEN: upsert guide, validate explicit canonical IDs before legacy resolver, operation lookup before current preference; daily existing row replay. Preserve compatibility for legacy numeric1 blank→daily.
-- [ ] RED: concurrent followup requests with same key invoke provider once, replay after DB reconnect, changed payload409, wrong owner403, server prompt uses stored guide/question/cards. Failed generation persists failed operation. Retry failed reading same cards, same retry key one call, new retry respects quota; settings authenticate.
-- [ ] GREEN: add durable followup table and retry-attempt table. Claim through atomic SQLite statements. Background followup tasks run independently of disconnected client; GET/session recover. Failed reading retry atomically changes status with quota guard (one slot, no redraw), distinct attempt timestamp. Never restart failed/pending requests automatically in production.
-- [ ] Run focused tests then full pytest; commit backend task.
+- [x] RED: fresh user POST character then GET returns chosen; replay begin after changing preference returns old guide/cards; unknown spread and blank required question400; same-day daily returns same reading. Write API tests and run pytest tests/test_ritual_sessions.py.
+- [x] GREEN: upsert guide, validate explicit canonical IDs before legacy resolver, operation lookup before current preference; daily existing row replay. Preserve compatibility for legacy numeric1 blank→daily.
+- [x] RED: concurrent followup requests with same key invoke provider once, replay after DB reconnect, changed payload409, wrong owner403, server prompt uses stored guide/question/cards. Failed generation persists failed operation. Retry failed reading same cards, same retry key one call, new retry respects quota; settings authenticate.
+- [x] GREEN: add durable followup table and retry-attempt table. Claim through atomic SQLite statements. Background followup tasks run independently of disconnected client; GET/session recover. Failed reading retry atomically changes status with quota guard (one slot, no redraw), distinct attempt timestamp. Never restart failed/pending requests automatically in production.
+- [x] Run focused tests then full pytest; commit backend task.
 
 ## Task 2: Persistent local studio
 
@@ -48,10 +48,10 @@
 
 **Interfaces:** `python scripts/dev_studio.py` starts both owned children; `--api-only` for tests. Default fixture DB .local/studio-fixture.sqlite3, live separate .local/studio-live.sqlite3. GET /__studio/bootstrap returns {init_data,user_id,namespace,mode}; /__studio/control supports deterministic failure-next and slow-next for fixture only. Explicit --reset-db changes persisted namespace. Next rewrites /api and /__studio only with ARCANUM_STUDIO=1 and development. `initializeRuntime():Promise<Runtime>` provides authenticated runtime before API use; `authHeaders()` uses initialized dev identity or real Telegram initData, never public-env embedded signed credentials.
 
-- [ ] RED: isolated fixture starts with supplied malicious real credentials but no outbound calls; bootstrap signature valid only dummytoken; full production create_webapp has no bootstrap; namespace stable restart/changes reset; occupied port exits without killing others; local interrupted rows failed preserving cards.
-- [ ] GREEN: implement loopback runner, explicit env isolation before importing config, proper cleanup, startup probe and child ownership. Fixtures use actual78-card draw, guide-specific prepared text and configurable delays/failure; local UI clearly labels outside phone. Existing temporary harness remains usable.
-- [ ] RED/GREEN: budget ledger reserves cost before every live provider hop, bounded calls and dollars survive restart, no automatic retries outside limiter. Explicit live key file only read server-side. No live test calls necessary for this migration.
-- [ ] Run pytest tests/test_studio.py then full suite; commit runtime task.
+- [x] RED: isolated fixture starts with supplied malicious real credentials but no outbound calls; bootstrap signature valid only dummytoken; full production create_webapp has no bootstrap; namespace stable restart/changes reset; occupied port exits without killing others; local interrupted rows failed preserving cards.
+- [x] GREEN: implement loopback runner, explicit env isolation before importing config, proper cleanup, startup probe and child ownership. Fixtures use actual78-card draw, guide-specific prepared text and configurable delays/failure; local UI clearly labels outside phone. Existing temporary harness remains usable.
+- [x] RED/GREEN: budget ledger reserves cost before every live provider hop, bounded calls and dollars survive restart, no automatic retries outside limiter. Explicit live key file only read server-side. No live test calls necessary for this migration.
+- [x] Run pytest tests/test_studio.py then full suite; commit runtime task.
 
 ## Task 3: Accepted scene, ritual and personal library
 
@@ -59,19 +59,21 @@
 
 **Interfaces:** State v2 is keyed by runtime.namespace+user_id; stores draft + operation, selected screen/session id, per-reading revealed indices/index/semantic scroll anchors and pending followup/retry IDs. Server content read after authorization. New API functions `getReadingSession(tokenOrId)`, `getReadingFollowups(id)`, `submitReadingFollowup(id,payload)`, `retryReading(token,key)`, `getPreferences()/savePreferences()` consume Task1 contracts. `gestureIntent(start,current,boundary)` pure decision tested; UI event adapter preserves native scrolling. `monthGrid(year,month)` Monday-first and `localReadingDay(createdAt)` shared list/grid date.
 
-- [ ] RED: state hydration invalid indices rejected, two namespaces don't mix; uncertain begin keeps frozen operation; gesture midtext/inertia no advance, deliberate end advances one, top previous no first-card wrap, inputs protected; December→January/leap year and UTC timestamp local day calendar.
-- [ ] GREEN: implement state/calendar/gesture helpers and API contract adapters, run Vitest.
-- [ ] Build scene from approved v5 CSS/assets:12 logical planes/3 movement groups, static while reading, Forum/Plex16px prose, safe areas. Intro once per document, restoration underneath, errors inline. Question includes bottom-sheet spread selector and single submit; no setup route or guide choice there. Table uses actual spread geometry. Reveal opens reading immediately.
-- [ ] Implement linked reading with full current card text, dots, forward/back edge gestures, left table, inline summary after all open and persisted discussion. Retry connection only polls same operation; explicit retry text uses retry endpoint. Telegram Back closes sheet then reading→table→home; close saves.
-- [ ] Implement journal month arrows/full calendar/day filter + recent reading thumbnails. Load all month via month endpoint; empty/loading/error distinct. Clicking item uses server reading_id and retained disclosure; finished historic records readable and discussion persists.
-- [ ] Guide gallery uses three tall illustrated personas, selection highlight and voice excerpt below, one save action; current preference fetched/saved server. Small settings entry outside main tab count; effects toggle functional, notification toggle existing server setting, sound off/no audio engine introduced; no inert future coating/language controls.
-- [ ] Run Vitest, TypeScript, lint changed components and Next production build; commit frontend task.
+- [x] RED: state hydration invalid indices rejected, two namespaces don't mix; uncertain begin keeps frozen operation; gesture midtext/inertia no advance, deliberate end advances one, top previous no first-card wrap, inputs protected; December→January/leap year and UTC timestamp local day calendar.
+- [x] GREEN: implement state/calendar/gesture helpers and API contract adapters, run Vitest.
+- [x] Build scene from approved v5 CSS/assets:12 logical planes/3 movement groups, static while reading, Forum/Plex16px prose, safe areas. Intro once per document, restoration underneath, errors inline. Question includes bottom-sheet spread selector and single submit; no setup route or guide choice there. Table uses actual spread geometry. Reveal opens reading immediately.
+- [x] Implement linked reading with full current card text, dots, forward/back edge gestures, left table, inline summary after all open and persisted discussion. Retry connection only polls same operation; explicit retry text uses retry endpoint. Telegram Back closes sheet then reading→table→home; close saves.
+- [x] Implement journal month arrows/full calendar/day filter + recent reading thumbnails. Load all month via month endpoint; empty/loading/error distinct. Clicking item uses server reading_id and retained disclosure; finished historic records readable and discussion persists.
+- [x] Guide gallery uses three tall illustrated personas, selection highlight and voice excerpt below, one save action; current preference fetched/saved server. Small settings entry outside main tab count; effects toggle functional, notification toggle existing server setting, sound off/no audio engine introduced; no inert future coating/language controls.
+- [x] Run Vitest, TypeScript, lint changed components and Next production build; commit frontend task.
 
 ## Task 4: Integrated acceptance and release notes
 
 **Files:** docs/LOCAL_STUDIO.md, docs/design-work/implementation-v5-report.md, screenshots; fixes limited to failures found in Tasks1–3 with regression tests.
 
-- [ ] Run studio normally and inspect browser through CUA (no Playwright routing/injected identity). All8 spreads, guides before first reading, daily replay, forward/back/left gestures, journal month/day + discussion restore.
+- [x] Run studio normally and inspect browser through CUA (no Playwright routing/injected identity). All8 spreads, guides before first reading, daily replay, forward/back/left gestures, journal month/day + discussion restore.
 - [ ] Check320/360/390/430 widths and reduced motion;1s intro on fresh load only; cards whole, all78URL200. Verify API restart persistence, fixture forced failure/retry without redraw, unavailable bootstrap preserves saved destination, no accidental provider calls.
-- [ ] Full pytest/Vitest/TypeScript/build, git diff whitespace. Independent final review if agent service available; otherwise explicitly record self-review and limitation. Do not claim real Telegram device verification.
-- [ ] Commit evidence, leave local studio running and open localhost3210 for owner. No push/deploy. Deck78art, paid launch/pricing, coatings/localization and actual-device QA remain follow-on work.
+- [x] Full pytest/Vitest/TypeScript/build, git diff whitespace. Independent final review if agent service available; otherwise explicitly record self-review and limitation. Do not claim real Telegram device verification.
+- [x] Commit evidence, leave local studio running and open localhost3210 for owner. No push/deploy. Deck78art, paid launch/pricing, coatings/localization and actual-device QA remain follow-on work.
+
+Local acceptance completed; exact coverage and unverified device/offline scenarios are in docs/design-work/implementation-v5-report.md. Unchecked acceptance items retain those limitations rather than implying production release readiness.

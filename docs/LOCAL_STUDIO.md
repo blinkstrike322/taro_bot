@@ -19,3 +19,13 @@ python scripts/dev_studio.py --mode live --key-file /absolute/path/to/server.env
 This uses a separate database. Each provider hop, including quality retries, reserves a conservative upper cost before sending. Only the verified Ling3.0Flash/DeepInfra route and its price ceiling are allowed. `.local/studio-budget.sqlite3` persists across runs and DB resets; reservations are not refunded on ambiguous errors. The global allowable remainder is capped at4.99USD, reserving prior probes below0.001USD from the owner's5USD budget. No live call is needed to test UI changes. Never commit/copy secrets into the frontend.
 
 Production export omits studio rewrites and bootstrap branch. Production authentication always validates actual Telegram initData and ownership. Studio dummy identity cannot authenticate to production. This is not a production deployment; real Telegram mobile gestures/keyboard and commercial tariff recovery still need release QA.
+
+On this machine, the existing interpreter can be used without copying its environment or secrets:
+
+```sh
+'/Users/omr/Library/Application Support/JetBrains/DataSpell2026.1/projects/workspace/taro_bot/.venv/bin/python' scripts/dev_studio.py
+```
+
+The launcher uses Next webpack because the existing `node_modules` symlink points outside the worktree, which Turbopack rejects. Production verification likewise uses `npm run build -- --webpack` from `web/`. The port probe permits immediate restart after socket TIME_WAIT; a live listener still prevents startup.
+
+Implementation and exact verification scope: [v5 report](design-work/implementation-v5-report.md).
