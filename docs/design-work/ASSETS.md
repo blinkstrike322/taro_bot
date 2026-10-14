@@ -51,3 +51,7 @@ Latest user direction: captions on the artwork are English regardless of future 
 - `mockup-assets/fool-complete.v005.webp` — 0 / THE FOOL.
 
 Each has a1024×1536 original `*.v005.master.png` beside it; delivery is768px WebP quality90, no crop or artistic pixel editing. Built-in ImageGen localized the captions from the v004 art. Exact prompts/source paths are recorded in `v5-asset-prompts.json`. Art was inspected for caption accuracy and overall symbol preservation; image-generation edits are not a pixel-identical guarantee. Four legacy placeholders already have English captions. The generated78-card deck and a language selector remain future implementation, not delivered here.
+
+## Product v5 persona portraits — 2026-10-14
+
+Three generated original portraits, separate from scene materials and guide accent color. Deliveries: `web/public/premium/ritual-v5/{spark_of_chaos,shadow_walker,ruin_keeper}.v001.webp` (768px wide); full PNG masters in `mockup-assets/`. Exact prompts and native sources: [guide-portrait-prompts.v001.json](guide-portrait-prompts.v001.json). No new deck artwork beyond the three accepted v5 cards is claimed. Production copies come from the Next static build.

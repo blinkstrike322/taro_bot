@@ -1,4 +1,4 @@
-import { runtimeIdentity } from './runtime';
+import { runtimeIdentity } from "./runtime";
 // ─────────────────────────────────────────────────────────────
 // api.ts — клиент канала ARCANUM (двухфазный расклад:
 // карты сразу, толкование — фоновым шёпотом через поллинг).
@@ -8,14 +8,15 @@ import { runtimeIdentity } from './runtime';
  *  Dev-мок: NEXT_PUBLIC_DEV_MOCK_INITDATA — только локальная разработка,
  *  в проде Python отвергнет такие данные (подпись не совпадёт). */
 function init_data(): string {
-  if (typeof window === 'undefined') return '';
-  const tg = (window as unknown as { Telegram?: { WebApp?: { initData?: string } } })
-    .Telegram?.WebApp;
-  return runtimeIdentity()?.init_data || tg?.initData || '';
+  if (typeof window === "undefined") return "";
+  const tg = (
+    window as unknown as { Telegram?: { WebApp?: { initData?: string } } }
+  ).Telegram?.WebApp;
+  return runtimeIdentity()?.init_data || tg?.initData || "";
 }
 
 function authHeaders(): Record<string, string> {
-  return { 'X-Telegram-Init-Data': init_data() };
+  return { "X-Telegram-Init-Data": init_data() };
 }
 
 export interface TarotCardData {
@@ -50,9 +51,12 @@ export interface Interpretation {
 export class ApiError extends Error {
   needsSubscription?: boolean;
   status?: number;
-  constructor(message: string, opts?: { needsSubscription?: boolean; status?: number }) {
+  constructor(
+    message: string,
+    opts?: { needsSubscription?: boolean; status?: number },
+  ) {
     super(message);
-    this.name = 'ApiError';
+    this.name = "ApiError";
     this.needsSubscription = opts?.needsSubscription;
     this.status = opts?.status;
   }
@@ -67,6 +71,9 @@ export interface DailyRitualInfo {
 }
 
 export interface SpreadBeginResponse {
+  character_id?: string;
+  question?: string | null;
+  created_at?: string;
   cards: TarotCardData[];
   token: string;
   reading_id?: number;
@@ -97,12 +104,12 @@ export interface ReadingEntry {
 }
 
 async function readErrorBody(res: Response): Promise<ApiError> {
-  let msg = 'канал недоступен';
+  let msg = "канал недоступен";
   let needsSubscription: boolean | undefined;
   try {
     const body = await res.json();
     if (body?.error) msg = body.error;
-    if (typeof body?.needs_subscription === 'boolean') {
+    if (typeof body?.needs_subscription === "boolean") {
       needsSubscription = body.needs_subscription;
     }
   } catch {}
@@ -113,21 +120,21 @@ async function readErrorBody(res: Response): Promise<ApiError> {
 export async function spreadBegin(
   spreadType: string | number,
   question: string | null,
-  characterId: string = 'shadow_walker',
+  characterId: string = "shadow_walker",
   /** локальный час оператора 0-23 — для серии рассветов */
   localHour?: number,
   idempotencyKey?: string,
 ): Promise<SpreadBeginResponse> {
-  const res = await fetch('/api/spread/begin', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+  const res = await fetch("/api/spread/begin", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       init_data: init_data(),
       spread_type: spreadType,
       question,
       character_id: characterId,
       ...(idempotencyKey ? { idempotency_key: idempotencyKey } : {}),
-      ...(typeof localHour === 'number' ? { local_hour: localHour } : {}),
+      ...(typeof localHour === "number" ? { local_hour: localHour } : {}),
     }),
   });
   if (!res.ok) throw await readErrorBody(res);
@@ -135,13 +142,17 @@ export async function spreadBegin(
 }
 
 export async function spreadPoll(token: string): Promise<SpreadPollResponse> {
-  const res = await fetch(`/api/spread/poll?token=${encodeURIComponent(token)}`, { headers: authHeaders() });
-  if (!res.ok) throw new Error('канал прерван');
+  const res = await fetch(
+    `/api/spread/poll?token=${encodeURIComponent(token)}`,
+    { headers: authHeaders() },
+  );
+  if (!res.ok) throw new Error("канал прерван");
   return res.json();
 }
 
 /** Recover the fixed draw and current generation state after returning to the app. */
-export type SpreadSessionStatus = 'reserved' | 'processing' | 'completed' | 'failed';
+export type SpreadSessionStatus =
+  "reserved" | "processing" | "completed" | "failed";
 
 export interface SpreadSessionResponse extends SpreadBeginResponse {
   reading_id: number;
@@ -152,10 +163,15 @@ export interface SpreadSessionResponse extends SpreadBeginResponse {
   error: string | null;
 }
 
-export async function spreadSession(token: string): Promise<SpreadSessionResponse> {
-  const res = await fetch(`/api/spread/session?token=${encodeURIComponent(token)}`, {
-    headers: authHeaders(),
-  });
+export async function spreadSession(
+  token: string,
+): Promise<SpreadSessionResponse> {
+  const res = await fetch(
+    `/api/spread/session?token=${encodeURIComponent(token)}`,
+    {
+      headers: authHeaders(),
+    },
+  );
   if (!res.ok) throw await readErrorBody(res);
   return res.json();
 }
@@ -172,9 +188,10 @@ export async function pollInterpretation(
     if (res.ready) {
       if (res.error) throw new Error(res.error);
       if (res.interpretation) return res.interpretation;
-      throw new Error('шёпот вернулся пустым');
+      throw new Error("шёпот вернулся пустым");
     }
-    if (Date.now() - t0 > timeoutMs) throw new Error('канал молчит слишком долго');
+    if (Date.now() - t0 > timeoutMs)
+      throw new Error("канал молчит слишком долго");
     await new Promise((r) => setTimeout(r, intervalMs));
   }
 }
@@ -184,7 +201,7 @@ export async function getCharacter(): Promise<string | null> {
   // выбор, а не затирает его дефолтом (бой 09.10: 500 character-колотил
   // проводника в shadow_walker при каждом входе и портил localStorage)
   try {
-    const res = await fetch('/api/character', { headers: authHeaders() });
+    const res = await fetch("/api/character", { headers: authHeaders() });
     if (!res.ok) return null;
     const data = await res.json();
     return data.character_id || null;
@@ -194,9 +211,9 @@ export async function getCharacter(): Promise<string | null> {
 }
 
 export async function setCharacter(id: string): Promise<string> {
-  const res = await fetch('/api/character', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+  const res = await fetch("/api/character", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ init_data: init_data(), character_id: id }),
   });
   if (!res.ok) throw await readErrorBody(res);
@@ -210,7 +227,7 @@ export async function getReadings(): Promise<ReadingEntry[]> {
     `/api/readings?year=${now.getFullYear()}&month=${now.getMonth() + 1}`,
     { headers: authHeaders() },
   );
-  if (!res.ok) throw new Error('журнал недоступен');
+  if (!res.ok) throw new Error("журнал недоступен");
   const data = await res.json();
   return data.readings ?? [];
 }
@@ -218,8 +235,10 @@ export async function getReadings(): Promise<ReadingEntry[]> {
 /** журнал за последние N дней (1-30): без привязки к месяцу —
  *  ретро-окно от текущего момента, для дайджеста недели */
 export async function getReadingsDays(days: number): Promise<ReadingEntry[]> {
-  const res = await fetch(`/api/readings?days=${days}`, { headers: authHeaders() });
-  if (!res.ok) throw new Error('журнал недоступен');
+  const res = await fetch(`/api/readings?days=${days}`, {
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error("журнал недоступен");
   const data = await res.json();
   return data.readings ?? [];
 }
@@ -239,7 +258,7 @@ export interface OperatorStats {
 }
 export async function getStats(): Promise<OperatorStats | null> {
   try {
-    const res = await fetch('/api/stats', { headers: authHeaders() });
+    const res = await fetch("/api/stats", { headers: authHeaders() });
     if (!res.ok) return null;
     return await res.json();
   } catch {
@@ -275,15 +294,17 @@ export interface FollowUpResponse {
   fallback?: boolean;
 }
 
-export async function askFollowup(payload: FollowUpPayload): Promise<FollowUpResponse> {
-  const res = await fetch('/api/ask', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+export async function askFollowup(
+  payload: FollowUpPayload,
+): Promise<FollowUpResponse> {
+  const res = await fetch("/api/ask", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ init_data: init_data(), ...payload }),
   });
   if (!res.ok) throw await readErrorBody(res);
   const data = await res.json();
-  if (!data?.answer) throw new ApiError('шёпот вернулся пустым');
+  if (!data?.answer) throw new ApiError("шёпот вернулся пустым");
   return { answer: String(data.answer), fallback: data.fallback === true };
 }
 
@@ -310,14 +331,18 @@ export async function askWeek(
   digest: WeekDigestPayload,
   characterId: string,
 ): Promise<WeekResponse> {
-  const res = await fetch('/api/week', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ init_data: init_data(), digest, character_id: characterId }),
+  const res = await fetch("/api/week", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      init_data: init_data(),
+      digest,
+      character_id: characterId,
+    }),
   });
   if (!res.ok) throw await readErrorBody(res);
   const data = await res.json();
-  if (!data?.answer) throw new ApiError('неделя молчит');
+  if (!data?.answer) throw new ApiError("неделя молчит");
   return { answer: String(data.answer), fallback: data.fallback === true };
 }
 
@@ -348,14 +373,18 @@ export async function askMonth(
   digest: MonthDigestPayload,
   characterId: string,
 ): Promise<MonthResponse> {
-  const res = await fetch('/api/month', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ init_data: init_data(), digest, character_id: characterId }),
+  const res = await fetch("/api/month", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      init_data: init_data(),
+      digest,
+      character_id: characterId,
+    }),
   });
   if (!res.ok) throw await readErrorBody(res);
   const data = await res.json();
-  if (!data?.answer) throw new ApiError('месяц молчит');
+  if (!data?.answer) throw new ApiError("месяц молчит");
   return { answer: String(data.answer), fallback: data.fallback === true };
 }
 
@@ -385,16 +414,21 @@ export interface DayForecastResponse {
 }
 
 /** прогноз дня: карта дня уже вскрыта — вывести из неё план дня */
-export async function dayForecast(payload: DayForecastPayload): Promise<DayForecastResponse> {
-  const res = await fetch('/api/forecast', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+export async function dayForecast(
+  payload: DayForecastPayload,
+): Promise<DayForecastResponse> {
+  const res = await fetch("/api/forecast", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ init_data: init_data(), ...payload }),
   });
   if (!res.ok) throw await readErrorBody(res);
   const data = await res.json();
-  if (!data?.forecast) throw new ApiError('прогноз не собрался');
-  return { forecast: data.forecast as DayForecast, fallback: data.fallback === true };
+  if (!data?.forecast) throw new ApiError("прогноз не собрался");
+  return {
+    forecast: data.forecast as DayForecast,
+    fallback: data.fallback === true,
+  };
 }
 
 // ── шеринг чтения в личку через нашего бота ──
@@ -411,9 +445,9 @@ export async function shareReading(payload: {
   token?: string;
   reading_id?: string | number;
 }): Promise<ShareResponse> {
-  const res = await fetch('/api/share', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+  const res = await fetch("/api/share", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ init_data: init_data(), ...payload }),
   });
   if (!res.ok) throw await readErrorBody(res);
@@ -422,8 +456,81 @@ export async function shareReading(payload: {
 
 /** весь журнал (до 500 строк) — хроника карты смотрит на всё */
 export async function getAllReadings(): Promise<ReadingEntry[]> {
-  const res = await fetch('/api/readings?all=1', { headers: authHeaders() });
-  if (!res.ok) throw new Error('журнал недоступен');
+  const res = await fetch("/api/readings?all=1", { headers: authHeaders() });
+  if (!res.ok) throw new Error("журнал недоступен");
   const data = await res.json();
   return data.readings ?? [];
+}
+
+export interface FollowupEntry {
+  operation_key: string;
+  question: string;
+  card_index: number | null;
+  character_id: string;
+  status: "processing" | "completed" | "failed";
+  answer: string | null;
+  error: string | null;
+  created_at: string;
+}
+export interface RitualSession extends SpreadSessionResponse {
+  positions: string[];
+  created_at: string;
+  followups: FollowupEntry[];
+}
+export async function getReadingSession(
+  id: number | string,
+): Promise<RitualSession> {
+  const query =
+    typeof id === "number"
+      ? `reading_id=${id}`
+      : `token=${encodeURIComponent(id)}`;
+  const r = await fetch(`/api/spread/session?${query}`, {
+    headers: authHeaders(),
+    cache: "no-store",
+  });
+  if (!r.ok) throw await readErrorBody(r);
+  return r.json();
+}
+async function sessionRequest<T>(path: string, body?: unknown): Promise<T> {
+  const r = await fetch(path, {
+    method: body === undefined ? "GET" : "POST",
+    headers: { ...authHeaders(), "Content-Type": "application/json" },
+    ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+  });
+  if (!r.ok) throw await readErrorBody(r);
+  return r.json();
+}
+export const getReadingFollowups = (id: number) =>
+  sessionRequest<{ followups: FollowupEntry[] }>(
+    `/api/readings/${id}/followups`,
+  );
+export const submitReadingFollowup = (
+  id: number,
+  body: { operation_key: string; question: string; card_index: number | null },
+) => sessionRequest<FollowupEntry>(`/api/readings/${id}/followups`, body);
+export const retryReading = (token: string, operation_key: string) =>
+  sessionRequest<{ token: string; status: SpreadSessionStatus }>(
+    "/api/spread/retry",
+    { token, operation_key },
+  );
+export const getPreferences = () =>
+  sessionRequest<{ notifications_enabled: boolean }>("/api/preferences");
+export const savePreferences = (notifications_enabled: boolean) =>
+  sessionRequest<{ notifications_enabled: boolean }>("/api/preferences", {
+    notifications_enabled,
+  });
+/** UTC month slices around the requested local month cover timezone boundaries. */
+export async function getJournalMonth(
+  year: number,
+  month: number,
+): Promise<ReadingEntry[]> {
+  const slices = await Promise.all(
+    [-1, 0, 1].map(async (delta) => {
+      const d = new Date(year, month + delta, 1);
+      return sessionRequest<{ readings: ReadingEntry[] }>(
+        `/api/readings?year=${d.getFullYear()}&month=${String(d.getMonth() + 1).padStart(2, "0")}`,
+      );
+    }),
+  );
+  return slices.flatMap((slice) => slice.readings);
 }
