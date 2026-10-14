@@ -28,3 +28,6 @@ static/default/
 art_references/
 temp/
 *.tsbuildinfo
+
+# Isolated local studio data and provider accounting
+.local/

@@ -1,3 +1,4 @@
+import { runtimeIdentity } from './runtime';
 // ─────────────────────────────────────────────────────────────
 // api.ts — клиент канала ARCANUM (двухфазный расклад:
 // карты сразу, толкование — фоновым шёпотом через поллинг).
@@ -10,8 +11,7 @@ function init_data(): string {
   if (typeof window === 'undefined') return '';
   const tg = (window as unknown as { Telegram?: { WebApp?: { initData?: string } } })
     .Telegram?.WebApp;
-  if (tg?.initData) return tg.initData;
-  return (process.env.NEXT_PUBLIC_DEV_MOCK_INITDATA as string | undefined) ?? '';
+  return runtimeIdentity()?.init_data || tg?.initData || '';
 }
 
 function authHeaders(): Record<string, string> {
