@@ -1,0 +1,6 @@
+{
+  "tool": "built-in imagegen",
+  "input": "assets/masters/premium/home-v6/light-axis.v001.png",
+  "output": "assets/masters/premium/home-v6/light-axis.v002.png",
+  "prompt": "Edit the supplied transparent light-axis sprite. Preserve alpha transparency and exact positions of the top main star at x50% y20% and lower light point at x50% y85%. Make it much more restrained, weathered and delicate: replace the thick curling smoke column by a very narrow straight dusty amber light thread, interrupted by fine organic grain. Remove ALL necklace-like beads and diamond nodes along the axis. The upper star should have 8 thin irregular engraved needle rays with a small pale gold core, without jewelry detailing or dangling ornaments. Warm antique gold with softly fading tiny amber halo. The lower light point should have a small horizontal flare and narrow vertical reflection. Reduce haze dramatically: mostly transparent space, only wisps immediately next to the line, not a wide glowing column. Preserve original canvas/aspect ratio. No moon, rings, text, background or opaque black fill. This will overlay an almost black painted stone scene in a refined ancient astronomical interface."
+}

@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import "./globals.css";
 import "./premium.css";
+import "./home.css";
 
 export const metadata: Metadata = {
   title: "ARCANUM — личный ритуал",

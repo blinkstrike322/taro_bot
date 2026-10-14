@@ -40,6 +40,7 @@ import { getGuide } from "@/lib/guides";
 import { Icon, Divider, type IconName } from "./Ornaments";
 import { TarotArtwork } from "./TarotArtwork";
 import { RitualScene } from "./RitualScene";
+import { HomeScreen } from "./HomeScreen";
 import { RitualReading } from "./RitualReading";
 import { Journal } from "./Journal";
 import { GuideGallery } from "./GuideGallery";
@@ -594,7 +595,7 @@ export default function PremiumApp() {
         style={{ "--guide": design.accent } as CSSProperties}
         onPointerMove={moveScene}
       >
-        <RitualScene />
+        {screen !== "home" && <RitualScene />}
         <main
           className="ritual-scroll"
           ref={mainRef}
@@ -648,45 +649,19 @@ export default function PremiumApp() {
           ) : (
             <>
               {screen === "home" ? (
-                <section className="home-content">
-                  <div className="home-tools">
-                    <button
-                      className="quiet"
-                      aria-label="Открыть настройки"
-                      onClick={() => navigate("settings")}
-                    >
-                      Настройки
-                    </button>
-                  </div>
-                  <h1 className="wordmark">АРКАНУМ</h1>
-                  <div className="home-actions">
-                    <p className="home-caption">
-                      Иногда ответ приходит
-                      <br />
-                      не в словах, а в образах.
-                    </p>
-                    <button className="primary" onClick={() => start()}>
-                      <Icon name="star" size={18} />
-                      Задать вопрос
-                      <Icon name="arrow" size={18} />
-                    </button>
-                    <button className="quiet" onClick={() => start("daily")}>
-                      Карта дня
-                    </button>
-                    {(activeId || state.draft.operationKey) && (
-                      <button
-                        className="resume-link quiet"
-                        onClick={() =>
+                <HomeScreen
+                  onQuestion={() => start()}
+                  onDaily={() => start("daily")}
+                  onSettings={() => navigate("settings")}
+                  onResume={
+                    activeId || state.draft.operationKey
+                      ? () =>
                           state.draft.operationKey
                             ? navigate("question")
                             : navigate("table")
-                        }
-                      >
-                        Продолжить свой расклад
-                      </button>
-                    )}
-                  </div>
-                </section>
+                      : undefined
+                  }
+                />
               ) : (
                 <>
                   <header className="ritual-topbar">
