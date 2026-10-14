@@ -142,7 +142,7 @@ async def reserve_reading(
     # Статус 'failed' — вернённый слот: не считается против лимита.
     if type == "daily":
         guard = (
-            "SELECT COUNT(*) FROM readings WHERE user_id = ? AND date(created_at) = date('now') "
+            "SELECT COUNT(*) FROM readings WHERE user_id = ? AND date(COALESCE(quota_at, created_at)) = date('now') "
             "AND status != ? "
             "AND (type = 'daily' OR (type = 'spread_1' AND question IS NULL))"
         )
@@ -151,7 +151,7 @@ async def reserve_reading(
         guard = (
             "SELECT COUNT(*) FROM readings WHERE user_id = ? AND type != 'daily' "
             "AND status != ? "
-            "AND strftime('%Y-%m', created_at) = strftime('%Y-%m', 'now')"
+            "AND strftime('%Y-%m', COALESCE(quota_at, created_at)) = strftime('%Y-%m', 'now')"
         )
         guard_args = (user_id, STATUS_FAILED)
 
@@ -244,7 +244,7 @@ async def sweep_stale_reservations(db: aiosqlite.Connection, older_than_minutes:
     """
     cursor = await db.execute(
         "UPDATE readings SET status = ?, error = ?, completed_at = datetime('now') "
-        "WHERE status IN (?, ?) AND created_at < datetime('now', ?)",
+        "WHERE status IN (?, ?) AND COALESCE(quota_at, created_at) < datetime('now', ?)",
         (STATUS_FAILED, EXPIRED_ERROR, STATUS_RESERVED, STATUS_PROCESSING, f"-{older_than_minutes} minutes"),
     )
     await db.commit()
@@ -390,6 +390,7 @@ async def _migrate_schema(db: aiosqlite.Connection) -> None:
         "ALTER TABLE readings ADD COLUMN client_token TEXT",
         "ALTER TABLE readings ADD COLUMN idempotency_key TEXT",
         "ALTER TABLE readings ADD COLUMN request_fingerprint TEXT",
+        "ALTER TABLE readings ADD COLUMN quota_at TEXT",
         "ALTER TABLE payments ADD COLUMN access_until TEXT",
         "ALTER TABLE payments ADD COLUMN first_month INTEGER NOT NULL DEFAULT 0",
     ]
@@ -409,7 +410,7 @@ async def _migrate_schema(db: aiosqlite.Connection) -> None:
         ("users", ("streak_days", "last_daily_at", "morning_streak",
                    "last_morning_at", "subscription_end", "first_month_done",
                    "notifications_enabled")),
-        ("readings", ("status", "completed_at", "error", "client_token", "idempotency_key", "request_fingerprint")),
+        ("readings", ("status", "completed_at", "error", "client_token", "idempotency_key", "request_fingerprint", "quota_at")),
     ):
         cursor = await db.execute(f"PRAGMA table_info({table})")
         have = {row[1] for row in await cursor.fetchall()}
@@ -455,8 +456,8 @@ async def init_db(db_path: str = "taro_bot.db") -> aiosqlite.Connection:
     await conn.execute(_CREATE_EVENTS_TABLE)
     await conn.execute(_CREATE_PAYMENTS_TABLE)
     from .conversations import SCHEMA
-    await conn.executescript(SCHEMA)
     await _migrate_schema(conn)
+    await conn.executescript(SCHEMA)
     await conn.commit()
     _db_connection = conn
     return conn
@@ -477,6 +478,8 @@ async def create_tables(db_path: str = "taro_bot.db") -> None:
         await db.execute(_CREATE_EVENTS_TABLE)
         await db.execute(_CREATE_PAYMENTS_TABLE)
         await _migrate_schema(db)
+        from .conversations import SCHEMA
+        await db.executescript(SCHEMA)
         await db.commit()
 
 
@@ -845,7 +848,7 @@ async def is_subscribed(db: aiosqlite.Connection, tg_id: int) -> bool:
 async def get_daily_non_daily_count(db: aiosqlite.Connection, user_id: int) -> int:
     """Count non-daily readings today for a user."""
     cursor = await db.execute(
-        "SELECT COUNT(*) FROM readings WHERE user_id = ? AND type != 'daily' AND status != ? AND date(created_at) = date('now')",
+        "SELECT COUNT(*) FROM readings WHERE user_id = ? AND type != 'daily' AND status != ? AND date(COALESCE(quota_at, created_at)) = date('now')",
         (user_id, STATUS_FAILED),
     )
     row = await cursor.fetchone()
@@ -855,7 +858,7 @@ async def get_daily_non_daily_count(db: aiosqlite.Connection, user_id: int) -> i
 async def get_monthly_non_daily_count(db: aiosqlite.Connection, user_id: int) -> int:
     """Count non-daily readings this month for a user."""
     cursor = await db.execute(
-        "SELECT COUNT(*) FROM readings WHERE user_id = ? AND type != 'daily' AND status != ? AND strftime('%Y-%m', created_at) = strftime('%Y-%m', 'now')",
+        "SELECT COUNT(*) FROM readings WHERE user_id = ? AND type != 'daily' AND status != ? AND strftime('%Y-%m', COALESCE(quota_at, created_at)) = strftime('%Y-%m', 'now')",
         (user_id, STATUS_FAILED),
     )
     row = await cursor.fetchone()
@@ -869,7 +872,7 @@ async def get_daily_card_count_today(db: aiosqlite.Connection, user_id: int) -> 
     (type='spread_1' with no question).
     """
     cursor = await db.execute(
-        "SELECT COUNT(*) FROM readings WHERE user_id = ? AND status != ? AND date(created_at) = date('now') AND (type = 'daily' OR (type = 'spread_1' AND question IS NULL))",
+        "SELECT COUNT(*) FROM readings WHERE user_id = ? AND status != ? AND date(COALESCE(quota_at, created_at)) = date('now') AND (type = 'daily' OR (type = 'spread_1' AND question IS NULL))",
         (user_id, STATUS_FAILED),
     )
     row = await cursor.fetchone()

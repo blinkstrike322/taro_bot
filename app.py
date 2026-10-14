@@ -392,6 +392,8 @@ async def _whisper_task(token: str, ctx: dict, cards: list[dict]) -> None:
             positions=ctx["positions"],
             avoid_texts=avoid_texts,
         )
+        if interpretation.get("_source") == "card_reference":
+            raise RuntimeError("Персональное чтение недоступно. Карты сохранены для повторной попытки.")
         latency_ms = int((time.monotonic() - started) * 1000)
         hop = get_last_llm_hop()
         await safe_log_event(

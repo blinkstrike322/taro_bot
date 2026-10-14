@@ -43,6 +43,7 @@ async def db():
             character_id TEXT DEFAULT 'shadow_walker',
             created_at TEXT DEFAULT (datetime('now')),
             status TEXT NOT NULL DEFAULT 'reserved',
+            quota_at TEXT,
             completed_at TEXT,
             error TEXT,
             client_token TEXT,

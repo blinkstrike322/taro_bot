@@ -800,7 +800,7 @@ async def interpret_reading(
     except RuntimeError:
         logger.error("All LLM models failed, using fallback")
 
-    return fallback_from_cards_db(cards, question, character_id, spread)
+    return {**fallback_from_cards_db(cards, question, character_id, spread), "_source": "card_reference"}
 
 
 _TEXT_FIELD_ALIASES = {
